@@ -1,0 +1,28 @@
+# --- Dependencies ---
+node_modules/
+dist/
+build/
+
+# --- Environment & Secrets ---
+.env
+.env.local
+uploads/
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+*.xml
+/shelf/
+/workspace.xml
+/httpRequests/
+/queries/
+/dataSources/
+/dataSources.local.xml
+
+# --- OS & System ---
+.DS_Store
+Thumbs.db
