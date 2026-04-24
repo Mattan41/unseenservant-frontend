@@ -17,7 +17,7 @@ uploads/
 *.iml
 *.xml
 /shelf/
-/workspace.xml
+/.idea/workspace.xml
 /httpRequests/
 /queries/
 /dataSources/
