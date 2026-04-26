@@ -10,11 +10,13 @@ const API_GITHUB_LOGIN_URL = `${oauthBase}/oauth2/authorization/github`
 
 class AuthService {
   async loginWithGoogle() {
-    window.location.href = API_GOOGLE_LOGIN_URL
+    const origin = window.location.origin
+    window.location.href = `${oauthBase}/api/auth/oauth-init?provider=google&origin=${encodeURIComponent(origin)}`
   }
 
   async loginWithGithub() {
-    window.location.href = API_GITHUB_LOGIN_URL
+    const origin = window.location.origin
+    window.location.href = `${oauthBase}/api/auth/oauth-init?provider=github&origin=${encodeURIComponent(origin)}`
   }
 
   async getCurrentUser() {
