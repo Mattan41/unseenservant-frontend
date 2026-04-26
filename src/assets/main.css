@@ -4,6 +4,8 @@
 
     /* Custom colors */
 
+    /* primary colors for Prod Environment */
+    /*
     --color-primary: #C0C0C0;
     --color-primary-50: #F9F9F9;
     --color-primary-100: #F2F2F2;
@@ -15,6 +17,20 @@
     --color-primary-700: #5C5C5C;
     --color-primary-800: #3D3D3D;
     --color-primary-900: #2B2B2B;
+ */
+
+    /* primary colors for Dev Environment */
+    --color-primary: #6B8E7B;
+    --color-primary-50: #BCCAC1;
+    --color-primary-100: #A9BDB1;
+    --color-primary-200: #96B0A1;
+    --color-primary-300: #83A391;
+    --color-primary-400: #749584;
+    --color-primary-500: #6B8E7B;
+    --color-primary-600: #567263;
+    --color-primary-700: #41564A;
+    --color-primary-800: #2C3A32;
+    --color-primary-900: #171E1A;
 
     /* Yellow colors */
     --color-secondary: #FFA500;
