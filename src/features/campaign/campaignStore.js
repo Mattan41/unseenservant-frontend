@@ -8,6 +8,7 @@ export const useCampaignStore = defineStore('campaign', {
     currentCampaign: null,
     campaignCharacters: {}, // Object with campaignId as key and characters array as value
     isLoading: false,
+    loadingCharacters: false,
     error: null, // todo: replace with notificationStore throughout the store
   }),
 
