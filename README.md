@@ -18,7 +18,7 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 
 ## Getting Started
 
-Requires the [Unseen Servant backend](link-to-backend-repo) to be running locally on port 8080 or whatever you have configured in `.env.development`.
+Requires the [Unseen Servant backend](https://github.com/Mattan41/unseenservant-backend) to be running locally on port 8080 or whatever you have configured in `.env.development`.
 
 ```
 VITE_API_BASE_URL=http://localhost:8080
