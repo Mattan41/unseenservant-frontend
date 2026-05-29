@@ -23,7 +23,6 @@ const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
 const showEditModal = ref(false)
 
-// Check if current user is the owner
 const isOwner = computed(() => {
   if (!campaign.value || !userStore.currentUser) return false
   return campaign.value.ownerId === userStore.userId
@@ -35,7 +34,6 @@ const loadCampaignData = async () => {
   const campaignStore = useCampaignStore()
 
   try {
-    // Load all campaigns for the current user
     await campaignStore.fetchAllCampaignsForCurrentUser()
   } catch (error) {
     console.error('Failed to load campaigns:', error)
@@ -44,7 +42,6 @@ const loadCampaignData = async () => {
     return
   }
 
-  // Load the campaign with the given id
   const campaignId = route.params.id
   const campaignExists = campaignStore.campaigns.some((c) => c.id === parseInt(campaignId))
   if (!campaignExists) {
@@ -63,20 +60,17 @@ const loadCampaignData = async () => {
   }
 }
 
-// Computed property to fetch characters for the current campaign from the campaign store
 const campaignCharacters = computed(() => {
   return campaignStore.getCharactersByCampaignId(parseInt(route.params.id))
 })
 
 const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
 
-// Group characters by participant id
 const charactersByParticipant = computed(() => {
   if (!campaign.value?.participants) return {}
 
   const characterMap = {}
 
-  // All participants in the campaign - viktigt att behålla alla deltagare
   campaign.value.participants.forEach((participant) => {
     characterMap[participant.id] = {
       participant: participant,
@@ -84,7 +78,6 @@ const charactersByParticipant = computed(() => {
     }
   })
 
-  // add owner to the character map if they are not already included
   if (campaign.value.ownerId && !characterMap[campaign.value.ownerId]) {
     let ownerInfo = campaign.value.participants.find((p) => p.id === campaign.value.ownerId)
     if (!ownerInfo) {
@@ -96,7 +89,6 @@ const charactersByParticipant = computed(() => {
     }
   }
 
-  // Fill characters for participants (only if we have characters)
   if (campaignCharacters.value && campaignCharacters.value.length) {
     campaignCharacters.value.forEach((character) => {
       if (characterMap[character.ownerId]) {
@@ -112,7 +104,6 @@ const onCharacterImported = () => {
   loadCampaignData()
 }
 
-// Remove character function
 const removeCharacter = async (characterId) => {
   if (confirm('Are you sure you want to remove this character from the campaign?')) {
     const campaignId = parseInt(route.params.id)
@@ -132,32 +123,33 @@ const openEditModal = () => {
 }
 
 const handleSaveCampaign = async (updatedCampaign) => {
-  const notificationStore = useNotificationStore()
+  const notificationStore = useNotificationStore() // Bring this back for the single success message
 
   try {
-    // Update campaign info in the store
+    // 1. Update text info
     await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updatedCampaign.title,
       description: updatedCampaign.description,
     })
 
-    // Upload image file if one was selected
+    // 2. Upload image file
     if (updatedCampaign.imageFile) {
       const updated = await campaignStore.uploadCampaignImage(campaign.value.id, updatedCampaign.imageFile)
       campaign.value.imageUrl = updated.imageUrl
     }
 
-    // Update local campaign object with edited values
+    // 3. Update local reactive state
     campaign.value.name = updatedCampaign.title
     campaign.value.description = updatedCampaign.description
 
-    // close the modal
+    // 4. Close the modal
     showEditModal.value = false
 
-    notificationStore.addNotification('Campaign updated successfully', 'success')
+    notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
+
   } catch (error) {
-    console.error('Failed to update campaign:', error)
-    notificationStore.addNotification('Failed to update campaign: ' + error.message, 'error')
+    // Silent catch, because the specific API errors are handled gracefully inside the store actions
+    console.error('Campaign update chain interrupted:', error)
   }
 }
 
@@ -169,12 +161,10 @@ const toggleSettings = () => {
   showSettings.value = !showSettings.value
 }
 
-// Toggle description expanded state
 const toggleDescription = () => {
   descriptionExpanded.value = !descriptionExpanded.value
 }
 
-// Handle participants updated
 const handleParticipantsUpdated = () => {
   loadCampaignData()
 }
@@ -189,7 +179,6 @@ onUnmounted(() => {
   }
 })
 
-// Watch for route parameter changes to reload data
 watch(
   () => route.params.id,
   async (newId) => {
