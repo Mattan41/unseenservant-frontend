@@ -12,7 +12,7 @@ Use the `beforeEnter` hook to redirect users, e.g. logging out and redirecting t
 
 There are three places where post-login redirects are configured:
 
-1. **OAuthRedirect Component** (`components/OAuthRedirect.vue`):
+1. **OAuthRedirect Component** (`feature/auth/OAuthRedirect.vue`):
    ```javascript
    // When OAuth login completes:
    if (authStore.isLoggedIn) {

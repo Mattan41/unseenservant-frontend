@@ -1,4 +1,4 @@
-import axios from '@/lib/axios.js'
+import axios from '@/api/lib/axios.js'
 import { useAuthStore } from '@/features/auth/authStore'
 
 // Helper to check if in guest mode

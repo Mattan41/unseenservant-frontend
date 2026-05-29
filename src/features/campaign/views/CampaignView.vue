@@ -29,13 +29,6 @@ const isOwner = computed(() => {
   return campaign.value.ownerId === userStore.userId
 })
 
-// Load user data for ownership check
-const loadUserData = async () => {
-  if (!userStore.currentUser) {
-    await userStore.fetchCurrentUser()
-  }
-}
-
 const loadCampaignData = async () => {
   const notificationStore = useNotificationStore()
   isLoading.value = true
