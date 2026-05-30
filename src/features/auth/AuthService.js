@@ -5,9 +5,6 @@ import apiClient from '@/api/apiClient'
 // For Cloudflare Pages, this points to the main backend
 const oauthBase = import.meta.env.VITE_OAUTH_BASE_URL || ''
 
-// const API_GOOGLE_LOGIN_URL = `${oauthBase}/oauth2/authorization/google`
-// const API_GITHUB_LOGIN_URL = `${oauthBase}/oauth2/authorization/github`
-
 class AuthService {
   async loginWithGoogle() {
     const origin = window.location.origin
@@ -22,6 +19,23 @@ class AuthService {
   async getCurrentUser() {
     const response = await apiClient.get(`/api/auth/me`)
     return response.data
+  }
+
+  async loginWithUsernamePassword(username, password) {
+    const response = await apiClient.post(`/api/auth/login`, { username, password })
+
+    // Extract JWT token from Authorization header (format: "Bearer <token>")
+    const authHeader = response.headers?.authorization || response.headers?.Authorization
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('No authorization token received in response headers')
+    }
+
+    const token = authHeader.substring(7) // Strip "Bearer " prefix (7 characters)
+
+    return {
+      token,
+      user: response.data, // Return user metadata from body (id, username, email, role)
+    }
   }
 }
 export default new AuthService()
