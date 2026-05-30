@@ -3,7 +3,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from "@/features/character/components/CharacterImage.vue";
+
+const authStore = useAuthStore();
+const isGuestMode = computed(() => authStore.isGuest);
 
 const characterStore = useCharacterStore()
 const notificationStore = useNotificationStore()
@@ -153,27 +157,42 @@ const submitCharacter = async () => {
         <!-- Character Image Section -->
         <div class="mb-6">
           <h5 class="text-lg font-semibold mb-3 text-primary-600">Character Image</h5>
+
+          <!-- Guest mode disclaimer -->
+          <div v-if="isGuestMode" class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3">
+            ⚠️ Image upload is not supported in guest mode. A default image will be used.
+          </div>
+
           <div class="flex items-center space-x-4">
             <div class="relative">
               <CharacterImage :src="characterImageUrl" alt="Character Image"
                               class="w-24 h-24 rounded-lg object-cover border-2 border-primary-300"/>
               <div
+                v-if="!isGuestMode"
                 @click="triggerFileInput"
                 class="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                 <span class="text-white text-sm">Change</span>
               </div>
             </div>
             <input
+              v-if="!isGuestMode"
               type="file"
               ref="fileInput"
               @change="handleImageChange"
               accept=".jpg,.jpeg,.png,.gif,.webp"
               class="hidden"/>
-            <button type="button" @click="triggerFileInput" class="button button-secondary">
+            <button
+              v-if="!isGuestMode"
+              type="button"
+              @click="triggerFileInput"
+              class="button button-secondary">
               Upload new image
             </button>
+            <span v-else class="text-sm text-gray-500 italic">
+              Image upload not available in guest mode
+            </span>
           </div>
-          <div class="text-xs text-gray-500 mt-1">
+          <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
             Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
           </div>
         </div>

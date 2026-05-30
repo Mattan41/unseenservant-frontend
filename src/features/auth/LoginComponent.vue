@@ -1,28 +1,46 @@
 <script setup>
-import { useAuthStore } from '@/features/auth/authStore.js';
+import { useAuthStore } from '@/features/auth/authStore.js'
+import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore();
+const authStore = useAuthStore()
+const router = useRouter()
 
 const handleGoogleLogin = async () => {
   try {
-    await authStore.loginWithGoogle();
+    await authStore.loginWithGoogle()
   } catch (error) {
-    console.error('Google login failed', error);
+    console.error('Google login failed', error)
   }
-};
+}
 
 const handleGithubLogin = async () => {
   try {
-    await authStore.loginWithGithub();
+    await authStore.loginWithGithub()
   } catch (error) {
-    console.error('GitHub login failed', error);
+    console.error('GitHub login failed', error)
   }
-};
+}
+
+const handleGuestMode = () => {
+  authStore.enterGuestMode()
+  router.push('/')
+}
 </script>
 
 <template>
   <div class="login max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold mb-6">Login</h2>
+    <div class="flex flex-col items-center mb-8">
+      <img src="@/assets/logo.svg" alt="Hat Man" class="w-16 h-16 mb-3 object-contain" />
+      <div class="text-center pb-4 mb-6 border-b border-gray-100 flex flex-col items-center">
+        <h2 class="text-xl font-bold text-gray-700 tracking-wide uppercase">Login</h2>
+        <p class="text-xs text-gray-500 mt-2 max-w-xs normal-case italic font-normal">
+          Log in is currently restricted to selected test users. Use the demo login below to test
+          the app
+        </p>
+      </div>
+      <p class="text-xs text-gray-400 mt-1 font-medium tracking-wider uppercase">Sign in</p>
+    </div>
+
     <div class="flex flex-col items-center gap-4">
       <!-- Google Sign-in Button -->
       <button
@@ -43,16 +61,22 @@ const handleGithubLogin = async () => {
         class="w-64 h-10 px-3 flex items-center justify-center bg-gray-900 rounded text-sm text-white font-medium relative transition duration-200 hover:bg-gray-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-600"
       >
         <div class="flex items-center justify-center">
-          <div class="w-5 h-5 mr-3 flex-shrink-0">
+          <div class="w-5 h-5 mr-3 shrink-0">
             <img src="@/assets/github.svg" alt="GitHub logo" class="w-full h-full filter invert" />
           </div>
           <span class="font-medium">Sign in with GitHub</span>
         </div>
       </button>
+      <p class="text-xs text-gray-400 mt-1 font-medium tracking-wider uppercase">
+        Or try app in demo mode
+      </p>
+      <!-- Guest Mode Button -->
+      <button
+        @click.prevent="handleGuestMode"
+        class="w-64 h-10 px-3 flex items-center justify-center bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800 font-medium relative transition duration-200 hover:bg-yellow-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+      >
+        <span class="font-medium">Demo mode</span>
+      </button>
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Minimal custom styles that can't be achieved with Tailwind alone */
-</style>

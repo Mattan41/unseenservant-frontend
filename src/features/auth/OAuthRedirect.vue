@@ -15,6 +15,11 @@ onMounted(async () => {
   const routeToken = route.query.token
   if (routeToken) {
     try {
+      // Clear guest mode if user was previously a guest
+      if (authStore.isGuest) {
+        authStore.exitGuestMode()
+      }
+
       authStore.handleOAuthRedirect(routeToken)
 
       await userStore.fetchCurrentUser()

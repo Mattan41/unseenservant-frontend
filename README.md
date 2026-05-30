@@ -18,11 +18,12 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 
 ## Getting Started
 
-Requires the [Unseen Servant backend](https://github.com/Mattan41/unseenservant-backend) to be running locally on port 8080 or whatever you have configured in `.env.development`.
+**Full Stack Mode:** Requires the [Unseen Servant backend](https://github.com/Mattan41/unseenservant-backend) to be running locally on port 8080 or whatever you have configured in `.env.development`.
 
 ```
 VITE_API_BASE_URL=http://localhost:8080
 ```
+* **Guest Mode:** No backend required. You can run the frontend completely decoupled by clicking **"Enter Guest Mode"** on the login screen to run the app using a local `localStorage` adapter seeded with mock data (Note: image uploads are not supported in guest mode).
 
 **2. Install and run**
 

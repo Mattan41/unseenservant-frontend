@@ -137,11 +137,11 @@ const updateNicknameForParticipant = (participant) => {
 
 const addParticipant = async (user) => {
   try {
-    // Convert campaignId to number if needed
-    const campaignIdNum = Number(props.campaignId)
+    // Keep campaignId as string to support both numeric and guest mode IDs
+    const campaignId = props.campaignId
 
     // call the store method to add the participant
-    await campaignStore.addParticipantsToCampaign(campaignIdNum, [
+    await campaignStore.addParticipantsToCampaign(campaignId, [
       { id: user, nickname: user.username, role: 'PLAYER' },
     ])
 
@@ -161,10 +161,10 @@ const removeParticipant = async (participant) => {
   if (!confirm(`Are you sure you want to remove ${participant.nickname || 'this participant'}?`))
     return
   try {
-    // Convert campaignId to number if needed
-    const campaignIdNum = Number(props.campaignId)
+    // Keep campaignId as string to support both numeric and guest mode IDs
+    const campaignId = props.campaignId
 
-    await campaignStore.removeParticipantsFromCampaign(campaignIdNum, [participant.id])
+    await campaignStore.removeParticipantsFromCampaign(campaignId, [participant.id])
     emit(
       'participants-updated',
       `Participant ${participant.nickname || participant.displayName || participant.username || participant.name} removed successfully!`,
