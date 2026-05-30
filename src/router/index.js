@@ -1,6 +1,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import LoginComponent from '@/components/LoginComponent.vue'
+import LoginComponent from '@/features/auth/LoginComponent.vue'
 import {useAuthStore} from '@/features/auth/authStore.js'
 
 /**
@@ -28,12 +28,12 @@ const router = createRouter({
     {
       path: '/logout',
       name: 'logout',
-      component: () => import('@/views/LogoutView.vue'),
+      component: () => import('@/features/auth/LogoutView.vue'),
     },
     {
       path: '/oauth-redirect',
       name: 'oauth-redirect',
-      component: () => import('../components/OAuthRedirect.vue'),
+      component: () => import('@/features/auth/OAuthRedirect.vue'),
     },
     {
       path: '/user-profile',

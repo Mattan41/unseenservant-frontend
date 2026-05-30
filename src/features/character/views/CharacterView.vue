@@ -2,12 +2,14 @@
 import { computed, onMounted, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 
 const characterStore = useCharacterStore()
 const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -37,7 +39,9 @@ const isOwner = computed(
 const deleteCharacter = async () => {
   if (confirm('Are you sure you want to delete this character? This action cannot be undone.')) {
     const success = await characterStore.deleteCharacter(characterId.value)
+
     if (success) {
+      notificationStore.addNotification('Character deleted successfully!', 'success', 3000)
       await router.push({ name: 'CharactersView' })
     }
   }

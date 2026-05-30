@@ -78,7 +78,6 @@ export const useCampaignStore = defineStore('campaign', {
       const notificationStore = useNotificationStore()
       try {
         await CampaignService.updateCampaignInfo(campaignId, campaignData)
-        notificationStore.addNotification('Campaign updated successfully!', 'success')
         return true
       } catch (error) {
         console.error('Failed to update campaign info:', error)
@@ -90,15 +89,17 @@ export const useCampaignStore = defineStore('campaign', {
       }
     },
 
-    async uploadCampaignImage(campaignId, imageFile) {
+   async uploadCampaignImage(campaignId, imageFile) {
       const notificationStore = useNotificationStore()
       try {
         return await CampaignService.uploadCampaignImage(campaignId, imageFile)
       } catch (error) {
-        notificationStore.addNotification(
-          error.message || 'Failed to upload campaign image',
-          'error',
-        )
+        // Extract the error message from the backend response
+        const errorMessage = error.response && typeof error.response.data === 'string'
+          ? error.response.data
+          : 'Failed to upload campaign image'
+
+        notificationStore.addNotification(errorMessage, 'error', 5000)
         console.error('Failed to upload campaign image:', error)
         throw error
       }

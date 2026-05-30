@@ -11,7 +11,6 @@
         </button>
       </div>
 
-      <!-- Campaign Name -->
       <div class="mb-3">
         <label for="campaign-name" class="block text-sm font-medium text-gray-700 mb-1">
           Campaign Name
@@ -25,7 +24,6 @@
         />
       </div>
 
-      <!-- Campaign Description -->
       <div class="mb-3">
         <label for="campaign-description" class="block text-sm font-medium text-gray-700 mb-1">
           Description
@@ -39,7 +37,6 @@
         ></textarea>
       </div>
 
-      <!-- Campaign Image Upload -->
       <div class="mb-3">
         <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Image</label>
         <div class="flex items-center space-x-4">
@@ -138,9 +135,10 @@ async function saveChanges() {
       imageFile: selectedFile.value,
     };
 
+    // Forward the form submit payload to the parent view context
     emit('save', updatedData);
   } catch (error) {
-    console.error('Error saving campaign:', error);
+    console.error('Error saving campaign data inside modal component:', error);
   } finally {
     isUpdating.value = false;
   }

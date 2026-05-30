@@ -22,6 +22,7 @@ export const useCharacterStore = defineStore('character', {
       } catch (error) {
         console.error('Failed to create character:', error)
         notificationStore.addNotification('Failed to create character.', 'error')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -43,7 +44,6 @@ export const useCharacterStore = defineStore('character', {
         const character = await CharacterService.fetchCharacter(characterId)
         this.currentCharacter = character
 
-        // Om karaktären inte finns i characters-arrayen, lägg till den
         if (!this.characters.some((char) => char.id === characterId)) {
           this.characters.push(character)
         }
@@ -52,6 +52,7 @@ export const useCharacterStore = defineStore('character', {
       } catch (error) {
         console.error('Failed to fetch character:', error)
         notificationStore.addNotification('Failed to fetch character.', 'error')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -67,6 +68,7 @@ export const useCharacterStore = defineStore('character', {
       } catch (error) {
         console.error('Failed to fetch characters:', error)
         notificationStore.addNotification('Failed to fetch characters.', 'error')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -96,22 +98,20 @@ export const useCharacterStore = defineStore('character', {
       try {
         const updatedCharacter = await CharacterService.updateCharacter(characterId, data)
 
-        // update the character in the characters array
         const index = this.characters.findIndex((char) => char.id === characterId)
         if (index !== -1) {
           this.characters[index] = updatedCharacter
         }
 
-        // Update currentCharacter if it is the one to be updated
         if (this.currentCharacter && this.currentCharacter.id === characterId) {
           this.currentCharacter = updatedCharacter
         }
 
-        notificationStore.addNotification('Character updated successfully!', 'success')
         return updatedCharacter
       } catch (error) {
         console.error('Failed to update character:', error)
         notificationStore.addNotification('Failed to update character.', 'error')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -128,22 +128,20 @@ export const useCharacterStore = defineStore('character', {
           value,
         )
 
-        // update the character in the characters array
         const index = this.characters.findIndex((char) => char.id === characterId)
         if (index !== -1) {
           this.characters[index] = updatedCharacter
         }
 
-        // Update currentCharacter if it is the one to be updated
         if (this.currentCharacter && this.currentCharacter.id === characterId) {
           this.currentCharacter = updatedCharacter
         }
 
-        notificationStore.addNotification(`Character ${field} updated successfully!`, 'success')
         return updatedCharacter
       } catch (error) {
         console.error('Failed to update character field:', error)
         notificationStore.addNotification(`Failed to update ${field}.`, 'error')
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -154,19 +152,21 @@ export const useCharacterStore = defineStore('character', {
 
       try {
         const updatedCharacter = await CharacterService.uploadCharacterImage(characterId, imageFile)
-        // Update character array with the new imageUrl
         if (this.characters.length > 0) {
           const index = this.characters.findIndex((c) => c.id === characterId)
           if (index !== -1) {
             this.characters[index] = updatedCharacter
           }
-          notificationStore.addNotification('Character image updated successfully!', 'success')
         }
 
-        // Return the updated imageUrl
         return updatedCharacter.imageUrl
       } catch (error) {
-        notificationStore.addNotification('Failed to upload character image.', 'error')
+        const errorMessage =
+          error.response && typeof error.response.data === 'string'
+            ? error.response.data
+            : 'Failed to upload character image.'
+
+        notificationStore.addNotification(errorMessage, 'error', 5000)
         console.error('Error in store uploadCharacterImage:', error)
         throw error
       }
@@ -179,15 +179,12 @@ export const useCharacterStore = defineStore('character', {
       try {
         await CharacterService.deleteCharacter(characterId)
 
-        // remove character form the characters array
         this.characters = this.characters.filter((char) => char.id !== characterId)
 
-        // remove currentCharacter if it matches the deleted character
         if (this.currentCharacter && this.currentCharacter.id === characterId) {
           this.currentCharacter = null
         }
 
-        notificationStore.addNotification('Character deleted successfully!', 'success')
         return true
       } catch (error) {
         console.error('Failed to delete character:', error)
