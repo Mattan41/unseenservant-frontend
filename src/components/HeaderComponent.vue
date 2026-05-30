@@ -1,9 +1,10 @@
 <script setup>
 import { useAuthStore } from '../features/auth/authStore.js'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const mobileMenuOpen = ref(false)
 
 const closeMenu = () => {
@@ -19,6 +20,11 @@ const handleClickOutside = (event) => {
   }
 }
 
+const exitGuestMode = () => {
+  authStore.exitGuestMode()
+  router.push('/')
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
 })
@@ -29,7 +35,21 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="bg-gradient-to-r from-primary-100 to-primary-300 p-4 text-center">
+  <header class="bg-linear-to-r from-primary-100 to-primary-300 p-4 text-center">
+    <!-- Guest Mode Banner -->
+    <div
+      v-if="authStore.isGuest"
+      class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 mb-4 rounded text-sm flex items-center justify-center gap-2"
+    >
+      <span>You are in demo mode — changes will not be saved</span>
+      <button
+        @click="exitGuestMode"
+        class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 py-2 rounded-full"
+      >
+        <span class="font-medium">Exit demo mode</span>
+      </button>
+    </div>
+
     <nav>
       <!-- Mobile menu -->
       <div class="flex md:hidden justify-between items-center">
@@ -95,6 +115,30 @@ onBeforeUnmount(() => {
           </RouterLink>
         </template>
 
+        <template v-else-if="authStore.isGuest">
+          <RouterLink
+            @click="closeMenu"
+            to="/characters"
+            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          >
+            <h5 class="p-2 uppercase">Characters</h5>
+          </RouterLink>
+          <RouterLink
+            @click="closeMenu"
+            to="/campaigns"
+            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            >
+            <h5 class="p-2 uppercase">Campaigns</h5>
+          </RouterLink>
+          <RouterLink
+            @click="closeMenu"
+            to="/login"
+            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+          >
+            <h5 class="p-2 uppercase">Login</h5>
+          </RouterLink>
+        </template>
+
         <RouterLink
           v-else
           @click="closeMenu"
@@ -144,6 +188,28 @@ onBeforeUnmount(() => {
             class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
           >
             <h5 class="p-2 uppercase">Logout</h5>
+          </RouterLink>
+        </template>
+
+        <template v-else-if="authStore.isGuest">
+          <RouterLink
+            to="/characters"
+            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          >
+            <h5 class="p-2 uppercase">Characters</h5>
+          </RouterLink>
+          <RouterLink
+            @click="closeMenu"
+            to="/campaigns"
+            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            >
+            <h5 class="p-2 uppercase">Campaigns</h5>
+          </RouterLink>
+          <RouterLink
+            to="/login"
+            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+          >
+            <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
         </template>
 

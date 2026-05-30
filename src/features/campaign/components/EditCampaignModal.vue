@@ -39,6 +39,12 @@
 
       <div class="mb-3">
         <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Image</label>
+
+        <!-- Guest mode disclaimer -->
+        <div v-if="isGuestMode" class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3">
+          ⚠️ Image upload is not supported in guest mode. A default image will be used.
+        </div>
+
         <div class="flex items-center space-x-4">
           <div class="relative">
             <img
@@ -48,7 +54,7 @@
               class="w-24 h-24 rounded-lg object-cover border-2 border-primary-300"
             />
             <div
-              v-if="previewImageUrl"
+              v-if="previewImageUrl && !isGuestMode"
               @click="triggerFileInput"
               class="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
             >
@@ -56,17 +62,26 @@
             </div>
           </div>
           <input
+            v-if="!isGuestMode"
             type="file"
             ref="fileInput"
             @change="handleImageChange"
             accept=".jpg,.jpeg,.png,.gif,.webp"
             class="hidden"
           />
-          <button type="button" @click="triggerFileInput" class="button button-secondary">
+          <button
+            v-if="!isGuestMode"
+            type="button"
+            @click="triggerFileInput"
+            class="button button-secondary"
+          >
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
           </button>
+          <span v-else class="text-sm text-gray-500 italic">
+            {{ previewImageUrl ? 'Current image (cannot change in guest mode)' : 'No image (upload not available in guest mode)' }}
+          </span>
         </div>
-        <div class="text-xs text-gray-500 mt-1">
+        <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
           Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
         </div>
       </div>
@@ -89,6 +104,10 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useAuthStore } from '@/features/auth/authStore.js';
+
+const authStore = useAuthStore();
+const isGuestMode = computed(() => authStore.isGuest);
 
 const props = defineProps({
   campaign: {

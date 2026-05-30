@@ -44,7 +44,6 @@
 
       <div class="text-center text-sm text-third-700 mt-6 border-t border-primary-200 pt-4">
         <p class="mt-2">Unseen Servant is a fan-created tool and is not affiliated with or endorsed by the official game publishers.</p>
-        <p class="mt-2">© {{ new Date().getFullYear() }} Unseen Servant</p>
       </div>
 
     </div>

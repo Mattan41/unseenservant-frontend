@@ -43,9 +43,10 @@ const loadCampaignData = async () => {
   }
 
   const campaignId = route.params.id
-  const campaignExists = campaignStore.campaigns.some((c) => c.id === parseInt(campaignId))
-  if (!campaignExists) {
-    await router.push({ name: 'campaignsView' })
+const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
+
+if (!campaignExists) {
+    await router.push({ name: 'CampaignsView' })
     return
   }
 
@@ -61,7 +62,9 @@ const loadCampaignData = async () => {
 }
 
 const campaignCharacters = computed(() => {
-  return campaignStore.getCharactersByCampaignId(parseInt(route.params.id))
+  const id = route.params.id
+  const safeId = isNaN(id) ? id : parseInt(id)
+  return campaignStore.getCharactersByCampaignId(safeId)
 })
 
 const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
@@ -106,8 +109,8 @@ const onCharacterImported = () => {
 
 const removeCharacter = async (characterId) => {
   if (confirm('Are you sure you want to remove this character from the campaign?')) {
-    const campaignId = parseInt(route.params.id)
-    campaignCharacters.value.filter((character) => character.id !== characterId)
+    const id = route.params.id
+    const campaignId = id // Keep as string for guest mode compatibility
     try {
       await campaignStore.removeCharacterFromCampaign(characterId)
     } catch (error) {
@@ -175,7 +178,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (route.params.id) {
-    campaignStore.clearCampaignCharacters(parseInt(route.params.id))
+    const id = route.params.id
+    const safeId = isNaN(id) ? id : parseInt(id)
+    campaignStore.clearCampaignCharacters(safeId)
   }
 })
 

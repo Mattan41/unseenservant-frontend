@@ -78,6 +78,12 @@ export const useCampaignStore = defineStore('campaign', {
       const notificationStore = useNotificationStore()
       try {
         await CampaignService.updateCampaignInfo(campaignId, campaignData)
+
+           const index = this.campaigns.findIndex(c => c.id === campaignId)
+           if (index !== -1) {
+            this.campaigns[index] = { ...this.campaigns[index], ...campaignData }
+          }
+
         return true
       } catch (error) {
         console.error('Failed to update campaign info:', error)
@@ -255,11 +261,13 @@ export const useCampaignStore = defineStore('campaign', {
     },
 
     async removeCharacterFromCampaign(characterId) {
+      const notificationStore = useNotificationStore()
       try {
         let campaignId = null;
+        // Find which campaign this character belongs to (handle both string and numeric IDs)
         for (const [campId, characters] of Object.entries(this.campaignCharacters)) {
           if (characters.some(char => char.id === characterId)) {
-            campaignId = parseInt(campId);
+            campaignId = campId; // Keep as string, don't parseInt - guest IDs are strings
             break;
           }
         }
@@ -276,10 +284,10 @@ export const useCampaignStore = defineStore('campaign', {
           [campaignId]: this.campaignCharacters[campaignId].filter(char => char.id !== characterId)
         };
 
-        this.notificationStore.addNotification('Character removed from campaign successfully!', 'success')
+        notificationStore.addNotification('Character removed from campaign successfully!', 'success')
       } catch (error) {
         console.error('Failed to remove character from campaign:', error)
-        this.notificationStore.addNotification(
+        notificationStore.addNotification(
           error.message || 'Failed to remove character from campaign',
           'error'
         )

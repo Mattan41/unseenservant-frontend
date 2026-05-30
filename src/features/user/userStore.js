@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import UserService from './UserService.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
+import { useAuthStore } from '@/features/auth/authStore.js'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -26,6 +27,17 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
 
     try {
+      // Check if in guest mode - return guest user from localStorage
+      const authStore = useAuthStore()
+      if (authStore.isGuest) {
+        const guestUser = JSON.parse(localStorage.getItem('guest_user') || 'null')
+        if (guestUser) {
+          currentUser.value = guestUser
+          return guestUser
+        }
+      }
+
+      // Authenticated mode - fetch from backend
       const userData = await UserService.fetchCurrentUserInfo()
       currentUser.value = userData
       return userData

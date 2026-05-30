@@ -46,39 +46,39 @@ const router = createRouter({
       name: 'CampaignView',
       component: () => import('@/features/campaign/views/CampaignView.vue'),
       props: true,
-      meta: { requiresAuth: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/campaigns',
       name: 'CampaignsView',
       component: () => import('../features/campaign/views/CampaignsView.vue'),
-      meta: { requiresAuth: true },
+       meta: { allowGuest: true },
     },
     {
       path: '/characters/create',
       name: 'CreateCharacter',
       component: () => import('@/features/character/components/CreateCharacter.vue'),
-      meta: { requiresAuth: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/characters/:id/edit',
       name: 'EditCharacter',
       component: () => import('@/features/character/components/EditCharacter.vue'),
       props: true,
-      meta: { requiresAuth: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/characters/:id',
       name: 'CharacterView',
       component: () => import('@/features/character/views/CharacterView.vue'),
       props: true,
-      meta: { requiresAuth: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/characters',
       name: 'CharactersView',
       component: () => import('@/features/character/views/CharactersView.vue'),
-      meta: { requiresAuth: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/under-construction',
@@ -101,14 +101,40 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   const isAuthenticated = authStore.isAuthenticated
+  const isGuest = authStore.isGuest
 
+  // 1. Authenticated users can access all routes
+  if (isAuthenticated) {
+    next()
+    return
+  }
+
+  // 2. Redirect authenticated users away from login page
+  if (to.name === 'login' && isAuthenticated) {
+    next({ name: 'home' })
+    return
+  }
+
+  // 3. Guest users with allowGuest meta can access the route
+  if (isGuest && to.meta?.allowGuest) {
+    next()
+    return
+  }
+
+  // 4. Guest users without allowGuest are redirected to home
+if (isGuest && to.meta?.requiresAuth) {
+    next({ name: 'home' })
+    return
+  }
+
+  // 5. Non-authenticated users trying to access requiresAuth routes
   if (to.meta?.requiresAuth && !isAuthenticated) {
     next({ name: 'login' })
-  } else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'home' })
-  } else {
-    next()
+    return
   }
+
+  // 6. Allow all other routes
+  next()
 })
 
 export default router
