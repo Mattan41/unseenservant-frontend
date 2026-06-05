@@ -23,6 +23,10 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 ```
 VITE_API_BASE_URL=http://localhost:8080
 ```
+
+* **Demo Mode:** Run backend with `demo` profile. 
+SetVITE_USER_NODE_ENV=demo in env.demo and start frontend with `npm run demo`.1 Uses form login with test users (User1-User5, admin — all passwords: `password`). 
+
 * **Guest Mode:** No backend required. You can run the frontend completely decoupled by clicking **"Enter Guest Mode"** on the login screen to run the app using a local `localStorage` adapter seeded with mock data (Note: image uploads are not supported in guest mode).
 
 **2. Install and run**

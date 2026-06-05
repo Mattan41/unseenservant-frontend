@@ -1,9 +1,12 @@
 <script setup>
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useRouter } from 'vue-router'
+import LoginForm from '@/features/auth/LoginForm.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+const isDemoMode = import.meta.env.VITE_USER_NODE_ENV === 'demo'
 
 const handleGoogleLogin = async () => {
   try {
@@ -28,7 +31,11 @@ const handleGuestMode = () => {
 </script>
 
 <template>
-  <div class="login max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+  <!-- Demo Mode: Show form-based login -->
+  <LoginForm v-if="isDemoMode" />
+
+  <!-- Production/Development: Show OAuth2 login -->
+  <div v-else class="login max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
     <div class="flex flex-col items-center mb-8">
       <img src="@/assets/logo.svg" alt="Hat Man" class="w-16 h-16 mb-3 object-contain" />
       <div class="text-center pb-4 mb-6 border-b border-gray-100 flex flex-col items-center">

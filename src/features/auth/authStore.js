@@ -129,6 +129,12 @@ export const useAuthStore = defineStore('auth', () => {
     return AuthService.loginWithGithub()
   }
 
+  async function login(username, password) {
+    const data = await AuthService.loginWithUsernamePassword(username, password)
+    setToken(data.token)
+    return data
+  }
+
   return {
     // State & Computed
     token,
@@ -141,6 +147,7 @@ export const useAuthStore = defineStore('auth', () => {
     initializeAuth,
     loginWithGoogle,
     loginWithGithub,
+    login,
     handleOAuthRedirect,
     logout,
     clearAuth,
