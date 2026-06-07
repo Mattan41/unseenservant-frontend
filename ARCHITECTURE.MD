@@ -14,10 +14,11 @@
 ```
 src/
 ├── api/
-│   ├── axios.js              # Axios instance with interceptors (JWT, 401-handling)
-│   ├── apiClient.js          # Unified API client wrapper. Dynamically switches between axios.js and guest-axios.js based on authStore.isGuest
-│   ├── guest-axios.js        # Mock Axios instance using localStorage to handle standalone guest mode requests
-│   └── open5eClient.js       # External API wrapper for Open5e (clean Axios instance)
+│   ├── lib/
+│   │    ├── axios.js              # Axios instance with interceptors (JWT, 401-handling)
+│   │    ├── open5e-axios.js       # External API wrapper for Open5e (clean Axios instance)
+│   │    └── guest-axios.js        # Mock Axios instance using localStorage to handle standalone guest mode requests
+│   └── apiClient.js          # Unified API client wrapper. Dynamically switches between axios.js and guest-axios.js based on authStore.isGuest
 ├── components/               # Shared UI components
 │   ├── base/                 # Generic building blocks (button, modal, input etc.)
 │   ├── HeaderComponent.vue

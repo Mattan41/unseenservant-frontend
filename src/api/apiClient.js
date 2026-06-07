@@ -10,6 +10,7 @@
 
 import axios from '@/api/lib/axios.js'
 import guestAxios from '@/api/lib/guest-axios.js'
+import open5eAxios from '@/api/lib/open5e-axios.js'
 import { useAuthStore } from '@/features/auth/authStore'
 
 // ============================================================================
@@ -96,6 +97,31 @@ export const del = (url, config) => {
   return client.delete(url, config)
 }
 
+// ============================================================================
+// Open5e External API Methods
+// ============================================================================
+
+/**
+ * GET request to Open5e API (always uses real Axios — public API, no auth)
+ * @param {string} url - API endpoint path (e.g., '/spells/')
+ * @param {object} config - axios config with params
+ * @returns {Promise} Axios response
+ */
+export const getOpen5e = (url, config) => {
+  return open5eAxios.get(url, config)
+}
+
+/**
+ * POST request to Open5e API (always uses real Axios — public API, no auth)
+ * @param {string} url - API endpoint path
+ * @param {object} data - request body
+ * @param {object} config - axios config
+ * @returns {Promise} Axios response
+ */
+export const postOpen5e = (url, data, config) => {
+  return open5eAxios.post(url, data, config)
+}
+
 // Export as default object for convenience
 export default {
   get,
@@ -103,4 +129,6 @@ export default {
   put,
   patch,
   delete: del,
+  getOpen5e,
+  postOpen5e,
 }
