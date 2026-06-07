@@ -82,7 +82,7 @@ const handleGuestMode = () => {
         @click.prevent="handleGuestMode"
         class="w-64 h-10 px-3 flex items-center justify-center bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800 font-medium relative transition duration-200 hover:bg-yellow-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
       >
-        <span class="font-medium">Demo mode</span>
+        <span class="font-medium">Guest Demo mode</span>
       </button>
     </div>
   </div>

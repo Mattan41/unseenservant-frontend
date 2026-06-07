@@ -30,9 +30,12 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### src/api/lib/open5e-axios.js — External API Client
 
-- Placeholder file for Open5e external API integration.
-- Currently empty (0 bytes) - implementation pending.
-- Intended to provide a clean Axios instance for external Open5e API calls.
+- **Base URL**: `https://api.open5e.com/v2/`
+- **Timeout**: 10 seconds.
+- **Auth**: Public API client. No authentication headers or interceptors are attached.
+- **Headers**: Fixed `Content-Type: application/json`.
+- **Purpose**: Provides a dedicated Axios instance specifically for fetching standardized SRD and open-licensed game mechanics (e.g., spells, monsters) from the Open5e database.
+- **Usage**: Accessed via `apiClient.getOpen5e()` and `apiClient.postOpen5e()` methods in apiClient.js.
 
 ---
 
@@ -164,6 +167,122 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Response**: UserDTO
 - **Status Codes**: 200, 400, 401, 403, 404, 409 (conflict on unique constraint)
 - **Notes**: Handles 409 conflict errors with user-friendly messages.
+
+---
+
+## Feature: Spell
+
+### spellStore — State Shape
+
+```js
+{
+  searchResults: Array<object>,           // Current search results (array of normalized spell objects)
+  spellCache: Map<string, object>,        // Spell cache keyed by Open5e key
+  currentQuery: string,                   // Current search query
+  currentPage: number,                    // Current page number (default 1)
+  totalResults: number | null,            // Total number of results
+  isLoading: boolean,                     // Loading state
+  error: string | null,                   // Error message
+  searchHistory: Array<{query: string, timestamp: number}>, // Search history (max 10 entries)
+  hasNextPage: computed,                  // Whether there are more pages (50 results per page)
+  hasPreviousPage: computed,             // Whether there is a previous page
+  totalPages: computed                    // Total number of pages based on 50 results per page
+}
+```
+
+### Normalized Spell Object Shape
+
+```js
+{
+  key: string,                            // Open5e spell key (e.g., 'srd_fireball')
+  name: string,                           // Spell name
+  level: number,                          // Spell level (0-9)
+  school: string,                         // School of magic name
+  schoolKey: string,                      // School of magic key
+  documentKey: string,                    // Source document key (e.g., 'srd-2014')
+  documentName: string,                   // Source document name
+  sourceLabel: string,                    // Human-readable source label (e.g., 'SRD 5.1')
+  classes: Array<string>,                 // Class names that can use this spell
+  desc: string,                           // Spell description
+  range: string,                          // Spell range
+  duration: string,                       // Spell duration
+  casting_time: string,                   // Casting time
+  components: Array<string>,              // Components (V, S, M)
+  material: string,                       // Material component description
+  ritual: boolean,                        // Is ritual spell
+  concentration: boolean,                 // Requires concentration
+  higher_level: string,                   // Higher level description
+  isHomebrew: boolean                     // Homebrew flag (future feature)
+}
+```
+
+---
+
+### GET https://api.open5e.com/v2/spells/
+
+- **Service**: SpellService.searchSpells(query, page)
+- **Store Action**: spellStore.searchSpells(query, page) or spellStore.debouncedSearch(query, page)
+- **Guest Mode**: Not applicable (external API)
+- **Query Params**:
+  - `name__contains`: Search term for spell name
+  - `page`: Page number (default 1)
+  - `limit`: Results per page (fixed at 50)
+  - `ordering`: Sort order (fixed at 'name')
+- **Response Body**: `{ count: number, next: string|null, previous: string|null, results: Array<Spell> }`
+- **Status Codes**: 200
+- **Notes**: Debounced by 300ms in store to reduce API load. Results are automatically normalized and cached.
+
+---
+
+### GET https://api.open5e.com/v2/spells/{key}/
+
+- **Service**: SpellService.fetchSpellByKey(key)
+- **Store Action**: spellStore.fetchSpellByKey(key)
+- **Guest Mode**: Not applicable (external API)
+- **Response**: Single Spell object from Open5e
+- **Status Codes**: 200, 404
+- **Notes**: Checks local cache first before making API call. Spell is normalized and cached on fetch.
+
+---
+
+### POST /api/characters/{characterId}/spells
+
+- **Service**: SpellService.saveSpellToCharacter(characterId, normalizedSpell)
+- **Store Action**: spellStore.saveSpellToCharacter(characterId, spell)
+- **Guest Mode**: Mocked — saves spell to character.spells array in guest_characters
+- **Request Body**:
+  ```js
+  {
+    slug: string,              // Spell key (from normalizedSpell.key)
+    name: string,              // Spell name (from normalizedSpell.name)
+    isHomebrew: boolean,       // Homebrew flag (default false)
+    spellDetails: object       // Full normalized spell object for guest mode and future homebrew features
+  }
+  ```
+- **Response**: Saved spell response
+- **Status Codes**: 200, 400, 401, 404
+- **Notes**: Unified payload structure ensures Spring Boot can find 'slug' and 'name' at root level while preserving full spell data for guest mode and future homebrew features.
+
+---
+
+### GET /api/characters/{characterId}/spells
+
+- **Service**: SpellService.fetchCharacterSpells(characterId)
+- **Store Action**: spellStore.fetchCharacterSpells(characterId)
+- **Guest Mode**: Mocked — returns character.spells array from guest_characters
+- **Response**: Array of spell objects (with spellData wrapper in backend response)
+- **Status Codes**: 200, 401, 404
+- **Notes**: Response items are expected to have spellData property containing the normalized spell object. Spells are automatically normalized and cached.
+
+---
+
+### DELETE /api/characters/{characterId}/spells/{spellKey}
+
+- **Service**: SpellService.removeSpellFromCharacter(characterId, spellKey)
+- **Store Action**: spellStore.removeSpellFromCharacter(characterId, spellKey)
+- **Guest Mode**: Mocked — removes spell from character.spells array in guest_characters
+- **Status Codes**: 200, 401, 404
+- **Notes**: spellKey is the Open5e key/slug of the spell to remove.
 
 ---
 
@@ -476,9 +595,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### Not Yet Implemented (Planned)
 
-- **Spells (Open5e Integration)**: Core integration architecture pending on both layers.
-- POST /api/characters/{characterId}/spells — Add spell to character
-- GET /api/characters/{characterId}/spells — Get character spells
+- **Character Homebrew Spells**: While the Open5e integration is complete, the homebrew spell creation feature is not yet implemented. The data structure supports it (isHomebrew flag, spellDetails payload), but UI and backend endpoints for creating custom spells are pending.
 
 ### Minor Mismatches
 
