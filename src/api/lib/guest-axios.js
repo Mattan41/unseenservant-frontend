@@ -115,6 +115,17 @@ const guestAxios = {
     if (url.includes('characters')) {
       const characters = getData(KEYS.CHARACTERS, [])
 
+      // GET /api/characters/{id}/spells — return character's spells
+      if (url.includes('/spells')) {
+        const match = url.match(/characters\/([^/]+)\/spells/)
+        const characterId = match ? match[1] : null
+        if (characterId) {
+          const character = characters.find((c) => String(c.id) === String(characterId))
+          return Promise.resolve({ data: character?.spells || [] })
+        }
+        return Promise.resolve({ data: [] })
+      }
+
       if (url.includes('campaignId=')) {
         const match = url.match(/campaignId=([^&]+)/)
         const campaignId = match ? match[1] : null
@@ -134,7 +145,7 @@ const guestAxios = {
 
       // Default profile filter or fallback all array rows
       if (url.includes('/me')) {
-        return Promise.resolve({ data: characters.filter(c => c.ownerId === 'guest_demo') })
+        return Promise.resolve({ data: characters.filter((c) => c.ownerId === 'guest_demo') })
       }
       return Promise.resolve({ data: characters })
     }
@@ -164,6 +175,59 @@ const guestAxios = {
 
     if (url.includes('characters') && url.includes('/image')) {
       return Promise.resolve({ data: { imageUrl: '/defaultCharacter.svg' } })
+    }
+
+    if (url.includes('characters') && url.includes('/spells')) {
+      // POST /api/characters/{id}/spells — save a spell to a character
+      const match = url.match(/characters\/([^/]+)\/spells/)
+      const characterId = match ? match[1] : null
+      if (characterId) {
+        const characters = getData(KEYS.CHARACTERS, [])
+        const idx = characters.findIndex((c) => String(c.id) === String(characterId))
+
+        if (idx !== -1) {
+          if (!characters[idx].spells) {
+            characters[idx].spells = []
+          }
+
+          const sourceData = data.spellDetails || data
+          const spellKey = sourceData.key || data.slug
+          const exists = characters[idx].spells.some(
+            (s) => s.key === spellKey || s.slug === spellKey,
+          )
+
+          if (!exists) {
+            const normalizedSpell = {
+              key: sourceData.key || data.slug || `spell_${Date.now()}`,
+              name: sourceData.name || 'Unknown Spell',
+              level: sourceData.level ?? 0,
+              school: sourceData.school || '',
+              documentKey: sourceData.documentKey || '',
+              documentName: sourceData.documentName || '',
+              classes: sourceData.classes || [],
+              desc: sourceData.desc || sourceData.description || '',
+              range: sourceData.range || '',
+              duration: sourceData.duration || '',
+              casting_time: sourceData.casting_time || '',
+              components: sourceData.components || [],
+              material: sourceData.material || '',
+              ritual: sourceData.ritual || false,
+              concentration: sourceData.concentration || false,
+              higher_level: sourceData.higher_level || '',
+              isHomebrew: data.isHomebrew || sourceData.isHomebrew || false,
+            }
+            characters[idx].spells.push(normalizedSpell)
+            setData(KEYS.CHARACTERS, characters)
+            return Promise.resolve({ data: normalizedSpell })
+          }
+
+          const existing = characters[idx].spells.find(
+            (s) => s.key === spellKey || s.slug === spellKey,
+          )
+          return Promise.resolve({ data: existing })
+        }
+      }
+      return Promise.resolve({ data: null })
     }
 
     if (url.includes('characters')) {
@@ -224,7 +288,6 @@ const guestAxios = {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] PATCH -> ${url}`)
 
-    // Character mutations (Full data or specific granular fields)
     if (url.includes('characters')) {
       const id = extractId(url)
       if (id) {
@@ -246,7 +309,6 @@ const guestAxios = {
       }
     }
 
-    // Campaign mutations
     if (url.includes('campaigns')) {
       const campaigns = getData(KEYS.CAMPAIGNS, [])
 
@@ -271,7 +333,6 @@ const guestAxios = {
         }
       }
 
-      // Robust execution matching CampaignService participant lists flawlessly
       if (url.includes('/participants') && !url.includes('/nickname') && !url.includes('/role')) {
         const match = url.match(/campaigns\/([^/]+)/)
         const id = match ? match[1] : null
@@ -280,13 +341,11 @@ const guestAxios = {
         if (index !== -1) {
           let currentList = campaigns[index].participants || []
 
-          // Handle Removal defensively (supports arrays of objects or direct IDs)
           if (data.participantIdsToRemove && data.participantIdsToRemove.length > 0) {
             const idsToRemove = data.participantIdsToRemove.map(p => p && typeof p === 'object' ? String(p.id) : String(p))
             currentList = currentList.filter(p => p && p.id && !idsToRemove.includes(String(p.id)))
           }
 
-          // Handle Addition defensively (supports arrays of objects or direct IDs)
           if (data.participantsToAdd && data.participantsToAdd.length > 0) {
             const dummyUsers = getData('guest_users', [])
 
@@ -321,7 +380,6 @@ const guestAxios = {
         }
       }
 
-      // Fallback update block for general info - explicit path guards added to prevent collisions
       const id = extractId(url)
       if (id && !url.includes('/participants') && !url.includes('/owner')) {
         const index = campaigns.findIndex((c) => String(c.id) === String(id))
@@ -340,6 +398,29 @@ const guestAxios = {
     if (!isGuestMode()) return Promise.resolve({ data: { deleted: false } })
     console.debug(`[guest-axios] DELETE -> ${url}`)
 
+    // 1. CHOSEN ROUTE: Remove a spell from a character
+    if (url.includes('characters') && url.includes('/spells/')) {
+      const urlParts = url.split('/')
+      const spellsIdx = urlParts.indexOf('spells')
+      const characterId = urlParts[spellsIdx - 1]
+      const spellKey = urlParts[spellsIdx + 1]?.split('?')[0]
+
+      if (characterId && spellKey) {
+        const characters = getData(KEYS.CHARACTERS, [])
+        const idx = characters.findIndex((c) => String(c.id) === String(characterId))
+
+        if (idx !== -1 && characters[idx].spells) {
+          characters[idx].spells = characters[idx].spells.filter(
+            (s) => String(s.key) !== String(spellKey) && String(s.slug) !== String(spellKey),
+          )
+          setData(KEYS.CHARACTERS, characters)
+          return Promise.resolve({ data: { success: true } })
+        }
+      }
+      return Promise.resolve({ data: { success: false } })
+    }
+
+    // 2. Remove character from campaign (dissociate, don't delete)
     if (url.includes('characters') && url.includes('/campaign')) {
       const id = extractId(url)
       const characters = getData(KEYS.CHARACTERS, [])
@@ -351,23 +432,36 @@ const guestAxios = {
       return Promise.resolve({ data: { success: true } })
     }
 
+    // 3. DELETE CHARACTER FULLY (Only caught if above routing options mismatch)
     if (url.includes('characters')) {
       const id = extractId(url)
       if (id) {
         const characters = getData(KEYS.CHARACTERS, [])
-        setData(KEYS.CHARACTERS, characters.filter((c) => String(c.id) !== String(id)))
+        setData(
+          KEYS.CHARACTERS,
+          characters.filter((c) => String(c.id) !== String(id)),
+        )
         return Promise.resolve({ data: { deleted: true } })
       }
     }
 
+    // 4. Delete Campaign Fully
     if (url.includes('campaigns')) {
       const id = extractId(url)
       if (id) {
         const campaigns = getData(KEYS.CAMPAIGNS, [])
-        setData(KEYS.CAMPAIGNS, campaigns.filter((c) => String(c.id) !== String(id)))
+        setData(
+          KEYS.CAMPAIGNS,
+          campaigns.filter((c) => String(c.id) !== String(id)),
+        )
 
         const characters = getData(KEYS.CHARACTERS, [])
-        setData(KEYS.CHARACTERS, characters.map(c => String(c.campaignId) === String(id) ? { ...c, campaignId: null } : c))
+        setData(
+          KEYS.CHARACTERS,
+          characters.map((c) =>
+            String(c.campaignId) === String(id) ? { ...c, campaignId: null } : c,
+          ),
+        )
         return Promise.resolve({ data: { deleted: true } })
       }
     }
