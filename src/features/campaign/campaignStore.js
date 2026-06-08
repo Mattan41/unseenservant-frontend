@@ -79,10 +79,10 @@ export const useCampaignStore = defineStore('campaign', {
       try {
         await CampaignService.updateCampaignInfo(campaignId, campaignData)
 
-           const index = this.campaigns.findIndex(c => c.id === campaignId)
-           if (index !== -1) {
-            this.campaigns[index] = { ...this.campaigns[index], ...campaignData }
-          }
+        const index = this.campaigns.findIndex((c) => c.id === campaignId)
+        if (index !== -1) {
+          this.campaigns[index] = { ...this.campaigns[index], ...campaignData }
+        }
 
         return true
       } catch (error) {
@@ -95,15 +95,16 @@ export const useCampaignStore = defineStore('campaign', {
       }
     },
 
-   async uploadCampaignImage(campaignId, imageFile) {
+    async uploadCampaignImage(campaignId, imageFile) {
       const notificationStore = useNotificationStore()
       try {
         return await CampaignService.uploadCampaignImage(campaignId, imageFile)
       } catch (error) {
         // Extract the error message from the backend response
-        const errorMessage = error.response && typeof error.response.data === 'string'
-          ? error.response.data
-          : 'Failed to upload campaign image'
+        const errorMessage =
+          error.response && typeof error.response.data === 'string'
+            ? error.response.data
+            : 'Failed to upload campaign image'
 
         notificationStore.addNotification(errorMessage, 'error', 5000)
         console.error('Failed to upload campaign image:', error)
@@ -263,17 +264,17 @@ export const useCampaignStore = defineStore('campaign', {
     async removeCharacterFromCampaign(characterId) {
       const notificationStore = useNotificationStore()
       try {
-        let campaignId = null;
+        let campaignId = null
         // Find which campaign this character belongs to (handle both string and numeric IDs)
         for (const [campId, characters] of Object.entries(this.campaignCharacters)) {
-          if (characters.some(char => char.id === characterId)) {
-            campaignId = campId; // Keep as string, don't parseInt - guest IDs are strings
-            break;
+          if (characters.some((char) => char.id === characterId)) {
+            campaignId = campId // Keep as string, don't parseInt - guest IDs are strings
+            break
           }
         }
 
         if (!campaignId) {
-          throw new Error('Could not determine which campaign the character belongs to');
+          throw new Error('Could not determine which campaign the character belongs to')
         }
 
         await CampaignService.removeCharacterFromCampaign(characterId)
@@ -281,15 +282,20 @@ export const useCampaignStore = defineStore('campaign', {
         // Important: Create a new array to secure reactivity
         this.campaignCharacters = {
           ...this.campaignCharacters,
-          [campaignId]: this.campaignCharacters[campaignId].filter(char => char.id !== characterId)
-        };
+          [campaignId]: this.campaignCharacters[campaignId].filter(
+            (char) => char.id !== characterId,
+          ),
+        }
 
-        notificationStore.addNotification('Character removed from campaign successfully!', 'success')
+        notificationStore.addNotification(
+          'Character removed from campaign successfully!',
+          'success',
+        )
       } catch (error) {
         console.error('Failed to remove character from campaign:', error)
         notificationStore.addNotification(
           error.message || 'Failed to remove character from campaign',
-          'error'
+          'error',
         )
         throw error
       }
@@ -306,7 +312,6 @@ export const useCampaignStore = defineStore('campaign', {
   },
 
   getters: {
-
     notificationStore() {
       return useNotificationStore()
     },
@@ -314,11 +319,11 @@ export const useCampaignStore = defineStore('campaign', {
     getCampaignById: (state) => (id) => state.campaigns.find((campaign) => campaign.id === id),
 
     isUserGM: (state) => (campaignId, userId) => {
-      const campaign = state.campaigns.find((c) => c.id === campaignId);
-      if (!campaign) return false;
+      const campaign = state.campaigns.find((c) => c.id === campaignId)
+      if (!campaign) return false
 
-      const participant = campaign.participants.find((p) => p.id === userId);
-      return participant?.role === 'GM';
+      const participant = campaign.participants.find((p) => p.id === userId)
+      return participant?.role === 'GM'
     },
 
     ownerId: (state) => (id) => {

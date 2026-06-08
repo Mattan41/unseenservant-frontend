@@ -1,8 +1,8 @@
 <script setup>
-import {ref} from 'vue'
-import {useUserStore} from './userStore.js'
-import {storeToRefs} from 'pinia'
-import {useNotificationStore} from '@/stores/notificationStore.js'
+import { ref } from 'vue'
+import { useUserStore } from './userStore.js'
+import { storeToRefs } from 'pinia'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import CampaignList from '@/features/campaign/components/CampaignList.vue'
 import CharacterList from '@/features/character/components/CharacterList.vue'
 

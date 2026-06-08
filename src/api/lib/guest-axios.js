@@ -92,7 +92,11 @@ const guestAxios = {
     console.debug(`[guest-axios] GET -> ${url}`)
 
     // User Profile Hooks
-    if (url.includes('users/me') || url.includes('api/me') || (url.includes('users') && url.endsWith('/me'))) {
+    if (
+      url.includes('users/me') ||
+      url.includes('api/me') ||
+      (url.includes('users') && url.endsWith('/me'))
+    ) {
       return Promise.resolve({ data: getData(KEYS.USER, null) })
     }
 
@@ -103,10 +107,11 @@ const guestAxios = {
       const query = (params.get('query') || '').toLowerCase()
 
       const dummyUsers = getData('guest_users', [])
-      const filtered = dummyUsers.filter(u =>
-        (u.displayName && u.displayName.toLowerCase().includes(query)) ||
-        (u.username && u.username.toLowerCase().includes(query)) ||
-        (u.email && u.email.toLowerCase().includes(query))
+      const filtered = dummyUsers.filter(
+        (u) =>
+          (u.displayName && u.displayName.toLowerCase().includes(query)) ||
+          (u.username && u.username.toLowerCase().includes(query)) ||
+          (u.email && u.email.toLowerCase().includes(query)),
       )
       return Promise.resolve({ data: filtered })
     }
@@ -170,7 +175,9 @@ const guestAxios = {
     console.debug(`[guest-axios] POST -> ${url}`)
 
     if (url.includes('campaigns') && url.includes('/image')) {
-      return Promise.resolve({ data: { imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe' } })
+      return Promise.resolve({
+        data: { imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe' },
+      })
     }
 
     if (url.includes('characters') && url.includes('/image')) {
@@ -202,7 +209,8 @@ const guestAxios = {
             const spellToStore = { ...sourceData }
             // Ensure key and isHomebrew are set from the payload root as well
             if (!spellToStore.key) spellToStore.key = data.slug || `spell_${Date.now()}`
-            if (spellToStore.isHomebrew === undefined) spellToStore.isHomebrew = data.isHomebrew || false
+            if (spellToStore.isHomebrew === undefined)
+              spellToStore.isHomebrew = data.isHomebrew || false
             characters[idx].spells.push(spellToStore)
             setData(KEYS.CHARACTERS, characters)
             return Promise.resolve({ data: spellToStore })
@@ -283,7 +291,7 @@ const guestAxios = {
 
         if (index !== -1) {
           if (url.includes('/campaign')) {
-            const campaignId = (data && typeof data === 'object') ? data.campaignId : data
+            const campaignId = data && typeof data === 'object' ? data.campaignId : data
             characters[index].campaignId = campaignId || null
           } else if (typeof data === 'object' && data !== null) {
             characters[index] = { ...characters[index], ...data }
@@ -307,10 +315,13 @@ const guestAxios = {
 
         const cIdx = campaigns.findIndex((c) => String(c.id) === String(campaignId))
         if (cIdx !== -1 && campaigns[cIdx].participants) {
-          const pIdx = campaigns[cIdx].participants.findIndex(p => String(p.id) === String(participantId))
+          const pIdx = campaigns[cIdx].participants.findIndex(
+            (p) => String(p.id) === String(participantId),
+          )
           if (pIdx !== -1) {
             if (url.includes('/nickname')) {
-              campaigns[cIdx].participants[pIdx].nickname = typeof data === 'string' ? data : data.nickname
+              campaigns[cIdx].participants[pIdx].nickname =
+                typeof data === 'string' ? data : data.nickname
             } else if (url.includes('/role')) {
               campaigns[cIdx].participants[pIdx].role = typeof data === 'string' ? data : data.role
             }
@@ -329,23 +340,31 @@ const guestAxios = {
           let currentList = campaigns[index].participants || []
 
           if (data.participantIdsToRemove && data.participantIdsToRemove.length > 0) {
-            const idsToRemove = data.participantIdsToRemove.map(p => p && typeof p === 'object' ? String(p.id) : String(p))
-            currentList = currentList.filter(p => p && p.id && !idsToRemove.includes(String(p.id)))
+            const idsToRemove = data.participantIdsToRemove.map((p) =>
+              p && typeof p === 'object' ? String(p.id) : String(p),
+            )
+            currentList = currentList.filter(
+              (p) => p && p.id && !idsToRemove.includes(String(p.id)),
+            )
           }
 
           if (data.participantsToAdd && data.participantsToAdd.length > 0) {
             const dummyUsers = getData('guest_users', [])
 
-            data.participantsToAdd.forEach(p => {
+            data.participantsToAdd.forEach((p) => {
               const participantId = p && typeof p === 'object' ? String(p.id) : String(p)
 
-              if (participantId && !currentList.some(el => String(el.id) === participantId)) {
-                const userDetails = dummyUsers.find(u => String(u.id) === participantId)
+              if (participantId && !currentList.some((el) => String(el.id) === participantId)) {
+                const userDetails = dummyUsers.find((u) => String(u.id) === participantId)
 
                 currentList.push({
                   id: participantId,
-                  nickname: userDetails?.displayName || userDetails?.username || (p && typeof p === 'object' ? p.displayName || p.username : null) || 'Player',
-                  role: 'PLAYER'
+                  nickname:
+                    userDetails?.displayName ||
+                    userDetails?.username ||
+                    (p && typeof p === 'object' ? p.displayName || p.username : null) ||
+                    'Player',
+                  role: 'PLAYER',
                 })
               }
             })

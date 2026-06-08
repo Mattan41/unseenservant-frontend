@@ -1,7 +1,7 @@
-import {createRouter, createWebHistory} from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginComponent from '@/features/auth/LoginComponent.vue'
-import {useAuthStore} from '@/features/auth/authStore.js'
+import { useAuthStore } from '@/features/auth/authStore.js'
 
 /**
  * @typedef {Object} RouteMeta
@@ -52,7 +52,7 @@ const router = createRouter({
       path: '/campaigns',
       name: 'CampaignsView',
       component: () => import('../features/campaign/views/CampaignsView.vue'),
-       meta: { allowGuest: true },
+      meta: { allowGuest: true },
     },
     {
       path: '/characters/create',
@@ -122,7 +122,7 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   // 4. Guest users without allowGuest are redirected to home
-if (isGuest && to.meta?.requiresAuth) {
+  if (isGuest && to.meta?.requiresAuth) {
     next({ name: 'home' })
     return
   }

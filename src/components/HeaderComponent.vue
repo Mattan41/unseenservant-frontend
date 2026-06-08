@@ -127,7 +127,7 @@ onBeforeUnmount(() => {
             @click="closeMenu"
             to="/campaigns"
             class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
-            >
+          >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
             @click="closeMenu"
             to="/campaigns"
             class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
-            >
+          >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink

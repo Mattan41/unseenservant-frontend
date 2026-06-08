@@ -43,9 +43,9 @@ const loadCampaignData = async () => {
   }
 
   const campaignId = route.params.id
-const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
+  const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
 
-if (!campaignExists) {
+  if (!campaignExists) {
     await router.push({ name: 'CampaignsView' })
     return
   }
@@ -137,7 +137,10 @@ const handleSaveCampaign = async (updatedCampaign) => {
 
     // 2. Upload image file
     if (updatedCampaign.imageFile) {
-      const updated = await campaignStore.uploadCampaignImage(campaign.value.id, updatedCampaign.imageFile)
+      const updated = await campaignStore.uploadCampaignImage(
+        campaign.value.id,
+        updatedCampaign.imageFile,
+      )
       campaign.value.imageUrl = updated.imageUrl
     }
 
@@ -149,7 +152,6 @@ const handleSaveCampaign = async (updatedCampaign) => {
     showEditModal.value = false
 
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
-
   } catch (error) {
     // Silent catch, because the specific API errors are handled gracefully inside the store actions
     console.error('Campaign update chain interrupted:', error)
@@ -206,7 +208,13 @@ watch(
   <div v-else-if="campaign" class="flex h-full">
     <!-- Campaign selector sidebar - completely self-contained now -->
     <CampaignSidebar
-      :campaigns="campaignStore.campaigns.map(c => ({ ...c, imageUrl: campaignStore.getCampaignImageUrl(c.id), name: campaignStore.getCampaignTitle(c.id) }))"
+      :campaigns="
+        campaignStore.campaigns.map((c) => ({
+          ...c,
+          imageUrl: campaignStore.getCampaignImageUrl(c.id),
+          name: campaignStore.getCampaignTitle(c.id),
+        }))
+      "
       :current-campaign-id="parseInt(route.params.id)"
     />
 
@@ -228,7 +236,9 @@ watch(
         <!-- Participants collapsible section -->
         <div class="mb-4 border rounded p-3">
           <h3 class="font-medium cursor-pointer flex items-center" @click="toggleCharactersList">
-            <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1">›</span>
+            <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1"
+              >›</span
+            >
             <span v-else class="inline-block mr-1">›</span>
             Participants & Characters
           </h3>
@@ -291,7 +301,8 @@ watch(
                       v-if="character.characterClass"
                       class="text-sm text-gray-600 ml-1 truncate"
                     >
-                      ({{ character.characterClass }}<span v-if="character.level"> , Level {{ character.level }} </span>)
+                      ({{ character.characterClass
+                      }}<span v-if="character.level"> , Level {{ character.level }} </span>)
                     </span>
 
                     <router-link

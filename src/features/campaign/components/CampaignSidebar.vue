@@ -4,12 +4,12 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 const props = defineProps({
   campaigns: {
     type: Array,
-    required: true
+    required: true,
   },
   currentCampaignId: {
     type: Number,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const listRef = ref(null)
@@ -43,14 +43,19 @@ onUnmounted(() => {
 })
 
 // Re-check when the campaigns array updates (items added/removed)
-watch(() => props.campaigns, () => {
-  nextTick(checkScrollable)
-}, { deep: true })
+watch(
+  () => props.campaigns,
+  () => {
+    nextTick(checkScrollable)
+  },
+  { deep: true },
+)
 </script>
 
 <template>
-  <aside class="w-16 flex flex-col min-h-screen items-center py-4 space-y-4 relative custom-gradient flex-shrink-0">
-
+  <aside
+    class="w-16 flex flex-col min-h-screen items-center py-4 space-y-4 relative custom-gradient flex-shrink-0"
+  >
     <!-- Scroll hint at top if scrollable -->
     <div
       v-if="isScrollable"
@@ -87,7 +92,9 @@ watch(() => props.campaigns, () => {
     </div>
 
     <!-- Scroll hint at bottom if scrollable -->
-    <div class="h-2 rounded-md flex items-center justify-center text-white font-medium relative group w-full">
+    <div
+      class="h-2 rounded-md flex items-center justify-center text-white font-medium relative group w-full"
+    >
       <div
         v-if="isScrollable"
         class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full animate-pulse"
@@ -106,7 +113,6 @@ watch(() => props.campaigns, () => {
         to campaign overview
       </span>
     </RouterLink>
-
   </aside>
 </template>
 
@@ -131,8 +137,13 @@ watch(() => props.campaigns, () => {
 
 /* Animation for the scroll hint */
 @keyframes pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 .animate-pulse {

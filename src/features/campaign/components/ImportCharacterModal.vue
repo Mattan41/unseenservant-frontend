@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
-import CharacterImage from "@/features/character/components/CharacterImage.vue";
+import CharacterImage from '@/features/character/components/CharacterImage.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -90,7 +90,10 @@ watch(
       </div>
 
       <!-- Character grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(80vh-200px)] overflow-y-auto">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(80vh-200px)] overflow-y-auto"
+      >
         <div
           v-for="character in availableCharacters"
           :key="character.id"
@@ -147,6 +150,4 @@ watch(
   </div>
 </template>
 
-
-<style scoped>
-</style>
+<style scoped></style>

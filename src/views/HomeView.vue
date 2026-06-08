@@ -11,11 +11,17 @@ const { displayName } = storeToRefs(userStore)
     <h1>Unseen Servant</h1>
     <p class="text-lg">A service that does not get in your way</p>
     <div class="logo-container">
-      <img src="@/assets/logo.svg" alt="Unseen Servant Logo"
-        class="logo max-w-[150px] h-auto my-4 mx-auto block" />
+      <img
+        src="@/assets/logo.svg"
+        alt="Unseen Servant Logo"
+        class="logo max-w-[150px] h-auto my-4 mx-auto block"
+      />
     </div>
     <div class="text-center">
-      <h3>Welcome <span class="rainbow-text">{{ displayName }}</span>, stay a while and listen.</h3>
+      <h3>
+        Welcome <span class="rainbow-text">{{ displayName }}</span
+        >, stay a while and listen.
+      </h3>
     </div>
   </section>
 </template>
@@ -75,25 +81,23 @@ const { displayName } = storeToRefs(userStore)
 }
 
 @keyframes rainbow {
-      0% {
-        background-position: 0 50%;
-      }
-      50% {
-        background-position: 100% 50%;
-      }
-      100% {
-        background-position: 0 50%;
-      }
-    }
+  0% {
+    background-position: 0 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
 
-    .rainbow-text {
-      background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
-      background-size: 400% 400%;
-      -webkit-background-clip: text;
-      background-clip: text; /* Standard property for compatibility */
-      -webkit-text-fill-color: transparent;
-      animation: rainbow 3s infinite;
-    }
-
-
+.rainbow-text {
+  background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text; /* Standard property for compatibility */
+  -webkit-text-fill-color: transparent;
+  animation: rainbow 3s infinite;
+}
 </style>
