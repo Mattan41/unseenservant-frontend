@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import SpellService from '@/features/spell/SpellService.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
+import { normalizeSpell } from '@/features/spell/spellUtils.js'
 
 export const useSpellStore = defineStore('spell', () => {
   // ==========================================================================
@@ -185,66 +186,6 @@ export const useSpellStore = defineStore('spell', () => {
   }
 
   /**
-   * Normalize an Open5e v2 spell object into a clean homebrew-ready format.
-   * Flattens nested objects (school, document) into top-level strings.
-   * @param {object} rawSpell - Raw spell from Open5e API
-   * @returns {object} Normalized spell object
-   */
-  function normalizeSpell(rawSpell) {
-    const docKey = rawSpell.document?.key || rawSpell.documentKey || ''
-    const docName = rawSpell.document?.name || rawSpell.documentName || ''
-
-    const sourceMap = {
-      'srd-2014': 'SRD 5.1',
-      'srd-2024': 'SRD 5.2',
-      'a5e-ag': "Adventurer's Guide",
-      'a5e-ddg': 'Dungeon Delver',
-      'a5e-gpg': 'Game Plan',
-      'a5e-mm': 'Monstrous Menagerie',
-      bfrd: 'Black Flag',
-      ccdx: 'Creature Codex',
-      deepm: 'Deep Magic',
-      deepmx: 'Deep Magic Expanded',
-      kp: 'Kobold Press',
-      open5e: 'Open5e',
-      tob: 'Tome of Beasts',
-      'tob-2023': 'ToB 2023',
-      tob2: 'ToB 2',
-      tob3: 'ToB 3',
-      toh: 'Tome of Heroes',
-      vom: 'Vault of Magic',
-      wz: 'Wastes of Chaos',
-      tdcs: "Tal'Dorei",
-      core: 'Core',
-      homebrew: 'Homebrew',
-    }
-
-    const sourceLabel = sourceMap[docKey] || docName || docKey || 'Unknown'
-
-    return {
-      key: rawSpell.key || '',
-      name: rawSpell.name || 'Unknown Spell',
-      level: rawSpell.level ?? 0,
-      school: rawSpell.school?.name || rawSpell.school || '',
-      schoolKey: rawSpell.school?.key || '',
-      documentKey: docKey,
-      documentName: docName,
-      sourceLabel: sourceLabel,
-      classes: (rawSpell.classes || []).map((c) => c.name || c),
-      desc: rawSpell.desc || rawSpell.description || '',
-      range: rawSpell.range || '',
-      duration: rawSpell.duration || '',
-      casting_time: rawSpell.casting_time || '',
-      components: rawSpell.components || [],
-      material: rawSpell.material || '',
-      ritual: rawSpell.ritual || false,
-      concentration: rawSpell.concentration || false,
-      higher_level: rawSpell.higher_level || '',
-      isHomebrew: false,
-    }
-  }
-
-  /**
    * Save a spell to a character.
    * @param {number|string} characterId
    * @param {object} spell - Full spell object from Open5e (will be normalized)
@@ -283,12 +224,8 @@ export const useSpellStore = defineStore('spell', () => {
 
     try {
       const responseData = await SpellService.fetchCharacterSpells(characterId)
-
       const spells = (responseData || []).map((item) => {
-        if (item && item.spellData) {
-          return normalizeSpell(item.spellData)
-        }
-        return item
+        return normalizeSpell(item.spellData || item)
       })
 
       if (Array.isArray(spells)) {
@@ -394,6 +331,5 @@ export const useSpellStore = defineStore('spell', () => {
     nextPage,
     previousPage,
     getCachedSpell,
-    normalizeSpell,
   }
 })

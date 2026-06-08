@@ -197,28 +197,15 @@ const guestAxios = {
           )
 
           if (!exists) {
-            const normalizedSpell = {
-              key: sourceData.key || data.slug || `spell_${Date.now()}`,
-              name: sourceData.name || 'Unknown Spell',
-              level: sourceData.level ?? 0,
-              school: sourceData.school || '',
-              documentKey: sourceData.documentKey || '',
-              documentName: sourceData.documentName || '',
-              classes: sourceData.classes || [],
-              desc: sourceData.desc || sourceData.description || '',
-              range: sourceData.range || '',
-              duration: sourceData.duration || '',
-              casting_time: sourceData.casting_time || '',
-              components: sourceData.components || [],
-              material: sourceData.material || '',
-              ritual: sourceData.ritual || false,
-              concentration: sourceData.concentration || false,
-              higher_level: sourceData.higher_level || '',
-              isHomebrew: data.isHomebrew || sourceData.isHomebrew || false,
-            }
-            characters[idx].spells.push(normalizedSpell)
+            // Store the full normalized spell object (sourceData is already normalized
+            // by spellStore.saveSpellToCharacter before being passed as spellDetails)
+            const spellToStore = { ...sourceData }
+            // Ensure key and isHomebrew are set from the payload root as well
+            if (!spellToStore.key) spellToStore.key = data.slug || `spell_${Date.now()}`
+            if (spellToStore.isHomebrew === undefined) spellToStore.isHomebrew = data.isHomebrew || false
+            characters[idx].spells.push(spellToStore)
             setData(KEYS.CHARACTERS, characters)
-            return Promise.resolve({ data: normalizedSpell })
+            return Promise.resolve({ data: spellToStore })
           }
 
           const existing = characters[idx].spells.find(
