@@ -55,6 +55,12 @@ const router = createRouter({
       meta: { allowGuest: true },
     },
     {
+      path: '/spells',
+      name: 'SpellSearch',
+      component: () => import('@/features/spell/views/SpellSearchView.vue'),
+      meta: { allowGuest: true },
+    },
+    {
       path: '/characters/create',
       name: 'CreateCharacter',
       component: () => import('@/features/character/components/CreateCharacter.vue'),

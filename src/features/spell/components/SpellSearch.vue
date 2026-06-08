@@ -3,6 +3,13 @@ import { ref, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSpellStore } from '@/features/spell/spellStore.js'
 
+const props = defineProps({
+  characterId: {
+    type: [String, Number],
+    default: null,
+  },
+})
+
 const emit = defineEmits(['spell-click', 'save'])
 
 const spellStore = useSpellStore()
@@ -55,6 +62,14 @@ async function onSaveSpell(spell) {
 
 <template>
   <div class="spell-search">
+    <!-- Header with 5E context -->
+    <div class="mb-4">
+      <h4 class="text-third-800 mb-0.5">Search 5E Spells</h4>
+      <p class="text-xs text-third-700">
+        Search spells compatible with the 5th Edition of the world's oldest fantasy roleplaying
+        game.
+      </p>
+    </div>
     <div class="mb-4">
       <div class="relative">
         <input
@@ -178,6 +193,7 @@ async function onSaveSpell(spell) {
             <div class="text-xs text-third-400 italic truncate">{{ spell.sourceLabel }}</div>
             <div class="w-16 flex justify-end" @click.stop>
               <button
+                v-if="props.characterId"
                 :disabled="savingSpellKey === spell.key"
                 class="button button-add disabled:opacity-50"
                 @click="onSaveSpell(spell)"
@@ -239,8 +255,22 @@ async function onSaveSpell(spell) {
     </div>
 
     <div v-else class="text-center py-8">
-      <p class="text-third-400 text-sm">
-        Type a spell name to start searching the Open5e spell database.
+      <p class="text-third-800 text-sm">
+        Why not start with searching for the handy spell "Unseen Servant"?
+      </p>
+    </div>
+
+    <!-- Attribution footer -->
+    <div class="mt-6 pt-4 border-t border-third-100 text-center">
+      <p class="text-[11px] text-third-800 italic">
+        Data provided via the
+        <a
+          href="https://open5e.com"
+          target="_blank"
+          rel="noopener"
+          class="underline hover:text-primary-500 font-medium"
+          >Open5e API</a
+        >.
       </p>
     </div>
   </div>
