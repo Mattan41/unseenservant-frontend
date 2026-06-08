@@ -72,7 +72,7 @@ watch(
         :key="userCampaign.id"
         :to="{ name: 'CampaignView', params: { id: userCampaign.id } }"
         class="w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative group no-underline border border-primary-400 hover:scale-110 flex-shrink-0"
-        :class="{ 'ring-2 ring-primary-500': currentCampaignId === userCampaign.id }"
+        :class="{ 'ring-2 ring-primary-500': Number(currentCampaignId) === Number(userCampaign.id) }"
         :style="
           userCampaign.imageUrl
             ? {

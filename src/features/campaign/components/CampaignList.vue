@@ -27,12 +27,6 @@ onMounted(async () => {
       ></div>
       <p class="mt-2">Loading campaigns...</p>
     </div>
-    <div
-      v-else-if="campaignStore.error"
-      class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
-    >
-      <p>{{ campaignStore.error }}</p>
-    </div>
     <ul v-else>
       <li
         v-for="campaign in campaignStore.campaigns"

@@ -16,7 +16,8 @@ const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const campaign = ref(null)
-const isLoading = ref(true)
+const isLoading = ref(false)
+const isInitialLoad = ref(true)
 const isCharactersListVisible = ref(false)
 const showSettings = ref(false)
 const descriptionExpanded = ref(false)
@@ -30,8 +31,11 @@ const isOwner = computed(() => {
 
 const loadCampaignData = async () => {
   const notificationStore = useNotificationStore()
-  isLoading.value = true
-  const campaignStore = useCampaignStore()
+
+  // Only show a full-page loading spinner on the very first visit (cold cache)
+  if (isInitialLoad.value) {
+    isLoading.value = true
+  }
 
   try {
     await campaignStore.fetchAllCampaignsForCurrentUser()
@@ -47,6 +51,7 @@ const loadCampaignData = async () => {
 
   if (!campaignExists) {
     await router.push({ name: 'CampaignsView' })
+    isLoading.value = false
     return
   }
 
@@ -58,6 +63,7 @@ const loadCampaignData = async () => {
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
   } finally {
     isLoading.value = false
+    isInitialLoad.value = false
   }
 }
 

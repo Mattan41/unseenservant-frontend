@@ -5,7 +5,8 @@ import { useAuthStore } from '@/features/auth/authStore.js'
 
 /**
  * @typedef {Object} RouteMeta
- * @property {boolean} [requiresAuth] - Whether the route requires authentication
+ * @property {boolean} [requiresAuth] - Whether the route strictly requires a real authenticated account
+ * @property {boolean} [requiresSession] - Whether the route requires an active identity (Guest or Authenticated)
  */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,45 +47,44 @@ const router = createRouter({
       name: 'CampaignView',
       component: () => import('@/features/campaign/views/CampaignView.vue'),
       props: true,
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/campaigns',
       name: 'CampaignsView',
       component: () => import('../features/campaign/views/CampaignsView.vue'),
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/spells',
       name: 'SpellSearch',
       component: () => import('@/features/spell/views/SpellSearchView.vue'),
-      meta: { allowGuest: true },
     },
     {
       path: '/characters/create',
       name: 'CreateCharacter',
       component: () => import('@/features/character/components/CreateCharacter.vue'),
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/characters/:id/edit',
       name: 'EditCharacter',
       component: () => import('@/features/character/components/EditCharacter.vue'),
       props: true,
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/characters/:id',
       name: 'CharacterView',
       component: () => import('@/features/character/views/CharacterView.vue'),
       props: true,
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/characters',
       name: 'CharactersView',
       component: () => import('@/features/character/views/CharactersView.vue'),
-      meta: { allowGuest: true },
+      meta: { requiresSession: true },
     },
     {
       path: '/under-construction',
@@ -102,44 +102,35 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
+  // Ensure initialization check runs before testing state properties
   if (!authStore.isAuthChecked) {
     await authStore.initializeAuth()
   }
 
   const isAuthenticated = authStore.isAuthenticated
   const isGuest = authStore.isGuest
+  const hasSession = isAuthenticated || isGuest
 
-  // 1. Authenticated users can access all routes
-  if (isAuthenticated) {
-    next()
-    return
-  }
-
-  // 2. Redirect authenticated users away from login page
+  // 1. Redirect already authenticated users away from the login page
   if (to.name === 'login' && isAuthenticated) {
     next({ name: 'home' })
     return
   }
 
-  // 3. Guest users with allowGuest meta can access the route
-  if (isGuest && to.meta?.allowGuest) {
-    next()
-    return
-  }
-
-  // 4. Guest users without allowGuest are redirected to home
-  if (isGuest && to.meta?.requiresAuth) {
-    next({ name: 'home' })
-    return
-  }
-
-  // 5. Non-authenticated users trying to access requiresAuth routes
+  // 2. Route requires a registered account (requiresAuth), but user lacks it
   if (to.meta?.requiresAuth && !isAuthenticated) {
+    // Send active guests to home page; send completely anonymous users to login
+    next(isGuest ? { name: 'home' } : { name: 'login' })
+    return
+  }
+
+  // 3. Route requires an active session (guest or auth), but user is completely anonymous
+  if (to.meta?.requiresSession && !hasSession) {
     next({ name: 'login' })
     return
   }
 
-  // 6. Allow all other routes
+  // 4. Proceed for public routes or when all session requirements are fully satisfied
   next()
 })
 

@@ -563,22 +563,23 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ## Protected Routes
 
-| Route                | Requires Auth | Allow Guest | Notes                                 |
-| -------------------- | ------------- | ----------- | ------------------------------------- |
-| /                    | No            | Yes         | Public                                |
-| /about               | No            | Yes         | Public                                |
-| /login               | No            | No          | Redirects authenticated users to home |
-| /logout              | No            | No          | Clears auth state                     |
-| /oauth-redirect      | No            | No          | Handles OAuth callback                |
-| /user-profile        | Yes           | No          | Requires authentication               |
-| /campaign/:id        | No            | Yes         | Guest accessible                      |
-| /campaigns           | No            | Yes         | Guest accessible                      |
-| /characters/create   | No            | Yes         | Guest accessible                      |
-| /characters/:id/edit | No            | Yes         | Guest accessible                      |
-| /characters/:id      | No            | Yes         | Guest accessible                      |
-| /characters          | No            | Yes         | Guest accessible                      |
-| /under-construction  | No            | Yes         | Public                                |
-| /:catchAll           | No            | No          | 404 page                              |
+| Route                | Requires Auth | Requires session | Notes                                 |
+| -------------------- | ------------- | ---------------- | ------------------------------------- |
+| /                    | No            | No               | Public                                |
+| /about               | No            | No               | Public                                |
+| /spells              | No            | No               | Public                                |
+| /login               | No            | No               | Redirects authenticated users to home |
+| /logout              | No            | No               | Clears auth state                     |
+| /oauth-redirect      | No            | No               | Handles OAuth callback                |
+| /user-profile        | Yes           | Yes              | Requires authentication               |
+| /campaign/:id        | No            | Yes              | Guest accessible                      |
+| /campaigns           | No            | Yes              | Guest accessible                      |
+| /characters/create   | No            | Yes              | Guest accessible                      |
+| /characters/:id/edit | No            | Yes              | Guest accessible                      |
+| /characters/:id      | No            | Yes              | Guest accessible                      |
+| /characters          | No            | Yes              | Guest accessible                      |
+| /under-construction  | No            | No               | Public                                |
+| /:catchAll           | No            | No               | 404 page                              |
 
 ---
 
