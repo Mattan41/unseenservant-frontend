@@ -5,6 +5,7 @@ import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)
@@ -215,14 +216,14 @@ const submitCharacter = async () => {
               accept=".jpg,.jpeg,.png,.gif,.webp"
               class="hidden"
             />
-            <button
+            <BaseButton
               v-if="!isGuestMode"
+              variant="secondary"
               type="button"
               @click="triggerFileInput"
-              class="button button-secondary"
             >
               Upload new image
-            </button>
+            </BaseButton>
             <span v-else class="text-sm text-gray-500 italic">
               Image upload not available in guest mode
             </span>
@@ -310,22 +311,22 @@ const submitCharacter = async () => {
 
         <!-- Form Action Buttons -->
         <div class="flex justify-end space-x-3 mt-8">
-          <button
+          <BaseButton
+            variant="secondary"
             type="button"
-            @click="router.push(goToCharacterView())"
-            class="px-4 py-2 border rounded-md border-third-300 button-secondary"
             :disabled="isSubmitting"
+            @click="router.push(goToCharacterView())"
           >
             Cancel
-          </button>
-          <button
+          </BaseButton>
+          <BaseButton
+            variant="add"
             type="submit"
-            class="px-4 py-2 border rounded-md border-third-300 button-add"
             :disabled="isSubmitting"
+            :loading="isSubmitting"
           >
-            <span v-if="isSubmitting">Saving...</span>
-            <span v-else>Save Changes</span>
-          </button>
+            Save Changes
+          </BaseButton>
         </div>
       </form>
     </div>

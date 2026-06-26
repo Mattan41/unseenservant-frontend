@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()
 const router = useRouter()
@@ -187,14 +188,14 @@ const submitCharacter = async () => {
             Cancel
           </router-link>
 
-          <button
+          <BaseButton
+            variant="add"
             type="submit"
-            class="px-4 py-2 border rounded-md border-third-300 button-add"
             :disabled="isSubmitting"
+            :loading="isSubmitting"
           >
-            <span v-if="isSubmitting">Creating...</span>
-            <span v-else>Create Character</span>
-          </button>
+            Create Character
+          </BaseButton>
         </div>
       </form>
     </div>

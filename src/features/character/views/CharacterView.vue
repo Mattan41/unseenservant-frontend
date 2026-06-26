@@ -10,6 +10,7 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import SpellSearch from '@/features/spell/components/SpellSearch.vue'
 import SpellCard from '@/features/spell/components/SpellCard.vue'
 import SpellDetailModal from '@/features/spell/components/SpellDetailModal.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()
 const userStore = useUserStore()
@@ -95,12 +96,10 @@ const isOwner = computed(
 )
 
 const deleteCharacter = async () => {
-  if (confirm('Are you sure you want to delete this character? This action cannot be undone.')) {
-    const success = await characterStore.deleteCharacter(characterId.value)
-    if (success) {
-      notificationStore.addNotification('Character deleted successfully!', 'success', 3000)
-      await router.push({ name: 'CharactersView' })
-    }
+  const success = await characterStore.deleteCharacter(characterId.value)
+  if (success) {
+    notificationStore.addNotification('Character deleted successfully!', 'success')
+    await router.push({ name: 'CharactersView' })
   }
 }
 </script>
@@ -138,7 +137,7 @@ const deleteCharacter = async () => {
           >
             Edit
           </router-link>
-          <button @click="deleteCharacter" class="button button-remove">Delete</button>
+          <BaseButton variant="remove" @click="deleteCharacter">Delete</BaseButton>
         </div>
 
         <!-- Character header: image + basic info -->
@@ -196,13 +195,13 @@ const deleteCharacter = async () => {
         <div class="p-6 border-t border-gray-200">
           <div class="flex items-center justify-between mb-4">
             <h2 class="section-heading">Spells</h2>
-            <button
+            <BaseButton
               v-if="isOwner"
-              class="button button-primary"
+              variant="primary"
               @click="showSpellSearch = !showSpellSearch"
             >
               {{ showSpellSearch ? 'Hide Search' : '+ Search Spells to add' }}
-            </button>
+            </BaseButton>
           </div>
 
           <div v-if="showSpellSearch" class="mb-6">
