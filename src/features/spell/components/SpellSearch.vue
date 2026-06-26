@@ -256,7 +256,8 @@ async function onSaveSpell(spell) {
 
     <div v-else class="text-center py-8">
       <p class="text-third-800 text-sm">
-        Why not start with searching for the handy spell "Unseen Servant"?
+        Why not start with searching for the handy spell
+        <span class="italic animate-pulse font-medium">Unseen Servant</span>
       </p>
     </div>
 

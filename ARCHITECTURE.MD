@@ -62,6 +62,8 @@ src/
 │       ├── UserService.js
 │       ├── userStore.js
 │       └── UserProfileView.vue
+├── utils/
+│   └──errorUtils.js          # Extracts a human-readable error message from an Axios error.
 ├── App.vue
 └── main.js
 ```

@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import UserService from './UserService.js'
+import UserService from '@/features/user/UserService.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useAuthStore } from '@/features/auth/authStore.js'
+import { extractErrorMessage } from '@/utils/errorUtils.js'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -57,7 +58,10 @@ export const useUserStore = defineStore('user', () => {
 
     try {
       const userData = await UserService.fetchUser(userId)
-      // Obs: updates current user only
+      // TODO: This method currently overwrites currentUser with any fetched user's data.
+      // Needs refactoring — either rename to fetchAndSetCurrentUser() if that's the intent,
+      // or split into a pure fetch (returns data only) vs. a setter that updates currentUser.
+      currentUser.value = userData
       currentUser.value = userData
       return userData
     } catch (err) {
@@ -89,7 +93,7 @@ export const useUserStore = defineStore('user', () => {
       let errorMessage = `Failed to update ${field}. Please try again.`
 
       if (err.response?.status === 409) {
-        errorMessage = err.response.data.message || `This ${field} is already taken`
+        errorMessage = extractErrorMessage(err, `This ${field} is already taken`)
       }
 
       error.value = errorMessage

@@ -132,7 +132,11 @@ export const useCharacterStore = defineStore('character', () => {
       return updatedCharacter
     } catch (error) {
       console.error('Failed to update character:', error)
-      notificationStore.addNotification('Failed to update character.', 'error')
+
+      if (!error.handled) {
+        notificationStore.addNotification('Failed to update character.', 'error')
+      }
+
       throw error
     } finally {
       isLoading.value = false
@@ -162,7 +166,9 @@ export const useCharacterStore = defineStore('character', () => {
       return updatedCharacter
     } catch (error) {
       console.error('Failed to update character field:', error)
-      notificationStore.addNotification(`Failed to update ${field}.`, 'error')
+      if (!error.handled) {
+        notificationStore.addNotification(`Failed to update ${field}.`, 'error')
+      }
       throw error
     } finally {
       isLoading.value = false

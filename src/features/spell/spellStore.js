@@ -206,7 +206,9 @@ export const useSpellStore = defineStore('spell', () => {
       return savedSpell
     } catch (err) {
       console.error('Failed to save spell:', err)
-      notificationStore.addNotification('Failed to save spell to character.', 'error')
+      if (!err.handled) {
+        notificationStore.addNotification('Failed to save spell to character.', 'error')
+      }
       throw err
     }
   }
@@ -296,7 +298,9 @@ export const useSpellStore = defineStore('spell', () => {
       return true
     } catch (err) {
       console.error('Failed to remove spell:', err)
-      notificationStore.addNotification('Failed to remove spell from character.', 'error')
+      if (!err.handled) {
+        notificationStore.addNotification('Failed to remove spell from character.', 'error')
+      }
       return false
     } finally {
       isLoading.value = false

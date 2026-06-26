@@ -196,7 +196,11 @@ const deleteCharacter = async () => {
         <div class="p-6 border-t border-gray-200">
           <div class="flex items-center justify-between mb-4">
             <h2 class="section-heading">Spells</h2>
-            <button class="button button-primary" @click="showSpellSearch = !showSpellSearch">
+            <button
+              v-if="isOwner"
+              class="button button-primary"
+              @click="showSpellSearch = !showSpellSearch"
+            >
               {{ showSpellSearch ? 'Hide Search' : '+ Search Spells to add' }}
             </button>
           </div>
@@ -221,7 +225,7 @@ const deleteCharacter = async () => {
               v-for="spell in characterSpells"
               :key="spell.key"
               :spell="spell"
-              :show-remove="true"
+              :show-remove="isOwner"
               :is-removing="removingSpellKey === (spell.key || spell.slug)"
               @click="openSpellDetail"
               @remove="removeSpellFromCharacter"

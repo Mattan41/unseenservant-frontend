@@ -1,6 +1,7 @@
 import Axios from 'axios'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
+import { extractErrorMessage } from '@/utils/errorUtils'
 
 const rawBase = import.meta.env.VITE_API_BASE_URL ?? ''
 const normalizedBase = rawBase ? (rawBase.endsWith('/') ? rawBase : `${rawBase}/`) : '/'
@@ -39,8 +40,25 @@ axios.interceptors.response.use(
           3000,
         )
       }
-
       authStore.clearAuth()
+    }
+
+    if (error.response?.status === 403) {
+      const notificationStore = useNotificationStore()
+      notificationStore.addNotification(
+        extractErrorMessage(error, 'You do not have permission to perform this action.'),
+        'warning',
+      )
+      error.handled = true
+    }
+
+    if (error.response?.status >= 500) {
+      const notificationStore = useNotificationStore()
+      notificationStore.addNotification(
+        'Something went wrong on the server. Please try again.',
+        'error',
+      )
+      error.handled = true
     }
 
     return Promise.reject(error)
