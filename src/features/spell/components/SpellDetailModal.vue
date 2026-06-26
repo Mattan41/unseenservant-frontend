@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getSchoolBadgeClass } from '@/features/spell/spellUtils.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   spell: {
@@ -35,7 +36,7 @@ function close() {
         <!-- Modal header -->
         <div class="flex items-start justify-between mb-4">
           <h3 class="text-2xl font-bold text-third-800">{{ spell.name }}</h3>
-          <button class="button-icon text-xl" @click="close">✕</button>
+          <BaseButton variant="icon" class="text-xl" @click="close">✕</BaseButton>
         </div>
 
         <!-- Badges -->

@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { getSchoolBadgeClass } from '@/features/spell/spellUtils.js'
+import BaseCard from '@/components/base/BaseCard.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   spell: {
@@ -34,10 +36,7 @@ const shortDescription = computed(() => {
 </script>
 
 <template>
-  <div
-    class="spell-card flex flex-col justify-between bg-white border border-third-200 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-4"
-    @click="emit('click', spell)"
-  >
+  <BaseCard clickable @click="emit('click', spell)">
     <div>
       <div class="flex items-start justify-between gap-2 mb-2">
         <h4 class="text-lg font-semibold text-third-800 line-clamp-2">{{ spell.name }}</h4>
@@ -63,33 +62,20 @@ const shortDescription = computed(() => {
       </span>
       <span v-else></span>
 
-      <div class="flex items-center gap-2">
-        <button
-          v-if="showSave"
-          class="button button-add"
-          :disabled="isSaving"
-          @click.stop="emit('save', spell)"
-        >
-          <span v-if="isSaving" class="inline-block animate-spin mr-1">⟳</span>
+      <div class="flex items-center gap-2" @click.stop>
+        <BaseButton v-if="showSave" variant="add" :loading="isSaving" @click="emit('save', spell)">
           Save to Character
-        </button>
+        </BaseButton>
 
-        <button
+        <BaseButton
           v-if="showRemove"
-          class="button button-remove"
-          :disabled="isRemoving"
-          @click.stop="emit('remove', spell)"
+          variant="remove"
+          :loading="isRemoving"
+          @click="emit('remove', spell)"
         >
-          <span v-if="isRemoving" class="inline-block animate-spin mr-1">⟳</span>
           Remove
-        </button>
+        </BaseButton>
       </div>
     </div>
-  </div>
+  </BaseCard>
 </template>
-
-<style scoped>
-.spell-card {
-  transition: box-shadow 0.15s ease-in-out;
-}
-</style>

@@ -2,6 +2,7 @@
 import { ref, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSpellStore } from '@/features/spell/spellStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   characterId: {
@@ -80,14 +81,15 @@ async function onSaveSpell(spell) {
           @input="onSearchInput"
           @keydown.escape="onClearSearch"
         />
-        <button
+        <BaseButton
           v-if="searchInput"
-          class="button-icon absolute right-3 top-1/2 -translate-y-1/2"
+          variant="icon"
+          class="absolute right-3 top-1/2 -translate-y-1/2"
           aria-label="Clear search"
           @click="onClearSearch"
         >
           ✕
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -114,12 +116,9 @@ async function onSaveSpell(spell) {
 
     <div v-else-if="error" class="text-center py-8">
       <p class="error-message mb-2">{{ error }}</p>
-      <button
-        class="button button-retry"
-        @click="spellStore.searchSpells(currentQuery, currentPage)"
-      >
+      <BaseButton variant="retry" @click="spellStore.searchSpells(currentQuery, currentPage)">
         Retry
-      </button>
+      </BaseButton>
     </div>
 
     <div v-else-if="searchResults?.length > 0">
@@ -134,21 +133,21 @@ async function onSaveSpell(spell) {
         v-if="totalPages > 1"
         class="flex items-center justify-center gap-4 mb-4 pt-4 border-t border-third-200"
       >
-        <button
-          class="button button-secondary"
+        <BaseButton
+          variant="secondary"
           :disabled="!hasPreviousPage || isLoading"
           @click="spellStore.previousPage()"
         >
           ← Previous
-        </button>
+        </BaseButton>
         <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button
-          class="button button-secondary"
+        <BaseButton
+          variant="secondary"
           :disabled="!hasNextPage || isLoading"
           @click="spellStore.nextPage()"
         >
           Next →
-        </button>
+        </BaseButton>
       </div>
 
       <div
@@ -192,14 +191,14 @@ async function onSaveSpell(spell) {
             <div class="text-sm text-third-500 capitalize">{{ spell.school }}</div>
             <div class="text-xs text-third-400 italic truncate">{{ spell.sourceLabel }}</div>
             <div class="w-16 flex justify-end" @click.stop>
-              <button
+              <BaseButton
                 v-if="props.characterId"
+                variant="add"
                 :disabled="savingSpellKey === spell.key"
-                class="button button-add disabled:opacity-50"
                 @click="onSaveSpell(spell)"
               >
                 {{ savingSpellKey === spell.key ? '...' : '+ Add' }}
-              </button>
+              </BaseButton>
             </div>
           </div>
 
@@ -231,21 +230,21 @@ async function onSaveSpell(spell) {
         v-if="totalPages > 1"
         class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-third-200"
       >
-        <button
-          class="button button-secondary"
+        <BaseButton
+          variant="secondary"
           :disabled="!hasPreviousPage || isLoading"
           @click="spellStore.previousPage()"
         >
           ← Previous
-        </button>
+        </BaseButton>
         <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button
-          class="button button-secondary"
+        <BaseButton
+          variant="secondary"
           :disabled="!hasNextPage || isLoading"
           @click="spellStore.nextPage()"
         >
           Next →
-        </button>
+        </BaseButton>
       </div>
     </div>
 

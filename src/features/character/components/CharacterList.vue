@@ -38,13 +38,8 @@ const viewCharacter = (id) => {
     </div>
 
     <div v-else-if="characterStore.characters.length === 0" class="text-center py-8">
-      <p class="text-gray-600">You don't have any characters yet.</p>
-      <router-link
-        :to="{ name: 'CreateCharacter' }"
-        class="mt-4 inline-block bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded"
-      >
-        Create your first character
-      </router-link>
+      <p class="text-third-600">You don't have any characters yet.</p>
+      <p class="text-third-400 text-sm mt-1">Click the button below to create your first one.</p>
     </div>
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
@@ -148,7 +143,7 @@ const viewCharacter = (id) => {
     <div class="mt-6 text-center">
       <router-link
         :to="{ name: 'CreateCharacter' }"
-        class="bg-primary-500 hover:bg-primary-600 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+        class="base-btn base-btn-add inline-flex items-center"
       >
         <span class="mr-2">+</span> Create New Character
       </router-link>

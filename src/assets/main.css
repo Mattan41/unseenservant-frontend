@@ -1,4 +1,5 @@
 @import './base.css';
+@import './base-button.css';
 
 @theme {
   /* Map functional variables to Tailwinds color system */
@@ -147,7 +148,6 @@ html[data-env='prod'] {
   @apply text-third-700 bg-third-100;
 }
 
-/* Lägg till i main.css */
 .badge-blue {
   @apply text-blue-800 bg-blue-100;
 }
@@ -161,6 +161,7 @@ html[data-env='prod'] {
 }
 
 .badge-pink {
+  /* Lägg till i main.css */
   @apply text-pink-800 bg-pink-100;
 }
 
