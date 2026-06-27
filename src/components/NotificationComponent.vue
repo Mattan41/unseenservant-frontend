@@ -11,16 +11,14 @@
 </template>
 
 <script setup>
-import {useNotificationStore} from "@/stores/notificationStore";
-import {computed} from "vue";
+import { useNotificationStore } from '@/stores/notificationStore'
+import { computed } from 'vue'
 
-const notificationStore = useNotificationStore();
+const notificationStore = useNotificationStore()
 
 // This is crucial for reactivity
-const notifications = computed(() => notificationStore.notifications);
-
+const notifications = computed(() => notificationStore.notifications)
 </script>
-
 
 <style scoped>
 /* Container for notifications */
@@ -66,6 +64,4 @@ const notifications = computed(() => notificationStore.notifications);
   border: 1px solid #ffeeba; /* Yellow border */
   color: #856404; /* Dark yellow text */
 }
-
-
 </style>

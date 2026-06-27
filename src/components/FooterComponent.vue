@@ -1,5 +1,4 @@
-<script setup>
-</script>
+<script setup></script>
 
 <template>
   <footer class="bg-linear-to-r from-primary-100 to-primary-300 p-4 text-center">

@@ -1,27 +1,28 @@
 <script setup>
-import CampaignImage from "@/features/campaign/components/CampaignImage.vue";
+import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 defineProps({
   title: {
     type: String,
-    required: true
+    required: true,
   },
   description: {
     type: String,
-    default: ''
+    default: '',
   },
   imageUrl: {
     type: String,
-    default: ''
+    default: '',
   },
   isOwner: {
     type: Boolean,
-    default: false
+    default: false,
   },
   descriptionExpanded: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 defineEmits(['edit-click', 'toggle-description'])
@@ -34,30 +35,17 @@ defineEmits(['edit-click', 'toggle-description'])
         <h2 class="text-xl sm:text-2xl font-bold">
           {{ title }}
         </h2>
-        <button
-          v-if="isOwner"
-          @click="$emit('edit-click')"
-          class="button button-primary button-small button-outline"
-        >
+        <BaseButton v-if="isOwner" variant="primary" @click="$emit('edit-click')">
           Edit Campaign
-        </button>
+        </BaseButton>
       </div>
 
       <!-- Campaign image -->
-      <CampaignImage
-        :src="imageUrl"
-        :alt="title"
-        class="w-full h-48 object-cover rounded"
-      />
+      <CampaignImage :src="imageUrl" :alt="title" class="w-full h-48 object-cover rounded" />
 
       <!-- Campaign description with line clamp -->
       <div class="mt-3 break-words whitespace-pre-line">
-        <p
-          v-if="!description"
-          class="italic text-gray-500 text-sm"
-        >
-          No description available.
-        </p>
+        <p v-if="!description" class="italic text-gray-500 text-sm">No description available.</p>
 
         <template v-else>
           <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-gray-700">

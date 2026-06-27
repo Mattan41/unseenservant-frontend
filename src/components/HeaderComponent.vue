@@ -83,6 +83,13 @@ onBeforeUnmount(() => {
         >
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
+        <RouterLink
+          @click="closeMenu"
+          to="/spells"
+          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+        >
+          <h5 class="p-2 uppercase">Spells</h5>
+        </RouterLink>
 
         <template v-if="authStore.isAuthenticated">
           <RouterLink
@@ -127,7 +134,7 @@ onBeforeUnmount(() => {
             @click="closeMenu"
             to="/campaigns"
             class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
-            >
+          >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
@@ -163,6 +170,12 @@ onBeforeUnmount(() => {
         >
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
+        <RouterLink
+          to="/spells"
+          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+        >
+          <h5 class="p-2 uppercase">Spells</h5>
+        </RouterLink>
 
         <template v-if="authStore.isAuthenticated">
           <RouterLink
@@ -202,7 +215,7 @@ onBeforeUnmount(() => {
             @click="closeMenu"
             to="/campaigns"
             class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
-            >
+          >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink

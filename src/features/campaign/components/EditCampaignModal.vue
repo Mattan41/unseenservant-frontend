@@ -3,12 +3,17 @@
     <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
-        <button @click="emitClose" class="text-gray-500 hover:text-gray-700">
+        <BaseButton variant="icon" @click="emitClose">
           <span class="sr-only">Close</span>
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
-        </button>
+        </BaseButton>
       </div>
 
       <div class="mb-3">
@@ -41,7 +46,10 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Image</label>
 
         <!-- Guest mode disclaimer -->
-        <div v-if="isGuestMode" class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3">
+        <div
+          v-if="isGuestMode"
+          class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3"
+        >
           ⚠️ Image upload is not supported in guest mode. A default image will be used.
         </div>
 
@@ -69,16 +77,20 @@
             accept=".jpg,.jpeg,.png,.gif,.webp"
             class="hidden"
           />
-          <button
+          <BaseButton
             v-if="!isGuestMode"
+            variant="secondary"
             type="button"
             @click="triggerFileInput"
-            class="button button-secondary"
           >
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
-          </button>
+          </BaseButton>
           <span v-else class="text-sm text-gray-500 italic">
-            {{ previewImageUrl ? 'Current image (cannot change in guest mode)' : 'No image (upload not available in guest mode)' }}
+            {{
+              previewImageUrl
+                ? 'Current image (cannot change in guest mode)'
+                : 'No image (upload not available in guest mode)'
+            }}
           </span>
         </div>
         <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
@@ -87,64 +99,66 @@
       </div>
 
       <div class="flex space-x-3">
-        <button
-          @click="emitClose"
-          class="button button-secondary"
-          :disabled="isUpdating"
-        >
+        <BaseButton variant="secondary" :disabled="isUpdating" @click="emitClose">
           Cancel
-        </button>
-        <button @click="saveChanges" class="button button-primary" :disabled="isUpdating">
-          {{ isUpdating ? 'Saving...' : 'Save Changes' }}
-        </button>
+        </BaseButton>
+        <BaseButton
+          variant="primary"
+          :disabled="isUpdating"
+          :loading="isUpdating"
+          @click="saveChanges"
+        >
+          Save Changes
+        </BaseButton>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useAuthStore } from '@/features/auth/authStore.js';
+import { ref, computed } from 'vue'
+import { useAuthStore } from '@/features/auth/authStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
-const authStore = useAuthStore();
-const isGuestMode = computed(() => authStore.isGuest);
+const authStore = useAuthStore()
+const isGuestMode = computed(() => authStore.isGuest)
 
 const props = defineProps({
   campaign: {
     type: Object,
-    required: true
-  }
-});
+    required: true,
+  },
+})
 
-const emit = defineEmits(['close', 'save']);
+const emit = defineEmits(['close', 'save'])
 
-const editedName = ref(props.campaign.title || '');
-const editedDescription = ref(props.campaign.description || '');
-const fileInput = ref(null);
-const selectedFile = ref(null);
-const localPreviewUrl = ref(null);
-const isUpdating = ref(false);
+const editedName = ref(props.campaign.title || '')
+const editedDescription = ref(props.campaign.description || '')
+const fileInput = ref(null)
+const selectedFile = ref(null)
+const localPreviewUrl = ref(null)
+const isUpdating = ref(false)
 
-const previewImageUrl = computed(() => localPreviewUrl.value || props.campaign.imageUrl || null);
+const previewImageUrl = computed(() => localPreviewUrl.value || props.campaign.imageUrl || null)
 
 function triggerFileInput() {
-  fileInput.value.click();
+  fileInput.value.click()
 }
 
 function handleImageChange(event) {
-  const file = event.target.files[0];
+  const file = event.target.files[0]
   if (file) {
-    selectedFile.value = file;
-    localPreviewUrl.value = URL.createObjectURL(file);
+    selectedFile.value = file
+    localPreviewUrl.value = URL.createObjectURL(file)
   }
 }
 
 function emitClose() {
-  emit('close');
+  emit('close')
 }
 
 async function saveChanges() {
-  isUpdating.value = true;
+  isUpdating.value = true
 
   try {
     const updatedData = {
@@ -152,14 +166,14 @@ async function saveChanges() {
       title: editedName.value,
       description: editedDescription.value,
       imageFile: selectedFile.value,
-    };
+    }
 
     // Forward the form submit payload to the parent view context
-    emit('save', updatedData);
+    emit('save', updatedData)
   } catch (error) {
-    console.error('Error saving campaign data inside modal component:', error);
+    console.error('Error saving campaign data inside modal component:', error)
   } finally {
-    isUpdating.value = false;
+    isUpdating.value = false
   }
 }
 </script>

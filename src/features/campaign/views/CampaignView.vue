@@ -10,13 +10,15 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.vue'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const campaign = ref(null)
-const isLoading = ref(true)
+const isLoading = ref(false)
+const isInitialLoad = ref(true)
 const isCharactersListVisible = ref(false)
 const showSettings = ref(false)
 const descriptionExpanded = ref(false)
@@ -30,8 +32,11 @@ const isOwner = computed(() => {
 
 const loadCampaignData = async () => {
   const notificationStore = useNotificationStore()
-  isLoading.value = true
-  const campaignStore = useCampaignStore()
+
+  // Only show a full-page loading spinner on the very first visit (cold cache)
+  if (isInitialLoad.value) {
+    isLoading.value = true
+  }
 
   try {
     await campaignStore.fetchAllCampaignsForCurrentUser()
@@ -43,10 +48,11 @@ const loadCampaignData = async () => {
   }
 
   const campaignId = route.params.id
-const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
+  const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
 
-if (!campaignExists) {
+  if (!campaignExists) {
     await router.push({ name: 'CampaignsView' })
+    isLoading.value = false
     return
   }
 
@@ -58,6 +64,7 @@ if (!campaignExists) {
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
   } finally {
     isLoading.value = false
+    isInitialLoad.value = false
   }
 }
 
@@ -137,7 +144,10 @@ const handleSaveCampaign = async (updatedCampaign) => {
 
     // 2. Upload image file
     if (updatedCampaign.imageFile) {
-      const updated = await campaignStore.uploadCampaignImage(campaign.value.id, updatedCampaign.imageFile)
+      const updated = await campaignStore.uploadCampaignImage(
+        campaign.value.id,
+        updatedCampaign.imageFile,
+      )
       campaign.value.imageUrl = updated.imageUrl
     }
 
@@ -149,7 +159,6 @@ const handleSaveCampaign = async (updatedCampaign) => {
     showEditModal.value = false
 
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
-
   } catch (error) {
     // Silent catch, because the specific API errors are handled gracefully inside the store actions
     console.error('Campaign update chain interrupted:', error)
@@ -206,7 +215,13 @@ watch(
   <div v-else-if="campaign" class="flex h-full">
     <!-- Campaign selector sidebar - completely self-contained now -->
     <CampaignSidebar
-      :campaigns="campaignStore.campaigns.map(c => ({ ...c, imageUrl: campaignStore.getCampaignImageUrl(c.id), name: campaignStore.getCampaignTitle(c.id) }))"
+      :campaigns="
+        campaignStore.campaigns.map((c) => ({
+          ...c,
+          imageUrl: campaignStore.getCampaignImageUrl(c.id),
+          name: campaignStore.getCampaignTitle(c.id),
+        }))
+      "
       :current-campaign-id="parseInt(route.params.id)"
     />
 
@@ -228,7 +243,9 @@ watch(
         <!-- Participants collapsible section -->
         <div class="mb-4 border rounded p-3">
           <h3 class="font-medium cursor-pointer flex items-center" @click="toggleCharactersList">
-            <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1">›</span>
+            <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1"
+              >›</span
+            >
             <span v-else class="inline-block mr-1">›</span>
             Participants & Characters
           </h3>
@@ -291,7 +308,8 @@ watch(
                       v-if="character.characterClass"
                       class="text-sm text-gray-600 ml-1 truncate"
                     >
-                      ({{ character.characterClass }}<span v-if="character.level"> , Level {{ character.level }} </span>)
+                      ({{ character.characterClass
+                      }}<span v-if="character.level"> , Level {{ character.level }} </span>)
                     </span>
 
                     <router-link
@@ -308,14 +326,14 @@ watch(
                     >
                       Open Character Details
                     </router-link>
-                    <button
+                    <BaseButton
                       v-if="userStore.currentUser && userStore.userId === character.ownerId"
+                      variant="remove"
+                      class="ml-auto mt-1 sm:mt-0"
                       @click="removeCharacter(character.id)"
-                      class="button button-remove ml-auto mt-1 sm:mt-0"
-                      aria-label="Remove character"
                     >
                       Remove
-                    </button>
+                    </BaseButton>
                   </div>
                 </div>
 
@@ -328,10 +346,10 @@ watch(
 
         <!-- Action Buttons -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-          <button class="button button-primary" @click="toggleSettings">Campaign Settings</button>
-          <button class="button button-primary" @click="showImportModal = true">
+          <BaseButton variant="primary" @click="toggleSettings">Campaign Settings</BaseButton>
+          <BaseButton variant="primary" @click="showImportModal = true">
             IMPORT CHARACTER
-          </button>
+          </BaseButton>
         </div>
 
         <EditCampaignModal
@@ -365,12 +383,7 @@ watch(
           >
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-2xl font-semibold text-third-800">Campaign Settings</h3>
-              <button
-                @click="showSettings = false"
-                class="text-gray-600 hover:text-gray-800 focus:outline-none"
-              >
-                &times;
-              </button>
+              <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
             </div>
             <CampaignSettings
               :campaignId="String(campaign.id)"

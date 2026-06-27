@@ -1,10 +1,11 @@
 <script setup>
-import {ref} from 'vue'
-import {useUserStore} from './userStore.js'
-import {storeToRefs} from 'pinia'
-import {useNotificationStore} from '@/stores/notificationStore.js'
+import { ref } from 'vue'
+import { useUserStore } from './userStore.js'
+import { storeToRefs } from 'pinia'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import CampaignList from '@/features/campaign/components/CampaignList.vue'
 import CharacterList from '@/features/character/components/CharacterList.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const userStore = useUserStore()
 const notificationStore = useNotificationStore()
@@ -75,7 +76,7 @@ const saveDisplayName = async () => {
                   <div class="bg-gray-100 p-3 rounded flex-grow">
                     {{ displayName }}
                   </div>
-                  <button @click="startEditing" class="button button-primary ml-2">Edit</button>
+                  <BaseButton variant="primary" class="ml-2" @click="startEditing">Edit</BaseButton>
                 </div>
 
                 <!-- Edit mode -->
@@ -89,21 +90,22 @@ const saveDisplayName = async () => {
                   />
 
                   <div class="flex space-x-2">
-                    <button
+                    <BaseButton
+                      variant="add"
+                      :disabled="editForm.isSaving"
+                      :loading="editForm.isSaving"
                       @click="saveDisplayName"
-                      class="button button-add"
-                      :disabled="editForm.isSaving"
                     >
-                      {{ editForm.isSaving ? 'Saving...' : 'Save' }}
-                    </button>
+                      Save
+                    </BaseButton>
 
-                    <button
-                      @click="cancelEditing"
-                      class="button button-primary"
+                    <BaseButton
+                      variant="primary"
                       :disabled="editForm.isSaving"
+                      @click="cancelEditing"
                     >
                       Cancel
-                    </button>
+                    </BaseButton>
                   </div>
                 </div>
               </div>

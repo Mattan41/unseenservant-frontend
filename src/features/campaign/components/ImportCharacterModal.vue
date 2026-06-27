@@ -2,7 +2,8 @@
 import { onMounted, ref, watch } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
-import CharacterImage from "@/features/character/components/CharacterImage.vue";
+import CharacterImage from '@/features/character/components/CharacterImage.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -90,7 +91,10 @@ watch(
       </div>
 
       <!-- Character grid -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(80vh-200px)] overflow-y-auto">
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(80vh-200px)] overflow-y-auto"
+      >
         <div
           v-for="character in availableCharacters"
           :key="character.id"
@@ -123,30 +127,23 @@ watch(
           </div>
 
           <div class="bg-primary-50 px-4 py-2 flex justify-end">
-            <button
-              @click="importCharacter(character.id)"
+            <BaseButton
+              variant="primary"
               :disabled="isImporting === character.id"
-              class="button button-primary text-sm"
+              :loading="isImporting === character.id"
+              @click="importCharacter(character.id)"
             >
-              <span v-if="isImporting === character.id">
-                <span
-                  class="inline-block animate-spin h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-1"
-                ></span>
-                Importing...
-              </span>
-              <span v-else>Import to campaign</span>
-            </button>
+              Import to campaign
+            </BaseButton>
           </div>
         </div>
       </div>
 
       <div class="mt-6 flex justify-end">
-        <button @click="close" class="button button-secondary">Cancel</button>
+        <BaseButton variant="secondary" @click="close">Cancel</BaseButton>
       </div>
     </div>
   </div>
 </template>
 
-
-<style scoped>
-</style>
+<style scoped></style>

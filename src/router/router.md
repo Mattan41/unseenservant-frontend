@@ -13,14 +13,16 @@ Use the `beforeEnter` hook to redirect users, e.g. logging out and redirecting t
 There are three places where post-login redirects are configured:
 
 1. **OAuthRedirect Component** (`feature/auth/OAuthRedirect.vue`):
+
    ```javascript
    // When OAuth login completes:
    if (authStore.isLoggedIn) {
-     await router.push({ name: 'home' }); // Change destination here
+     await router.push({ name: 'home' }) // Change destination here
    }
    ```
 
 2. **Redirect Route** (in `router/index.js`):
+
    ```javascript
    {
      path: '/redirect',
@@ -39,9 +41,9 @@ There are three places where post-login redirects are configured:
    router.beforeEach(async (to, from, next) => {
      // ...
      if (to.name === 'login' && authStore.isLoggedIn) {
-       next({ name: 'home' }); // Change destination here
+       next({ name: 'home' }) // Change destination here
      }
-   });
+   })
    ```
 
 ### Route Protection
@@ -63,16 +65,16 @@ The router guard will automatically check authentication:
 router.beforeEach(async (to, from, next) => {
   // Initialize auth if needed
   if (!authStore.authInitialized) {
-    await authStore.checkAuth();
+    await authStore.checkAuth()
   }
 
   // Check if route requires authentication
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
-    next({ name: 'login' });
+    next({ name: 'login' })
   } else {
-    next();
+    next()
   }
-});
+})
 ```
 
 ### Error Handling
@@ -83,9 +85,9 @@ The router includes error handling to prevent navigation from breaking if authen
 try {
   // Authentication logic
 } catch (error) {
-  console.error('Error in router guard:', error);
+  console.error('Error in router guard:', error)
   // Continue navigation even if auth check fails
-  next();
+  next()
 }
 ```
 

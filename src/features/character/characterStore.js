@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue' // Importera ref och computed
+import { ref, computed } from 'vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterService from '@/features/character/CharacterService.js'
 
 export const useCharacterStore = defineStore('character', () => {
   // ==========================================================================
-  // State (ref istället för state())
+  // State
   // ==========================================================================
   const characters = ref([])
   const currentCharacter = ref(null)
@@ -30,7 +30,7 @@ export const useCharacterStore = defineStore('character', () => {
   })
 
   // ==========================================================================
-  // Actions (Vanliga funktioner, byt ut "this.XYZ" mot ".value")
+  // Actions
   // ==========================================================================
   async function createCharacter(data) {
     const notificationStore = useNotificationStore()
@@ -132,7 +132,11 @@ export const useCharacterStore = defineStore('character', () => {
       return updatedCharacter
     } catch (error) {
       console.error('Failed to update character:', error)
-      notificationStore.addNotification('Failed to update character.', 'error')
+
+      if (!error.handled) {
+        notificationStore.addNotification('Failed to update character.', 'error')
+      }
+
       throw error
     } finally {
       isLoading.value = false
@@ -162,7 +166,9 @@ export const useCharacterStore = defineStore('character', () => {
       return updatedCharacter
     } catch (error) {
       console.error('Failed to update character field:', error)
-      notificationStore.addNotification(`Failed to update ${field}.`, 'error')
+      if (!error.handled) {
+        notificationStore.addNotification(`Failed to update ${field}.`, 'error')
+      }
       throw error
     } finally {
       isLoading.value = false
@@ -217,9 +223,6 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
-  // ==========================================================================
-  // Returnera allt som komponenterna behöver komma åt
-  // ==========================================================================
   return {
     // State
     characters,

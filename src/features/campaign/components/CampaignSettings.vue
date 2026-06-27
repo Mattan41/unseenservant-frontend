@@ -4,6 +4,7 @@ import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import router from '@/router/index.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   campaignId: {
@@ -158,8 +159,6 @@ const addParticipant = async (user) => {
 }
 
 const removeParticipant = async (participant) => {
-  if (!confirm(`Are you sure you want to remove ${participant.nickname || 'this participant'}?`))
-    return
   try {
     // Keep campaignId as string to support both numeric and guest mode IDs
     const campaignId = props.campaignId
@@ -203,7 +202,9 @@ const deleteCampaign = () => {
   console.log('Deleting campaign:', props.campaignId)
   const notificationStore = useNotificationStore()
 
-  if (confirm('Are you sure you want to delete this campaign?')) {
+  if (
+    confirm('You are about to delete this campaign. This action cannot be undone. Are you sure?')
+  ) {
     campaignStore
       .deleteCampaign(props.campaignId)
       .then(() => {
@@ -221,20 +222,14 @@ const deleteCampaign = () => {
 }
 
 const transferOwnership = (participant) => {
-  if (
-    confirm(
-      `Are you sure you want to transfer ownership to ${participant.nickname || 'this participant'}?`,
-    )
-  ) {
-    campaignStore
-      .transferCampaignOwnership(props.campaignId, participant.id)
-      .then(() => {
-        emit('close-modal')
-      })
-      .catch((error) => {
-        console.error('Error transferring ownership:', error)
-      })
-  }
+  campaignStore
+    .transferCampaignOwnership(props.campaignId, participant.id)
+    .then(() => {
+      emit('close-modal')
+    })
+    .catch((error) => {
+      console.error('Error transferring ownership:', error)
+    })
 }
 </script>
 
@@ -256,17 +251,23 @@ const transferOwnership = (participant) => {
         />
 
         <div v-if="isEditingNickname" class="flex gap-2">
-          <button @click="saveNickname" class="button button-add flex-1" :disabled="isSaving">
-            <span v-if="isSaving">Saving...</span>
-            <span v-else>Save</span>
-          </button>
-          <button
-            @click="cancelEditingNickname"
-            class="button button-primary flex-1"
+          <BaseButton
+            variant="add"
+            class="flex-1"
             :disabled="isSaving"
+            :loading="isSaving"
+            @click="saveNickname"
+          >
+            Save
+          </BaseButton>
+          <BaseButton
+            variant="primary"
+            class="flex-1"
+            :disabled="isSaving"
+            @click="cancelEditingNickname"
           >
             Cancel
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -286,10 +287,14 @@ const transferOwnership = (participant) => {
             @keyup.enter="searchUsers"
           />
 
-          <button @click="searchUsers" class="button button-primary" :disabled="isSearching">
-            <span v-if="isSearching">Searching...</span>
-            <span v-else>Search</span>
-          </button>
+          <BaseButton
+            variant="primary"
+            :disabled="isSearching"
+            :loading="isSearching"
+            @click="searchUsers"
+          >
+            Search
+          </BaseButton>
         </div>
 
         <!-- Search results -->
@@ -307,13 +312,14 @@ const transferOwnership = (participant) => {
                 <div class="text-sm text-gray-500">{{ user.email }}</div>
               </div>
               <!--             todo: can we have a checkbox here instead of button? and add all selected users with a button -->
-              <button
-                @click="addParticipant(user.id)"
-                class="button button-add self-end sm:self-auto"
+              <BaseButton
+                variant="add"
+                class="self-end sm:self-auto"
                 :disabled="isSaving"
+                @click="addParticipant(user.id)"
               >
                 Add to Campaign
-              </button>
+              </BaseButton>
             </li>
           </ul>
         </div>
@@ -348,25 +354,26 @@ const transferOwnership = (participant) => {
 
               <!-- Action buttons -->
               <div class="flex flex-wrap gap-2">
-                <button class="button button-update" @click="toggleRole(participant)">
+                <BaseButton variant="update" @click="toggleRole(participant)">
                   change to {{ participant.role === 'PLAYER' ? 'GM' : 'PLAYER' }}
-                </button>
-                <button
-                  class="button button-update"
-                  @click="updateNicknameForParticipant(participant)"
-                >
+                </BaseButton>
+                <BaseButton variant="update" @click="updateNicknameForParticipant(participant)">
                   Edit Nickname
-                </button>
-                <button class="button button-remove" @click="removeParticipant(participant)">
+                </BaseButton>
+                <BaseButton
+                  variant="remove"
+                  :confirm-message="`Are you sure you want to remove ${participant.nickname || 'this participant'}?`"
+                  @click="removeParticipant(participant)"
+                >
                   Remove
-                </button>
-                <button
-                  v-if="participant.id !== userStore.userId"
-                  class="button button-update"
+                </BaseButton>
+                <BaseButton
+                  variant="update"
+                  confirm-message="Are you sure you want to transfer ownership?"
                   @click="transferOwnership(participant)"
                 >
                   Transfer Ownership of campaign
-                </button>
+                </BaseButton>
               </div>
             </div>
 
@@ -381,21 +388,23 @@ const transferOwnership = (participant) => {
               />
 
               <div class="flex gap-2">
-                <button
+                <BaseButton
+                  variant="add"
+                  class="flex-1"
+                  :disabled="isSaving"
+                  :loading="isSaving"
                   @click="saveParticipantNickname(participant)"
-                  class="button button-add flex-1"
-                  :disabled="isSaving"
                 >
-                  <span v-if="isSaving">Saving...</span>
-                  <span v-else>Save</span>
-                </button>
-                <button
-                  @click="editingParticipantId = null"
-                  class="button button-primary flex-1"
+                  Save
+                </BaseButton>
+                <BaseButton
+                  variant="primary"
+                  class="flex-1"
                   :disabled="isSaving"
+                  @click="editingParticipantId = null"
                 >
                   Cancel
-                </button>
+                </BaseButton>
               </div>
             </div>
           </li>
@@ -414,7 +423,13 @@ const transferOwnership = (participant) => {
         <h4 class="text-lg font-semibold mb-3">Campaign Management</h4>
 
         <div class="flex flex-col sm:flex-row gap-3">
-          <button class="button button-remove" @click="deleteCampaign">Delete Campaign</button>
+          <BaseButton
+            variant="remove"
+            confirm-message="Are you sure you want to delete this campaign?"
+            @click="deleteCampaign"
+          >
+            Delete Campaign
+          </BaseButton>
         </div>
       </div>
     </div>

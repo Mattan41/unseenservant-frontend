@@ -47,6 +47,12 @@ src/
 │   │   ├── campaignStore.js
 │   │   ├── components/
 │   │   └── views/
+│   ├── spell/
+│   │   ├── SpellService.js
+│   │   ├── spellStore.js
+│   │   ├── spellUtils.js
+│   │   ├── components/
+│   │   └── views/
 │   ├── character/
 │   │   ├── CharacterService.js
 │   │   ├── characterStore.js
@@ -56,6 +62,8 @@ src/
 │       ├── UserService.js
 │       ├── userStore.js
 │       └── UserProfileView.vue
+├── utils/
+│   └──errorUtils.js          # Extracts a human-readable error message from an Axios error.
 ├── App.vue
 └── main.js
 ```
@@ -67,16 +75,16 @@ Each feature follows the same pattern:
 - `components/` — UI components used within the feature
 - `views/` — routable pages for the feature
 
-## API Architechture & Communication
+## API Architecture & Communication
 ```
-Internal (Live):                axios.js         → apiClient.js     → FeatureService.js → Store
-Internal (Guest):               guest-axios.js   → apiClient.js     → FeatureService.js → Store
-External: (Open5e - Planned):   open5e-axios.js  → open5eClient.js  → FeatureService.js → Store
+Internal (Live):      axios.js         → apiClient.js     → FeatureService.js → Store
+Internal (Demo):     guest-axios.js   → apiClient.js     → FeatureService.js → Store
+External (Open5e):    open5e-axios.js  → apiClient.js     → FeatureService.js → Store
 ```
 - `api/axios.js`: Standard Axios instance for authenticated traffic. Automatically attaches JWT headers to requests and intercepts `401 Unauthorized` responses to clear local auth and trigger system notifications.
-- `api/apiClient.js`: Dynamic wrapper client. It acts as a gateway that checks `authStore.isGuest` and seamlessly switches all traffic between the live backend client (`axios.js`) and the mock client (`guest-axios.js`). All feature services import from this file.
+- `api/apiClient.js`: Dynamic wrapper client. It acts as a gateway that checks `authStore.isGuest` and seamlessly switches all traffic between the live backend client (`axios.js`) and the mock client (`guest-axios.js`). Also provides `getOpen5e()` and `postOpen5e()` methods for external API calls. All feature services import from this file.
 - `api/guest-axios.js`: Simulates backend behavior inside the browser. It intercepts incoming HTTP requests and redirects full CRUD operations (GET, POST, PUT, PATCH, DELETE) to `localStorage`, enabling full application functionality in standalone mode.
-- External APIs (e.g., Open5e) are handled directly from the browser using a dedicated Axios instance (`open5eClient.js`).
+- `api/open5e-axios.js`: Dedicated Axios instance for Open5e API v2 calls. Public API with no authentication headers. Used via `apiClient.getOpen5e()` and `apiClient.postOpen5e()` methods.
 
 ## Authentication
 - JWT-based authentication with state persisted and managed in `authStore` (Pinia).
@@ -84,7 +92,7 @@ External: (Open5e - Planned):   open5e-axios.js  → open5eClient.js  → Featur
 - Auth state persisted in `authStore` (Pinia)
 
 ## Guest Mode
-Standalone preview mode populated entirely via mock data from `src/data/demoData.js`. When activated, state changes are written directly to `localStorage`. Image uploads are not supported in guest mode and are gracefully mocked out or bypassed via a disclaimer.
+Standalone preview mode populated entirely via mock data from `src/data/demoData.js`. When activated, state changes are written directly to `localStorage`. Image uploads are not supported in guest mode and are gracefully mocked out or bypassed via a disclaimer. Spell operations (search, save to character, fetch character spells, remove from character) are fully mocked in guest-axios.js.
 
 ## Component conventions (target pattern)
 - **Smart components** (views, containers): handle store calls and logic

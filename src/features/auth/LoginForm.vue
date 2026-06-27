@@ -28,9 +28,10 @@ const handleSubmit = async () => {
     router.push({ name: 'home' })
   } catch (err) {
     console.error('Demo login failed:', err)
-    error.value = err.response?.status === 401
-      ? 'Invalid username or password'
-      : 'Login failed. Please try again.'
+    error.value =
+      err.response?.status === 401
+        ? 'Invalid username or password'
+        : 'Login failed. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -92,7 +93,10 @@ const handleSubmit = async () => {
         :disabled="isLoading"
         class="w-64 h-10 px-3 flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-white font-medium rounded transition duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span v-if="isLoading" class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        <span
+          v-if="isLoading"
+          class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+        ></span>
         <span v-else>Login</span>
       </button>
     </form>
@@ -102,9 +106,7 @@ const handleSubmit = async () => {
       <p class="text-xs text-gray-500">
         Users: <span class="font-mono">User1</span> - <span class="font-mono">User5</span>
       </p>
-      <p class="text-xs text-gray-500">
-        Admin: <span class="font-mono">admin</span>
-      </p>
+      <p class="text-xs text-gray-500">Admin: <span class="font-mono">admin</span></p>
       <p class="text-xs text-gray-400 mt-1">
         All passwords: <span class="font-mono">password</span>
       </p>
