@@ -137,9 +137,12 @@ const deleteCharacter = async () => {
           >
             Edit
           </router-link>
-          <BaseButton variant="remove"
-          :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
-          @click="deleteCharacter">Delete</BaseButton>
+          <BaseButton
+            variant="remove"
+            :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
+            @click="deleteCharacter"
+            >Delete</BaseButton
+          >
         </div>
 
         <!-- Character header: image + basic info -->
