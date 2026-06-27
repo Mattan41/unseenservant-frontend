@@ -3,7 +3,7 @@
     <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
-        <button @click="emitClose" class="text-gray-500 hover:text-gray-700">
+        <BaseButton variant="icon" @click="emitClose">
           <span class="sr-only">Close</span>
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -13,7 +13,7 @@
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+        </BaseButton>
       </div>
 
       <div class="mb-3">
@@ -77,14 +77,14 @@
             accept=".jpg,.jpeg,.png,.gif,.webp"
             class="hidden"
           />
-          <button
+          <BaseButton
             v-if="!isGuestMode"
+            variant="secondary"
             type="button"
             @click="triggerFileInput"
-            class="button button-secondary"
           >
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
-          </button>
+          </BaseButton>
           <span v-else class="text-sm text-gray-500 italic">
             {{
               previewImageUrl
@@ -99,12 +99,17 @@
       </div>
 
       <div class="flex space-x-3">
-        <button @click="emitClose" class="button button-secondary" :disabled="isUpdating">
+        <BaseButton variant="secondary" :disabled="isUpdating" @click="emitClose">
           Cancel
-        </button>
-        <button @click="saveChanges" class="button button-primary" :disabled="isUpdating">
-          {{ isUpdating ? 'Saving...' : 'Save Changes' }}
-        </button>
+        </BaseButton>
+        <BaseButton
+          variant="primary"
+          :disabled="isUpdating"
+          :loading="isUpdating"
+          @click="saveChanges"
+        >
+          Save Changes
+        </BaseButton>
       </div>
     </div>
   </div>
@@ -113,6 +118,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)

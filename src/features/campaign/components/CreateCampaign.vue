@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const campaignStore = useCampaignStore()
 
@@ -29,9 +30,9 @@ const createCampaign = async () => {
 
 <template>
   <div>
-    <button @click="showCreateCampaignModal = true" class="button button-add">
+    <BaseButton variant="add" @click="showCreateCampaignModal = true">
       Create new campaign
-    </button>
+    </BaseButton>
     <div
       v-if="showCreateCampaignModal"
       class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-primary-600 bg-opacity-50"
@@ -62,10 +63,14 @@ const createCampaign = async () => {
             >
             </textarea>
           </div>
-          <button type="submit" class="button button-add">create</button>
-          <button @click="showCreateCampaignModal = false" class="button button-secondary">
+          <BaseButton variant="add" type="submit" :loading="isCreating"> create </BaseButton>
+          <BaseButton
+            variant="secondary"
+            :disabled="isCreating"
+            @click="showCreateCampaignModal = false"
+          >
             Cancel
-          </button>
+          </BaseButton>
         </form>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       </div>

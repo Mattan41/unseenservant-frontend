@@ -1,5 +1,6 @@
 <script setup>
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 defineProps({
   title: {
@@ -34,13 +35,9 @@ defineEmits(['edit-click', 'toggle-description'])
         <h2 class="text-xl sm:text-2xl font-bold">
           {{ title }}
         </h2>
-        <button
-          v-if="isOwner"
-          @click="$emit('edit-click')"
-          class="button button-primary button-small button-outline"
-        >
+        <BaseButton v-if="isOwner" variant="primary" @click="$emit('edit-click')">
           Edit Campaign
-        </button>
+        </BaseButton>
       </div>
 
       <!-- Campaign image -->

@@ -319,12 +319,7 @@ const submitCharacter = async () => {
           >
             Cancel
           </BaseButton>
-          <BaseButton
-            variant="add"
-            type="submit"
-            :disabled="isSubmitting"
-            :loading="isSubmitting"
-          >
+          <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
             Save Changes
           </BaseButton>
         </div>

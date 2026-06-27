@@ -52,7 +52,7 @@ const router = createRouter({
     {
       path: '/campaigns',
       name: 'CampaignsView',
-      component: () => import('../features/campaign/views/CampaignsView.vue'),
+      component: () => import('@/features/campaign/views/CampaignsView.vue'),
       meta: { requiresSession: true },
     },
     {

@@ -10,6 +10,7 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.vue'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -325,14 +326,14 @@ watch(
                     >
                       Open Character Details
                     </router-link>
-                    <button
+                    <BaseButton
                       v-if="userStore.currentUser && userStore.userId === character.ownerId"
+                      variant="remove"
+                      class="ml-auto mt-1 sm:mt-0"
                       @click="removeCharacter(character.id)"
-                      class="button button-remove ml-auto mt-1 sm:mt-0"
-                      aria-label="Remove character"
                     >
                       Remove
-                    </button>
+                    </BaseButton>
                   </div>
                 </div>
 
@@ -345,10 +346,10 @@ watch(
 
         <!-- Action Buttons -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-          <button class="button button-primary" @click="toggleSettings">Campaign Settings</button>
-          <button class="button button-primary" @click="showImportModal = true">
+          <BaseButton variant="primary" @click="toggleSettings">Campaign Settings</BaseButton>
+          <BaseButton variant="primary" @click="showImportModal = true">
             IMPORT CHARACTER
-          </button>
+          </BaseButton>
         </div>
 
         <EditCampaignModal
@@ -382,12 +383,7 @@ watch(
           >
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-2xl font-semibold text-third-800">Campaign Settings</h3>
-              <button
-                @click="showSettings = false"
-                class="text-gray-600 hover:text-gray-800 focus:outline-none"
-              >
-                &times;
-              </button>
+              <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
             </div>
             <CampaignSettings
               :campaignId="String(campaign.id)"

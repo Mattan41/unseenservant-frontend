@@ -188,12 +188,7 @@ const submitCharacter = async () => {
             Cancel
           </router-link>
 
-          <BaseButton
-            variant="add"
-            type="submit"
-            :disabled="isSubmitting"
-            :loading="isSubmitting"
-          >
+          <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
             Create Character
           </BaseButton>
         </div>
