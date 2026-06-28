@@ -218,7 +218,7 @@ const submitCharacter = async () => {
             />
             <BaseButton
               v-if="!isGuestMode"
-              variant="secondary"
+              variant="ghost"
               type="button"
               @click="triggerFileInput"
             >
@@ -312,7 +312,7 @@ const submitCharacter = async () => {
         <!-- Form Action Buttons -->
         <div class="flex justify-end space-x-3 mt-8">
           <BaseButton
-            variant="secondary"
+            variant="ghost"
             type="button"
             :disabled="isSubmitting"
             @click="router.push(goToCharacterView())"

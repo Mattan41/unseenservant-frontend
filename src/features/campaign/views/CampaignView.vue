@@ -346,8 +346,8 @@ watch(
 
         <!-- Action Buttons -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-          <BaseButton variant="primary" @click="toggleSettings">Campaign Settings</BaseButton>
-          <BaseButton variant="primary" @click="showImportModal = true">
+          <BaseButton variant="default" @click="toggleSettings">Campaign Settings</BaseButton>
+          <BaseButton variant="default" @click="showImportModal = true">
             IMPORT CHARACTER
           </BaseButton>
         </div>

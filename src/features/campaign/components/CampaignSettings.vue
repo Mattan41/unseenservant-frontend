@@ -261,7 +261,7 @@ const transferOwnership = (participant) => {
             Save
           </BaseButton>
           <BaseButton
-            variant="primary"
+            variant="ghost"
             class="flex-1"
             :disabled="isSaving"
             @click="cancelEditingNickname"
@@ -288,7 +288,7 @@ const transferOwnership = (participant) => {
           />
 
           <BaseButton
-            variant="primary"
+            variant="default"
             :disabled="isSearching"
             :loading="isSearching"
             @click="searchUsers"
@@ -398,7 +398,7 @@ const transferOwnership = (participant) => {
                   Save
                 </BaseButton>
                 <BaseButton
-                  variant="primary"
+                  variant="ghost"
                   class="flex-1"
                   :disabled="isSaving"
                   @click="editingParticipantId = null"

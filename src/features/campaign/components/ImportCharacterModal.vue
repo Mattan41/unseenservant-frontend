@@ -98,7 +98,7 @@ watch(
         <div
           v-for="character in availableCharacters"
           :key="character.id"
-          class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
+          class="bg-primary-50 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
         >
           <div class="p-4 flex-grow">
             <div class="flex items-start space-x-3">
@@ -126,9 +126,9 @@ watch(
             </div>
           </div>
 
-          <div class="bg-primary-50 px-4 py-2 flex justify-end">
+          <div class="bg-primary-100 px-4 py-2 flex justify-end">
             <BaseButton
-              variant="primary"
+              variant="add"
               :disabled="isImporting === character.id"
               :loading="isImporting === character.id"
               @click="importCharacter(character.id)"
@@ -140,7 +140,7 @@ watch(
       </div>
 
       <div class="mt-6 flex justify-end">
-        <BaseButton variant="secondary" @click="close">Cancel</BaseButton>
+        <BaseButton variant="ghost" @click="close">Cancel</BaseButton>
       </div>
     </div>
   </div>

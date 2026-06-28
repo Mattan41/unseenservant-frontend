@@ -79,7 +79,7 @@
           />
           <BaseButton
             v-if="!isGuestMode"
-            variant="secondary"
+            variant="ghost"
             type="button"
             @click="triggerFileInput"
           >
@@ -99,11 +99,11 @@
       </div>
 
       <div class="flex space-x-3">
-        <BaseButton variant="secondary" :disabled="isUpdating" @click="emitClose">
+        <BaseButton variant="ghost" :disabled="isUpdating" @click="emitClose">
           Cancel
         </BaseButton>
         <BaseButton
-          variant="primary"
+          variant="add"
           :disabled="isUpdating"
           :loading="isUpdating"
           @click="saveChanges"

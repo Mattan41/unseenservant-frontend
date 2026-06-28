@@ -6,6 +6,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()
 const router = useRouter()
+const cancel = () => router.push({ name: 'CharactersView' })
 
 const character = ref({
   name: '',
@@ -27,6 +28,7 @@ const formError = ref('')
 
 const races = [
   'Human',
+  'Centaur',
   'Elf',
   'Dwarf',
   'Halfling',
@@ -181,17 +183,13 @@ const submitCharacter = async () => {
 
         <!-- Buttons -->
         <div class="flex justify-end space-x-3 mt-8">
-          <router-link
-            :to="{ name: 'CharactersView' }"
-            class="px-4 py-2 border rounded-md border-third-300 button-secondary"
-          >
-            Cancel
-          </router-link>
-
-          <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
-            Create Character
-          </BaseButton>
-        </div>
+  <BaseButton variant="ghost" @click="cancel">
+    Cancel
+  </BaseButton>
+  <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
+    Create Character
+  </BaseButton>
+</div>
       </form>
     </div>
   </div>
