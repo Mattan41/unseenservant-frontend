@@ -202,10 +202,10 @@ const deleteCharacter = async () => {
             <h2 class="section-heading">Spells</h2>
             <BaseButton
               v-if="isOwner"
-              variant="primary"
+              variant="default"
               @click="showSpellSearch = !showSpellSearch"
             >
-              {{ showSpellSearch ? 'Hide Search' : '+ Search Spells to add' }}
+              {{ showSpellSearch ? 'Hide Search' : 'Search Spells to add' }}
             </BaseButton>
           </div>
 

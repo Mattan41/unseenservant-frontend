@@ -145,7 +145,7 @@ const viewCharacter = (id) => {
         :to="{ name: 'CreateCharacter' }"
         class="base-btn base-btn-add inline-flex items-center"
       >
-        <span class="mr-2">+</span> Create New Character
+      Create New Character
       </router-link>
     </div>
   </div>

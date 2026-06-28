@@ -65,7 +65,7 @@ const createCampaign = async () => {
           </div>
           <BaseButton variant="add" type="submit" :loading="isCreating"> create </BaseButton>
           <BaseButton
-            variant="secondary"
+            variant="ghost"
             :disabled="isCreating"
             @click="showCreateCampaignModal = false"
           >

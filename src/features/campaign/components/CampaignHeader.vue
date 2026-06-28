@@ -35,7 +35,7 @@ defineEmits(['edit-click', 'toggle-description'])
         <h2 class="text-xl sm:text-2xl font-bold">
           {{ title }}
         </h2>
-        <BaseButton v-if="isOwner" variant="primary" @click="$emit('edit-click')">
+        <BaseButton v-if="isOwner" variant="default" @click="$emit('edit-click')">
           Edit Campaign
         </BaseButton>
       </div>

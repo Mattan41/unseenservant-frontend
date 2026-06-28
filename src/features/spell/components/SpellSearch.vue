@@ -134,7 +134,7 @@ async function onSaveSpell(spell) {
         class="flex items-center justify-center gap-4 mb-4 pt-4 border-t border-third-200"
       >
         <BaseButton
-          variant="secondary"
+          variant="ghost"
           :disabled="!hasPreviousPage || isLoading"
           @click="spellStore.previousPage()"
         >
@@ -142,7 +142,7 @@ async function onSaveSpell(spell) {
         </BaseButton>
         <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
         <BaseButton
-          variant="secondary"
+          variant="ghost"
           :disabled="!hasNextPage || isLoading"
           @click="spellStore.nextPage()"
         >
@@ -231,7 +231,7 @@ async function onSaveSpell(spell) {
         class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-third-200"
       >
         <BaseButton
-          variant="secondary"
+          variant="ghost"
           :disabled="!hasPreviousPage || isLoading"
           @click="spellStore.previousPage()"
         >
@@ -239,7 +239,7 @@ async function onSaveSpell(spell) {
         </BaseButton>
         <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
         <BaseButton
-          variant="secondary"
+          variant="ghost"
           :disabled="!hasNextPage || isLoading"
           @click="spellStore.nextPage()"
         >

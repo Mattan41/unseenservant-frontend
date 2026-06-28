@@ -76,7 +76,7 @@ const saveDisplayName = async () => {
                   <div class="bg-gray-100 p-3 rounded flex-grow">
                     {{ displayName }}
                   </div>
-                  <BaseButton variant="primary" class="ml-2" @click="startEditing">Edit</BaseButton>
+                  <BaseButton variant="default" class="ml-2" @click="startEditing">Edit</BaseButton>
                 </div>
 
                 <!-- Edit mode -->
@@ -100,7 +100,7 @@ const saveDisplayName = async () => {
                     </BaseButton>
 
                     <BaseButton
-                      variant="primary"
+                      variant="default"
                       :disabled="editForm.isSaving"
                       @click="cancelEditing"
                     >
