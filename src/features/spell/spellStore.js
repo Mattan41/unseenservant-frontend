@@ -136,7 +136,9 @@ export const useSpellStore = defineStore('spell', () => {
     } catch (err) {
       console.error('Spell search failed:', err)
       error.value = 'Failed to search spells. Please try again.'
-      notificationStore.addNotification('Failed to search spells.', 'error')
+      if (!err.handled) {
+        notificationStore.addNotification('Failed to search spells.', 'error')
+      }
       searchResults.value = []
     } finally {
       isLoading.value = false
@@ -155,9 +157,10 @@ export const useSpellStore = defineStore('spell', () => {
   }
 
   /**
-   * Fetch a single spell by Open5e key, using cache if available.
-   * @param {string} key - Open5e spell key (e.g., 'srd_fireball')
-   * @returns {Promise<object>} Spell object
+   * Fetch a single spell by key, using cache if available.
+   * Normalizes the spell regardless of source (backend or Open5e).
+   * @param {string} key - Spell key (e.g., 'srd_fireball')
+   * @returns {Promise<object>} Normalized spell object
    */
   async function fetchSpellByKey(key) {
     const notificationStore = useNotificationStore()
@@ -172,13 +175,17 @@ export const useSpellStore = defineStore('spell', () => {
     try {
       const spell = await SpellService.fetchSpellByKey(key)
       if (spell && spell.key) {
-        spellCache.value.set(spell.key, spell)
+        const normalized = normalizeSpell(spell)
+        spellCache.value.set(normalized.key, normalized)
+        return normalized
       }
       return spell
     } catch (err) {
       console.error('Failed to fetch spell:', err)
       error.value = 'Failed to fetch spell details.'
-      notificationStore.addNotification('Failed to fetch spell details.', 'error')
+      if (!err.handled) {
+        notificationStore.addNotification('Failed to fetch spell details.', 'error')
+      }
       return null
     } finally {
       isLoading.value = false
