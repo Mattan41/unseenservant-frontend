@@ -1,7 +1,7 @@
 import AuthService from '@/features/auth/AuthService.js'
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { guestUser, guestUsers, guestCharacters, guestCampaigns } from '@/data/demoData.js'
+import { guestUser, guestUsers, guestCharacters, guestCampaigns, guestMessages } from '@/data/demoData.js'
 import { useUserStore } from '@/features/user/userStore.js'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -82,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('guest_users', JSON.stringify(guestUsers))
       localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
       localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
+      localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
 
       console.log('[AuthStore] Guest mode: Demo data loaded synchronously from demoData.js')
     } catch (error) {
@@ -105,6 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('guest_users')
     localStorage.removeItem('guest_characters')
     localStorage.removeItem('guest_campaigns')
+    localStorage.removeItem('guest_messages')
 
     // Clear user state when leaving guest session
     const userStore = useUserStore()
