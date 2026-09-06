@@ -1,10 +1,9 @@
 import apiClient from '@/api/apiClient.js'
-import axios from '@/api/lib/axios.js'
 import open5eAxios from '@/api/lib/open5e-axios.js'
 import { useAuthStore } from '@/features/auth/authStore'
 
 /**
- * SpellService - fetches spells from backend (authenticated) or Open5e API (guest).
+ * SpellService - fetches spells from backend (authenticated) or Open5e API (everyone else).
  *
  * Design: each method decides directly whether to call the backend or Open5e,
  * instead of routing through a URL-sniffing wrapper. Param and response-shape
@@ -18,14 +17,16 @@ const SpellService = {
   // --------------------------------------------------------------------------
 
   /**
-   * True when the current session is guest mode (no auth).
+   * Only authenticated sessions (real logged-in users with a JWT) should
+   * hit the backend DB for spells. Every other state — guest mode, plain
+   * anonymous visitors, idle — should fetch directly from the Open5e API.
    * @returns {boolean}
    */
-  _isGuestMode() {
+  _shouldUseOpen5eDirectly() {
     try {
-      return useAuthStore().isGuest || false
+      return !useAuthStore().isAuthenticated
     } catch {
-      return false
+      return true  // default to Open5e on error
     }
   },
 
@@ -54,7 +55,7 @@ const SpellService = {
   /**
    * Search spells.
    * - Authenticated: calls backend GET /api/spells (Spring Page → Open5e shape)
-   * - Guest: calls Open5e API v2 GET /spells/
+   * - Everyone else (guest mode, anonymous, idle): calls Open5e API v2 directly
    *
    * Always returns Open5e-compatible shape: { count, next, previous, results }
    *
@@ -63,8 +64,9 @@ const SpellService = {
    * @returns {Promise<object>} Paginated response
    */
   async searchSpells(query, page = 1) {
-    if (this._isGuestMode()) {
-      const response = await open5eAxios.get('/spells/', {
+    if (this._shouldUseOpen5eDirectly()) {
+      // Guest, anonymous, or idle — fetch directly from the Open5e API
+      const response = await open5eAxios.get('spells/', {
         params: {
           name__contains: query,
           page,
@@ -77,7 +79,7 @@ const SpellService = {
 
     // Authenticated → backend
     // Map Open5e 1-indexed page to Spring 0-indexed page
-    const response = await axios.get('/api/spells', {
+    const response = await apiClient.get('api/spells', {
       params: {
         query,
         page: page - 1,
@@ -96,19 +98,20 @@ const SpellService = {
   /**
    * Fetch a single spell by its Open5e key (e.g., 'srd_fireball').
    * - Authenticated: calls backend GET /api/spells/{key}
-   * - Guest: calls Open5e API v2 GET /spells/{key}/
+   * - Everyone else (guest mode, anonymous, idle): calls Open5e API v2 directly
    *
    * @param {string} key - Spell identifier key
    * @returns {Promise<object>} Spell object
    */
   async fetchSpellByKey(key) {
-    if (this._isGuestMode()) {
-      const response = await open5eAxios.get(`/spells/${key}/`)
+    if (this._shouldUseOpen5eDirectly()) {
+      // Guest, anonymous, or idle — fetch directly from the Open5e API
+      const response = await open5eAxios.get(`spells/${key}/`)
       return response.data
     }
 
     // Authenticated → backend
-    const response = await axios.get(`/api/spells/${key}`)
+    const response = await apiClient.get(`api/spells/${key}`)
     return response.data
   },
 
