@@ -585,16 +585,83 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ---
 
+## Feature: Messages
+
+### messageStore — State Shape
+
+```js
+{
+  messages: Array,              // Array of MessageDTO for the current campaign
+  isLoading: boolean,           // Loading indicator
+  error: string | null,         // Error message string
+}
+```
+
+---
+
+### GET /api/messages/campaign/{campaignId}
+
+- **Service**: MessageService.fetchCampaignMessages(campaignId)
+- **Store Action**: messageStore.fetchMessagesForCampaign(campaignId)
+- **Guest Mode**: Mocked — filters guest_messages localStorage list by campaignId
+- **Response**: Array of MessageDTO `{ id, campaignId, userId, messageBody, createdAt, updatedAt }`
+- **Status Codes**: 200, 401, 403, 404
+- **Notes**: Messages are visible only to campaign participants. Fetched on mount in the MessageBoard component.
+
+---
+
+### GET /api/messages/{id}
+
+- **Service**: MessageService.fetchMessage(id)
+- **Store Action**: Not directly exposed via store action (used internally)
+- **Guest Mode**: Mocked — finds message by ID in localStorage
+- **Response**: MessageDTO
+- **Status Codes**: 200, 401, 403, 404
+
+---
+
+### POST /api/messages
+
+- **Service**: MessageService.createMessage(campaignId, messageBody)
+- **Store Action**: messageStore.createMessage(campaignId, messageBody)
+- **Guest Mode**: Mocked — generates message with guest_demo as sender, stores in localStorage
+- **Request**: `{ campaignId: Long, messageBody: string (max 10000 chars) }`
+- **Response**: MessageDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: userId is set automatically from JWT/auth principal. Not included in request payload.
+
+---
+
+### DELETE /api/messages/{id}
+
+- **Service**: MessageService.deleteMessage(id)
+- **Store Action**: messageStore.deleteMessage(messageId)
+- **Guest Mode**: Mocked — only allows delete if the current guest user is the message sender; otherwise rejects with 403
+- **Status Codes**: 204, 401, 403, 404
+- **Notes**: Only the message's original sender can delete it. Campaign GMs cannot delete others' messages. UI only shows delete button for own messages to prevent unnecessary 403s.
+
+---
+
+### MessageDTO
+
+```json
+{
+  "id": 1,
+  "campaignId": 1,
+  "userId": 3,
+  "messageBody": "Hello!",
+  "createdAt": "2026-05-29T10:00:00",
+  "updatedAt": "2026-05-29T10:00:00"
+}
+```
+
+---
+
 ## Known Gaps and Todo Items
 
 ### Not Yet Implemented (Backend Ready)
 
-- **Messages API**: Backend endpoints exist (GET, POST, DELETE under /api/messages) but frontend integration is pending. Designed for campaign-specific message boards.
-- GET /api/messages — Get all messages
-- GET /api/messages/campaign/{campaignId} — Get campaign messages
-- GET /api/messages/{id} — Get single message
-- POST /api/messages — Create message
-- DELETE /api/messages/{id} — Delete message
+- _(none — all backend-ready endpoints have been integrated)_
 
 ### Not Yet Implemented (Planned)
 

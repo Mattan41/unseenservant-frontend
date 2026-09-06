@@ -11,11 +11,14 @@ import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import MessageBoard from '@/features/message/components/MessageBoard.vue'
+import { useMessageStore } from '@/features/message/messageStore.js'
 
 const route = useRoute()
 const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 const campaign = ref(null)
 const isLoading = ref(false)
 const isInitialLoad = ref(true)
@@ -24,6 +27,7 @@ const showSettings = ref(false)
 const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
 const showEditModal = ref(false)
+const isMessageBoardVisible = ref(false)
 
 const isOwner = computed(() => {
   if (!campaign.value || !userStore.currentUser) return false
@@ -177,6 +181,10 @@ const toggleDescription = () => {
   descriptionExpanded.value = !descriptionExpanded.value
 }
 
+const toggleMessageBoard = () => {
+  isMessageBoardVisible.value = !isMessageBoardVisible.value
+}
+
 const handleParticipantsUpdated = () => {
   loadCampaignData()
 }
@@ -191,6 +199,7 @@ onUnmounted(() => {
     const safeId = isNaN(id) ? id : parseInt(id)
     campaignStore.clearCampaignCharacters(safeId)
   }
+  messageStore.clearMessages()
 })
 
 watch(
@@ -341,6 +350,24 @@ watch(
                 <div v-else class="pl-8 py-1 text-gray-500 text-sm italic">No characters</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Message Board collapsible section -->
+        <div class="mb-4 border rounded p-3">
+          <h3 class="font-medium cursor-pointer flex items-center" @click="toggleMessageBoard">
+            <span v-if="isMessageBoardVisible" class="transform rotate-90 inline-block mr-1"
+              >›</span
+            >
+            <span v-else class="inline-block mr-1">›</span>
+            Message Board
+          </h3>
+
+          <div v-if="isMessageBoardVisible" class="mt-2">
+            <MessageBoard
+              :campaign-id="campaign.id"
+              :participants="campaign.participants"
+            />
           </div>
         </div>
 

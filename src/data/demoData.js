@@ -303,15 +303,55 @@ Have Fun: Remember, the goal is collective storytelling and enjoyment. Support y
   },
 ]
 
+export const guestMessages = [
+  {
+    id: 'guest_msg_1',
+    campaignId: 'guest_campaign_1',
+    userId: 'guest_player_1',
+    messageBody:
+      "Alright team, the entrance to the Tomb of Horrors lies just ahead. I suggest we move carefully — I've heard tales of traps that can vaporize even the hardiest adventurers.",
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 'guest_msg_2',
+    campaignId: 'guest_campaign_1',
+    userId: 'guest_player_2',
+    messageBody:
+      "Agreed. My rogue can scout ahead and check for pressure plates and tripwires. Give me a moment to don my goggles of minute seeing.",
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 'guest_msg_3',
+    campaignId: 'guest_campaign_1',
+    userId: 'guest_demo',
+    messageBody:
+      "While Frodo scouts, I'll prepare a few utility spells. Detect Magic and Identify could be invaluable in a place like this. Has anyone packed extra rations? We may be inside for a while.",
+   createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: 'guest_msg_4',
+    campaignId: 'guest_campaign_1',
+    userId: 'guest_player_3',
+    messageBody:
+      "I've got enough dried meat and waybread for a tenday. Also — did anyone else notice that strange green glow coming from the mouth of the tomb? It pulsed three times when we approached.",
+   createdAt: new Date(Date.now() - 43200000).toISOString(),
+    updatedAt: new Date(Date.now() - 43200000).toISOString(),
+ },
+]
+
 /**
  * Helper function to inject data into localStorage
  */
 export function seedLocalStorage() {
-  if (!localStorage.getItem('guest_user')) {
-    localStorage.setItem('guest_user', JSON.stringify(guestUser))
-    localStorage.setItem('guest_users', JSON.stringify(guestUsers))
-    localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
-    localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
-    console.log('[Seed] Guest data successfully initialized in localStorage!')
+   if (!localStorage.getItem('guest_user')) {
+     localStorage.setItem('guest_user', JSON.stringify(guestUser))
+     localStorage.setItem('guest_users', JSON.stringify(guestUsers))
+     localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
+     localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
+     localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
+     console.log('[Seed] Guest data successfully initialized in localStorage!')
   }
 }

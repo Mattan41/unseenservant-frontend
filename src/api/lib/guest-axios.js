@@ -13,6 +13,7 @@ const KEYS = {
   USER: 'guest_user',
   CHARACTERS: 'guest_characters',
   CAMPAIGNS: 'guest_campaigns',
+  MESSAGES: 'guest_messages',
 }
 
 // ============================================================================
@@ -167,6 +168,33 @@ const guestAxios = {
       return Promise.resolve({ data: campaigns })
     }
 
+    // Messages Routing Logic
+    if (url.includes('messages')) {
+      const messages = getData(KEYS.MESSAGES, [])
+
+      // GET /api/messages/campaign/{campaignId}
+      if (url.includes('/campaign/')) {
+        const parts = url.split('/')
+        const campaignIdx = parts.indexOf('campaign')
+        const campaignId = campaignIdx !== -1 ? parts[campaignIdx + 1]?.split('?')[0] : null
+        if (campaignId) {
+          const filtered = messages.filter(
+            (m) => String(m.campaignId) === String(campaignId),
+          )
+          return Promise.resolve({ data: filtered })
+        }
+      }
+
+      // GET /api/messages/{id}
+      const id = extractId(url)
+      if (id && id !== 'messages') {
+        const message = messages.find((m) => String(m.id) === String(id))
+        return Promise.resolve({ data: message || null })
+      }
+
+      return Promise.resolve({ data: messages })
+    }
+
     return Promise.resolve({ data: null })
   },
 
@@ -255,6 +283,23 @@ const guestAxios = {
       campaigns.push(newCampaign)
       setData(KEYS.CAMPAIGNS, campaigns)
       return Promise.resolve({ data: newCampaign })
+    }
+
+    // Create Message
+    if (url.includes('messages')) {
+      const messages = getData(KEYS.MESSAGES, [])
+      const guestUser = getData(KEYS.USER, null)
+      const newMessage = {
+        id: generateId(),
+        campaignId: data.campaignId,
+        userId: guestUser?.id || 'guest_demo',
+        messageBody: data.messageBody || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      messages.push(newMessage)
+      setData(KEYS.MESSAGES, messages)
+      return Promise.resolve({ data: newMessage })
     }
 
     return Promise.resolve({ data: null })
@@ -469,6 +514,27 @@ const guestAxios = {
           ),
         )
         return Promise.resolve({ data: { deleted: true } })
+      }
+    }
+
+    // 5. Delete Message (only sender can delete)
+    if (url.includes('messages')) {
+      const id = extractId(url)
+      if (id) {
+        const messages = getData(KEYS.MESSAGES, [])
+        const messageIndex = messages.findIndex((m) => String(m.id) === String(id))
+        if (messageIndex !== -1) {
+          const guestUser = getData(KEYS.USER, null)
+          const currentUserId = guestUser?.id || 'guest_demo'
+          // Only the message sender can delete
+          if (String(messages[messageIndex].userId) !== String(currentUserId)) {
+            const error = { data: { message: 'You do not have permission to delete this message.' }, status: 403, handled: false }
+            return Promise.reject({ response: error })
+          }
+          messages.splice(messageIndex, 1)
+          setData(KEYS.MESSAGES, messages)
+          return Promise.resolve({ data: { deleted: true } })
+        }
       }
     }
 
