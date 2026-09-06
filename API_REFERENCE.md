@@ -16,6 +16,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - Provides get, post, put, patch, and delete methods.
 - **Guest Mode Switching**: Checks authStore.isGuest to determine whether to use axios (live) or guestAxios (mock).
 - All feature services import from this module and never use axios.js directly.
+- Purely generic — no feature-specific routing or translation logic.
 
 ### src/api/lib/guest-axios.js — LocalStorage Mock Adapter
 
@@ -35,7 +36,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Auth**: Public API client. No authentication headers or interceptors are attached.
 - **Headers**: Fixed `Content-Type: application/json`.
 - **Purpose**: Provides a dedicated Axios instance specifically for fetching standardized SRD and open-licensed game mechanics (e.g., spells, monsters) from the Open5e database.
-- **Usage**: Accessed via `apiClient.getOpen5e()` and `apiClient.postOpen5e()` methods in apiClient.js.
+- **Error handling**: Response interceptor classifies transport errors (timeout/unreachable), rate limiting (429), and server errors (5xx) into user-facing notifications, matching the pattern established by `api/lib/axios.js`.
+- **Usage**: Imported and called directly by `SpellService.js` for guest-mode spell operations (search and single-spell fetch).
 
 ---
 
