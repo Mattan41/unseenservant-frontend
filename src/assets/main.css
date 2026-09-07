@@ -280,6 +280,64 @@ html[data-env='prod'] {
   @apply hover:bg-third-50 transition-colors;
 }
 
+/* Header / Footer */
+.header-footer-bg {
+  @apply bg-linear-to-r from-primary-100 to-primary-300;
+}
+.header-nav-link {
+  @apply flex items-center justify-center bg-primary-500/70 hover:bg-primary-600 px-4 rounded-full;
+}
+.header-nav-link-secondary {
+  @apply flex items-center justify-center bg-third-400/70 hover:bg-third-500 px-4 rounded-full;
+}
+.header-logo-hover {
+  @apply hover:text-primary-300;
+}
+
+/* Notification component colour types */
+.notification-success {
+  @apply bg-green-100 border border-green-400 text-green-700;
+}
+.notification-error {
+  @apply bg-red-100 border border-red-400 text-red-700;
+}
+.notification-warning {
+  @apply bg-yellow-100 border border-yellow-400 text-yellow-700;
+}
+
+/* UnderConstruction — parchment theme */
+.parchment-heading {
+  @apply text-primary-800 font-bold;
+}
+.parchment-text {
+  @apply text-primary-700;
+}
+.parchment-subtitle {
+  @apply text-primary-600 italic;
+}
+.parchment-border {
+  @apply border-primary-400;
+}
+.parchment-border-light {
+  @apply border-primary-300;
+}
+.parchment-border-lighter {
+  @apply border-primary-200;
+}
+.parchment-inset {
+  @apply bg-primary-100;
+}
+
+/* UserProfile — section/value blocks */
+.profile-section {
+  @apply bg-third-50 p-4 rounded-lg;
+}
+.profile-value {
+  @apply bg-third-100 p-3 rounded;
+}
+
+/* --------------------------------------------------------------------------
+
 /* --------------------------------------------------------------------------
    Semantic text/border role classes
    Replace direct text-third-*/border-third-* utility usage in templates.

@@ -35,16 +35,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="bg-linear-to-r from-primary-100 to-primary-300 p-4 text-center">
+  <header class="header-footer-bg p-4 text-center">
     <!-- Guest Mode Banner -->
     <div
       v-if="authStore.isGuest"
-      class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 mb-4 rounded text-sm flex items-center justify-center gap-2"
+      class="demo-notice mb-4 flex items-center justify-center gap-2"
     >
       <span>You are in demo mode — changes will not be saved</span>
       <button
         @click="exitGuestMode"
-        class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 py-2 rounded-full"
+        class="header-nav-link py-2"
       >
         <span class="font-medium">Exit demo mode</span>
       </button>
@@ -54,11 +54,11 @@ onBeforeUnmount(() => {
       <!-- Mobile menu -->
       <div class="flex md:hidden justify-between items-center">
         <RouterLink @click="closeMenu" to="/" class="block">
-          <h5 class="uppercase hover:text-primary-300">Unseen Servant</h5>
+          <h5 class="uppercase header-logo-hover">Unseen Servant</h5>
         </RouterLink>
         <button
           @click.stop="mobileMenuOpen = !mobileMenuOpen"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 py-2 rounded-full"
+          class="header-nav-link py-2"
         >
           <span>Menu</span>
         </button>
@@ -72,21 +72,21 @@ onBeforeUnmount(() => {
         <RouterLink
           @click="closeMenu"
           to="/"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">Home</h5>
         </RouterLink>
         <RouterLink
           @click="closeMenu"
           to="/about"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
         <RouterLink
           @click="closeMenu"
           to="/spells"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">Spells</h5>
         </RouterLink>
@@ -95,28 +95,28 @@ onBeforeUnmount(() => {
           <RouterLink
             @click="closeMenu"
             to="/user-profile"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">User Profile</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/characters"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/campaigns"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/logout"
-            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link-secondary"
           >
             <h5 class="p-2 uppercase">Logout</h5>
           </RouterLink>
@@ -126,21 +126,21 @@ onBeforeUnmount(() => {
           <RouterLink
             @click="closeMenu"
             to="/characters"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/campaigns"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/login"
-            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link-secondary"
           >
             <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
           v-else
           @click="closeMenu"
           to="/login"
-          class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link-secondary"
         >
           <h5 class="p-2 uppercase">Login</h5>
         </RouterLink>
@@ -160,19 +160,19 @@ onBeforeUnmount(() => {
       <div class="hidden md:flex md:flex-wrap justify-center items-center space-x-2">
         <RouterLink
           to="/"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">Home</h5>
         </RouterLink>
         <RouterLink
           to="/about"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
         <RouterLink
           to="/spells"
-          class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link"
         >
           <h5 class="p-2 uppercase">Spells</h5>
         </RouterLink>
@@ -180,25 +180,25 @@ onBeforeUnmount(() => {
         <template v-if="authStore.isAuthenticated">
           <RouterLink
             to="/user-profile"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">User Profile</h5>
           </RouterLink>
           <RouterLink
             to="/characters"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
           <RouterLink
             to="/campaigns"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
             to="/logout"
-            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link-secondary"
           >
             <h5 class="p-2 uppercase">Logout</h5>
           </RouterLink>
@@ -207,20 +207,20 @@ onBeforeUnmount(() => {
         <template v-else-if="authStore.isGuest">
           <RouterLink
             to="/characters"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
           <RouterLink
             @click="closeMenu"
             to="/campaigns"
-            class="flex items-center justify-center bg-primary-500 hover:bg-primary-600 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link"
           >
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
           <RouterLink
             to="/login"
-            class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+            class="header-nav-link-secondary"
           >
             <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
         <RouterLink
           v-else
           to="/login"
-          class="flex items-center justify-center bg-third-400 hover:bg-third-500 bg-opacity-70 px-4 rounded-full"
+          class="header-nav-link-secondary"
         >
           <h5 class="p-2 uppercase">Login</h5>
         </RouterLink>

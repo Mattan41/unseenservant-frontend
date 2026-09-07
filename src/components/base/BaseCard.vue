@@ -15,7 +15,7 @@ function handleClick() {
 
 <template>
   <div
-    class="flex flex-col justify-between bg-white border border-third-200 rounded-lg shadow-sm p-4"
+    class="flex flex-col justify-between bg-[var(--color-surface)] border border-section rounded-lg shadow-sm p-4"
     :class="{ 'hover:shadow-md transition-shadow cursor-pointer': clickable }"
     @click="clickable && handleClick()"
   >
