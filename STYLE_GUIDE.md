@@ -1,0 +1,218 @@
+# Style Guide — unseenservant-frontend
+
+> Draft based on full codebase audit, 2026-09-07.
+
+---
+
+## 1. Color Token Map
+
+> Values below mirror `src/assets/main.css`. **main.css is the source of
+> truth** — if they ever disagree, update this table to match main.css,
+> not the other way around.
+
+### 1.1 `--color-primary` (environment-aware)
+
+Set on `<html data-env="dev|prod">`. Source: `src/assets/main.css`.
+
+| Token | dev value | prod value | Status |
+|-------|-----------|------------|--------|
+| `--color-primary-50` | #bccac1 | #f9f9f9 | implemented |
+| `--color-primary-100` | #a9bdb1 | #f2f2f2 | implemented |
+| `--color-primary-200` | #96b0a1 | #e5e5e5 | implemented |
+| `--color-primary-300` | #83a391 | #d8d8d8 | implemented |
+| `--color-primary-400` | #749584 | #c5c5c5 | implemented |
+| `--color-primary-500` | #6b8e7b | #c0c0c0 | implemented |
+| `--color-primary-600` | #567263 | #a0a0a0 | implemented |
+| `--color-primary-700` | #41564a | #5c5c5c | implemented |
+| `--color-primary-800` | #2c3a32 | #3d3d3d | implemented |
+| `--color-primary-900` | #171e1a | #2b2b2b | implemented |
+
+`--color-primary` (unscaled) maps to `--primary` which resolves to the
+environment's `--primary-500` value via the `@theme` block.
+
+### 1.2 `--color-secondary` (yellow/amber — fixed)
+
+50–900 scale defined in `main.css` `@theme` block. Values range from
+`#fff8e1` (50) to `#ff6f00` (900). Base: `#ffa500`.
+
+Status: implemented.
+
+### 1.3 `--color-third` (blue-grey — fixed)
+
+50–900 scale defined in `main.css` `@theme` block. Values range from
+`#f9fafb` (50) to `#111827` (900). Base: `#374151`.
+
+Status: implemented.
+
+### 1.4 Additional semantic-role variables
+
+Based on patterns observed in the audit. Define in `src/assets/main.css`
+under the `:root` / `html[data-env]` blocks when approved.
+
+| Variable | Proposed value | Rationale | Status |
+|----------|---------------|-----------|--------|
+| `--color-surface` | `var(--color-primary-50)` | Card/modals/form backgrounds — used in 10+ components. Referenced from primary scale so it tracks the current theme (dev/prod) automatically when theming is implemented. | proposed |
+| `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
+| `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
+---
+
+## 2. Semantic Classes
+
+### 2.1 Buttons
+
+#### Legacy `.button-*` → `src/assets/main.css` (in progress)
+
+| Class | Role | Tailwind used | Status |
+|-------|------|--------------|--------|
+| `.button` | Base | ml-1 mt-1 px-2 py-1 text-xs font-semibold rounded cursor-pointer transition focus:outline-none focus:ring-2 | in progress |
+| `.button-primary` | Primary action | `bg-primary-700 text-primary-100 hover:bg-primary-800 focus:ring-primary-700` | in progress |
+| `.button-secondary` | Ghost/secondary | `bg-gray-300 text-black hover:bg-gray-400 focus:ring-gray-300` | in progress |
+| `.button-add` | Save/create | `bg-green-800 text-gray-100 hover:bg-green-900 focus:ring-green-900` | in progress |
+| `.button-update` | Update/edit | `bg-yellow-600 text-gray-200 hover:bg-yellow-700 focus:ring-yellow-500` | in progress |
+| `.button-remove` | Delete | `bg-red-900 text-gray-200 hover:bg-red-950 focus:ring-red-500` | in progress |
+| `.button-retry` | Retry | `bg-orange-500 text-gray-200 hover:bg-orange-600 focus:ring-orange-500` | in progress |
+| `.button-icon` | Icon/close | `text-third-400 hover:text-third-600 cursor-pointer leading-none transition` | in progress |
+
+Target: 0 `.button-*` usages in components (migrate to `<BaseButton>`).
+
+#### `.base-btn*` → `src/assets/base-button.css` (target)
+
+Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
+`variant` prop:
+
+| `variant` value | CSS class | Status |
+|----------------|-----------|--------|
+| `"default"` | `base-btn base-btn-default` | implemented |
+| `"ghost"` | `base-btn base-btn-ghost` | implemented |
+| `"add"` | `base-btn base-btn-add` | implemented |
+| `"update"` | `base-btn base-btn-update` | implemented |
+| `"remove"` | `base-btn base-btn-remove` | implemented |
+| `"retry"` | `base-btn base-btn-retry` | implemented |
+| `"icon"` | `base-btn base-btn-icon` | implemented |
+
+Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
+
+Props: `variant`, `disabled`, `loading`, `confirmMessage`. Emits: `click`.
+
+### 2.2 Badges → `src/assets/main.css`
+
+| Class | Color pair | School mapping | Status |
+|-------|-----------|----------------|--------|
+| `.badge` (base) | text-sm font-medium px-3 py-1 rounded-full | — | implemented |
+| `.badge-primary` | `text-primary-600 bg-primary-50` | — | implemented |
+| `.badge-secondary` | `text-third-700 bg-third-100` | — | implemented |
+| `.badge-blue` | `text-blue-800 bg-blue-100` | abjuration | implemented |
+| `.badge-purple` | `text-purple-800 bg-purple-100` | conjuration | implemented |
+| `.badge-indigo` | `text-indigo-800 bg-indigo-100` | divination | implemented |
+| `.badge-pink` | `text-pink-800 bg-pink-100` | enchantment | implemented |
+| `.badge-teal` | `text-teal-800 bg-teal-100` | illusion | implemented |
+| `.badge-yellow` | `text-yellow-800 bg-yellow-100` | transmutation | implemented |
+| `.badge-muted` | `text-third-500 bg-third-100` | necromancy, fallback | implemented |
+| `.badge-danger` | `text-red-600 bg-red-50` | evocation | implemented |
+| `.badge-info` | `text-blue-600 bg-blue-50` | — | implemented |
+
+School → badge mapping lives in `src/features/spell/spellUtils.js` →
+`getSchoolBadgeClass(school)` (returns the class name string). Components
+never contain school → color logic. This is the canonical pattern for
+all conditional styling in `*Utils.js` files.
+
+### 2.3 Other utility classes → `src/assets/main.css`
+
+| Class | Purpose | Tailwind | Status |
+|-------|---------|----------|--------|
+| `.section-heading` | Section title | `text-xl font-semibold text-primary-700` | implemented |
+| `.element-link` | Navigation link | `text-primary-900 hover:text-primary-700` | implemented |
+| `.error-message` | Error alert | `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded` | implemented |
+| `.success-message` | Success alert | `bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded` | implemented |
+
+### 2.4 Proposed new classes (not yet implemented)
+
+| Class | Purpose | Replaces | Status |
+|-------|---------|----------|--------|
+| `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | proposed |
+| `.demo-notice` | Guest mode warning banner | `bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded` (4 sites) | proposed |
+| `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | proposed |
+| `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
+| `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
+| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 z-* flex items-center justify-center bg-black/50` + content-wrapper pattern duplicated across 5 modals. This is a component extraction task — the overlay structure is duplicated, not just the color. | proposed |
+---
+
+## 3. Hard Constraints
+
+### 3.1 NO raw Tailwind color utility classes in components
+
+**Banned in all component templates:**
+- `bg-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `text-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `border-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `ring-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `fill-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `stroke-{color}-{shade}` where color is NOT white, black, gray, or transparent
+- `from-{color}-*`, `via-{color}-*`, `to-{color}-*` gradient stops using non-gray/white/black palettes
+
+**Specifically banned examples:**
+- `bg-primary-100`, `text-third-500`, `border-secondary-200`
+- `bg-yellow-100`, `text-red-700`, `border-blue-200`
+- `focus:ring-primary-500`, `hover:bg-third-200`
+
+**Allowed:**
+- `bg-white`, `bg-black`, `bg-gray-50`–`bg-gray-900`, `bg-transparent`
+- `text-white`, `text-black`, `text-gray-50`–`text-gray-900`, `text-transparent`
+- `border-white`, `border-black`, `border-gray-*`, `border-transparent`
+- `bg-black/50` (black with opacity — allowed)
+- `bg-opacity-70` modifier on an allowed base
+
+**How to comply:**
+1. Use existing semantic classes (`.badge-primary`, `.section-heading`,
+   `.element-link`, `.base-btn*`, `.error-message`, etc.)
+2. For one-off cases: `style="color: var(--color-primary-700)"`
+3. For repeated patterns (≥2 occurrences): add a new semantic class to
+   `main.css` or `base-button.css` (see §4)
+
+### 3.2 NO hex values or inline color styles in components
+
+**Banned:** `#faebd7`, `style="color: #333"`, `style="background: red"`
+
+**Allowed:** `style="background-image: url(...)"`,
+`style="color: var(--color-primary-700)"`,
+`style="backgroundSize: 'cover'"` (non-color properties)
+
+### 3.3 Components stay dumb/presentational
+
+- Components in `src/components/base/` and
+  `src/features/*/components/`: **props in, events out, no direct store
+  access**
+- **No color-decision logic** in component templates — conditional CSS
+  classes must come from a `*Utils.js` function (see
+  `spellUtils.js:getSchoolBadgeClass` as canonical example)
+- **Views** (routable pages in `views/` folders) and **layout
+  components** (Header, Footer) are exempt from this rule — they
+  can access stores, handle logic, and use color utilities directly
+  per ARCHITECTURE.md's smart/dumb component conventions
+
+### 3.4 Component-local `<style scoped>` must not duplicate central color decisions
+
+- Layout, animation, sizing in scoped styles: allowed
+- Colors in scoped styles: must use a semantic class or CSS variable
+  reference
+
+---
+
+## 4. Where to Add New Classes / Variables
+
+| What | Where | Pattern to follow |
+|------|-------|-------------------|
+| New button variant | `src/assets/base-button.css` | Add `.base-btn-{name}` with `@apply` block; update `BaseButton.vue` variant map |
+| New badge variant | `src/assets/main.css` | Add `.badge-{name}` with `@apply text-* bg-*` |
+| New utility class | `src/assets/main.css` | Add `.class-name { @apply ... }` in the existing flat list |
+| New CSS variable (palette) | `src/assets/main.css` → `@theme { }` block | `--color-{name}-{shade}: #value` |
+| New CSS variable (role) | `src/assets/main.css` → `:root { }` block | `--{role}: var(--color-{name}-{shade})` |
+| Layout/animation-only scoped style | Component's `<style scoped>` block | No color values allowed |
+
+### Process for adding a class/variable candidate
+
+1. Identify the repeated pattern (≥2 occurrences)
+2. Verify no existing semantic class covers it
+3. Propose in PR/comment with rationale
+4. Add to appropriate CSS file
+5. Replace all inline occurrences with the new class
