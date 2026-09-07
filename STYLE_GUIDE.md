@@ -89,6 +89,11 @@ Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
 | `"remove"` | `base-btn base-btn-remove` | implemented |
 | `"retry"` | `base-btn base-btn-retry` | implemented |
 | `"icon"` | `base-btn base-btn-icon` | implemented |
+| `"demo"` | `base-btn base-btn-demo` | implemented |
+| `"form"` | `base-btn base-btn-form` | implemented |
+
+- `"demo"` — guest/demo mode button. Yellow palette (`bg-yellow-100 border-yellow-400 text-yellow-800 hover:bg-yellow-200 focus:ring-yellow-300`). Distinct from `.demo-notice`, which is a banner, not a button.
+- `"form"` — larger primary call-to-action button for form submissions. Lighter shade (`bg-primary-500`) than `.base-btn-default` (`primary-700`) — a distinct variant, not an inconsistency. `w-64 h-10` sizing stays as layout utilities in the template.
 
 Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
 
@@ -129,9 +134,9 @@ all conditional styling in `*Utils.js` files.
 
 | Class | Purpose | Replaces | Status |
 |-------|---------|----------|--------|
-| `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | proposed |
+| `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | implemented |
 | `.demo-notice` | Guest mode warning banner | `bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded` (4 sites) | proposed |
-| `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | proposed |
+| `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
 | `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 z-* flex items-center justify-center bg-black/50` + content-wrapper pattern duplicated across 5 modals. This is a component extraction task — the overlay structure is duplicated, not just the color. | proposed |
@@ -161,6 +166,15 @@ all conditional styling in `*Utils.js` files.
 - `border-white`, `border-black`, `border-gray-*`, `border-transparent`
 - `bg-black/50` (black with opacity — allowed)
 - `bg-opacity-70` modifier on an allowed base
+
+**Exception — third-party brand identity:** raw Tailwind color utilities are
+permitted when representing a third-party brand's own color (e.g. a Google or
+GitHub sign-in button), since these colors are not part of our palette and must
+not be centralized into our theme tokens. Add a code comment at the usage site
+noting which brand the color represents, e.g.
+`<!-- Google brand blue, not part of our palette -->`.
+Accepted instance: `LoginComponent.vue` Google sign-in button
+(`hover:border-blue-100`, `focus:border-blue-500`, `focus:ring-blue-200`).
 
 **How to comply:**
 1. Use existing semantic classes (`.badge-primary`, `.section-heading`,

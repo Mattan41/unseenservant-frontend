@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -54,7 +55,7 @@ const handleSubmit = async () => {
     <!-- Error Message -->
     <div
       v-if="error"
-      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm"
+      class="error-message mb-4 text-sm"
     >
       {{ error }}
     </div>
@@ -69,7 +70,7 @@ const handleSubmit = async () => {
           v-model="username"
           type="text"
           placeholder="e.g., User1 or admin"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
           :disabled="isLoading"
         />
       </div>
@@ -83,22 +84,23 @@ const handleSubmit = async () => {
           v-model="password"
           type="password"
           placeholder="password"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
           :disabled="isLoading"
         />
       </div>
 
-      <button
+      <BaseButton
+        variant="form"
         type="submit"
+        class="w-64 h-10 px-3"
         :disabled="isLoading"
-        class="w-64 h-10 px-3 flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-white font-medium rounded transition duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span
           v-if="isLoading"
-          class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+          class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
         ></span>
         <span v-else>Login</span>
-      </button>
+      </BaseButton>
     </form>
 
     <div class="mt-6 text-center">

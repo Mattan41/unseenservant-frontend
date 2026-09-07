@@ -2,6 +2,7 @@
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useRouter } from 'vue-router'
 import LoginForm from '@/features/auth/LoginForm.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -50,6 +51,7 @@ const handleGuestMode = () => {
 
     <div class="flex flex-col items-center gap-4">
       <!-- Google Sign-in Button -->
+      <!-- Google brand blue (border/ring) — not part of our palette, see STYLE_GUIDE §3.1 -->
       <button
         @click.prevent="handleGoogleLogin"
         class="w-64 h-10 px-3 flex items-center justify-center bg-white border border-gray-300 rounded text-sm text-gray-800 font-medium relative transition duration-200 hover:shadow-md hover:border-blue-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -78,12 +80,13 @@ const handleGuestMode = () => {
         Or try app in demo mode
       </p>
       <!-- Guest Mode Button -->
-      <button
-        @click.prevent="handleGuestMode"
-        class="w-64 h-10 px-3 flex items-center justify-center bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800 font-medium relative transition duration-200 hover:bg-yellow-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+      <BaseButton
+        variant="demo"
+        class="w-64 h-10 px-3 text-sm font-medium relative hover:shadow-md"
+        @click="handleGuestMode"
       >
-        <span class="font-medium">Guest Demo mode</span>
-      </button>
+        Guest Demo mode
+      </BaseButton>
     </div>
   </div>
 </template>

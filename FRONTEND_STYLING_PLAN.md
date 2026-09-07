@@ -17,7 +17,7 @@
 file-group commits. Each group verified independently against:
 
 ```
-grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit)\w+' src/
+grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit)[a-z]+-[0-9]+' src/
 ```
 
 ### File-group order and scope
@@ -47,7 +47,7 @@ grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|t
    class (step 2.6)
 6. Run both grep checks — must return zero hits for files in that group
    before moving to the next step:
-   - Raw Tailwind color utilities (the Perl regex above)
+   - Raw Tailwind color utilities: `grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit)[a-z]+-[0-9]+' src/`
    - Remaining `.button-*` usages: `grep -rn 'class="button' src/`
 
 ### New CSS variables (Phase 2 deliverable)

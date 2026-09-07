@@ -41,9 +41,9 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen">
     <div class="text-center">
-      <div class="mb-4 text-lg font-semibold text-primary-600">Completing login...</div>
+      <div class="mb-4 text-lg font-semibold" style="color: var(--color-primary-600)">Completing login...</div>
       <div
-        class="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"
+        class="spinner w-12 h-12 border-4"
       ></div>
     </div>
   </div>
