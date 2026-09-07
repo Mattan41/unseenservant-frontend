@@ -268,6 +268,17 @@ html[data-env='prod'] {
 .character-name {
   @apply text-primary-700 hover:text-primary-800;
 }
+/* Spell feature */
+
+/* Search history badge hover */
+.spell-history-hover {
+  @apply hover:bg-third-200 transition-colors;
+}
+
+/* Search result row hover */
+.spell-row-hover {
+  @apply hover:bg-third-50 transition-colors;
+}
 
 /* --------------------------------------------------------------------------
    Semantic text/border role classes

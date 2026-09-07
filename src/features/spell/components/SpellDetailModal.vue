@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { getSchoolBadgeClass } from '@/features/spell/spellUtils.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 
 const props = defineProps({
   spell: {
@@ -27,15 +28,13 @@ function close() {
 
 <template>
   <Teleport to="body">
-    <div v-if="visible && spell" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/50" @click="close"></div>
-
+    <BaseModal v-if="visible && spell" @close="close">
       <div
-        class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
+        class="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
       >
         <!-- Modal header -->
         <div class="flex items-start justify-between mb-4">
-          <h3 class="text-2xl font-bold text-third-800">{{ spell.name }}</h3>
+          <h3 class="text-2xl font-bold" style="color: var(--color-third-800)">{{ spell.name }}</h3>
           <BaseButton variant="icon" class="text-xl" @click="close">✕</BaseButton>
         </div>
 
@@ -55,7 +54,7 @@ function close() {
         </div>
 
         <!-- Spell metadata -->
-        <div class="space-y-3 text-third-700">
+        <div class="space-y-3 text-default">
           <p v-if="spell.range !== null && spell.range !== ''">
             <strong>Range:</strong> {{ spell.range }}
           </p>
@@ -71,19 +70,19 @@ function close() {
 
         <!-- Description -->
         <div class="mt-4">
-          <h4 class="font-semibold text-third-800 mb-2">Description</h4>
+          <h4 class="font-semibold mb-2" style="color: var(--color-third-800)">Description</h4>
           <div
             v-if="spell.desc || spell.description"
-            class="text-third-600 prose prose-sm max-w-none"
+            class="text-secondary prose prose-sm max-w-none"
           >
             <p>{{ spell.desc || spell.description }}</p>
           </div>
           <div v-if="spell.higher_level" class="mt-2">
-            <h5 class="font-semibold text-third-700">At Higher Levels:</h5>
-            <p class="text-third-600">{{ spell.higher_level }}</p>
+            <h5 class="font-semibold text-default">At Higher Levels:</h5>
+            <p class="text-secondary">{{ spell.higher_level }}</p>
           </div>
         </div>
       </div>
-    </div>
+    </BaseModal>
   </Teleport>
 </template>

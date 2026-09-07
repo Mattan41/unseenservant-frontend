@@ -65,8 +65,8 @@ async function onSaveSpell(spell) {
   <div class="spell-search">
     <!-- Header with 5E context -->
     <div class="mb-4">
-      <h4 class="text-third-800 mb-0.5">Search 5E Spells</h4>
-      <p class="text-xs text-third-700">
+      <h4 class="mb-0.5" style="color: var(--color-third-800)">Search 5E Spells</h4>
+      <p class="text-xs text-default">
         Search spells compatible with the 5th Edition of the world's oldest fantasy roleplaying
         game.
       </p>
@@ -77,7 +77,8 @@ async function onSaveSpell(spell) {
           v-model="searchInput"
           type="text"
           placeholder="Search spells (e.g., fireball, healing, charm)..."
-          class="w-full px-4 py-3 pr-10 border border-third-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-third-800"
+          class="w-full px-4 py-3 pr-10 border border-input rounded-lg input-field"
+          style="color: var(--color-third-800)"
           @input="onSearchInput"
           @keydown.escape="onClearSearch"
         />
@@ -94,12 +95,12 @@ async function onSaveSpell(spell) {
     </div>
 
     <div v-if="searchHistory?.length > 0 && !currentQuery" class="mb-4">
-      <p class="text-xs text-third-400 mb-1">Recent searches:</p>
+      <p class="text-xs text-subtle mb-1">Recent searches:</p>
       <div class="flex flex-wrap gap-1">
         <button
           v-for="item in searchHistory"
           :key="item.timestamp"
-          class="badge badge-secondary hover:bg-third-200 transition-colors"
+          class="badge badge-secondary spell-history-hover"
           @click="onHistoryClick(item.query)"
         >
           {{ item.query }}
@@ -109,9 +110,9 @@ async function onSaveSpell(spell) {
 
     <div v-if="isLoading" class="flex justify-center items-center py-8">
       <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"
+        class="spinner h-8 w-8 border-t-2 border-b-2"
       ></div>
-      <span class="ml-3 text-third-500">Searching spells...</span>
+      <span class="ml-3 text-muted">Searching spells...</span>
     </div>
 
     <div v-else-if="error" class="text-center py-8">
@@ -123,7 +124,7 @@ async function onSaveSpell(spell) {
 
     <div v-else-if="searchResults?.length > 0">
       <div class="flex items-center justify-between mb-3">
-        <p class="text-sm text-third-500">
+        <p class="text-sm text-muted">
           Found {{ totalResults }} spell{{ totalResults !== 1 ? 's' : '' }}
           <span v-if="totalPages > 1">— Page {{ currentPage }} of {{ totalPages }}</span>
         </p>
@@ -131,7 +132,7 @@ async function onSaveSpell(spell) {
 
       <div
         v-if="totalPages > 1"
-        class="flex items-center justify-center gap-4 mb-4 pt-4 border-t border-third-200"
+        class="flex items-center justify-center gap-4 mb-4 pt-4 border-t border-section"
       >
         <BaseButton
           variant="ghost"
@@ -140,7 +141,7 @@ async function onSaveSpell(spell) {
         >
           ← Previous
         </BaseButton>
-        <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
+        <span class="text-sm text-muted">Page {{ currentPage }} of {{ totalPages }}</span>
         <BaseButton
           variant="ghost"
           :disabled="!hasNextPage || isLoading"
@@ -151,10 +152,11 @@ async function onSaveSpell(spell) {
       </div>
 
       <div
-        class="flex flex-col border border-third-200 rounded-lg overflow-hidden bg-white shadow-sm"
+        class="flex flex-col border border-section rounded-lg overflow-hidden bg-[var(--color-surface)] shadow-sm"
       >
         <div
-          class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-2 bg-third-50 border-b border-third-200 font-semibold text-xs text-third-500 uppercase tracking-wider"
+          class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-2 border-b border-section font-semibold text-xs text-muted uppercase tracking-wider"
+          style="background-color: var(--color-third-50)"
         >
           <div>Name</div>
           <div>Level</div>
@@ -166,13 +168,13 @@ async function onSaveSpell(spell) {
         <div
           v-for="spell in searchResults"
           :key="spell.key"
-          class="border-b border-third-100 last:border-b-0"
+          class="border-b border-subtle last:border-b-0"
         >
           <div
-            class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-3 items-center cursor-pointer hover:bg-third-50 transition-colors"
+            class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-3 items-center cursor-pointer spell-row-hover"
             @click="toggleExpand(spell.key)"
           >
-            <div class="font-medium text-third-800 flex items-center gap-1.5 flex-wrap">
+            <div class="font-medium flex items-center gap-1.5 flex-wrap" style="color: var(--color-third-800)">
               {{ spell.name }}
               <span
                 v-if="spell.concentration"
@@ -187,9 +189,9 @@ async function onSaveSpell(spell) {
                 >R</span
               >
             </div>
-            <div class="text-sm text-third-600">{{ spell.levelLabel }}</div>
-            <div class="text-sm text-third-500 capitalize">{{ spell.school }}</div>
-            <div class="text-xs text-third-400 italic truncate">{{ spell.sourceLabel }}</div>
+            <div class="text-sm text-secondary">{{ spell.levelLabel }}</div>
+            <div class="text-sm text-muted capitalize">{{ spell.school }}</div>
+            <div class="text-xs text-subtle italic truncate">{{ spell.sourceLabel }}</div>
             <div class="w-16 flex justify-end" @click.stop>
               <BaseButton
                 v-if="props.characterId"
@@ -204,16 +206,17 @@ async function onSaveSpell(spell) {
 
           <div
             v-if="expandedSpellKey === spell.key"
-            class="px-4 pb-4 pt-2 bg-third-50/50 border-t border-third-100 text-sm text-third-700"
+            class="px-4 pb-4 pt-2 border-t border-subtle text-sm text-default"
+            style="background-color: color-mix(in srgb, var(--color-third-50) 50%, transparent)"
           >
             <div
-              class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs text-third-500 border-b border-third-100 pb-2"
+              class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs text-muted border-b border-subtle pb-2"
             >
               <div><strong>Casting Time:</strong> {{ spell.casting_time }}</div>
               <div><strong>Range:</strong> {{ spell.range }}</div>
               <div><strong>Duration:</strong> {{ spell.duration }}</div>
             </div>
-            <div class="prose prose-sm max-w-none text-third-600 whitespace-pre-line mb-2">
+            <div class="prose prose-sm max-w-none text-secondary whitespace-pre-line mb-2">
               {{ spell.desc }}
             </div>
             <button
@@ -228,7 +231,7 @@ async function onSaveSpell(spell) {
 
       <div
         v-if="totalPages > 1"
-        class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-third-200"
+        class="flex items-center justify-center gap-4 mt-6 pt-4 border-t border-section"
       >
         <BaseButton
           variant="ghost"
@@ -237,7 +240,7 @@ async function onSaveSpell(spell) {
         >
           ← Previous
         </BaseButton>
-        <span class="text-sm text-third-500">Page {{ currentPage }} of {{ totalPages }}</span>
+        <span class="text-sm text-muted">Page {{ currentPage }} of {{ totalPages }}</span>
         <BaseButton
           variant="ghost"
           :disabled="!hasNextPage || isLoading"
@@ -249,26 +252,26 @@ async function onSaveSpell(spell) {
     </div>
 
     <div v-else-if="currentQuery && !isLoading && !error" class="text-center py-8">
-      <p class="text-third-500">No spells found for "{{ currentQuery }}".</p>
-      <p class="text-sm text-third-400 mt-1">Try a different search term.</p>
+      <p class="text-muted">No spells found for "{{ currentQuery }}".</p>
+      <p class="text-sm text-subtle mt-1">Try a different search term.</p>
     </div>
 
     <div v-else class="text-center py-8">
-      <p class="text-third-800 text-sm">
+      <p class="text-sm" style="color: var(--color-third-800)">
         Why not start with searching for the handy spell
         <span class="italic animate-pulse font-medium">Unseen Servant</span>
       </p>
     </div>
 
     <!-- Attribution footer -->
-    <div class="mt-6 pt-4 border-t border-third-100 text-center">
-      <p class="text-[11px] text-third-800 italic">
+    <div class="mt-6 pt-4 border-t border-subtle text-center">
+      <p class="text-[11px] italic" style="color: var(--color-third-800)">
         Data provided via the
         <a
           href="https://open5e.com"
           target="_blank"
           rel="noopener"
-          class="underline hover:text-primary-500 font-medium"
+          class="element-link underline font-medium"
           >Open5e API</a
         >.
       </p>
