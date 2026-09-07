@@ -5,7 +5,7 @@ const props = defineProps({
   // retry, icon, demo, form.
   variant: {
     type: String,
-    default: 'primary',
+    default: 'default',
   },
   disabled: {
     type: Boolean,
