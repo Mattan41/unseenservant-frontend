@@ -136,6 +136,9 @@ all conditional styling in `*Utils.js` files.
 | `.campaign-nav-tooltip` | Tooltip for the campaign nav button | `absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none` | implemented |
 | `.scroll-hint` | Scroll indicator in the sidebar campaign list | `absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full` | implemented |
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
+| `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
+| `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
+| `.character-name` | Character name (clickable card title) | `text-primary-700 hover:text-primary-800` | implemented |
 
 ### 2.4 Proposed new classes (not yet implemented)
 
@@ -153,35 +156,23 @@ all conditional styling in `*Utils.js` files.
 
 ### 3.1 NO raw Tailwind color utility classes in components
 
-**Banned in all component templates:**
-- `bg-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `text-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `border-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `ring-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `fill-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `stroke-{color}-{shade}` where color is NOT white, black, gray, or transparent
-- `from-{color}-*`, `via-{color}-*`, `to-{color}-*` gradient stops using non-gray/white/black palettes
+**Banned in all component templates:** any `bg-{color}-{shade}`,
+`text-{color}-{shade}`, `border-{color}-{shade}`, `ring-{color}-{shade}`,
+`fill-{color}-{shade}`, `stroke-{color}-{shade}`, or
+`from-{color}-*/via-{color}-*/to-{color}-*` gradient stop — regardless of
+whether the color name is `primary`, `secondary`, `third`, `red`, `blue`,
+`yellow`, `gray`, or any other Tailwind palette.
 
-**Specifically banned examples:**
-- `bg-primary-100`, `text-third-500`, `border-secondary-200`
-- `bg-yellow-100`, `text-red-700`, `border-blue-200`
-- `focus:ring-primary-500`, `hover:bg-third-200`
+All colors that affect text, surface, or border contrast must route through
+our own semantic classes or variables so contrast stays correct if the user
+switches theme. The only exceptions are:
 
-**Allowed:**
-- `bg-white`, `bg-black`, `bg-gray-50`–`bg-gray-900`, `bg-transparent`
-- `text-white`, `text-black`, `text-gray-50`–`text-gray-900`, `text-transparent`
-- `border-white`, `border-black`, `border-gray-*`, `border-transparent`
-- `bg-black/50` (black with opacity — allowed)
-- `bg-opacity-70` modifier on an allowed base
-
-**Exception — third-party brand identity:** raw Tailwind color utilities are
-permitted when representing a third-party brand's own color (e.g. a Google or
-GitHub sign-in button), since these colors are not part of our palette and must
-not be centralized into our theme tokens. Add a code comment at the usage site
-noting which brand the color represents, e.g.
-`<!-- Google brand blue, not part of our palette -->`.
-Accepted instance: `LoginComponent.vue` Google sign-in button
+**(a) Third-party brand identity** (already documented):
+`LoginComponent.vue` Google sign-in button
 (`hover:border-blue-100`, `focus:border-blue-500`, `focus:ring-blue-200`).
+
+**(b) Modal backdrop dimming layer:** `bg-black/50` in `BaseModal.vue`,
+which is a fixed scrim, not a themed surface or text color.
 
 **How to comply:**
 1. Use existing semantic classes (`.badge-primary`, `.section-heading`,
@@ -189,6 +180,11 @@ Accepted instance: `LoginComponent.vue` Google sign-in button
 2. For one-off cases: `style="color: var(--color-primary-700)"`
 3. For repeated patterns (≥2 occurrences): add a new semantic class to
    `main.css` or `base-button.css` (see §4)
+
+Specifically banned examples (now including gray/white/black shades):
+- `bg-primary-100`, `text-third-500`, `border-secondary-200`
+- `bg-yellow-100`, `text-red-700`, `border-blue-200`
+- `text-gray-500`, `bg-white`, `border-gray-300`
 
 ### 3.2 NO hex values or inline color styles in components
 

@@ -253,6 +253,21 @@ html[data-env='prod'] {
   @apply text-primary-600 hover:text-primary-800;
 }
 
+/* Character attribute tag (race/class) */
+.character-tag {
+  @apply inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full;
+}
+
+/* Character level tag */
+.character-tag-level {
+  @apply inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full;
+}
+
+/* Character name (clickable card title) */
+.character-name {
+  @apply text-primary-700 hover:text-primary-800;
+}
+
 h1,
 h2,
 h3,
