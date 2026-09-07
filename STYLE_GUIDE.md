@@ -129,6 +129,13 @@ all conditional styling in `*Utils.js` files.
 | `.element-link` | Navigation link | `text-primary-900 hover:text-primary-700` | implemented |
 | `.error-message` | Error alert | `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded` | implemented |
 | `.success-message` | Success alert | `bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded` | implemented |
+| `.campaign-selector` | Campaign-switcher link/button in the sidebar | `w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative group no-underline border border-primary-400 hover:scale-110 flex-shrink-0` | implemented |
+| `.campaign-selector--active` | Active/selected state modifier for `.campaign-selector` | `ring-2 ring-primary-500` | implemented |
+| `.campaign-tooltip` | Hover tooltip showing campaign names in the sidebar | `absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none` | implemented |
+| `.campaign-nav-button` | "+" add/navigate-to-campaigns button | `w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative group mt-2 hover:scale-110 flex-shrink-0` | implemented |
+| `.campaign-nav-tooltip` | Tooltip for the campaign nav button | `absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none` | implemented |
+| `.scroll-hint` | Scroll indicator in the sidebar campaign list | `absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full` | implemented |
+| `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
 
 ### 2.4 Proposed new classes (not yet implemented)
 

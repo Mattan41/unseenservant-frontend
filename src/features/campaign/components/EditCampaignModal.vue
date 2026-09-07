@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+  <BaseModal @close="emitClose">
     <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
@@ -48,7 +48,7 @@
         <!-- Guest mode disclaimer -->
         <div
           v-if="isGuestMode"
-          class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3"
+          class="demo-notice mb-3"
         >
           ⚠️ Image upload is not supported in guest mode. A default image will be used.
         </div>
@@ -59,7 +59,8 @@
               v-if="previewImageUrl"
               :src="previewImageUrl"
               alt="Campaign image preview"
-              class="w-24 h-24 rounded-lg object-cover border-2 border-primary-300"
+              class="w-24 h-24 rounded-lg object-cover border-2"
+              style="border-color: var(--color-primary-300)"
             />
             <div
               v-if="previewImageUrl && !isGuestMode"
@@ -112,13 +113,14 @@
         </BaseButton>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)

@@ -17,7 +17,7 @@
 file-group commits. Each group verified independently against:
 
 ```
-grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit)[a-z]+-[0-9]+' src/
+grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit|opacity|[trbl]-[0-9])[a-z]+-[0-9]+' src/
 ```
 
 ### File-group order and scope
@@ -38,16 +38,17 @@ grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|t
 2. Add new semantic classes to `main.css` or `base-button.css` for repeated
    patterns (`.spinner`, `.demo-notice`, `.input-field`, `.section-primary`)
 3. Migrate `.button-*` → `<BaseButton>` within the step's files:
-   - Step 2.2: `ImportCharacterModal.vue` has a `.button-add` usage
-   - Step 2.3: `CampaignView.vue` and `CharacterView.vue` have
-     `.button-primary` and `.button-secondary` usages
+   - Step 2.2: `ImportCharacterModal.vue` (`.button-add`) and
+     `CampaignView.vue` (`.button-primary`) — both done ✅
+   - Step 2.3: `CharacterView.vue` has `.button-primary` and
+     `.button-secondary` usages
 4. Extract `<BaseModal>` when the overlay pattern is touched (likely in step
    2.2 or 2.3)
 5. Replace NotificationComponent hex values with the `.notification-base`
    class (step 2.6)
 6. Run both grep checks — must return zero hits for files in that group
    before moving to the next step:
-   - Raw Tailwind color utilities: `grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit)[a-z]+-[0-9]+' src/`
+   - Raw Tailwind color utilities: `grep -rnP 'class="[^"]*\b(bg|text|border|ring|from|via|to)-(?!white|black|gray|transparent|current|inherit|opacity|[trbl]-[0-9])[a-z]+-[0-9]+' src/`
    - Remaining `.button-*` usages: `grep -rn 'class="button' src/`
 
 ### New CSS variables (Phase 2 deliverable)

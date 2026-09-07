@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 
 const campaignStore = useCampaignStore()
 
@@ -33,10 +34,7 @@ const createCampaign = async () => {
     <BaseButton variant="add" @click="showCreateCampaignModal = true">
       Create new campaign
     </BaseButton>
-    <div
-      v-if="showCreateCampaignModal"
-      class="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-primary-600 bg-opacity-50"
-    >
+    <BaseModal v-if="showCreateCampaignModal" @close="showCreateCampaignModal = false">
       <div class="bg-white p-8 rounded">
         <h3 class="text-lg font-bold mb-4">Create a new campaign</h3>
         <form @submit.prevent="createCampaign">
@@ -74,6 +72,6 @@ const createCampaign = async () => {
         </form>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
       </div>
-    </div>
+    </BaseModal>
   </div>
 </template>

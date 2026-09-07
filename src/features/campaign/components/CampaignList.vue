@@ -23,7 +23,7 @@ onMounted(async () => {
     </h2>
     <div v-if="campaignStore.isLoading" class="text-center p-8">
       <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"
+        class="spinner h-8 w-8 border-b-2"
       ></div>
       <p class="mt-2">Loading campaigns...</p>
     </div>
@@ -31,7 +31,8 @@ onMounted(async () => {
       <li
         v-for="campaign in campaignStore.campaigns"
         :key="campaign.id"
-        class="mb-4 p-4 bg-primary-100 rounded"
+        class="mb-4 p-4 rounded"
+        style="background-color: var(--color-primary-100)"
       >
         <RouterLink
           :to="{ name: 'CampaignView', params: { id: campaign.id } }"
@@ -63,7 +64,7 @@ onMounted(async () => {
             <button
               v-if="campaignStore.getCampaignDescription(campaign.id).length > 150"
               @click.prevent="toggleDescription(campaign.id)"
-              class="text-primary-600 hover:text-primary-800 text-sm mt-1"
+              class="read-more-link text-sm mt-1"
             >
               {{ expandedDescriptions[campaign.id] ? 'Show Less' : 'Read More' }}
             </button>

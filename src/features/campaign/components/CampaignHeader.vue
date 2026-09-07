@@ -55,7 +55,8 @@ defineEmits(['edit-click', 'toggle-description'])
           <button
             v-if="description && description.length > 60"
             @click="$emit('toggle-description')"
-            class="text-xs text-primary-500 mt-1 hover:underline"
+            class="text-xs mt-1 hover:underline"
+            style="color: var(--color-primary-500)"
           >
             {{ descriptionExpanded ? 'Show less' : 'Read more' }}
           </button>
