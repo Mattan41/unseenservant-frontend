@@ -87,8 +87,8 @@ const submitCharacter = async () => {
 
 <template>
   <div class="container mx-auto p-4 max-w-2xl">
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div class="p-6 border-b border-gray-200">
+    <div class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
+      <div class="p-6 border-b border-section">
         <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">Create New Character</h1>
       </div>
 
@@ -105,25 +105,25 @@ const submitCharacter = async () => {
           <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">Basic Information</h3>
 
           <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-1"
+            <label for="name" class="block text-sm font-medium text-default mb-1"
               >Character Name</label
             >
             <input
               id="name"
               v-model="character.name"
               type="text"
-              class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
               placeholder="Enter character name"
             />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="mb-4">
-              <label for="race" class="block text-sm font-medium text-gray-700 mb-1">Race</label>
+              <label for="race" class="block text-sm font-medium text-default mb-1">Race</label>
               <select
                 id="race"
                 v-model="character.race"
-                class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               >
                 <option value="" disabled>Select a race</option>
                 <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
@@ -131,11 +131,11 @@ const submitCharacter = async () => {
             </div>
 
             <div class="mb-4">
-              <label for="class" class="block text-sm font-medium text-gray-700 mb-1">Class</label>
+              <label for="class" class="block text-sm font-medium text-default mb-1">Class</label>
               <select
                 id="class"
                 v-model="character.characterClass"
-                class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               >
                 <option value="" disabled>Select a class</option>
                 <option v-for="charClass in characterClasses" :key="charClass" :value="charClass">
@@ -146,7 +146,7 @@ const submitCharacter = async () => {
           </div>
 
           <div class="mb-4">
-            <label for="level" class="block text-sm font-medium text-gray-700 mb-1"
+            <label for="level" class="block text-sm font-medium text-default mb-1"
               >Level (1-20)</label
             >
             <input
@@ -155,7 +155,7 @@ const submitCharacter = async () => {
               type="number"
               min="1"
               max="20"
-              class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
             />
           </div>
         </div>
@@ -166,7 +166,7 @@ const submitCharacter = async () => {
 
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
-              <label :for="stat" class="block text-sm font-medium text-gray-700 mb-1 capitalize">{{
+              <label :for="stat" class="block text-sm font-medium text-default mb-1 capitalize">{{
                 stat
               }}</label>
               <input
@@ -175,7 +175,7 @@ const submitCharacter = async () => {
                 type="number"
                 min="1"
                 max="30"
-                class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               />
             </div>
           </div>

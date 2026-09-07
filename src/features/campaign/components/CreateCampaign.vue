@@ -35,11 +35,11 @@ const createCampaign = async () => {
       Create new campaign
     </BaseButton>
     <BaseModal v-if="showCreateCampaignModal" @close="showCreateCampaignModal = false">
-      <div class="bg-white p-8 rounded">
+      <div class="bg-[var(--color-surface)] p-8 rounded">
         <h3 class="text-lg font-bold mb-4">Create a new campaign</h3>
         <form @submit.prevent="createCampaign">
           <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-gray-700"
+            <label for="name" class="block text-sm font-medium text-default"
               >Name of your campaign</label
             >
             <input
@@ -50,7 +50,7 @@ const createCampaign = async () => {
             />
           </div>
           <div class="mb-4">
-            <label for="description" class="block text-sm font-medium text-gray-700"
+            <label for="description" class="block text-sm font-medium text-default"
               >Description</label
             >
             <textarea

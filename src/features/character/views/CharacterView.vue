@@ -186,7 +186,7 @@ const deleteCharacter = async () => {
         </div>
 
         <!-- Additional info -->
-        <div class="p-6 border-t border-gray-200">
+        <div class="p-6 border-t border-section">
           <h2 class="section-heading mb-4">Additional Information</h2>
           <p>
             <strong>Created:</strong>
@@ -199,7 +199,7 @@ const deleteCharacter = async () => {
         </div>
 
         <!-- Spells -->
-        <div class="p-6 border-t border-gray-200">
+        <div class="p-6 border-t border-section">
           <div class="flex items-center justify-between mb-4">
             <h2 class="section-heading">Spells</h2>
             <BaseButton

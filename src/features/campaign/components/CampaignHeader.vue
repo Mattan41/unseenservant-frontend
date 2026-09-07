@@ -45,10 +45,10 @@ defineEmits(['edit-click', 'toggle-description'])
 
       <!-- Campaign description with line clamp -->
       <div class="mt-3 break-words whitespace-pre-line">
-        <p v-if="!description" class="italic text-gray-500 text-sm">No description available.</p>
+        <p v-if="!description" class="italic text-muted text-sm">No description available.</p>
 
         <template v-else>
-          <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-gray-700">
+          <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-default">
             {{ description }}
           </p>
 

@@ -34,7 +34,7 @@ const viewCharacter = (id) => {
       <div
         class="spinner h-8 w-8 border-t-2 border-b-2"
       ></div>
-      <p class="mt-2 text-gray-600">Loading characters...</p>
+      <p class="mt-2 text-secondary">Loading characters...</p>
     </div>
 
     <div v-else-if="characterStore.characters.length === 0" class="text-center py-8">
@@ -45,7 +45,7 @@ const viewCharacter = (id) => {
       <div
         v-for="character in characterStore.characters"
         :key="character.id"
-        class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-gray-100 flex flex-col h-full"
+        class="bg-[var(--color-surface)] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-subtle flex flex-col h-full"
         @click="viewCharacter(character.id)"
       >
         <!-- Character card -->
@@ -67,7 +67,7 @@ const viewCharacter = (id) => {
               </h5>
 
               <!-- Campaign with icon-->
-              <div class="flex items-center text-xs text-gray-600 mt-1">
+              <div class="flex items-center text-xs text-secondary mt-1">
                 <span class="inline-flex items-center truncate w-full">
                   <span class="mr-1 flex-shrink-0">🏰</span>
                   <span
@@ -108,7 +108,7 @@ const viewCharacter = (id) => {
           class="px-4 py-2 border-t flex justify-between items-center"
           style="background-color: var(--color-third-50); border-color: var(--color-third-100)"
         >
-          <div class="text-xs text-gray-500 truncate mr-2">
+          <div class="text-xs text-muted truncate mr-2">
             <span v-if="character.lastUpdated"
               >Updated {{ new Date(character.lastUpdated).toLocaleDateString() }}</span
             >

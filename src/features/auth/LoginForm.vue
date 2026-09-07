@@ -40,16 +40,16 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="login max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+  <div class="login max-w-md mx-auto mt-10 p-6 bg-[var(--color-surface)] rounded-lg shadow-md">
     <div class="flex flex-col items-center mb-8">
       <img src="@/assets/logo.svg" alt="Hat Man" class="w-16 h-16 mb-3 object-contain" />
-      <div class="text-center pb-4 mb-6 border-b border-gray-100 flex flex-col items-center">
-        <h2 class="text-xl font-bold text-gray-700 tracking-wide uppercase">Demo Login</h2>
-        <p class="text-xs text-gray-500 mt-2 max-w-xs normal-case italic font-normal">
+      <div class="text-center pb-4 mb-6 border-b border-subtle flex flex-col items-center">
+        <h2 class="text-xl font-bold text-default tracking-wide uppercase">Demo Login</h2>
+        <p class="text-xs text-muted mt-2 max-w-xs normal-case italic font-normal">
           Log in with a demo account to test the app
         </p>
       </div>
-      <p class="text-xs text-gray-400 mt-1 font-medium tracking-wider uppercase">Sign in</p>
+      <p class="text-xs text-subtle mt-1 font-medium tracking-wider uppercase">Sign in</p>
     </div>
 
     <!-- Error Message -->
@@ -62,7 +62,7 @@ const handleSubmit = async () => {
 
     <form @submit.prevent="handleSubmit" class="flex flex-col items-center gap-4">
       <div class="w-64">
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="username" class="block text-sm font-medium text-default mb-1">
           Username
         </label>
         <input
@@ -70,13 +70,13 @@ const handleSubmit = async () => {
           v-model="username"
           type="text"
           placeholder="e.g., User1 or admin"
-          class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+          class="input-field w-full px-3 py-2 border border-input rounded-md"
           :disabled="isLoading"
         />
       </div>
 
       <div class="w-64">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="password" class="block text-sm font-medium text-default mb-1">
           Password
         </label>
         <input
@@ -84,7 +84,7 @@ const handleSubmit = async () => {
           v-model="password"
           type="password"
           placeholder="password"
-          class="input-field w-full px-3 py-2 border border-gray-300 rounded-md"
+          class="input-field w-full px-3 py-2 border border-input rounded-md"
           :disabled="isLoading"
         />
       </div>
@@ -104,12 +104,12 @@ const handleSubmit = async () => {
     </form>
 
     <div class="mt-6 text-center">
-      <p class="text-xs text-gray-400 font-medium tracking-wider uppercase mb-2">Demo Accounts</p>
-      <p class="text-xs text-gray-500">
+      <p class="text-xs text-subtle font-medium tracking-wider uppercase mb-2">Demo Accounts</p>
+      <p class="text-xs text-muted">
         Users: <span class="font-mono">User1</span> - <span class="font-mono">User5</span>
       </p>
-      <p class="text-xs text-gray-500">Admin: <span class="font-mono">admin</span></p>
-      <p class="text-xs text-gray-400 mt-1">
+      <p class="text-xs text-muted">Admin: <span class="font-mono">admin</span></p>
+      <p class="text-xs text-subtle mt-1">
         All passwords: <span class="font-mono">password</span>
       </p>
     </div>

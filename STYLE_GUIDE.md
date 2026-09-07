@@ -51,7 +51,7 @@ under the `:root` / `html[data-env]` blocks when approved.
 
 | Variable | Proposed value | Rationale | Status |
 |----------|---------------|-----------|--------|
-| `--color-surface` | `var(--color-primary-50)` | Card/modals/form backgrounds — used in 10+ components. Referenced from primary scale so it tracks the current theme (dev/prod) automatically when theming is implemented. | proposed |
+| `--color-surface` | `#ffffff` | Card/modals/form backgrounds — used in 10+ components. Defined as a true neutral (not derived from primary) so it supports a future dark mode without being tied to the accent hue. A dark-mode value is TBD in Phase 5. | implemented |
 | `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
 | `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
 ---
@@ -139,6 +139,13 @@ all conditional styling in `*Utils.js` files.
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-name` | Character name (clickable card title) | `text-primary-700 hover:text-primary-800` | implemented |
+| `.text-subtle` | Faint labels, e.g. "Sign in" | `text-third-400` | implemented |
+| `.text-muted` | Help text, empty states | `text-third-500` | implemented |
+| `.text-secondary` | Secondary body text, loading text | `text-third-600` | implemented |
+| `.text-default` | Form labels, headings, primary body text | `text-third-700` | implemented |
+| `.border-subtle` | Light dividers between grouped items | `border-third-100` | implemented |
+| `.border-section` | Section dividers between major content areas | `border-third-200` | implemented |
+| `.border-input` | Input and button borders | `border-third-300` | implemented |
 
 ### 2.4 Proposed new classes (not yet implemented)
 
@@ -173,6 +180,16 @@ switches theme. The only exceptions are:
 
 **(b) Modal backdrop dimming layer:** `bg-black/50` in `BaseModal.vue`,
 which is a fixed scrim, not a themed surface or text color.
+
+> **Important — our own palette utilities are also banned in templates:**
+> `text-primary-{shade}`, `bg-third-{shade}`, `border-secondary-{shade}`,
+> etc. are not permitted in component templates even though the tokens are
+> defined in our `@theme` block. They must go through a named role class
+> (`.text-default`, `.text-subtle`, etc.) or a component-specific semantic
+> class (`.character-tag`, `.campaign-selector`, etc.) — same as any other
+> color utility. The only place direct palette utilities are allowed is
+> inside `src/assets/main.css` and `src/assets/base-button.css` where the
+> role/component classes are defined.
 
 **How to comply:**
 1. Use existing semantic classes (`.badge-primary`, `.section-heading`,

@@ -1,6 +1,6 @@
 <template>
   <BaseModal @close="emitClose">
-    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
+    <div class="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
         <BaseButton variant="icon" @click="emitClose">
@@ -17,7 +17,7 @@
       </div>
 
       <div class="mb-3">
-        <label for="campaign-name" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="campaign-name" class="block text-sm font-medium text-default mb-1">
           Campaign Name
         </label>
         <input
@@ -30,7 +30,7 @@
       </div>
 
       <div class="mb-3">
-        <label for="campaign-description" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="campaign-description" class="block text-sm font-medium text-default mb-1">
           Description
         </label>
         <textarea
@@ -43,7 +43,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Image</label>
+        <label class="block text-sm font-medium text-default mb-1">Campaign Image</label>
 
         <!-- Guest mode disclaimer -->
         <div
@@ -86,7 +86,7 @@
           >
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
           </BaseButton>
-          <span v-else class="text-sm text-gray-500 italic">
+          <span v-else class="text-sm text-muted italic">
             {{
               previewImageUrl
                 ? 'Current image (cannot change in guest mode)'
@@ -94,7 +94,7 @@
             }}
           </span>
         </div>
-        <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
+        <div v-if="!isGuestMode" class="text-xs text-muted mt-1">
           Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
         </div>
       </div>

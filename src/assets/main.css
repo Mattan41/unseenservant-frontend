@@ -49,6 +49,7 @@
 /* Standard (if not set) or explicit DEV (Greenish) */
 :root,
 html[data-env='dev'] {
+  --color-surface: #ffffff;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -267,6 +268,34 @@ html[data-env='prod'] {
 .character-name {
   @apply text-primary-700 hover:text-primary-800;
 }
+
+/* --------------------------------------------------------------------------
+   Semantic text/border role classes
+   Replace direct text-third-*/border-third-* utility usage in templates.
+   -------------------------------------------------------------------------- */
+
+.text-subtle {
+  @apply text-third-400;
+} /* faint labels, e.g. "Sign in" */
+.text-muted {
+  @apply text-third-500;
+} /* help text, empty states */
+.text-secondary {
+  @apply text-third-600;
+} /* secondary body text */
+.text-default {
+  @apply text-third-700;
+} /* form labels, headings, primary body text */
+
+.border-subtle {
+  @apply border-third-100;
+} /* light dividers between grouped items */
+.border-section {
+  @apply border-third-200;
+} /* section dividers between major content areas */
+.border-input {
+  @apply border-third-300;
+} /* input and button borders */
 
 h1,
 h2,

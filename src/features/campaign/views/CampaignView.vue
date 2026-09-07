@@ -261,11 +261,11 @@ watch(
           </h3>
 
           <div v-if="isCharactersListVisible" class="mt-2">
-            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-gray-500">
+            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-muted">
               Loading characters...
             </div>
 
-            <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-gray-500">
+            <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-muted">
               No participants in this campaign yet.
             </div>
 
@@ -285,7 +285,7 @@ watch(
                   >
                     {{ data.participant.nickname }}
                   </span>
-                  <span v-if="data.participant.role" class="text-gray-600 ml-1 truncate">
+                  <span v-if="data.participant.role" class="text-secondary ml-1 truncate">
                     ({{ data.participant.role }})
                   </span>
                   <span
@@ -302,7 +302,7 @@ watch(
                   <div
                     v-for="character in data.characters"
                     :key="character.id"
-                    class="py-1 flex flex-wrap items-center text-gray-700"
+                    class="py-1 flex flex-wrap items-center text-default"
                   >
                     <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)">◦</span>
                     <CharacterImage
@@ -319,7 +319,7 @@ watch(
                     </span>
                     <span
                       v-if="character.characterClass"
-                      class="text-sm text-gray-600 ml-1 truncate"
+                      class="text-sm text-secondary ml-1 truncate"
                     >
                       ({{ character.characterClass
                       }}<span v-if="character.level"> , Level {{ character.level }} </span>)
@@ -353,7 +353,7 @@ watch(
                 </div>
 
                 <!-- If the participant has no characters yet in the campaign -->
-                <div v-else class="pl-8 py-1 text-gray-500 text-sm italic">No characters</div>
+                <div v-else class="pl-8 py-1 text-muted text-sm italic">No characters</div>
               </div>
             </div>
           </div>

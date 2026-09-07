@@ -311,7 +311,7 @@ const transferOwnership = (participant) => {
             >
               <div class="mb-2 sm:mb-0">
                 <div class="font-medium">{{ user.displayName || user.username }}</div>
-                <div class="text-sm text-gray-500">{{ user.email }}</div>
+                <div class="text-sm text-muted">{{ user.email }}</div>
               </div>
               <!--             todo: can we have a checkbox here instead of button? and add all selected users with a button -->
               <BaseButton
@@ -350,7 +350,7 @@ const transferOwnership = (participant) => {
               </div>
 
               <!-- Owner info -->
-              <div v-if="participant.id === userStore.userId" class="text-sm text-gray-500">
+              <div v-if="participant.id === userStore.userId" class="text-sm text-muted">
                 This is you
               </div>
 
@@ -415,7 +415,7 @@ const transferOwnership = (participant) => {
 
         <div
           v-if="(campaign?.participants || []).length === 0"
-          class="text-center py-3 text-gray-500"
+          class="text-center py-3 text-muted"
         >
           No participants in this campaign yet.
         </div>

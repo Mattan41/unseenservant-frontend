@@ -84,11 +84,11 @@ watch(
 
       <div v-if="characterStore.isLoading" class="text-center py-8">
         <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
-        <p class="mt-2 text-gray-600">Loading available characters...</p>
+        <p class="mt-2 text-secondary">Loading available characters...</p>
       </div>
 
       <div v-else-if="availableCharacters.length === 0" class="text-center py-8">
-        <p class="text-gray-600">You don't have any characters available to import.</p>
+        <p class="text-secondary">You don't have any characters available to import.</p>
         <BaseButton variant="add" @click="router.push({ name: 'CreateCharacter' })">
           Create a new character
         </BaseButton>
@@ -102,7 +102,7 @@ watch(
         <div
           v-for="character in availableCharacters"
           :key="character.id"
-          class="rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
+          class="rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-subtle flex flex-col"
           style="background-color: var(--color-primary-50)"
         >
           <div class="p-4 flex-grow">
@@ -124,7 +124,7 @@ watch(
                 </h5>
 
                 <!-- Character basic info -->
-                <div class="flex items-center text-xs text-gray-600 mt-1">
+                <div class="flex items-center text-xs text-secondary mt-1">
                   <span>{{ character.race }}</span>
                   <span class="mx-1">•</span>
                   <span>{{ character.characterClass }} (Level {{ character.level }})</span>
