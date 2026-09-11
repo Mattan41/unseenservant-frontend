@@ -26,3 +26,6 @@ uploads/
 # --- OS & System ---
 .DS_Store
 Thumbs.db
+
+### Local files ###
+docs/local/
