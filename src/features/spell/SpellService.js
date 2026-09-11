@@ -30,31 +30,13 @@ const SpellService = {
     }
   },
 
-  /**
-   * Translate a Spring Page response into the Open5e paginated shape.
-   * Spring: { content, totalElements, totalPages, number, size, ... }
-   * Open5e: { count, next, previous, results }
-   * @param {object} springData
-   * @returns {object}
-   */
-  _springPageToOpen5e(springData) {
-    const currentPage = springData.number ?? 0
-    const totalPages = springData.totalPages ?? 1
-    return {
-      count: springData.totalElements ?? 0,
-      next: currentPage < totalPages - 1 ? `/spells/?page=${currentPage + 2}` : null,
-      previous: currentPage > 0 ? `/spells/?page=${currentPage}` : null,
-      results: springData.content || [],
-    }
-  },
-
   // --------------------------------------------------------------------------
   // Public API
   // --------------------------------------------------------------------------
 
   /**
    * Search spells.
-   * - Authenticated: calls backend GET /api/spells (Spring Page → Open5e shape)
+   * - Authenticated: calls backend GET /api/spells
    * - Everyone else (guest mode, anonymous, idle): calls Open5e API v2 directly
    *
    * Always returns Open5e-compatible shape: { count, next, previous, results }
@@ -87,11 +69,6 @@ const SpellService = {
       },
     })
 
-    // If the backend returned a Spring Page, translate to Open5e shape
-    if (response.data && response.data.content !== undefined) {
-      return this._springPageToOpen5e(response.data)
-    }
-
     return response.data
   },
 
@@ -123,6 +100,9 @@ const SpellService = {
   async saveSpellToCharacter(characterId, normalizedSpell) {
     // This structure ensures Spring Boot can find 'slug' and 'name' directly at the root,
     // while guest mode and future homebrew features have access to everything.
+    // Note: isHomebrew and spellDetails are not read by the backend today — Jackson silently
+    // ignores unknown fields. They exist so guest mode (which reads spellDetails) and a future
+    // homebrew feature don't require a payload-shape change later.
     const unifiedPayload = {
       slug: normalizedSpell.key,
       name: normalizedSpell.name,

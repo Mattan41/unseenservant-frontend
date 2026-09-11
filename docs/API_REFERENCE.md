@@ -219,32 +219,39 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ```
 
 ---
+### GET /api/spells (or Open5e /v2/spells/)
 
-### GET https://api.open5e.com/v2/spells/
-
-- **Service**: SpellService.searchSpells(query, page)
-- **Store Action**: spellStore.searchSpells(query, page) or spellStore.debouncedSearch(query, page)
-- **Guest Mode**: Not applicable (external API)
-- **Query Params**:
-  - `name__contains`: Search term for spell name
-  - `page`: Page number (default 1)
-  - `limit`: Results per page (fixed at 50)
-  - `ordering`: Sort order (fixed at 'name')
-- **Response Body**: `{ count: number, next: string|null, previous: string|null, results: Array<Spell> }`
-- **Status Codes**: 200
-- **Notes**: Debounced by 300ms in store to reduce API load. Results are automatically normalized and cached.
+- **Service**: SpellService.searchSpells(query, page)[cite: 3]
+- **Store Action**: spellStore.searchSpells(query, page) or spellStore.debouncedSearch(query, page)[cite: 3]
+- **Routing Policy**:
+  - **Authenticated** (OAuth & Demo backend login): calls backend `GET /api/spells` (returns `{ count, results }`)[cite: 1, 3]
+  - **Unauthenticated & Guest mode**: calls Open5e API v2 directly via `open5eAxios` (public SRD data)[cite: 3]
+  - *(Note: Character spell assignments /api/characters/{id}/spells are mocked in localStorage during Guest mode, but spell discovery queries Open5e directly)*[cite: 3]
+- **Query Params (Backend)**:
+  - `query`: Search string matched case-insensitively against spell name[cite: 1]
+  - `page`: Page number (0-indexed, default 0; frontend passes `page - 1`)[cite: 1, 3]
+  - `size`: Results per page (default 20, max 100; frontend passes 50)[cite: 1, 3]
+- **Query Params (Open5e Direct)**:
+  - `name__contains`: Search term for spell name[cite: 3]
+  - `page`: Page number (1-indexed, default 1)[cite: 3]
+  - `limit`: Results per page (fixed at 50)[cite: 3]
+  - `ordering`: Sort order (fixed at 'name')[cite: 3]
+- **Response Body**: `{ count: number, next: string|null, previous: string|null, results: Array<Spell> }`[cite: 3]
+- **Status Codes**: 200, 401[cite: 1, 3]
+- **Notes**: Debounced by 300ms in store to reduce API load[cite: 3]. Results are automatically normalized and cached[cite: 3]. Blank query returns `{ count: 0, results: [] }` on backend[cite: 1].
 
 ---
 
-### GET https://api.open5e.com/v2/spells/{key}/
+### GET /api/spells/{slug} (or Open5e /v2/spells/{key}/)
 
-- **Service**: SpellService.fetchSpellByKey(key)
-- **Store Action**: spellStore.fetchSpellByKey(key)
-- **Guest Mode**: Not applicable (external API)
-- **Response**: Single Spell object from Open5e
-- **Status Codes**: 200, 404
-- **Notes**: Checks local cache first before making API call. Spell is normalized and cached on fetch.
-
+- **Service**: SpellService.fetchSpellByKey(key)[cite: 3]
+- **Store Action**: spellStore.fetchSpellByKey(key)[cite: 3]
+- **Routing Policy**:
+  - **Authenticated**: calls backend `GET /api/spells/{slug}`[cite: 3, 4]
+  - **Unauthenticated & Guest mode**: calls Open5e API v2 directly via `open5eAxios` (public SRD data)[cite: 3]
+- **Response**: Single normalized Spell object (or full raw Open5e object mapped from backend raw JSON)[cite: 1, 3]
+- **Status Codes**: 200, 401, 404[cite: 3]
+- **Notes**: Checks local `spellCache` first before making API call[cite: 3]. Spell is normalized and cached on fetch[cite: 3].
 ---
 
 ### POST /api/characters/{characterId}/spells
@@ -257,8 +264,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
   {
     slug: string,              // Spell key (from normalizedSpell.key)
     name: string,              // Spell name (from normalizedSpell.name)
-    isHomebrew: boolean,       // Homebrew flag (default false)
-    spellDetails: object       // Full normalized spell object for guest mode and future homebrew features
+    isHomebrew: boolean,       // Homebrew flag (default false) — currently ignored by backend
+    spellDetails: object       // Full normalized spell object for guest mode and future homebrew features — currently ignored by backend
   }
   ```
 - **Response**: Saved spell response
@@ -665,7 +672,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### Not Yet Implemented (Planned)
 
-- **Character Homebrew Spells**: While the Open5e integration is complete, the homebrew spell creation feature is not yet implemented. The data structure supports it (isHomebrew flag, spellDetails payload), but UI and backend endpoints for creating custom spells are pending.
+- **Character Homebrew Spells**: While the Open5e integration is complete, the homebrew spell creation feature is not yet implemented. The data structure supports it (isHomebrew flag, spellDetails payload), but UI and backend endpoints for creating custom spells are pending. Note: The backend currently ignores these fields in spell save requests.
 
 ### Minor Mismatches
 

@@ -340,7 +340,7 @@ html[data-env='prod'] {
    Semantic text/border role classes
    Replace direct text-third-X/border-third-X utility usage in templates.
    -------------------------------------------------------------------------- */
-  .text-subtle {
+.text-subtle {
   @apply text-third-400;
 } /* faint labels, e.g. "Sign in" */
 .text-muted {
