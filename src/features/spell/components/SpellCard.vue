@@ -39,7 +39,9 @@ const shortDescription = computed(() => {
   <BaseCard clickable @click="emit('click', spell)">
     <div>
       <div class="flex items-start justify-between gap-2 mb-2">
-        <h4 class="text-lg font-semibold line-clamp-2" style="color: var(--color-third-800)">{{ spell.name }}</h4>
+        <h4 class="text-lg font-semibold line-clamp-2" style="color: var(--color-third-800)">
+          {{ spell.name }}
+        </h4>
         <span
           v-if="spell.school"
           class="badge capitalize shrink-0"
@@ -50,7 +52,9 @@ const shortDescription = computed(() => {
       </div>
 
       <div class="flex items-center gap-3 text-sm text-muted mb-2">
-        <span class="font-medium" style="color: var(--color-primary-600)">{{ spell.levelLabel }}</span>
+        <span class="font-medium" style="color: var(--color-primary-600)">{{
+          spell.levelLabel
+        }}</span>
       </div>
 
       <p class="text-sm text-secondary leading-relaxed mb-3">{{ shortDescription }}</p>

@@ -168,9 +168,7 @@ const submitCharacter = async () => {
   <div class="container mx-auto p-4 max-w-2xl">
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
-      <div
-        class="spinner h-8 w-8 border-t-2 border-b-2"
-      ></div>
+      <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2 text-secondary">Loading character...</p>
     </div>
 
@@ -183,13 +181,12 @@ const submitCharacter = async () => {
       <form @submit.prevent="submitCharacter" class="p-6">
         <!-- Character Image Section -->
         <div class="mb-6">
-          <h5 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">Character Image</h5>
+          <h5 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Character Image
+          </h5>
 
           <!-- Guest mode disclaimer -->
-          <div
-            v-if="isGuestMode"
-            class="demo-notice mb-3"
-          >
+          <div v-if="isGuestMode" class="demo-notice mb-3">
             ⚠️ Image upload is not supported in guest mode. A default image will be used.
           </div>
 
@@ -217,12 +214,7 @@ const submitCharacter = async () => {
               accept=".jpg,.jpeg,.png,.gif,.webp"
               class="hidden"
             />
-            <BaseButton
-              v-if="!isGuestMode"
-              variant="ghost"
-              type="button"
-              @click="triggerFileInput"
-            >
+            <BaseButton v-if="!isGuestMode" variant="ghost" type="button" @click="triggerFileInput">
               Upload new image
             </BaseButton>
             <span v-else class="text-sm text-muted italic">
@@ -236,7 +228,9 @@ const submitCharacter = async () => {
 
         <!-- Basic Information Section -->
         <div class="mb-6">
-          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">Basic Information</h4>
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Basic Information
+          </h4>
           <div class="mb-4">
             <label for="name" class="block text-sm font-medium text-default mb-1"
               >Character Name</label
@@ -292,7 +286,9 @@ const submitCharacter = async () => {
 
         <!-- Character Stats Section -->
         <div class="mb-6">
-          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">Character Stats</h4>
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Character Stats
+          </h4>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
               <label :for="stat" class="block text-sm font-medium text-default mb-1 capitalize">{{

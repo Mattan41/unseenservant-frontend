@@ -1,6 +1,8 @@
 <template>
   <BaseModal @close="emitClose">
-    <div class="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
+    <div
+      class="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto"
+    >
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
         <BaseButton variant="icon" @click="emitClose">
@@ -46,10 +48,7 @@
         <label class="block text-sm font-medium text-default mb-1">Campaign Image</label>
 
         <!-- Guest mode disclaimer -->
-        <div
-          v-if="isGuestMode"
-          class="demo-notice mb-3"
-        >
+        <div v-if="isGuestMode" class="demo-notice mb-3">
           ⚠️ Image upload is not supported in guest mode. A default image will be used.
         </div>
 
@@ -78,12 +77,7 @@
             accept=".jpg,.jpeg,.png,.gif,.webp"
             class="hidden"
           />
-          <BaseButton
-            v-if="!isGuestMode"
-            variant="ghost"
-            type="button"
-            @click="triggerFileInput"
-          >
+          <BaseButton v-if="!isGuestMode" variant="ghost" type="button" @click="triggerFileInput">
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
           </BaseButton>
           <span v-else class="text-sm text-muted italic">
@@ -100,15 +94,8 @@
       </div>
 
       <div class="flex space-x-3">
-        <BaseButton variant="ghost" :disabled="isUpdating" @click="emitClose">
-          Cancel
-        </BaseButton>
-        <BaseButton
-          variant="add"
-          :disabled="isUpdating"
-          :loading="isUpdating"
-          @click="saveChanges"
-        >
+        <BaseButton variant="ghost" :disabled="isUpdating" @click="emitClose"> Cancel </BaseButton>
+        <BaseButton variant="add" :disabled="isUpdating" :loading="isUpdating" @click="saveChanges">
           Save Changes
         </BaseButton>
       </div>

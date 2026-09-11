@@ -89,20 +89,21 @@ const submitCharacter = async () => {
   <div class="container mx-auto p-4 max-w-2xl">
     <div class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
       <div class="p-6 border-b border-section">
-        <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">Create New Character</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">
+          Create New Character
+        </h1>
       </div>
 
       <form @submit.prevent="submitCharacter" class="p-6">
-        <div
-          v-if="formError"
-          class="error-message mb-4"
-        >
+        <div v-if="formError" class="error-message mb-4">
           {{ formError }}
         </div>
 
         <!-- Basic Info -->
         <div class="mb-6">
-          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">Basic Information</h3>
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
+            Basic Information
+          </h3>
 
           <div class="mb-4">
             <label for="name" class="block text-sm font-medium text-default mb-1"
@@ -162,7 +163,9 @@ const submitCharacter = async () => {
 
         <!-- Character Stats -->
         <div class="mb-6">
-          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">Character Stats</h3>
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
+            Character Stats
+          </h3>
 
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
@@ -183,13 +186,11 @@ const submitCharacter = async () => {
 
         <!-- Buttons -->
         <div class="flex justify-end space-x-3 mt-8">
-  <BaseButton variant="ghost" @click="cancel">
-    Cancel
-  </BaseButton>
-  <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
-    Create Character
-  </BaseButton>
-</div>
+          <BaseButton variant="ghost" @click="cancel"> Cancel </BaseButton>
+          <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
+            Create Character
+          </BaseButton>
+        </div>
       </form>
     </div>
   </div>

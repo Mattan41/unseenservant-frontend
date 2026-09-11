@@ -22,9 +22,7 @@ onMounted(async () => {
       <CreateCampaign />
     </h2>
     <div v-if="campaignStore.isLoading" class="text-center p-8">
-      <div
-        class="spinner h-8 w-8 border-b-2"
-      ></div>
+      <div class="spinner h-8 w-8 border-b-2"></div>
       <p class="mt-2">Loading campaigns...</p>
     </div>
     <ul v-else>

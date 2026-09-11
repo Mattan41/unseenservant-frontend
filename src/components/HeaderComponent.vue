@@ -37,15 +37,9 @@ onBeforeUnmount(() => {
 <template>
   <header class="header-footer-bg p-4 text-center">
     <!-- Guest Mode Banner -->
-    <div
-      v-if="authStore.isGuest"
-      class="demo-notice mb-4 flex items-center justify-center gap-2"
-    >
+    <div v-if="authStore.isGuest" class="demo-notice mb-4 flex items-center justify-center gap-2">
       <span>You are in demo mode — changes will not be saved</span>
-      <button
-        @click="exitGuestMode"
-        class="header-nav-link py-2"
-      >
+      <button @click="exitGuestMode" class="header-nav-link py-2">
         <span class="font-medium">Exit demo mode</span>
       </button>
     </div>
@@ -56,10 +50,7 @@ onBeforeUnmount(() => {
         <RouterLink @click="closeMenu" to="/" class="block">
           <h5 class="uppercase header-logo-hover">Unseen Servant</h5>
         </RouterLink>
-        <button
-          @click.stop="mobileMenuOpen = !mobileMenuOpen"
-          class="header-nav-link py-2"
-        >
+        <button @click.stop="mobileMenuOpen = !mobileMenuOpen" class="header-nav-link py-2">
           <span>Menu</span>
         </button>
       </div>
@@ -69,168 +60,88 @@ onBeforeUnmount(() => {
         v-if="mobileMenuOpen"
         class="mobile-menu md:hidden flex flex-col space-y-2 mt-2 transition-all duration-300"
       >
-        <RouterLink
-          @click="closeMenu"
-          to="/"
-          class="header-nav-link"
-        >
+        <RouterLink @click="closeMenu" to="/" class="header-nav-link">
           <h5 class="p-2 uppercase">Home</h5>
         </RouterLink>
-        <RouterLink
-          @click="closeMenu"
-          to="/about"
-          class="header-nav-link"
-        >
+        <RouterLink @click="closeMenu" to="/about" class="header-nav-link">
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
-        <RouterLink
-          @click="closeMenu"
-          to="/spells"
-          class="header-nav-link"
-        >
+        <RouterLink @click="closeMenu" to="/spells" class="header-nav-link">
           <h5 class="p-2 uppercase">Spells</h5>
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated">
-          <RouterLink
-            @click="closeMenu"
-            to="/user-profile"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/user-profile" class="header-nav-link">
             <h5 class="p-2 uppercase">User Profile</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/characters"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/campaigns"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/logout"
-            class="header-nav-link-secondary"
-          >
+          <RouterLink @click="closeMenu" to="/logout" class="header-nav-link-secondary">
             <h5 class="p-2 uppercase">Logout</h5>
           </RouterLink>
         </template>
 
         <template v-else-if="authStore.isGuest">
-          <RouterLink
-            @click="closeMenu"
-            to="/characters"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/campaigns"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/login"
-            class="header-nav-link-secondary"
-          >
+          <RouterLink @click="closeMenu" to="/login" class="header-nav-link-secondary">
             <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
         </template>
 
-        <RouterLink
-          v-else
-          @click="closeMenu"
-          to="/login"
-          class="header-nav-link-secondary"
-        >
+        <RouterLink v-else @click="closeMenu" to="/login" class="header-nav-link-secondary">
           <h5 class="p-2 uppercase">Login</h5>
         </RouterLink>
       </div>
 
       <!-- Desktop menu -->
       <div class="hidden md:flex md:flex-wrap justify-center items-center space-x-2">
-        <RouterLink
-          to="/"
-          class="header-nav-link"
-        >
+        <RouterLink to="/" class="header-nav-link">
           <h5 class="p-2 uppercase">Home</h5>
         </RouterLink>
-        <RouterLink
-          to="/about"
-          class="header-nav-link"
-        >
+        <RouterLink to="/about" class="header-nav-link">
           <h5 class="p-2 uppercase">About</h5>
         </RouterLink>
-        <RouterLink
-          to="/spells"
-          class="header-nav-link"
-        >
+        <RouterLink to="/spells" class="header-nav-link">
           <h5 class="p-2 uppercase">Spells</h5>
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated">
-          <RouterLink
-            to="/user-profile"
-            class="header-nav-link"
-          >
+          <RouterLink to="/user-profile" class="header-nav-link">
             <h5 class="p-2 uppercase">User Profile</h5>
           </RouterLink>
-          <RouterLink
-            to="/characters"
-            class="header-nav-link"
-          >
+          <RouterLink to="/characters" class="header-nav-link">
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
-          <RouterLink
-            to="/campaigns"
-            class="header-nav-link"
-          >
+          <RouterLink to="/campaigns" class="header-nav-link">
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
-          <RouterLink
-            to="/logout"
-            class="header-nav-link-secondary"
-          >
+          <RouterLink to="/logout" class="header-nav-link-secondary">
             <h5 class="p-2 uppercase">Logout</h5>
           </RouterLink>
         </template>
 
         <template v-else-if="authStore.isGuest">
-          <RouterLink
-            to="/characters"
-            class="header-nav-link"
-          >
+          <RouterLink to="/characters" class="header-nav-link">
             <h5 class="p-2 uppercase">Characters</h5>
           </RouterLink>
-          <RouterLink
-            @click="closeMenu"
-            to="/campaigns"
-            class="header-nav-link"
-          >
+          <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
-          <RouterLink
-            to="/login"
-            class="header-nav-link-secondary"
-          >
+          <RouterLink to="/login" class="header-nav-link-secondary">
             <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
         </template>
 
-        <RouterLink
-          v-else
-          to="/login"
-          class="header-nav-link-secondary"
-        >
+        <RouterLink v-else to="/login" class="header-nav-link-secondary">
           <h5 class="p-2 uppercase">Login</h5>
         </RouterLink>
       </div>

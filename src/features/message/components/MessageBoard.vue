@@ -31,9 +31,7 @@ const isSending = ref(false)
  */
 function getSenderNickname(userId) {
   if (!props.participants || !props.participants.length) return 'Unknown User'
-  const participant = props.participants.find(
-    (p) => String(p.id) === String(userId),
-  )
+  const participant = props.participants.find((p) => String(p.id) === String(userId))
   return participant?.nickname || 'Unknown User'
 }
 
@@ -88,19 +86,14 @@ onUnmounted(() => {
   <div>
     <!-- Loading state -->
     <div v-if="isLoading" class="flex items-center justify-center py-4">
-      <div
-        class="spinner h-6 w-6"
-      ></div>
+      <div class="spinner h-6 w-6"></div>
       <span class="ml-2 text-muted">Loading messages...</span>
     </div>
 
     <!-- Error state -->
     <div v-else-if="error" class="py-4 text-center">
       <p class="error-message mb-2">{{ error }}</p>
-      <BaseButton
-        variant="retry"
-        @click="messageStore.fetchMessagesForCampaign(campaignId)"
-      >
+      <BaseButton variant="retry" @click="messageStore.fetchMessagesForCampaign(campaignId)">
         Retry
       </BaseButton>
     </div>

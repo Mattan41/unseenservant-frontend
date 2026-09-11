@@ -57,10 +57,7 @@ watch(
     class="w-16 flex flex-col min-h-screen items-center py-4 space-y-4 relative custom-gradient flex-shrink-0"
   >
     <!-- Scroll hint at top if scrollable -->
-    <div
-      v-if="isScrollable"
-      class="scroll-hint top-2 z-10 animate-pulse"
-    ></div>
+    <div v-if="isScrollable" class="scroll-hint top-2 z-10 animate-pulse"></div>
 
     <!-- Campaign list wrapper (Added ref="listRef" here) -->
     <div
@@ -85,9 +82,7 @@ watch(
             : {}
         "
       >
-        <span
-          class="campaign-tooltip"
-        >
+        <span class="campaign-tooltip">
           {{ userCampaign.name }}
         </span>
       </RouterLink>
@@ -97,23 +92,13 @@ watch(
     <div
       class="h-2 rounded-md flex items-center justify-center text-white font-medium relative group w-full"
     >
-      <div
-        v-if="isScrollable"
-        class="scroll-hint bottom-2 animate-pulse"
-      ></div>
+      <div v-if="isScrollable" class="scroll-hint bottom-2 animate-pulse"></div>
     </div>
 
     <!-- Navigation action button -->
-    <RouterLink
-      to="/campaigns"
-      class="campaign-nav-button group"
-    >
+    <RouterLink to="/campaigns" class="campaign-nav-button group">
       <span class="text-xl">+</span>
-      <span
-        class="campaign-nav-tooltip"
-      >
-        to campaign overview
-      </span>
+      <span class="campaign-nav-tooltip"> to campaign overview </span>
     </RouterLink>
   </aside>
 </template>

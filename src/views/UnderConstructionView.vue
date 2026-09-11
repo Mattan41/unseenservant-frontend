@@ -1,13 +1,28 @@
 <template>
   <div
     class="min-h-screen flex items-center justify-center p-4"
-    style="background-image: linear-gradient(to bottom right, var(--color-primary-50), var(--color-primary-100))"
+    style="
+      background-image: linear-gradient(
+        to bottom right,
+        var(--color-primary-50),
+        var(--color-primary-100)
+      );
+    "
   >
-    <div class="w-full max-w-2xl border-4 parchment-border shadow-xl relative p-8" style="background-color: var(--color-primary-50)">
+    <div
+      class="w-full max-w-2xl border-4 parchment-border shadow-xl relative p-8"
+      style="background-color: var(--color-primary-50)"
+    >
       <!-- Parchment texture effect -->
       <div
         class="absolute inset-0 opacity-90"
-        style="background-image: linear-gradient(to bottom, var(--color-primary-50), var(--color-primary-100))"
+        style="
+          background-image: linear-gradient(
+            to bottom,
+            var(--color-primary-50),
+            var(--color-primary-100)
+          );
+        "
       ></div>
       <div class="absolute inset-2 border-2 parchment-border-light border-dashed"></div>
       <div class="absolute inset-4 border parchment-border-lighter border-dashed opacity-50"></div>

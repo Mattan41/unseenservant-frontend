@@ -29,17 +29,22 @@ const viewCharacter = (id) => {
 
 <template>
   <div class="container mx-auto p-4">
-    <h1 class="p-4 mb-4 rounded-lg font-bold" style="background-color: var(--color-primary-100); color: var(--color-primary-900)">Characters</h1>
+    <h1
+      class="p-4 mb-4 rounded-lg font-bold"
+      style="background-color: var(--color-primary-100); color: var(--color-primary-900)"
+    >
+      Characters
+    </h1>
     <div v-if="characterStore.isLoading || loading" class="text-center py-8">
-      <div
-        class="spinner h-8 w-8 border-t-2 border-b-2"
-      ></div>
+      <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2 text-secondary">Loading characters...</p>
     </div>
 
     <div v-else-if="characterStore.characters.length === 0" class="text-center py-8">
       <p style="color: var(--color-third-600)">You don't have any characters yet.</p>
-      <p class="text-sm mt-1" style="color: var(--color-third-400)">Click the button below to create your first one.</p>
+      <p class="text-sm mt-1" style="color: var(--color-third-400)">
+        Click the button below to create your first one.
+      </p>
     </div>
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
@@ -84,21 +89,13 @@ const viewCharacter = (id) => {
           <!-- Character information -->
           <div class="mt-3 pt-2 border-t" style="border-color: var(--color-third-100)">
             <div class="flex flex-wrap gap-2">
-              <span
-                class="character-tag"
-              >
+              <span class="character-tag">
                 {{ character.race }}
               </span>
-              <span
-                class="character-tag"
-              >
+              <span class="character-tag">
                 {{ character.characterClass }}
               </span>
-              <span
-                class="character-tag-level"
-              >
-                Level {{ character.level }}
-              </span>
+              <span class="character-tag-level"> Level {{ character.level }} </span>
             </div>
           </div>
         </div>
@@ -147,7 +144,7 @@ const viewCharacter = (id) => {
         :to="{ name: 'CreateCharacter' }"
         class="base-btn base-btn-add inline-flex items-center"
       >
-      Create New Character
+        Create New Character
       </router-link>
     </div>
   </div>

@@ -346,7 +346,12 @@ const transferOwnership = (participant) => {
               <!-- Participant info -->
               <div class="flex justify-between items-center">
                 <div class="font-medium">{{ participant.nickname }}</div>
-                <div class="px-2 py-1 rounded text-sm" style="background-color: var(--color-primary-300)">{{ participant.role }}</div>
+                <div
+                  class="px-2 py-1 rounded text-sm"
+                  style="background-color: var(--color-primary-300)"
+                >
+                  {{ participant.role }}
+                </div>
               </div>
 
               <!-- Owner info -->
@@ -413,10 +418,7 @@ const transferOwnership = (participant) => {
           </li>
         </ul>
 
-        <div
-          v-if="(campaign?.participants || []).length === 0"
-          class="text-center py-3 text-muted"
-        >
+        <div v-if="(campaign?.participants || []).length === 0" class="text-center py-3 text-muted">
           No participants in this campaign yet.
         </div>
       </div>

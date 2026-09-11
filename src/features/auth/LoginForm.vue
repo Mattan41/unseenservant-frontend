@@ -53,18 +53,13 @@ const handleSubmit = async () => {
     </div>
 
     <!-- Error Message -->
-    <div
-      v-if="error"
-      class="error-message mb-4 text-sm"
-    >
+    <div v-if="error" class="error-message mb-4 text-sm">
       {{ error }}
     </div>
 
     <form @submit.prevent="handleSubmit" class="flex flex-col items-center gap-4">
       <div class="w-64">
-        <label for="username" class="block text-sm font-medium text-default mb-1">
-          Username
-        </label>
+        <label for="username" class="block text-sm font-medium text-default mb-1"> Username </label>
         <input
           id="username"
           v-model="username"
@@ -76,9 +71,7 @@ const handleSubmit = async () => {
       </div>
 
       <div class="w-64">
-        <label for="password" class="block text-sm font-medium text-default mb-1">
-          Password
-        </label>
+        <label for="password" class="block text-sm font-medium text-default mb-1"> Password </label>
         <input
           id="password"
           v-model="password"
@@ -89,12 +82,7 @@ const handleSubmit = async () => {
         />
       </div>
 
-      <BaseButton
-        variant="form"
-        type="submit"
-        class="w-64 h-10 px-3"
-        :disabled="isLoading"
-      >
+      <BaseButton variant="form" type="submit" class="w-64 h-10 px-3" :disabled="isLoading">
         <span
           v-if="isLoading"
           class="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
@@ -109,9 +97,7 @@ const handleSubmit = async () => {
         Users: <span class="font-mono">User1</span> - <span class="font-mono">User5</span>
       </p>
       <p class="text-xs text-muted">Admin: <span class="font-mono">admin</span></p>
-      <p class="text-xs text-subtle mt-1">
-        All passwords: <span class="font-mono">password</span>
-      </p>
+      <p class="text-xs text-subtle mt-1">All passwords: <span class="font-mono">password</span></p>
     </div>
   </div>
 </template>

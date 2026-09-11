@@ -26,7 +26,7 @@ const SpellService = {
     try {
       return !useAuthStore().isAuthenticated
     } catch {
-      return true  // default to Open5e on error
+      return true // default to Open5e on error
     }
   },
 

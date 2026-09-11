@@ -71,16 +71,14 @@ watch(
 </script>
 
 <template>
-  <BaseModal
-    v-if="modelValue"
-    z-index="z-[100]"
-    @close="close"
-  >
+  <BaseModal v-if="modelValue" z-index="z-[100]" @close="close">
     <div
       class="p-8 rounded-lg max-w-[600px] w-[90%] max-h-[80vh] overflow-y-auto"
       style="background-color: var(--color-primary-50)"
     >
-      <h4 class="mb-4" style="color: var(--color-primary-800)">Select a character to import to the campaign</h4>
+      <h4 class="mb-4" style="color: var(--color-primary-800)">
+        Select a character to import to the campaign
+      </h4>
 
       <div v-if="characterStore.isLoading" class="text-center py-8">
         <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
@@ -133,7 +131,10 @@ watch(
             </div>
           </div>
 
-          <div class="px-4 py-2 flex justify-end" style="background-color: var(--color-primary-100)">
+          <div
+            class="px-4 py-2 flex justify-end"
+            style="background-color: var(--color-primary-100)"
+          >
             <BaseButton
               variant="add"
               :disabled="isImporting === character.id"

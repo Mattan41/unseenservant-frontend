@@ -109,9 +109,7 @@ async function onSaveSpell(spell) {
     </div>
 
     <div v-if="isLoading" class="flex justify-center items-center py-8">
-      <div
-        class="spinner h-8 w-8 border-t-2 border-b-2"
-      ></div>
+      <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <span class="ml-3 text-muted">Searching spells...</span>
     </div>
 
@@ -174,7 +172,10 @@ async function onSaveSpell(spell) {
             class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-3 items-center cursor-pointer spell-row-hover"
             @click="toggleExpand(spell.key)"
           >
-            <div class="font-medium flex items-center gap-1.5 flex-wrap" style="color: var(--color-third-800)">
+            <div
+              class="font-medium flex items-center gap-1.5 flex-wrap"
+              style="color: var(--color-third-800)"
+            >
               {{ spell.name }}
               <span
                 v-if="spell.concentration"

@@ -55,9 +55,7 @@ const saveDisplayName = async () => {
       <div class="p-6">
         <!-- Loading state -->
         <div v-if="isLoading" class="text-center p-8">
-          <div
-            class="spinner h-8 w-8"
-          ></div>
+          <div class="spinner h-8 w-8"></div>
           <p class="mt-2">Loading your profile...</p>
         </div>
 
@@ -65,7 +63,9 @@ const saveDisplayName = async () => {
         <div v-else-if="currentUser" class="space-y-6">
           <!-- Basic info section -->
           <section class="profile-section">
-            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">Basic Information</h2>
+            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">
+              Basic Information
+            </h2>
 
             <div class="space-y-4">
               <div>
@@ -122,7 +122,9 @@ const saveDisplayName = async () => {
 
           <!-- Account details section -->
           <section class="profile-section">
-            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">Account Details</h2>
+            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">
+              Account Details
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-default mb-1">Account Type</label>
@@ -138,7 +140,9 @@ const saveDisplayName = async () => {
 
           <!-- Characters section -->
           <section class="section-primary p-4 rounded-lg">
-            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">Your Characters</h2>
+            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">
+              Your Characters
+            </h2>
             <CharacterList />
           </section>
         </div>

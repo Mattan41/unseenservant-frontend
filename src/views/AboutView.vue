@@ -1,6 +1,9 @@
 <template>
   <div class="about">
-    <div class="about-content max-w-4xl mx-auto p-6 rounded-lg shadow-md" style="background-color: var(--color-primary-50)">
+    <div
+      class="about-content max-w-4xl mx-auto p-6 rounded-lg shadow-md"
+      style="background-color: var(--color-primary-50)"
+    >
       <h1 class="font-bold mb-6 text-xs">About Unseen Servant</h1>
 
       <div class="mb-8">
@@ -40,7 +43,10 @@
         </div>
       </div>
 
-      <div class="text-center text-sm text-default mt-6 border-t pt-4" style="border-color: var(--color-primary-200)">
+      <div
+        class="text-center text-sm text-default mt-6 border-t pt-4"
+        style="border-color: var(--color-primary-200)"
+      >
         <p class="mt-2">
           Unseen Servant is a fan-created tool and is not affiliated with or endorsed by the
           official game publishers.

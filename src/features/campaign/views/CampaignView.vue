@@ -261,9 +261,7 @@ watch(
           </h3>
 
           <div v-if="isCharactersListVisible" class="mt-2">
-            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-muted">
-              Loading characters...
-            </div>
+            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-muted">Loading characters...</div>
 
             <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-muted">
               No participants in this campaign yet.
@@ -304,7 +302,9 @@ watch(
                     :key="character.id"
                     class="py-1 flex flex-wrap items-center text-default"
                   >
-                    <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)">◦</span>
+                    <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)"
+                      >◦</span
+                    >
                     <CharacterImage
                       :src="character.imageUrl"
                       :alt="`${character.name} portrait`"
@@ -370,10 +370,7 @@ watch(
           </h3>
 
           <div v-if="isMessageBoardVisible" class="mt-2">
-            <MessageBoard
-              :campaign-id="campaign.id"
-              :participants="campaign.participants"
-            />
+            <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
           </div>
         </div>
 
@@ -408,11 +405,16 @@ watch(
         <BaseModal v-if="showSettings" z-index="z-30" @close="showSettings = false">
           <div
             class="p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border"
-            style="background-color: var(--color-primary-100); border-color: var(--color-primary-300)"
+            style="
+              background-color: var(--color-primary-100);
+              border-color: var(--color-primary-300);
+            "
             @click.stop
           >
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-2xl font-semibold" style="color: var(--color-third-800)">Campaign Settings</h3>
+              <h3 class="text-2xl font-semibold" style="color: var(--color-third-800)">
+                Campaign Settings
+              </h3>
               <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
             </div>
             <CampaignSettings
