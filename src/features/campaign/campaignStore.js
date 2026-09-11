@@ -268,7 +268,6 @@ export const useCampaignStore = defineStore('campaign', () => {
     const notificationStore = useNotificationStore()
     try {
       await CampaignService.addParticipants(campaignId, participantsToAdd)
-      notificationStore.addNotification('Participant added successfully!', 'success')
       return true
     } catch (error) {
       console.error('Failed to add participants to campaign:', error)

@@ -138,23 +138,23 @@ const updateNicknameForParticipant = (participant) => {
 
 const addParticipant = async (user) => {
   try {
-    // Keep campaignId as string to support both numeric and guest mode IDs
+    isSaving.value = true
     const campaignId = props.campaignId
 
-    // call the store method to add the participant
     await campaignStore.addParticipantsToCampaign(campaignId, [
-      { id: user, nickname: user.username, role: 'PLAYER' },
+      { id: user.id, nickname: user.displayName || user.username, role: 'PLAYER' },
     ])
 
-    // remove the added user from the search results
     searchResults.value = searchResults.value.filter((u) => u.id !== user.id)
 
-    emit(
-      'participants-updated',
-      `Participant ${user.displayName || user.username} added successfully!`,
-    )
-  } catch (error) {
-    notificationStore.addNotification(`Failed to add participant: ${error.message}`, 'error')
+    const name = user.displayName || user.username
+    notificationStore.addNotification(`Participant ${name} added successfully!`, 'success')
+
+    emit('participants-updated')
+  } catch {
+    /* handled in campaignStore */
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -318,7 +318,7 @@ const transferOwnership = (participant) => {
                 variant="add"
                 class="self-end sm:self-auto"
                 :disabled="isSaving"
-                @click="addParticipant(user.id)"
+                @click="addParticipant(user)"
               >
                 Add to Campaign
               </BaseButton>
