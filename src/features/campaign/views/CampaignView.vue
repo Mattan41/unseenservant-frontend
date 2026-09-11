@@ -20,9 +20,12 @@ const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+
 const campaign = ref(null)
 const isLoading = ref(false)
 const isInitialLoad = ref(true)
+
+// Local UI-state
 const isCharactersListVisible = ref(false)
 const showSettings = ref(false)
 const descriptionExpanded = ref(false)
@@ -30,18 +33,32 @@ const showImportModal = ref(false)
 const showEditModal = ref(false)
 const isMessageBoardVisible = ref(false)
 
+function resetViewState() {
+  isCharactersListVisible.value = false
+  showSettings.value = false
+  descriptionExpanded.value = false
+  showImportModal.value = false
+  showEditModal.value = false
+  isMessageBoardVisible.value = false
+}
+
 const isOwner = computed(() => {
   if (!campaign.value || !userStore.currentUser) return false
   return campaign.value.ownerId === userStore.userId
 })
 
-const loadCampaignData = async () => {
+const loadCampaignData = async (campaignId) => {
   const notificationStore = useNotificationStore()
 
-  // Only show a full-page loading spinner on the very first visit (cold cache)
   if (isInitialLoad.value) {
     isLoading.value = true
   }
+
+  // Reset local presentation state
+  resetViewState()
+
+  // Reset previous campaig messages
+  messageStore.clearMessages()
 
   try {
     await campaignStore.fetchAllCampaignsForCurrentUser()
@@ -52,7 +69,6 @@ const loadCampaignData = async () => {
     return
   }
 
-  const campaignId = route.params.id
   const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
 
   if (!campaignExists) {
@@ -116,13 +132,12 @@ const charactersByParticipant = computed(() => {
 })
 
 const onCharacterImported = () => {
-  loadCampaignData()
+  loadCampaignData(route.params.id)
 }
 
 const removeCharacter = async (characterId) => {
   if (confirm('Are you sure you want to remove this character from the campaign?')) {
-    const id = route.params.id
-    const campaignId = id // Keep as string for guest mode compatibility
+    const campaignId = route.params.id
     try {
       await campaignStore.removeCharacterFromCampaign(characterId)
     } catch (error) {
@@ -138,16 +153,14 @@ const openEditModal = () => {
 }
 
 const handleSaveCampaign = async (updatedCampaign) => {
-  const notificationStore = useNotificationStore() // Bring this back for the single success message
+  const notificationStore = useNotificationStore()
 
   try {
-    // 1. Update text info
     await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updatedCampaign.title,
       description: updatedCampaign.description,
     })
 
-    // 2. Upload image file
     if (updatedCampaign.imageFile) {
       const updated = await campaignStore.uploadCampaignImage(
         campaign.value.id,
@@ -156,16 +169,12 @@ const handleSaveCampaign = async (updatedCampaign) => {
       campaign.value.imageUrl = updated.imageUrl
     }
 
-    // 3. Update local reactive state
     campaign.value.name = updatedCampaign.title
     campaign.value.description = updatedCampaign.description
-
-    // 4. Close the modal
     showEditModal.value = false
 
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
   } catch (error) {
-    // Silent catch, because the specific API errors are handled gracefully inside the store actions
     console.error('Campaign update chain interrupted:', error)
   }
 }
@@ -187,11 +196,11 @@ const toggleMessageBoard = () => {
 }
 
 const handleParticipantsUpdated = () => {
-  loadCampaignData()
+  loadCampaignData(route.params.id)
 }
 
 onMounted(async () => {
-  await loadCampaignData()
+  await loadCampaignData(route.params.id)
 })
 
 onUnmounted(() => {
@@ -203,27 +212,26 @@ onUnmounted(() => {
   messageStore.clearMessages()
 })
 
+// Load data and reset presentation mode when changing campaign
 watch(
   () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      await loadCampaignData()
+  async (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      await loadCampaignData(newId)
     }
   },
-  { immediate: true },
 )
 </script>
 
 <template>
-  <!-- Loading state -->
+  <!-- Full loading spinner -->
   <div v-if="isLoading" class="flex flex-col items-center justify-center h-full p-8">
     <div class="spinner h-8 w-8 border-b-2"></div>
     <p class="mt-2">Loading campaign...</p>
   </div>
 
-  <!-- Campaign loaded successfully -->
   <div v-else-if="campaign" class="flex h-full">
-    <!-- Campaign selector sidebar - completely self-contained now -->
+    <!-- Campaign Sidebar -->
     <CampaignSidebar
       :campaigns="
         campaignStore.campaigns.map((c) => ({
@@ -235,9 +243,8 @@ watch(
       :current-campaign-id="parseInt(route.params.id)"
     />
 
-    <!-- Main content area -->
+    <!-- Campaign content -->
     <div class="flex-1 p-4 overflow-y-auto">
-      <!-- Campaign header with edit button -->
       <CampaignHeader
         :title="campaignStore.getCampaignTitle(campaign.id)"
         :description="campaignStore.getCampaignDescription(campaign.id)"
@@ -248,9 +255,8 @@ watch(
         @toggle-description="toggleDescription"
       />
 
-      <!-- Campaign content -->
       <section class="mb-6">
-        <!-- Participants collapsible section -->
+        <!-- Participants and characters -->
         <div class="mb-4 border rounded p-3">
           <h3 class="font-medium cursor-pointer flex items-center" @click="toggleCharactersList">
             <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1"
@@ -267,18 +273,16 @@ watch(
               No participants in this campaign yet.
             </div>
 
-            <!-- For each participants and its characters -->
             <div v-else>
               <div
                 v-for="(data, participantId) in charactersByParticipant"
                 :key="participantId"
-                class="mb-3 border-l-2"
-                style="border-color: var(--color-primary-200)"
+                class="mb-3 border-l-2 border-subtle"
               >
                 <div class="pl-4 py-1 font-medium flex flex-wrap items-center">
-                  <span class="mr-2 flex-shrink-0">•</span>
+                  <span class="mr-2 shrink-0">•</span>
                   <span
-                    class="truncate max-w-[150px] sm:max-w-none"
+                    class="truncate max-w-37.5 sm:max-w-none"
                     :title="data.participant.nickname"
                   >
                     {{ data.participant.nickname }}
@@ -288,28 +292,23 @@ watch(
                   </span>
                   <span
                     v-if="data.participant.id === campaign.ownerId"
-                    class="text-sm ml-1 whitespace-nowrap"
-                    style="color: var(--color-primary-600)"
+                    class="text-sm ml-1 whitespace-nowrap text-secondary"
                   >
                     (Campaign Owner)
                   </span>
                 </div>
 
-                <!-- Show participants characters -->
                 <div v-if="data.characters.length > 0" class="pl-8">
                   <div
                     v-for="character in data.characters"
                     :key="character.id"
                     class="py-1 flex flex-wrap items-center text-default"
                   >
-                    <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)"
-                      >◦</span
-                    >
+                    <span class="mr-1 shrink-0 text-muted">◦</span>
                     <CharacterImage
                       :src="character.imageUrl"
                       :alt="`${character.name} portrait`"
-                      class="w-10 h-10 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
-                      style="border-color: var(--color-primary-300)"
+                      class="w-10 h-10 rounded-lg border border-section shadow-sm shrink-0 object-cover"
                     />
                     <span
                       class="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none"
@@ -352,7 +351,6 @@ watch(
                   </div>
                 </div>
 
-                <!-- If the participant has no characters yet in the campaign -->
                 <div v-else class="pl-8 py-1 text-muted text-sm italic">No characters</div>
               </div>
             </div>
@@ -394,27 +392,19 @@ watch(
           @save="handleSaveCampaign"
         />
 
-        <!-- Import modal-component -->
         <ImportCharacterModal
           v-model="showImportModal"
           :campaign-id="campaign.id"
           @character-imported="onCharacterImported"
         />
 
-        <!-- Modal overlay -->
         <BaseModal v-if="showSettings" z-index="z-30" @close="showSettings = false">
           <div
-            class="p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border"
-            style="
-              background-color: var(--color-primary-100);
-              border-color: var(--color-primary-300);
-            "
+            class="p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border border-section bg-(--color-surface)"
             @click.stop
           >
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-2xl font-semibold" style="color: var(--color-third-800)">
-                Campaign Settings
-              </h3>
+              <h3 class="text-2xl font-semibold text-default">Campaign Settings</h3>
               <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
             </div>
             <CampaignSettings

@@ -47,6 +47,10 @@ src/
 │   │   ├── campaignStore.js
 │   │   ├── components/
 │   │   └── views/
+│   ├── message/
+│   │   ├── MessageService.js
+│   │   ├── messageStore.js
+│   │   └── components/       # MessageBoard.vue (no views/ — rendered within CampaignView)
 │   ├── spell/
 │   │   ├── SpellService.js
 │   │   ├── spellStore.js

@@ -148,7 +148,7 @@ const addParticipant = async (user) => {
     searchResults.value = searchResults.value.filter((u) => u.id !== user.id)
 
     const name = user.displayName || user.username
-    notificationStore.addNotification(`Participant ${name} added successfully!`, 'success')
+    notificationStore.addNotification(`${name} added successfully to the campaign!`, 'success')
 
     emit('participants-updated')
   } catch {
