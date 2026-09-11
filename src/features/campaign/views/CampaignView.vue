@@ -11,6 +11,7 @@ import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 
@@ -216,7 +217,7 @@ watch(
 <template>
   <!-- Loading state -->
   <div v-if="isLoading" class="flex flex-col items-center justify-center h-full p-8">
-    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+    <div class="spinner h-8 w-8 border-b-2"></div>
     <p class="mt-2">Loading campaign...</p>
   </div>
 
@@ -260,11 +261,9 @@ watch(
           </h3>
 
           <div v-if="isCharactersListVisible" class="mt-2">
-            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-gray-500">
-              Loading characters...
-            </div>
+            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-muted">Loading characters...</div>
 
-            <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-gray-500">
+            <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-muted">
               No participants in this campaign yet.
             </div>
 
@@ -273,7 +272,8 @@ watch(
               <div
                 v-for="(data, participantId) in charactersByParticipant"
                 :key="participantId"
-                class="mb-3 border-l-2 border-primary-200"
+                class="mb-3 border-l-2"
+                style="border-color: var(--color-primary-200)"
               >
                 <div class="pl-4 py-1 font-medium flex flex-wrap items-center">
                   <span class="mr-2 flex-shrink-0">•</span>
@@ -283,12 +283,13 @@ watch(
                   >
                     {{ data.participant.nickname }}
                   </span>
-                  <span v-if="data.participant.role" class="text-gray-600 ml-1 truncate">
+                  <span v-if="data.participant.role" class="text-secondary ml-1 truncate">
                     ({{ data.participant.role }})
                   </span>
                   <span
                     v-if="data.participant.id === campaign.ownerId"
-                    class="text-primary-600 text-sm ml-1 whitespace-nowrap"
+                    class="text-sm ml-1 whitespace-nowrap"
+                    style="color: var(--color-primary-600)"
                   >
                     (Campaign Owner)
                   </span>
@@ -299,13 +300,16 @@ watch(
                   <div
                     v-for="character in data.characters"
                     :key="character.id"
-                    class="py-1 flex flex-wrap items-center text-gray-700"
+                    class="py-1 flex flex-wrap items-center text-default"
                   >
-                    <span class="text-primary-500 mr-1 flex-shrink-0">◦</span>
+                    <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)"
+                      >◦</span
+                    >
                     <CharacterImage
                       :src="character.imageUrl"
                       :alt="`${character.name} portrait`"
-                      class="w-10 h-10 rounded-lg border-2 border-primary-300 shadow-sm flex-shrink-0 object-cover"
+                      class="w-10 h-10 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
+                      style="border-color: var(--color-primary-300)"
                     />
                     <span
                       class="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none"
@@ -315,26 +319,28 @@ watch(
                     </span>
                     <span
                       v-if="character.characterClass"
-                      class="text-sm text-gray-600 ml-1 truncate"
+                      class="text-sm text-secondary ml-1 truncate"
                     >
                       ({{ character.characterClass
                       }}<span v-if="character.level"> , Level {{ character.level }} </span>)
                     </span>
 
-                    <router-link
+                    <BaseButton
                       v-if="
                         (userStore.currentUser && userStore.userId === character.ownerId) ||
                         campaignStore.isUserGM(campaign.id, userStore.userId)
                       "
-                      :to="{
-                        name: 'CharacterView',
-                        params: { id: character.id },
-                        query: { from: 'campaign', campaignId: campaign.id },
-                      }"
-                      class="button button-primary"
+                      variant="default"
+                      @click="
+                        router.push({
+                          name: 'CharacterView',
+                          params: { id: character.id },
+                          query: { from: 'campaign', campaignId: campaign.id },
+                        })
+                      "
                     >
                       Open Character Details
-                    </router-link>
+                    </BaseButton>
                     <BaseButton
                       v-if="userStore.currentUser && userStore.userId === character.ownerId"
                       variant="remove"
@@ -347,7 +353,7 @@ watch(
                 </div>
 
                 <!-- If the participant has no characters yet in the campaign -->
-                <div v-else class="pl-8 py-1 text-gray-500 text-sm italic">No characters</div>
+                <div v-else class="pl-8 py-1 text-muted text-sm italic">No characters</div>
               </div>
             </div>
           </div>
@@ -364,10 +370,7 @@ watch(
           </h3>
 
           <div v-if="isMessageBoardVisible" class="mt-2">
-            <MessageBoard
-              :campaign-id="campaign.id"
-              :participants="campaign.participants"
-            />
+            <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
           </div>
         </div>
 
@@ -399,17 +402,19 @@ watch(
         />
 
         <!-- Modal overlay -->
-        <div
-          v-if="showSettings"
-          class="fixed inset-0 z-30 bg-black/50 flex items-center justify-center"
-          @click="showSettings = false"
-        >
+        <BaseModal v-if="showSettings" z-index="z-30" @close="showSettings = false">
           <div
-            class="bg-primary-100 p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border border-primary-300"
+            class="p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border"
+            style="
+              background-color: var(--color-primary-100);
+              border-color: var(--color-primary-300);
+            "
             @click.stop
           >
             <div class="flex justify-between items-center mb-4">
-              <h3 class="text-2xl font-semibold text-third-800">Campaign Settings</h3>
+              <h3 class="text-2xl font-semibold" style="color: var(--color-third-800)">
+                Campaign Settings
+              </h3>
               <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
             </div>
             <CampaignSettings
@@ -418,7 +423,7 @@ watch(
               @participants-updated="handleParticipantsUpdated"
             />
           </div>
-        </div>
+        </BaseModal>
       </section>
     </div>
   </div>

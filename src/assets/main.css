@@ -49,6 +49,7 @@
 /* Standard (if not set) or explicit DEV (Greenish) */
 :root,
 html[data-env='dev'] {
+  --color-surface: #ffffff;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -197,6 +198,171 @@ html[data-env='prod'] {
 .success-message {
   @apply bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded;
 }
+
+/* Loading spinner (color only — size via utilities) */
+.spinner {
+  @apply inline-block animate-spin rounded-full border-primary-500 border-t-transparent;
+}
+
+/* Form input focus ring */
+.input-field {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+/* Guest/demo mode notice banner */
+.demo-notice {
+  @apply bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded;
+}
+
+/* Primary section wrapper */
+.section-primary {
+  @apply bg-primary-500 p-4 rounded-lg;
+}
+
+/* Campaign sidebar — switcher link */
+.campaign-selector {
+  @apply w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative no-underline border border-primary-400 hover:scale-110 flex-shrink-0;
+}
+
+/* Campaign sidebar — active/selected state */
+.campaign-selector--active {
+  @apply ring-2 ring-primary-500;
+}
+
+/* Campaign sidebar — hover tooltip (campaign names) */
+.campaign-tooltip {
+  @apply absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none;
+}
+
+/* Campaign sidebar — "+" add/navigate button */
+.campaign-nav-button {
+  @apply w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative mt-2 hover:scale-110 flex-shrink-0;
+}
+
+/* Campaign sidebar — nav button tooltip */
+.campaign-nav-tooltip {
+  @apply absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none;
+}
+
+/* Campaign sidebar — scroll indicator */
+.scroll-hint {
+  @apply absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full;
+}
+
+/* Read more/less toggle link */
+.read-more-link {
+  @apply text-primary-600 hover:text-primary-800;
+}
+
+/* Character attribute tag (race/class) */
+.character-tag {
+  @apply inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full;
+}
+
+/* Character level tag */
+.character-tag-level {
+  @apply inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full;
+}
+
+/* Character name (clickable card title) */
+.character-name {
+  @apply text-primary-700 hover:text-primary-800;
+}
+/* Spell feature */
+
+/* Search history badge hover */
+.spell-history-hover {
+  @apply hover:bg-third-200 transition-colors;
+}
+
+/* Search result row hover */
+.spell-row-hover {
+  @apply hover:bg-third-50 transition-colors;
+}
+
+/* Header / Footer */
+.header-footer-bg {
+  @apply bg-linear-to-r from-primary-100 to-primary-300;
+}
+.header-nav-link {
+  @apply flex items-center justify-center bg-primary-500/70 hover:bg-primary-600 px-4 rounded-full;
+}
+.header-nav-link-secondary {
+  @apply flex items-center justify-center bg-third-400/70 hover:bg-third-500 px-4 rounded-full;
+}
+.header-logo-hover {
+  @apply hover:text-primary-300;
+}
+
+/* Notification component colour types */
+.notification-success {
+  @apply bg-green-100 border border-green-400 text-green-700;
+}
+.notification-error {
+  @apply bg-red-100 border border-red-400 text-red-700;
+}
+.notification-warning {
+  @apply bg-yellow-100 border border-yellow-400 text-yellow-700;
+}
+
+/* UnderConstruction — parchment theme */
+.parchment-heading {
+  @apply text-primary-800 font-bold;
+}
+.parchment-text {
+  @apply text-primary-700;
+}
+.parchment-subtitle {
+  @apply text-primary-600 italic;
+}
+.parchment-border {
+  @apply border-primary-400;
+}
+.parchment-border-light {
+  @apply border-primary-300;
+}
+.parchment-border-lighter {
+  @apply border-primary-200;
+}
+.parchment-inset {
+  @apply bg-primary-100;
+}
+
+/* UserProfile — section/value blocks */
+.profile-section {
+  @apply bg-third-50 p-4 rounded-lg;
+}
+.profile-value {
+  @apply bg-third-100 p-3 rounded;
+}
+
+/* --------------------------------------------------------------------------
+   Semantic text/border role classes
+   Replace direct text-third-X/border-third-X utility usage in templates.
+   -------------------------------------------------------------------------- */
+  .text-subtle {
+  @apply text-third-400;
+} /* faint labels, e.g. "Sign in" */
+.text-muted {
+  @apply text-third-500;
+} /* help text, empty states */
+.text-secondary {
+  @apply text-third-600;
+} /* secondary body text */
+.text-default {
+  @apply text-third-700;
+} /* form labels, headings, primary body text */
+
+.border-subtle {
+  @apply border-third-100;
+} /* light dividers between grouped items */
+.border-section {
+  @apply border-third-200;
+} /* section dividers between major content areas */
+.border-input {
+  @apply border-third-300;
+} /* input and button borders */
+
 h1,
 h2,
 h3,

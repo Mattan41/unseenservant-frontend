@@ -168,28 +168,25 @@ const submitCharacter = async () => {
   <div class="container mx-auto p-4 max-w-2xl">
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
-      <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"
-      ></div>
-      <p class="mt-2 text-gray-600">Loading character...</p>
+      <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
+      <p class="mt-2 text-secondary">Loading character...</p>
     </div>
 
     <!-- Main Form Container -->
-    <div v-else class="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div class="p-6 border-b border-gray-200">
-        <h1 class="text-2xl font-bold text-primary-700">Edit Character</h1>
+    <div v-else class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
+      <div class="p-6 border-b border-section">
+        <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">Edit Character</h1>
       </div>
 
       <form @submit.prevent="submitCharacter" class="p-6">
         <!-- Character Image Section -->
         <div class="mb-6">
-          <h5 class="text-lg font-semibold mb-3 text-primary-600">Character Image</h5>
+          <h5 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Character Image
+          </h5>
 
           <!-- Guest mode disclaimer -->
-          <div
-            v-if="isGuestMode"
-            class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3"
-          >
+          <div v-if="isGuestMode" class="demo-notice mb-3">
             ⚠️ Image upload is not supported in guest mode. A default image will be used.
           </div>
 
@@ -198,7 +195,8 @@ const submitCharacter = async () => {
               <CharacterImage
                 :src="characterImageUrl"
                 alt="Character Image"
-                class="w-24 h-24 rounded-lg object-cover border-2 border-primary-300"
+                class="w-24 h-24 rounded-lg object-cover border-2"
+                style="border-color: var(--color-primary-300)"
               />
               <div
                 v-if="!isGuestMode"
@@ -216,56 +214,53 @@ const submitCharacter = async () => {
               accept=".jpg,.jpeg,.png,.gif,.webp"
               class="hidden"
             />
-            <BaseButton
-              v-if="!isGuestMode"
-              variant="ghost"
-              type="button"
-              @click="triggerFileInput"
-            >
+            <BaseButton v-if="!isGuestMode" variant="ghost" type="button" @click="triggerFileInput">
               Upload new image
             </BaseButton>
-            <span v-else class="text-sm text-gray-500 italic">
+            <span v-else class="text-sm text-muted italic">
               Image upload not available in guest mode
             </span>
           </div>
-          <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
+          <div v-if="!isGuestMode" class="text-xs text-muted mt-1">
             Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
           </div>
         </div>
 
         <!-- Basic Information Section -->
         <div class="mb-6">
-          <h4 class="text-lg font-semibold mb-3 text-primary-600">Basic Information</h4>
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Basic Information
+          </h4>
           <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-1"
+            <label for="name" class="block text-sm font-medium text-default mb-1"
               >Character Name</label
             >
             <input
               id="name"
               v-model="character.name"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
               placeholder="Enter character name"
             />
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="mb-4">
-              <label for="race" class="block text-sm font-medium text-gray-700 mb-1">Race</label>
+              <label for="race" class="block text-sm font-medium text-default mb-1">Race</label>
               <select
                 id="race"
                 v-model="character.race"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               >
                 <option value="" disabled>Select a race</option>
                 <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
               </select>
             </div>
             <div class="mb-4">
-              <label for="class" class="block text-sm font-medium text-gray-700 mb-1">Class</label>
+              <label for="class" class="block text-sm font-medium text-default mb-1">Class</label>
               <select
                 id="class"
                 v-model="character.characterClass"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               >
                 <option value="" disabled>Select a class</option>
                 <option v-for="charClass in characterClasses" :key="charClass" :value="charClass">
@@ -275,7 +270,7 @@ const submitCharacter = async () => {
             </div>
           </div>
           <div class="mb-4">
-            <label for="level" class="block text-sm font-medium text-gray-700 mb-1"
+            <label for="level" class="block text-sm font-medium text-default mb-1"
               >Level (1-20)</label
             >
             <input
@@ -284,17 +279,19 @@ const submitCharacter = async () => {
               type="number"
               min="1"
               max="20"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
             />
           </div>
         </div>
 
         <!-- Character Stats Section -->
         <div class="mb-6">
-          <h4 class="text-lg font-semibold mb-3 text-primary-600">Character Stats</h4>
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Character Stats
+          </h4>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
-              <label :for="stat" class="block text-sm font-medium text-gray-700 mb-1 capitalize">{{
+              <label :for="stat" class="block text-sm font-medium text-default mb-1 capitalize">{{
                 stat
               }}</label>
               <input
@@ -303,7 +300,7 @@ const submitCharacter = async () => {
                 type="number"
                 min="1"
                 max="30"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                class="input-field w-full px-3 py-2 border border-input rounded-md"
               />
             </div>
           </div>

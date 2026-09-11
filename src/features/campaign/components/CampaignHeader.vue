@@ -45,17 +45,18 @@ defineEmits(['edit-click', 'toggle-description'])
 
       <!-- Campaign description with line clamp -->
       <div class="mt-3 break-words whitespace-pre-line">
-        <p v-if="!description" class="italic text-gray-500 text-sm">No description available.</p>
+        <p v-if="!description" class="italic text-muted text-sm">No description available.</p>
 
         <template v-else>
-          <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-gray-700">
+          <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-default">
             {{ description }}
           </p>
 
           <button
             v-if="description && description.length > 60"
             @click="$emit('toggle-description')"
-            class="text-xs text-primary-500 mt-1 hover:underline"
+            class="text-xs mt-1 hover:underline"
+            style="color: var(--color-primary-500)"
           >
             {{ descriptionExpanded ? 'Show less' : 'Read more' }}
           </button>

@@ -1,6 +1,8 @@
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
+  <BaseModal @close="emitClose">
+    <div
+      class="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-5 max-h-[90vh] overflow-y-auto"
+    >
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Edit Campaign</h3>
         <BaseButton variant="icon" @click="emitClose">
@@ -17,7 +19,7 @@
       </div>
 
       <div class="mb-3">
-        <label for="campaign-name" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="campaign-name" class="block text-sm font-medium text-default mb-1">
           Campaign Name
         </label>
         <input
@@ -30,7 +32,7 @@
       </div>
 
       <div class="mb-3">
-        <label for="campaign-description" class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="campaign-description" class="block text-sm font-medium text-default mb-1">
           Description
         </label>
         <textarea
@@ -43,13 +45,10 @@
       </div>
 
       <div class="mb-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Campaign Image</label>
+        <label class="block text-sm font-medium text-default mb-1">Campaign Image</label>
 
         <!-- Guest mode disclaimer -->
-        <div
-          v-if="isGuestMode"
-          class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded mb-3"
-        >
+        <div v-if="isGuestMode" class="demo-notice mb-3">
           ⚠️ Image upload is not supported in guest mode. A default image will be used.
         </div>
 
@@ -59,7 +58,8 @@
               v-if="previewImageUrl"
               :src="previewImageUrl"
               alt="Campaign image preview"
-              class="w-24 h-24 rounded-lg object-cover border-2 border-primary-300"
+              class="w-24 h-24 rounded-lg object-cover border-2"
+              style="border-color: var(--color-primary-300)"
             />
             <div
               v-if="previewImageUrl && !isGuestMode"
@@ -77,15 +77,10 @@
             accept=".jpg,.jpeg,.png,.gif,.webp"
             class="hidden"
           />
-          <BaseButton
-            v-if="!isGuestMode"
-            variant="ghost"
-            type="button"
-            @click="triggerFileInput"
-          >
+          <BaseButton v-if="!isGuestMode" variant="ghost" type="button" @click="triggerFileInput">
             {{ previewImageUrl ? 'Change image' : 'Upload image' }}
           </BaseButton>
-          <span v-else class="text-sm text-gray-500 italic">
+          <span v-else class="text-sm text-muted italic">
             {{
               previewImageUrl
                 ? 'Current image (cannot change in guest mode)'
@@ -93,32 +88,26 @@
             }}
           </span>
         </div>
-        <div v-if="!isGuestMode" class="text-xs text-gray-500 mt-1">
+        <div v-if="!isGuestMode" class="text-xs text-muted mt-1">
           Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
         </div>
       </div>
 
       <div class="flex space-x-3">
-        <BaseButton variant="ghost" :disabled="isUpdating" @click="emitClose">
-          Cancel
-        </BaseButton>
-        <BaseButton
-          variant="add"
-          :disabled="isUpdating"
-          :loading="isUpdating"
-          @click="saveChanges"
-        >
+        <BaseButton variant="ghost" :disabled="isUpdating" @click="emitClose"> Cancel </BaseButton>
+        <BaseButton variant="add" :disabled="isUpdating" :loading="isUpdating" @click="saveChanges">
           Save Changes
         </BaseButton>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)

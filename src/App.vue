@@ -26,18 +26,27 @@ watch(
 <template>
   <div
     v-if="!authStore.isAuthChecked"
-    class="flex flex-col items-center justify-center h-screen bg-primary-100"
+    class="flex flex-col items-center justify-center h-screen"
+    style="background-color: var(--color-primary-100)"
   >
-    <div
-      class="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"
-    ></div>
-    <p class="mt-4 text-primary-800 font-medium">Loading...</p>
+    <div class="spinner w-12 h-12 border-4"></div>
+    <p class="mt-4 font-medium" style="color: var(--color-primary-800)">Loading...</p>
   </div>
 
   <div v-else class="flex flex-col min-h-screen overflow-x-hidden">
     <NotificationComponent />
     <HeaderComponent />
-    <main class="flex-grow bg-gradient-to-b from-primary-100 via-primary-300 to-primary-100">
+    <main
+      class="flex-grow"
+      style="
+        background-image: linear-gradient(
+          to bottom,
+          var(--color-primary-100),
+          var(--color-primary-300),
+          var(--color-primary-100)
+        );
+      "
+    >
       <RouterView />
     </main>
     <FooterComponent />

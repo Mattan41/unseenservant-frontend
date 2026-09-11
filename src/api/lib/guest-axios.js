@@ -178,9 +178,7 @@ const guestAxios = {
         const campaignIdx = parts.indexOf('campaign')
         const campaignId = campaignIdx !== -1 ? parts[campaignIdx + 1]?.split('?')[0] : null
         if (campaignId) {
-          const filtered = messages.filter(
-            (m) => String(m.campaignId) === String(campaignId),
-          )
+          const filtered = messages.filter((m) => String(m.campaignId) === String(campaignId))
           return Promise.resolve({ data: filtered })
         }
       }
@@ -528,7 +526,11 @@ const guestAxios = {
           const currentUserId = guestUser?.id || 'guest_demo'
           // Only the message sender can delete
           if (String(messages[messageIndex].userId) !== String(currentUserId)) {
-            const error = { data: { message: 'You do not have permission to delete this message.' }, status: 403, handled: false }
+            const error = {
+              data: { message: 'You do not have permission to delete this message.' },
+              status: 403,
+              handled: false,
+            }
             return Promise.reject({ response: error })
           }
           messages.splice(messageIndex, 1)

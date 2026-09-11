@@ -108,35 +108,38 @@ const deleteCharacter = async () => {
   <div class="container mx-auto p-4 max-w-4xl">
     <!-- Loading state -->
     <div v-if="loading" class="text-center py-8">
-      <div
-        class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"
-      ></div>
-      <p class="mt-2 text-third-600">Loading character...</p>
+      <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
+      <p class="mt-2" style="color: var(--color-third-600)">Loading character...</p>
     </div>
 
     <!-- Not found state -->
     <div v-else-if="!currentCharacter" class="text-center py-8">
-      <p class="text-third-600">Character not found.</p>
-      <router-link :to="{ name: 'CharactersView' }" class="mt-4 inline-block button button-primary">
+      <p style="color: var(--color-third-600)">Character not found.</p>
+      <BaseButton variant="default" class="mt-4" @click="router.push({ name: 'CharactersView' })">
         Back to Character List
-      </router-link>
+      </BaseButton>
     </div>
 
     <!-- Main content -->
     <div v-else>
-      <div class="bg-primary-50 rounded-lg shadow-lg overflow-hidden">
+      <div
+        class="rounded-lg shadow-lg overflow-hidden"
+        style="background-color: var(--color-primary-50)"
+      >
         <!-- Action bar -->
         <div v-if="isOwner" class="flex justify-end p-2 space-x-2">
-          <router-link
-            :to="{
-              name: 'EditCharacter',
-              params: { id: currentCharacter.id },
-              query: from === 'campaign' && campaignId ? { from, campaignId } : {},
-            }"
-            class="button button-secondary"
+          <BaseButton
+            variant="ghost"
+            @click="
+              router.push({
+                name: 'EditCharacter',
+                params: { id: currentCharacter.id },
+                query: from === 'campaign' && campaignId ? { from, campaignId } : {},
+              })
+            "
           >
             Edit
-          </router-link>
+          </BaseButton>
           <BaseButton
             variant="remove"
             :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
@@ -146,17 +149,23 @@ const deleteCharacter = async () => {
         </div>
 
         <!-- Character header: image + basic info -->
-        <div class="p-6 border-b border-third-200">
+        <div class="p-6 border-b" style="border-color: var(--color-third-200)">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div class="flex flex-col items-center md:items-start">
               <CharacterImage
                 :src="currentCharacter.imageUrl"
                 alt="Character portrait"
-                class="w-64 h-64 rounded-lg border-2 border-primary-300 shadow-md mb-2"
+                class="w-64 h-64 rounded-lg border-2 shadow-md mb-2"
+                style="border-color: var(--color-primary-300)"
               />
-              <h3 class="text-xl font-bold text-third-700">{{ currentCharacter.name }}</h3>
+              <h3 class="text-xl font-bold" style="color: var(--color-third-700)">
+                {{ currentCharacter.name }}
+              </h3>
             </div>
-            <div class="flex flex-col justify-center text-third-700 md:col-span-1">
+            <div
+              class="flex flex-col justify-center md:col-span-1"
+              style="color: var(--color-third-700)"
+            >
               <div class="space-y-2">
                 <p><strong>Race:</strong> {{ currentCharacter.race }}</p>
                 <p><strong>Class:</strong> {{ currentCharacter.characterClass }}</p>
@@ -167,24 +176,29 @@ const deleteCharacter = async () => {
         </div>
 
         <!-- Stats -->
-        <div class="p-6 bg-third-50">
+        <div class="p-6" style="background-color: var(--color-third-50)">
           <h2 class="section-heading mb-4">Character Stats</h2>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
             <div v-if="currentCharacter.playerCharacterData">
               <div
                 v-for="(value, stat) in currentCharacter.playerCharacterData"
                 :key="stat"
-                class="bg-third-200 p-2 rounded-lg shadow text-center"
+                class="p-2 rounded-lg shadow text-center"
+                style="background-color: var(--color-third-200)"
               >
-                <div class="text-lg font-bold text-primary-700">{{ value }}</div>
-                <div class="text-xs uppercase tracking-wide text-third-600">{{ stat }}</div>
+                <div class="text-lg font-bold" style="color: var(--color-primary-700)">
+                  {{ value }}
+                </div>
+                <div class="text-xs uppercase tracking-wide" style="color: var(--color-third-600)">
+                  {{ stat }}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Additional info -->
-        <div class="p-6 border-t border-gray-200">
+        <div class="p-6 border-t border-section">
           <h2 class="section-heading mb-4">Additional Information</h2>
           <p>
             <strong>Created:</strong>
@@ -197,7 +211,7 @@ const deleteCharacter = async () => {
         </div>
 
         <!-- Spells -->
-        <div class="p-6 border-t border-gray-200">
+        <div class="p-6 border-t border-section">
           <div class="flex items-center justify-between mb-4">
             <h2 class="section-heading">Spells</h2>
             <BaseButton
@@ -218,10 +232,8 @@ const deleteCharacter = async () => {
           </div>
 
           <div v-if="spellsLoading" class="text-center py-4">
-            <div
-              class="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary-500"
-            ></div>
-            <span class="ml-2 text-third-500">Loading spells...</span>
+            <div class="spinner h-6 w-6 border-t-2 border-b-2"></div>
+            <span class="ml-2" style="color: var(--color-third-500)">Loading spells...</span>
           </div>
 
           <div v-else-if="characterSpells.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -236,7 +248,7 @@ const deleteCharacter = async () => {
             />
           </div>
 
-          <div v-else class="text-center py-4 text-third-400">
+          <div v-else class="text-center py-4" style="color: var(--color-third-400)">
             <p>No spells saved yet. Use the "Add Spell" button to search and save spells.</p>
           </div>
         </div>

@@ -57,10 +57,7 @@ watch(
     class="w-16 flex flex-col min-h-screen items-center py-4 space-y-4 relative custom-gradient flex-shrink-0"
   >
     <!-- Scroll hint at top if scrollable -->
-    <div
-      v-if="isScrollable"
-      class="absolute top-2 left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full animate-pulse z-10"
-    ></div>
+    <div v-if="isScrollable" class="scroll-hint top-2 z-10 animate-pulse"></div>
 
     <!-- Campaign list wrapper (Added ref="listRef" here) -->
     <div
@@ -71,9 +68,9 @@ watch(
         v-for="userCampaign in campaigns"
         :key="userCampaign.id"
         :to="{ name: 'CampaignView', params: { id: userCampaign.id } }"
-        class="w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative group no-underline border border-primary-400 hover:scale-110 flex-shrink-0"
+        class="campaign-selector group"
         :class="{
-          'ring-2 ring-primary-500': Number(currentCampaignId) === Number(userCampaign.id),
+          'campaign-selector--active': Number(currentCampaignId) === Number(userCampaign.id),
         }"
         :style="
           userCampaign.imageUrl
@@ -85,9 +82,7 @@ watch(
             : {}
         "
       >
-        <span
-          class="absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none"
-        >
+        <span class="campaign-tooltip">
           {{ userCampaign.name }}
         </span>
       </RouterLink>
@@ -97,23 +92,13 @@ watch(
     <div
       class="h-2 rounded-md flex items-center justify-center text-white font-medium relative group w-full"
     >
-      <div
-        v-if="isScrollable"
-        class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full animate-pulse"
-      ></div>
+      <div v-if="isScrollable" class="scroll-hint bottom-2 animate-pulse"></div>
     </div>
 
     <!-- Navigation action button -->
-    <RouterLink
-      to="/campaigns"
-      class="w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative group mt-2 hover:scale-110 flex-shrink-0"
-    >
+    <RouterLink to="/campaigns" class="campaign-nav-button group">
       <span class="text-xl">+</span>
-      <span
-        class="absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none"
-      >
-        to campaign overview
-      </span>
+      <span class="campaign-nav-tooltip"> to campaign overview </span>
     </RouterLink>
   </aside>
 </template>

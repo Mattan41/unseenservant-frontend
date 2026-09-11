@@ -234,7 +234,7 @@ const transferOwnership = (participant) => {
 </script>
 
 <template>
-  <div class="bg-primary-200 rounded-lg shadow-md p-4">
+  <div class="rounded-lg shadow-md p-4" style="background-color: var(--color-primary-200)">
     <!-- Non-owner settings -->
     <div v-if="!isOwner" class="mb-6">
       <div class="border rounded-lg p-4">
@@ -243,7 +243,8 @@ const transferOwnership = (participant) => {
         <input
           v-model="nickname"
           type="text"
-          class="bg-primary-50 p-3 rounded w-full mb-3"
+          class="p-3 rounded w-full mb-3"
+          style="background-color: var(--color-primary-50)"
           :readonly="!isEditingNickname"
           :disabled="isSaving"
           :placeholder="currentUserNickname || 'Enter your nickname'"
@@ -282,7 +283,8 @@ const transferOwnership = (participant) => {
           <input
             v-model="searchTerm"
             type="text"
-            class="bg-primary-50 p-3 rounded flex-grow"
+            class="p-3 rounded flex-grow"
+            style="background-color: var(--color-primary-50)"
             placeholder="username or email"
             @keyup.enter="searchUsers"
           />
@@ -309,7 +311,7 @@ const transferOwnership = (participant) => {
             >
               <div class="mb-2 sm:mb-0">
                 <div class="font-medium">{{ user.displayName || user.username }}</div>
-                <div class="text-sm text-gray-500">{{ user.email }}</div>
+                <div class="text-sm text-muted">{{ user.email }}</div>
               </div>
               <!--             todo: can we have a checkbox here instead of button? and add all selected users with a button -->
               <BaseButton
@@ -344,11 +346,16 @@ const transferOwnership = (participant) => {
               <!-- Participant info -->
               <div class="flex justify-between items-center">
                 <div class="font-medium">{{ participant.nickname }}</div>
-                <div class="px-2 py-1 bg-primary-300 rounded text-sm">{{ participant.role }}</div>
+                <div
+                  class="px-2 py-1 rounded text-sm"
+                  style="background-color: var(--color-primary-300)"
+                >
+                  {{ participant.role }}
+                </div>
               </div>
 
               <!-- Owner info -->
-              <div v-if="participant.id === userStore.userId" class="text-sm text-gray-500">
+              <div v-if="participant.id === userStore.userId" class="text-sm text-muted">
                 This is you
               </div>
 
@@ -382,7 +389,8 @@ const transferOwnership = (participant) => {
               <input
                 v-model="participant.nickname"
                 type="text"
-                class="bg-primary-50 p-2 rounded w-full"
+                class="p-2 rounded w-full"
+                style="background-color: var(--color-primary-50)"
                 :disabled="isSaving"
                 placeholder="Enter new nickname"
               />
@@ -410,10 +418,7 @@ const transferOwnership = (participant) => {
           </li>
         </ul>
 
-        <div
-          v-if="(campaign?.participants || []).length === 0"
-          class="text-center py-3 text-gray-500"
-        >
+        <div v-if="(campaign?.participants || []).length === 0" class="text-center py-3 text-muted">
           No participants in this campaign yet.
         </div>
       </div>

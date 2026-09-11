@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseModal from '@/components/base/BaseModal.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -17,6 +19,7 @@ const emit = defineEmits(['update:modelValue', 'character-imported'])
 
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
+const router = useRouter()
 
 // Initialize an empty array to hold the available characters
 const availableCharacters = ref([])
@@ -68,26 +71,25 @@ watch(
 </script>
 
 <template>
-  <div
-    v-if="modelValue"
-    class="fixed inset-0 w-full h-full bg-black/50 flex justify-center items-center z-[100]"
-    @click.self="close"
-  >
-    <div class="bg-primary-50 p-8 rounded-lg max-w-[600px] w-[90%] max-h-[80vh] overflow-y-auto">
-      <h4 class="mb-4 text-primary-800">Select a character to import to the campaign</h4>
+  <BaseModal v-if="modelValue" z-index="z-[100]" @close="close">
+    <div
+      class="p-8 rounded-lg max-w-[600px] w-[90%] max-h-[80vh] overflow-y-auto"
+      style="background-color: var(--color-primary-50)"
+    >
+      <h4 class="mb-4" style="color: var(--color-primary-800)">
+        Select a character to import to the campaign
+      </h4>
 
       <div v-if="characterStore.isLoading" class="text-center py-8">
-        <div
-          class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"
-        ></div>
-        <p class="mt-2 text-gray-600">Loading available characters...</p>
+        <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
+        <p class="mt-2 text-secondary">Loading available characters...</p>
       </div>
 
       <div v-else-if="availableCharacters.length === 0" class="text-center py-8">
-        <p class="text-gray-600">You don't have any characters available to import.</p>
-        <router-link :to="{ name: 'CreateCharacter' }" class="button button-add">
+        <p class="text-secondary">You don't have any characters available to import.</p>
+        <BaseButton variant="add" @click="router.push({ name: 'CreateCharacter' })">
           Create a new character
-        </router-link>
+        </BaseButton>
       </div>
 
       <!-- Character grid -->
@@ -98,26 +100,29 @@ watch(
         <div
           v-for="character in availableCharacters"
           :key="character.id"
-          class="bg-primary-50 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-100 flex flex-col"
+          class="rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-subtle flex flex-col"
+          style="background-color: var(--color-primary-50)"
         >
           <div class="p-4 flex-grow">
             <div class="flex items-start space-x-3">
               <CharacterImage
                 :src="character.imageUrl"
                 :alt="`${character.name} portrait`"
-                class="w-14 h-14 rounded-lg border-2 border-primary-300 shadow-sm flex-shrink-0 object-cover"
+                class="w-14 h-14 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
+                style="border-color: var(--color-primary-300)"
               />
 
               <div class="flex-1 min-w-0">
                 <h5
-                  class="text-base font-semibold text-primary-700 line-clamp-2 break-words"
+                  class="text-base font-semibold line-clamp-2 break-words"
+                  style="color: var(--color-primary-700)"
                   :title="character.name"
                 >
                   {{ character.name }}
                 </h5>
 
                 <!-- Character basic info -->
-                <div class="flex items-center text-xs text-gray-600 mt-1">
+                <div class="flex items-center text-xs text-secondary mt-1">
                   <span>{{ character.race }}</span>
                   <span class="mx-1">•</span>
                   <span>{{ character.characterClass }} (Level {{ character.level }})</span>
@@ -126,7 +131,10 @@ watch(
             </div>
           </div>
 
-          <div class="bg-primary-100 px-4 py-2 flex justify-end">
+          <div
+            class="px-4 py-2 flex justify-end"
+            style="background-color: var(--color-primary-100)"
+          >
             <BaseButton
               variant="add"
               :disabled="isImporting === character.id"
@@ -143,7 +151,7 @@ watch(
         <BaseButton variant="ghost" @click="close">Cancel</BaseButton>
       </div>
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <style scoped></style>

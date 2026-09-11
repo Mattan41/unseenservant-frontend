@@ -1,7 +1,13 @@
 import AuthService from '@/features/auth/AuthService.js'
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { guestUser, guestUsers, guestCharacters, guestCampaigns, guestMessages } from '@/data/demoData.js'
+import {
+  guestUser,
+  guestUsers,
+  guestCharacters,
+  guestCampaigns,
+  guestMessages,
+} from '@/data/demoData.js'
 import { useUserStore } from '@/features/user/userStore.js'
 
 export const useAuthStore = defineStore('auth', () => {

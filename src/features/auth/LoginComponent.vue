@@ -2,6 +2,7 @@
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useRouter } from 'vue-router'
 import LoginForm from '@/features/auth/LoginForm.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -35,24 +36,29 @@ const handleGuestMode = () => {
   <LoginForm v-if="isDemoMode" />
 
   <!-- Production/Development: Show OAuth2 login -->
-  <div v-else class="login max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+  <div
+    v-else
+    class="login max-w-md mx-auto mt-10 p-6 bg-[var(--color-surface)] rounded-lg shadow-md"
+  >
     <div class="flex flex-col items-center mb-8">
       <img src="@/assets/logo.svg" alt="Hat Man" class="w-16 h-16 mb-3 object-contain" />
-      <div class="text-center pb-4 mb-6 border-b border-gray-100 flex flex-col items-center">
-        <h2 class="text-xl font-bold text-gray-700 tracking-wide uppercase">Login</h2>
-        <p class="text-xs text-gray-500 mt-2 max-w-xs normal-case italic font-normal">
+      <div class="text-center pb-4 mb-6 border-b border-subtle flex flex-col items-center">
+        <h2 class="text-xl font-bold text-default tracking-wide uppercase">Login</h2>
+        <p class="text-xs text-muted mt-2 max-w-xs normal-case italic font-normal">
           Log in is currently restricted to selected test users. Use the demo login below to test
           the app
         </p>
       </div>
-      <p class="text-xs text-gray-400 mt-1 font-medium tracking-wider uppercase">Sign in</p>
+      <p class="text-xs text-subtle mt-1 font-medium tracking-wider uppercase">Sign in</p>
     </div>
 
     <div class="flex flex-col items-center gap-4">
       <!-- Google Sign-in Button -->
+      <!-- Google brand blue (border/ring) — not part of our palette, see STYLE_GUIDE §3.1 -->
       <button
         @click.prevent="handleGoogleLogin"
-        class="w-64 h-10 px-3 flex items-center justify-center bg-white border border-gray-300 rounded text-sm text-gray-800 font-medium relative transition duration-200 hover:shadow-md hover:border-blue-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        class="w-64 h-10 px-3 flex items-center justify-center bg-white border border-input rounded text-sm font-medium relative transition duration-200 hover:shadow-md hover:border-blue-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+        style="color: var(--color-third-800)"
       >
         <div class="flex items-center justify-center">
           <div class="w-5 h-5 mr-3 flex-shrink-0">
@@ -74,16 +80,17 @@ const handleGuestMode = () => {
           <span class="font-medium">Sign in with GitHub</span>
         </div>
       </button>
-      <p class="text-xs text-gray-400 mt-1 font-medium tracking-wider uppercase">
+      <p class="text-xs text-subtle mt-1 font-medium tracking-wider uppercase">
         Or try app in demo mode
       </p>
       <!-- Guest Mode Button -->
-      <button
-        @click.prevent="handleGuestMode"
-        class="w-64 h-10 px-3 flex items-center justify-center bg-yellow-100 border border-yellow-400 rounded text-sm text-yellow-800 font-medium relative transition duration-200 hover:bg-yellow-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-300"
+      <BaseButton
+        variant="demo"
+        class="w-64 h-10 px-3 text-sm font-medium relative hover:shadow-md"
+        @click="handleGuestMode"
       >
-        <span class="font-medium">Guest Demo mode</span>
-      </button>
+        Guest Demo mode
+      </BaseButton>
     </div>
   </div>
 </template>
