@@ -129,12 +129,15 @@ all conditional styling in `*Utils.js` files.
 | `.element-link` | Navigation link | `text-primary-900 hover:text-primary-700` | implemented |
 | `.error-message` | Error alert | `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded` | implemented |
 | `.success-message` | Success alert | `bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded` | implemented |
-| `.campaign-selector` | Campaign-switcher link/button in the sidebar | `w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative group no-underline border border-primary-400 hover:scale-110 flex-shrink-0` | implemented |
-| `.campaign-selector--active` | Active/selected state modifier for `.campaign-selector` | `ring-2 ring-primary-500` | implemented |
-| `.campaign-tooltip` | Hover tooltip showing campaign names in the sidebar | `absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none` | implemented |
-| `.campaign-nav-button` | "+" add/navigate-to-campaigns button | `w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative group mt-2 hover:scale-110 flex-shrink-0` | implemented |
-| `.campaign-nav-tooltip` | Tooltip for the campaign nav button | `absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none` | implemented |
-| `.scroll-hint` | Scroll indicator in the sidebar campaign list | `absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full` | implemented |
+| `.campaign-sidebar` | Contextual in-campaign navigation (icon rail below md, labeled rail at md+) | `flex flex-row items-center justify-between gap-2 p-2 w-full flex-shrink-0 self-stretch md:w-56 md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4` | implemented |
+| `.campaign-sidebar-nav` | Section-button list wrapper | `flex flex-row items-center justify-center gap-2 flex-1 md:flex-col md:items-stretch md:justify-start` | implemented |
+| `.campaign-sidebar-item` | Section navigation button | `relative inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 md:justify-start md:text-left` | implemented |
+| `.campaign-sidebar-item--active` | Active/selected section modifier | `bg-primary-700 text-primary-100 hover:bg-primary-700` | implemented |
+| `.campaign-sidebar-item-label` | Item label (hidden on mobile icon rail) | `hidden md:inline` | implemented |
+| `.campaign-sidebar-icon` | Monochrome nav icon sizing | `w-5 h-5 flex-shrink-0` | implemented |
+| `.campaign-sidebar-tooltip` | Mobile icon-rail tooltip (hover/focus) | `absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 text-xs rounded whitespace-nowrap bg-primary-800 text-primary-100 pointer-events-none opacity-0 invisible transition-opacity z-50 md:hidden` | implemented |
+| `.campaign-sidebar-actions` | Owner-only action area pinned to sidebar bottom | `flex items-center justify-center flex-shrink-0 md:mt-auto md:pt-4 md:border-t md:border-primary-300` | implemented |
+| `.campaign-sidebar-action` | Owner-only campaign action button | `relative inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900 md:w-full md:justify-start` | implemented |
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |

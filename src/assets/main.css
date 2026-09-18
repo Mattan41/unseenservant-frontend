@@ -49,7 +49,7 @@
 /* Standard (if not set) or explicit DEV (Greenish) */
 :root,
 html[data-env='dev'] {
-  --color-surface: #ffffff;
+  --color-surface: #d8e7dd;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -65,6 +65,7 @@ html[data-env='dev'] {
 
 /* PROD-environment (Silver/Grey) */
 html[data-env='prod'] {
+  --color-surface: #ffffff;
   --primary: #c0c0c0;
   --primary-50: #f9f9f9;
   --primary-100: #f2f2f2;
@@ -219,34 +220,52 @@ html[data-env='prod'] {
   @apply bg-primary-500 p-4 rounded-lg;
 }
 
-/* Campaign sidebar — switcher link */
-.campaign-selector {
-  @apply w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative no-underline border border-primary-400 hover:scale-110 flex-shrink-0;
+/* Campaign sidebar — contextual in-campaign navigation
+   Icon rail below md, labeled vertical rail at md+. */
+.campaign-sidebar {
+  @apply flex flex-row items-center justify-between gap-2 p-2 w-full flex-shrink-0 self-stretch md:w-56 md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4;
 }
 
-/* Campaign sidebar — active/selected state */
-.campaign-selector--active {
-  @apply ring-2 ring-primary-500;
+.campaign-sidebar-nav {
+  @apply flex flex-row items-center justify-center gap-2 flex-1 md:flex-col md:items-stretch md:justify-start;
 }
 
-/* Campaign sidebar — hover tooltip (campaign names) */
-.campaign-tooltip {
-  @apply absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none;
+.campaign-sidebar-item {
+  @apply relative inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 md:justify-start md:text-left;
 }
 
-/* Campaign sidebar — "+" add/navigate button */
-.campaign-nav-button {
-  @apply w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative mt-2 hover:scale-110 flex-shrink-0;
+.campaign-sidebar-item--active {
+  @apply bg-primary-700 text-primary-100 hover:bg-primary-700;
 }
 
-/* Campaign sidebar — nav button tooltip */
-.campaign-nav-tooltip {
-  @apply absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none;
+/* Label is hidden on the mobile icon rail, shown on desktop */
+.campaign-sidebar-item-label {
+  @apply hidden md:inline;
 }
 
-/* Campaign sidebar — scroll indicator */
-.scroll-hint {
-  @apply absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full;
+.campaign-sidebar-icon {
+  @apply w-5 h-5 flex-shrink-0;
+}
+
+/* Tooltip for the mobile icon rail (accessible label is always in the DOM) */
+.campaign-sidebar-tooltip {
+  @apply absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 text-xs rounded whitespace-nowrap bg-primary-800 text-primary-100 pointer-events-none opacity-0 invisible transition-opacity z-50 md:hidden;
+}
+
+.campaign-sidebar-item:hover .campaign-sidebar-tooltip,
+.campaign-sidebar-item:focus .campaign-sidebar-tooltip,
+.campaign-sidebar-action:hover .campaign-sidebar-tooltip,
+.campaign-sidebar-action:focus .campaign-sidebar-tooltip {
+  @apply opacity-100 visible;
+}
+
+/* Owner-only campaign action pinned to the bottom on desktop */
+.campaign-sidebar-actions {
+  @apply flex items-center justify-center flex-shrink-0 md:mt-auto md:pt-4 md:border-t md:border-primary-300;
+}
+
+.campaign-sidebar-action {
+  @apply relative inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900 md:w-full md:justify-start;
 }
 
 /* Read more/less toggle link */

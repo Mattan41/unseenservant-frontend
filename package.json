@@ -12,7 +12,6 @@
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
     "clean": "rm -rf dist node_modules/.vite"
-
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.1",

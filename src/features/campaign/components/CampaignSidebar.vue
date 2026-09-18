@@ -1,139 +1,89 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 
 const props = defineProps({
-  campaigns: {
+  /**
+   * Contextual navigation items for the active campaign.
+   * Each item: `{ key: string, label: string, icon: string }`.
+   * Built by the smart parent (CampaignView) so role logic stays out of this
+   * presentational component.
+   */
+  items: {
     type: Array,
     required: true,
   },
-  currentCampaignId: {
-    type: Number,
+  /** Key of the currently active section. */
+  activeSection: {
+    type: String,
     required: true,
   },
-})
-
-const listRef = ref(null)
-const isScrollable = ref(false)
-let resizeObserver = null
-
-// Function to calculate if the list is currently scrollable
-const checkScrollable = () => {
-  if (listRef.value) {
-    isScrollable.value = listRef.value.scrollHeight > listRef.value.clientHeight
-  }
-}
-
-onMounted(() => {
-  if (listRef.value) {
-    // Setup observer to re-calculate when element size changes
-    resizeObserver = new ResizeObserver(() => {
-      checkScrollable()
-    })
-    resizeObserver.observe(listRef.value)
-  }
-
-  // Initial check when DOM is ready
-  nextTick(checkScrollable)
-})
-
-onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect()
-  }
-})
-
-// Re-check when the campaigns array updates (items added/removed)
-watch(
-  () => props.campaigns,
-  () => {
-    nextTick(checkScrollable)
+  /** Identifier of the campaign this sidebar belongs to. */
+  campaignId: {
+    type: [Number, String],
+    required: true,
   },
-  { deep: true },
-)
+  /** Whether the current user may edit campaign details (owner only). */
+  canEdit: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+defineEmits(['select', 'edit'])
+
+const isActive = (key) => key === props.activeSection
 </script>
 
 <template>
-  <aside
-    class="w-16 flex flex-col min-h-screen items-center py-4 space-y-4 relative custom-gradient flex-shrink-0"
-  >
-    <!-- Scroll hint at top if scrollable -->
-    <div v-if="isScrollable" class="scroll-hint top-2 z-10 animate-pulse"></div>
-
-    <!-- Campaign list wrapper (Added ref="listRef" here) -->
-    <div
-      ref="listRef"
-      class="campaign-list flex-1 flex flex-col items-center space-y-4 max-h-[calc(10*2.5rem+2rem)] w-full overflow-y-auto"
-    >
-      <RouterLink
-        v-for="userCampaign in campaigns"
-        :key="userCampaign.id"
-        :to="{ name: 'CampaignView', params: { id: userCampaign.id } }"
-        class="campaign-selector group"
-        :class="{
-          'campaign-selector--active': Number(currentCampaignId) === Number(userCampaign.id),
-        }"
-        :style="
-          userCampaign.imageUrl
-            ? {
-                backgroundImage: `url(${userCampaign.imageUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }
-            : {}
-        "
+  <aside class="campaign-sidebar custom-gradient" :data-campaign-id="campaignId">
+    <nav class="campaign-sidebar-nav" aria-label="Campaign sections">
+      <button
+        v-for="item in items"
+        :key="item.key"
+        type="button"
+        class="campaign-sidebar-item"
+        :class="{ 'campaign-sidebar-item--active': isActive(item.key) }"
+        :aria-current="isActive(item.key) ? 'page' : undefined"
+        :title="item.label"
+        @click="$emit('select', item.key)"
       >
-        <span class="campaign-tooltip">
-          {{ userCampaign.name }}
-        </span>
-      </RouterLink>
-    </div>
+        <CampaignNavIcon :name="item.icon" class="campaign-sidebar-icon" />
+        <span class="campaign-sidebar-item-label">{{ item.label }}</span>
+        <span class="campaign-sidebar-tooltip" role="tooltip">{{ item.label }}</span>
+        <span class="sr-only">{{ item.label }}</span>
+      </button>
+    </nav>
 
-    <!-- Scroll hint at bottom if scrollable -->
-    <div
-      class="h-2 rounded-md flex items-center justify-center text-white font-medium relative group w-full"
-    >
-      <div v-if="isScrollable" class="scroll-hint bottom-2 animate-pulse"></div>
+    <!-- Owner-only campaign action, pinned to the bottom on desktop -->
+    <div v-if="canEdit" class="campaign-sidebar-actions">
+      <button
+        type="button"
+        class="campaign-sidebar-action"
+        title="Edit Campaign"
+        @click="$emit('edit')"
+      >
+        <CampaignNavIcon name="edit" class="campaign-sidebar-icon" />
+        <span class="campaign-sidebar-item-label">Edit Campaign</span>
+        <span class="campaign-sidebar-tooltip" role="tooltip">Edit Campaign</span>
+        <span class="sr-only">Edit Campaign</span>
+      </button>
     </div>
-
-    <!-- Navigation action button -->
-    <RouterLink to="/campaigns" class="campaign-nav-button group">
-      <span class="text-xl">+</span>
-      <span class="campaign-nav-tooltip"> to campaign overview </span>
-    </RouterLink>
   </aside>
 </template>
 
 <style scoped>
 .custom-gradient {
-  background: linear-gradient(
-    to bottom,
-    var(--color-primary-100) 0%,
-    var(--color-primary-600) 50%,
-    var(--color-primary-100) 100%
-  );
+  background: linear-gradient(to right, var(--color-primary-100) 0%, var(--color-primary-300) 100%);
 }
 
-.campaign-list {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.campaign-list::-webkit-scrollbar {
-  display: none;
-}
-
-/* Animation for the scroll hint */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.3;
+@media screen and (min-width: 768px) {
+  .custom-gradient {
+    background: linear-gradient(
+      to bottom,
+      var(--color-primary-100) 0%,
+      var(--color-primary-300) 50%,
+      var(--color-primary-100) 100%
+    );
   }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>

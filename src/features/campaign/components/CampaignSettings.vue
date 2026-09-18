@@ -13,7 +13,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['participants-updated'], ['close-modal'])
+const emit = defineEmits(['participants-updated'])
 const notificationStore = useNotificationStore()
 
 const campaignStore = useCampaignStore()
@@ -41,20 +41,50 @@ const loadCampaignData = async () => {
   }
 }
 
-// Use a computed property determine ownership based on the campaign data
+// Ownership is separate from table role: only the owner can delete the
+// campaign or transfer ownership.
 const isOwner = computed(() => {
   if (!campaign.value || !userStore.currentUser) return false
-  return campaign.value.ownerId === userStore.userId
+  return String(campaign.value.ownerId) === String(userStore.userId)
 })
+
+// Table role (GM vs PLAYER) is resolved from the campaign's participant list.
+const isGm = computed(() => {
+  if (!campaign.value || !userStore.currentUser) return false
+  return campaignStore.isUserGM(campaign.value.id, userStore.userId)
+})
+
+// Participant and role management requires the owner or a GM.
+const canManage = computed(() => isOwner.value || isGm.value)
+
+// A non-owner GM must not be able to modify the campaign owner's entry.
+const canModifyParticipant = (participant) => {
+  if (!canManage.value) return false
+  if (isOwner.value) return true
+  return String(participant.id) !== String(campaign.value.ownerId)
+}
 
 // Computed property to get the current user's nickname
 const currentUserNickname = computed(() => {
   if (!campaign.value || !userStore.currentUser) return ''
-  const participant = campaign.value.participants.find((p) => p.id === userStore.userId)
+  const participant = campaign.value.participants.find(
+    (p) => String(p.id) === String(userStore.userId),
+  )
   return participant ? participant.nickname : ''
 })
 
 watch(() => props.campaignId, loadCampaignData, { immediate: true })
+
+// Keep the locally rendered campaign in sync when the parent refreshes the
+// shared store after a mutation (role toggle, nickname change, etc.).
+watch(
+  () => campaignStore.currentCampaign,
+  (updated) => {
+    if (updated && String(updated.id) === String(props.campaignId)) {
+      campaign.value = updated
+    }
+  },
+)
 
 // Search for users by username or email
 const searchUsers = async () => {
@@ -68,7 +98,7 @@ const searchUsers = async () => {
 
     // Filter out users who are already participants
     searchResults.value = users.filter(
-      (user) => !campaign.value.participants.some((p) => p.id === user.id),
+      (user) => !campaign.value.participants.some((p) => String(p.id) === String(user.id)),
     )
     // If no users found, set an error message - display for  3 seconds
     if (searchResults.value.length === 0) {
@@ -225,7 +255,7 @@ const transferOwnership = (participant) => {
   campaignStore
     .transferCampaignOwnership(props.campaignId, participant.id)
     .then(() => {
-      emit('close-modal')
+      emit('participants-updated', 'Campaign ownership transferred successfully!')
     })
     .catch((error) => {
       console.error('Error transferring ownership:', error)
@@ -235,8 +265,8 @@ const transferOwnership = (participant) => {
 
 <template>
   <div class="rounded-lg shadow-md p-4" style="background-color: var(--color-primary-200)">
-    <!-- Non-owner settings -->
-    <div v-if="!isOwner" class="mb-6">
+    <!-- Personal nickname (available to every participant) -->
+    <div class="mb-6">
       <div class="border rounded-lg p-4">
         <h5 class="font-medium mb-2">Your Nickname in Campaign</h5>
 
@@ -273,8 +303,8 @@ const transferOwnership = (participant) => {
       </div>
     </div>
 
-    <!-- Owner-only settings -->
-    <div v-if="isOwner" class="space-y-6">
+    <!-- Management settings (campaign owner or GM) -->
+    <div v-if="canManage" class="space-y-6">
       <!-- Add Participants Section -->
       <div class="border rounded-lg p-4">
         <h4 class="text-lg font-semibold mb-3">Add Participants</h4>
@@ -355,19 +385,31 @@ const transferOwnership = (participant) => {
               </div>
 
               <!-- Owner info -->
-              <div v-if="participant.id === userStore.userId" class="text-sm text-muted">
+              <div
+                v-if="String(participant.id) === String(userStore.userId)"
+                class="text-sm text-muted"
+              >
                 This is you
               </div>
 
               <!-- Action buttons -->
               <div class="flex flex-wrap gap-2">
-                <BaseButton variant="update" @click="toggleRole(participant)">
+                <BaseButton
+                  v-if="canModifyParticipant(participant)"
+                  variant="update"
+                  @click="toggleRole(participant)"
+                >
                   change to {{ participant.role === 'PLAYER' ? 'GM' : 'PLAYER' }}
                 </BaseButton>
-                <BaseButton variant="update" @click="updateNicknameForParticipant(participant)">
+                <BaseButton
+                  v-if="canModifyParticipant(participant)"
+                  variant="update"
+                  @click="updateNicknameForParticipant(participant)"
+                >
                   Edit Nickname
                 </BaseButton>
                 <BaseButton
+                  v-if="canModifyParticipant(participant)"
                   variant="remove"
                   :confirm-message="`Are you sure you want to remove ${participant.nickname || 'this participant'}?`"
                   @click="removeParticipant(participant)"
@@ -375,6 +417,7 @@ const transferOwnership = (participant) => {
                   Remove
                 </BaseButton>
                 <BaseButton
+                  v-if="isOwner"
                   variant="update"
                   confirm-message="Are you sure you want to transfer ownership?"
                   @click="transferOwnership(participant)"
@@ -423,8 +466,8 @@ const transferOwnership = (participant) => {
         </div>
       </div>
 
-      <!-- Campaign Management Buttons -->
-      <div class="border rounded-lg p-4">
+      <!-- Campaign Management Buttons (owner only) -->
+      <div v-if="isOwner" class="border rounded-lg p-4">
         <h4 class="text-lg font-semibold mb-3">Campaign Management</h4>
 
         <div class="flex flex-col sm:flex-row gap-3">

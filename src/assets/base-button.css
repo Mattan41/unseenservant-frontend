@@ -61,6 +61,11 @@
   @apply bg-yellow-100 border border-yellow-400 text-yellow-800 hover:bg-yellow-200 focus:ring-yellow-300;
 }
 
+/* Link / inline text button (e.g. read-more toggles) */
+.base-btn-link {
+  @apply m-0 p-0 bg-transparent text-primary-600 hover:text-primary-800 hover:underline font-normal text-sm focus:ring-0 focus:outline-none;
+}
+
 /* Primary form submit button (larger CTA, lighter than default) */
 .base-btn-form {
   @apply bg-primary-500 hover:bg-primary-600 text-white font-medium rounded transition duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed;
