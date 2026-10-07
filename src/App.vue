@@ -37,7 +37,7 @@ watch(
     <NotificationComponent />
     <HeaderComponent />
     <main
-      class="flex-grow"
+      class="grow"
       style="
         background-image: linear-gradient(
           to bottom,

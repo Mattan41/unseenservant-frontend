@@ -178,6 +178,41 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   }
 
+  /**
+   * Force-refresh a single campaign from the backend, bypassing the in-memory
+   * cache. Used after mutations (participant role/nickname, ownership transfer)
+   * that change campaign.participants, so role-based UI stays accurate.
+   *
+   * @param {number|string} id
+   * @returns {Promise<object>} The refreshed campaign
+   */
+  async function refreshCampaign(id) {
+    const notificationStore = useNotificationStore()
+
+    try {
+      const campaign = await CampaignService.fetchCampaign(id)
+      currentCampaign.value = campaign
+
+      const index = campaigns.value.findIndex((c) => c.id == id)
+      if (index !== -1) {
+        campaigns.value[index] = campaign
+      } else {
+        campaigns.value.push(campaign)
+      }
+
+      return campaign
+    } catch (error) {
+      console.error('Failed to refresh campaign:', error)
+      if (!error.handled) {
+        notificationStore.addNotification(
+          extractErrorMessage(error, 'Could not refresh campaign.'),
+          'error',
+        )
+      }
+      throw error
+    }
+  }
+
   async function updateCampaignInfo(campaignId, campaignData) {
     const notificationStore = useNotificationStore()
     try {
@@ -475,6 +510,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     fetchAllCampaigns,
     fetchAllCampaignsForCurrentUser,
     fetchCampaign,
+    refreshCampaign,
     updateCampaignInfo,
     uploadCampaignImage,
     deleteCampaign,

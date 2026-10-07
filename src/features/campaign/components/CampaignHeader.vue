@@ -1,67 +1,22 @@
 <script setup>
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
 
 defineProps({
   title: {
     type: String,
     required: true,
   },
-  description: {
-    type: String,
-    default: '',
-  },
   imageUrl: {
     type: String,
     default: '',
   },
-  isOwner: {
-    type: Boolean,
-    default: false,
-  },
-  descriptionExpanded: {
-    type: Boolean,
-    default: false,
-  },
 })
-
-defineEmits(['edit-click', 'toggle-description'])
 </script>
 
 <template>
   <div class="mb-6">
-    <div class="group relative">
-      <div class="flex justify-between items-start">
-        <h2 class="text-xl sm:text-2xl font-bold">
-          {{ title }}
-        </h2>
-        <BaseButton v-if="isOwner" variant="default" @click="$emit('edit-click')">
-          Edit Campaign
-        </BaseButton>
-      </div>
-
-      <!-- Campaign image -->
-      <CampaignImage :src="imageUrl" :alt="title" class="w-full h-48 object-cover rounded" />
-
-      <!-- Campaign description with line clamp -->
-      <div class="mt-3 break-words whitespace-pre-line">
-        <p v-if="!description" class="italic text-muted text-sm">No description available.</p>
-
-        <template v-else>
-          <p :class="{ 'line-clamp-2': !descriptionExpanded }" class="text-sm text-default">
-            {{ description }}
-          </p>
-
-          <button
-            v-if="description && description.length > 60"
-            @click="$emit('toggle-description')"
-            class="text-xs mt-1 hover:underline"
-            style="color: var(--color-primary-500)"
-          >
-            {{ descriptionExpanded ? 'Show less' : 'Read more' }}
-          </button>
-        </template>
-      </div>
-    </div>
+    <!-- Title is shown on desktop; on mobile it lives in the campaign top bar -->
+    <h2 class="hidden md:block text-xl sm:text-2xl font-bold break-words">{{ title }}</h2>
+    <CampaignImage :src="imageUrl" :alt="title" class="w-full h-48 object-cover rounded mt-3" />
   </div>
 </template>

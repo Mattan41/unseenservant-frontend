@@ -49,7 +49,7 @@
 /* Standard (if not set) or explicit DEV (Greenish) */
 :root,
 html[data-env='dev'] {
-  --color-surface: #ffffff;
+  --color-surface: #d8e7dd;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -65,6 +65,7 @@ html[data-env='dev'] {
 
 /* PROD-environment (Silver/Grey) */
 html[data-env='prod'] {
+  --color-surface: #ffffff;
   --primary: #c0c0c0;
   --primary-50: #f9f9f9;
   --primary-100: #f2f2f2;
@@ -219,34 +220,155 @@ html[data-env='prod'] {
   @apply bg-primary-500 p-4 rounded-lg;
 }
 
-/* Campaign sidebar — switcher link */
-.campaign-selector {
-  @apply w-10 h-10 rounded-md flex items-center justify-center text-primary-500 font-medium relative no-underline border border-primary-400 hover:scale-110 flex-shrink-0;
+/* Campaign sidebar — desktop-only contextual rail (md+).
+   The mobile equivalent is rendered through `SlideOverDrawer`. */
+.campaign-sidebar {
+  @apply hidden md:flex md:h-full md:w-56 md:flex-shrink-0 md:self-stretch md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4;
 }
 
-/* Campaign sidebar — active/selected state */
-.campaign-selector--active {
-  @apply ring-2 ring-primary-500;
+/* Vertical theme gradient shared by the campaign rail and the mobile drawer */
+.campaign-gradient {
+  @apply bg-linear-to-b from-primary-100 via-primary-300 to-primary-100;
 }
 
-/* Campaign sidebar — hover tooltip (campaign names) */
-.campaign-tooltip {
-  @apply absolute left-full ml-2 px-2 py-1 bg-primary-600 text-white text-xs rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 pointer-events-none;
+/* Mobile campaign top bar: title + local navigation trigger */
+.campaign-mobile-bar {
+  @apply flex items-center justify-between gap-2 p-2 md:hidden;
 }
 
-/* Campaign sidebar — "+" add/navigate button */
-.campaign-nav-button {
-  @apply w-10 h-10 bg-primary-200 text-primary-800 rounded-md flex items-center justify-center hover:bg-primary-300 transition-colors no-underline relative mt-2 hover:scale-110 flex-shrink-0;
+.campaign-mobile-title {
+  @apply min-w-0 truncate text-lg font-bold text-third-700;
 }
 
-/* Campaign sidebar — nav button tooltip */
-.campaign-nav-tooltip {
-  @apply absolute top-1/2 left-full transform -translate-y-1/2 ml-2 w-auto p-2 bg-primary-700 text-white text-xs rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity z-50 whitespace-nowrap pointer-events-none;
+/* "Campaign Views" trigger (a BaseButton with the base margins/padding reset) */
+.campaign-nav-trigger {
+  @apply ml-0 mt-0 inline-flex items-center gap-2 bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700;
 }
 
-/* Campaign sidebar — scroll indicator */
-.scroll-hint {
-  @apply absolute left-1/2 transform -translate-x-1/2 w-5 h-1 bg-primary-400 rounded-full;
+.campaign-sidebar-nav {
+  @apply flex flex-col items-stretch justify-start gap-2 flex-1;
+}
+
+.campaign-sidebar-item {
+  @apply relative inline-flex items-center justify-start gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 text-left;
+}
+
+.campaign-sidebar-item--active {
+  @apply bg-primary-700 text-primary-100 hover:bg-primary-700;
+}
+
+/* Labels are always visible (drawer on mobile, rail on desktop) */
+.campaign-sidebar-item-label {
+  @apply inline;
+}
+
+.campaign-sidebar-icon {
+  @apply w-5 h-5 flex-shrink-0;
+}
+
+/* Owner-only destructive/settings grouping (Campaign Settings section) */
+.danger-zone {
+  @apply border border-red-300 rounded-lg p-4;
+}
+
+.danger-zone-title {
+  @apply text-lg font-semibold mb-3 text-red-700;
+}
+
+/* Discovery tile for add/import actions (e.g. import a character) */
+.add-tile {
+  @apply flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-center cursor-pointer transition-colors text-primary-700 hover:bg-primary-200;
+}
+
+/* Empty-state call-to-action container */
+.empty-cta {
+  @apply flex flex-col items-center gap-3 rounded-lg border border-third-200 p-6 text-center;
+}
+
+/* Base icon button (IconButton.vue) */
+.icon-btn {
+  @apply inline-flex items-center justify-center rounded-md p-2 cursor-pointer transition-colors focus:outline-none focus:ring-2;
+}
+
+.icon-btn-glyph {
+  @apply w-5 h-5 flex-shrink-0;
+}
+
+.icon-btn-plain {
+  @apply text-third-700 hover:bg-primary-300/60 focus:ring-primary-600;
+}
+
+.icon-btn-solid {
+  @apply bg-primary-800 text-primary-100 hover:bg-primary-900 focus:ring-primary-700;
+}
+
+.icon-btn-on-dark {
+  @apply text-primary-100 hover:bg-primary-800 focus:ring-primary-500;
+}
+
+/* Slide-over drawer / overlay (SlideOverDrawer.vue) */
+.slide-over-backdrop {
+  @apply fixed inset-0 bg-black/50;
+}
+
+.slide-over-panel {
+  @apply fixed inset-y-0 flex flex-col overflow-y-auto;
+}
+
+.slide-over-panel--left {
+  @apply left-0;
+}
+
+.slide-over-panel--right {
+  @apply right-0;
+}
+
+.slide-over-panel--sidebar {
+  @apply w-72 max-w-[80vw] gap-4 p-4;
+}
+
+.slide-over-panel--fullscreen {
+  @apply w-full gap-4 p-4;
+}
+
+.slide-over-left-enter-active,
+.slide-over-left-leave-active,
+.slide-over-right-enter-active,
+.slide-over-right-leave-active {
+  @apply transition-transform duration-200 ease-out;
+}
+
+.slide-over-left-enter-from,
+.slide-over-left-leave-to {
+  @apply -translate-x-full;
+}
+
+.slide-over-right-enter-from,
+.slide-over-right-leave-to {
+  @apply translate-x-full;
+}
+
+.slide-over-fade-enter-active,
+.slide-over-fade-leave-active {
+  @apply transition-opacity duration-200 ease-out;
+}
+
+.slide-over-fade-enter-from,
+.slide-over-fade-leave-to {
+  @apply opacity-0;
+}
+
+/* Global navigation overlay content (HeaderComponent) */
+.app-menu {
+  @apply flex h-full flex-col gap-4;
+}
+
+.app-menu-header {
+  @apply flex items-center justify-between gap-2;
+}
+
+.app-menu-links {
+  @apply flex flex-col gap-2;
 }
 
 /* Read more/less toggle link */

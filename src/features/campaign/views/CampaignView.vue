@@ -4,62 +4,93 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import CampaignSettings from '@/features/campaign/components/CampaignSettings.vue'
+import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
+import CampaignSettingsSection from '@/features/campaign/components/CampaignSettingsSection.vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.vue'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
+import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import BaseModal from '@/components/base/BaseModal.vue'
+import BaseCard from '@/components/base/BaseCard.vue'
+import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
+import { getCharacterOwnerName } from '@/features/campaign/campaignUtils.js'
 
 const route = useRoute()
 const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+
 const campaign = ref(null)
 const isLoading = ref(false)
 const isInitialLoad = ref(true)
-const isCharactersListVisible = ref(false)
-const showSettings = ref(false)
+
+// Contextual navigation section currently rendered in the main content area.
+const activeSection = ref('overview')
+
+// Local UI-state
 const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
-const showEditModal = ref(false)
-const isMessageBoardVisible = ref(false)
+// Mobile campaign navigation drawer (triggered from the campaign top bar).
+const campaignNavOpen = ref(false)
 
+const SECTIONS = [
+  { key: 'overview', label: 'Overview', icon: 'overview' },
+  { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
+  { key: 'characters', label: 'Characters', icon: 'characters' },
+  { key: 'messages', label: 'Messages', icon: 'messages' },
+  { key: 'participants', label: 'Participants', icon: 'participants' },
+  { key: 'settings', label: 'Settings', icon: 'settings' },
+  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'edit', ownerOnly: true },
+]
+
+/**
+ * Navigation items are computed by this smart view so the sidebar stays
+ * presentational. Every participant sees Overview/Lore/Characters/Messages/
+ * Participants/Settings; the owner-only "Campaign Settings" section is filtered
+ * out for everyone else.
+ */
+const navItems = computed(() => SECTIONS.filter((section) => !section.ownerOnly || isOwner.value))
+
+function selectSection(key) {
+  if (navItems.value.some((section) => section.key === key)) {
+    activeSection.value = key
+  }
+}
+
+function resetPresentationState() {
+  activeSection.value = 'overview'
+  descriptionExpanded.value = false
+  showImportModal.value = false
+  campaignNavOpen.value = false
+}
+
+// Ownership is separate from table role: only the owner controls the campaign.
 const isOwner = computed(() => {
   if (!campaign.value || !userStore.currentUser) return false
-  return campaign.value.ownerId === userStore.userId
+  return String(campaign.value.ownerId) === String(userStore.userId)
 })
 
-const loadCampaignData = async () => {
+// Table role (GM vs PLAYER) is looked up from the campaign's participant list.
+const isGm = computed(() => {
+  if (!campaign.value || !userStore.currentUser) return false
+  return campaignStore.isUserGM(campaign.value.id, userStore.userId)
+})
+
+const loadCampaignData = async (campaignId) => {
   const notificationStore = useNotificationStore()
 
-  // Only show a full-page loading spinner on the very first visit (cold cache)
   if (isInitialLoad.value) {
     isLoading.value = true
   }
 
-  try {
-    await campaignStore.fetchAllCampaignsForCurrentUser()
-  } catch (error) {
-    console.error('Failed to load campaigns:', error)
-    notificationStore.addNotification('Failed to load campaigns: ' + error.message, 'error')
-    isLoading.value = false
-    return
-  }
-
-  const campaignId = route.params.id
-  const campaignExists = campaignStore.campaigns.some((c) => String(c.id) === String(campaignId))
-
-  if (!campaignExists) {
-    await router.push({ name: 'CampaignsView' })
-    isLoading.value = false
-    return
-  }
+  // Reset local presentation state and stale messages for the new campaign
+  resetPresentationState()
+  messageStore.clearMessages()
 
   try {
     campaign.value = await campaignStore.fetchCampaign(campaignId)
@@ -67,6 +98,7 @@ const loadCampaignData = async () => {
   } catch (error) {
     console.error('Failed to load campaign:', error)
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
+    await router.push({ name: 'CampaignsView' })
   } finally {
     isLoading.value = false
     isInitialLoad.value = false
@@ -81,48 +113,51 @@ const campaignCharacters = computed(() => {
 
 const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
 
-const charactersByParticipant = computed(() => {
-  if (!campaign.value?.participants) return {}
+// Read-only participant roster (owner + players + GMs).
+const participants = computed(() => campaign.value?.participants || [])
 
-  const characterMap = {}
+// Overview summary counts.
+const participantCount = computed(() => participants.value.length)
+const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM').length)
+const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
+const characterCount = computed(() => campaignCharacters.value.length)
 
-  campaign.value.participants.forEach((participant) => {
-    characterMap[participant.id] = {
-      participant: participant,
-      characters: [],
-    }
-  })
-
-  if (campaign.value.ownerId && !characterMap[campaign.value.ownerId]) {
-    let ownerInfo = campaign.value.participants.find((p) => p.id === campaign.value.ownerId)
-    if (!ownerInfo) {
-      ownerInfo = { id: campaign.value.ownerId, nickname: 'Campaign Owner' }
-    }
-    characterMap[ownerInfo.id] = {
-      participant: ownerInfo,
-      characters: [],
-    }
-  }
-
-  if (campaignCharacters.value && campaignCharacters.value.length) {
-    campaignCharacters.value.forEach((character) => {
-      if (characterMap[character.ownerId]) {
-        characterMap[character.ownerId].characters.push(character)
-      }
-    })
-  }
-
-  return characterMap
+// Description is framed as the campaign's world lore/background block.
+const campaignDescription = computed(() => {
+  if (!campaign.value) return ''
+  return campaignStore.getCampaignDescription(campaign.value.id) || ''
 })
 
-const onCharacterImported = () => {
-  loadCampaignData()
+function openCharacter(character) {
+  if (!canOpenCharacter(character)) return
+  router.push({
+    name: 'CharacterView',
+    params: { id: character.id },
+    query: { from: 'campaign', campaignId: campaign.value.id },
+  })
+}
+
+// Keep "Remove from campaign" available to the character owner, a GM, or the
+// campaign owner.
+function canRemoveCharacter(character) {
+  if (!character) return false
+  return isOwner.value || isGm.value || String(character.ownerId) === String(userStore.userId)
+}
+
+// The owner has full access; GMs and the character's owner may open details.
+function canOpenCharacter(character) {
+  if (isOwner.value || isGm.value) return true
+  return userStore.currentUser && String(userStore.userId) === String(character.ownerId)
+}
+
+const onCharacterImported = async () => {
+  await campaignStore.refreshCampaign(route.params.id)
+  await campaignStore.fetchCharactersForCampaign(route.params.id)
 }
 
 const removeCharacter = async (characterId) => {
   if (confirm('Are you sure you want to remove this character from the campaign?')) {
-    const id = route.params.id
-    const campaignId = id // Keep as string for guest mode compatibility
+    const campaignId = route.params.id
     try {
       await campaignStore.removeCharacterFromCampaign(characterId)
     } catch (error) {
@@ -132,66 +167,24 @@ const removeCharacter = async (characterId) => {
   }
 }
 
-const openEditModal = () => {
-  if (!isOwner.value) return
-  showEditModal.value = true
-}
-
-const handleSaveCampaign = async (updatedCampaign) => {
-  const notificationStore = useNotificationStore() // Bring this back for the single success message
-
-  try {
-    // 1. Update text info
-    await campaignStore.updateCampaignInfo(campaign.value.id, {
-      name: updatedCampaign.title,
-      description: updatedCampaign.description,
-    })
-
-    // 2. Upload image file
-    if (updatedCampaign.imageFile) {
-      const updated = await campaignStore.uploadCampaignImage(
-        campaign.value.id,
-        updatedCampaign.imageFile,
-      )
-      campaign.value.imageUrl = updated.imageUrl
-    }
-
-    // 3. Update local reactive state
-    campaign.value.name = updatedCampaign.title
-    campaign.value.description = updatedCampaign.description
-
-    // 4. Close the modal
-    showEditModal.value = false
-
-    notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
-  } catch (error) {
-    // Silent catch, because the specific API errors are handled gracefully inside the store actions
-    console.error('Campaign update chain interrupted:', error)
-  }
-}
-
-const toggleCharactersList = () => {
-  isCharactersListVisible.value = !isCharactersListVisible.value
-}
-
-const toggleSettings = () => {
-  showSettings.value = !showSettings.value
-}
-
 const toggleDescription = () => {
   descriptionExpanded.value = !descriptionExpanded.value
 }
 
-const toggleMessageBoard = () => {
-  isMessageBoardVisible.value = !isMessageBoardVisible.value
-}
-
-const handleParticipantsUpdated = () => {
-  loadCampaignData()
+/**
+ * Refresh role/participant data after a mutation without losing the section
+ * the user is currently looking at.
+ */
+const handleParticipantsUpdated = async () => {
+  try {
+    campaign.value = await campaignStore.refreshCampaign(route.params.id)
+  } catch (error) {
+    console.error('Failed to refresh campaign after participant update:', error)
+  }
 }
 
 onMounted(async () => {
-  await loadCampaignData()
+  await loadCampaignData(route.params.id)
 })
 
 onUnmounted(() => {
@@ -203,228 +196,235 @@ onUnmounted(() => {
   messageStore.clearMessages()
 })
 
+// Load data and reset presentation mode when changing campaign
 watch(
   () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      await loadCampaignData()
+  async (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      await loadCampaignData(newId)
     }
   },
-  { immediate: true },
 )
 </script>
 
 <template>
-  <!-- Loading state -->
-  <div v-if="isLoading" class="flex flex-col items-center justify-center h-full p-8">
+  <!-- Full loading spinner (initial load only) -->
+  <div v-if="isLoading && !campaign" class="flex flex-col items-center justify-center h-full p-8">
     <div class="spinner h-8 w-8 border-b-2"></div>
     <p class="mt-2">Loading campaign...</p>
   </div>
 
-  <!-- Campaign loaded successfully -->
-  <div v-else-if="campaign" class="flex h-full">
-    <!-- Campaign selector sidebar - completely self-contained now -->
+  <div v-else-if="campaign" class="flex flex-col md:flex-row md:items-stretch md:h-full">
+    <!-- Mobile campaign bar: title + local navigation trigger -->
+    <div class="campaign-mobile-bar">
+      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
+      <BaseButton variant="default" class="campaign-nav-trigger" @click="campaignNavOpen = true">
+        <CampaignNavIcon name="menu" class="w-5 h-5 flex-shrink-0" />
+        <span>Campaign Views</span>
+      </BaseButton>
+    </div>
+
+    <!-- Contextual in-campaign navigation (rail on desktop, drawer on mobile) -->
     <CampaignSidebar
-      :campaigns="
-        campaignStore.campaigns.map((c) => ({
-          ...c,
-          imageUrl: campaignStore.getCampaignImageUrl(c.id),
-          name: campaignStore.getCampaignTitle(c.id),
-        }))
-      "
-      :current-campaign-id="parseInt(route.params.id)"
+      :items="navItems"
+      :active-section="activeSection"
+      :campaign-id="campaign.id"
+      :open="campaignNavOpen"
+      @select="selectSection"
+      @update:open="campaignNavOpen = $event"
     />
 
-    <!-- Main content area -->
-    <div class="flex-1 p-4 overflow-y-auto">
-      <!-- Campaign header with edit button -->
-      <CampaignHeader
-        :title="campaignStore.getCampaignTitle(campaign.id)"
-        :description="campaignStore.getCampaignDescription(campaign.id)"
-        :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
-        :is-owner="isOwner"
-        :description-expanded="descriptionExpanded"
-        @edit-click="openEditModal"
-        @toggle-description="toggleDescription"
-      />
+    <!-- Active section content -->
+    <div class="flex-1 min-w-0 p-4">
+      <!-- Overview -->
+      <section v-if="activeSection === 'overview'">
+        <CampaignHeader
+          :title="campaignStore.getCampaignTitle(campaign.id)"
+          :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
+        />
 
-      <!-- Campaign content -->
-      <section class="mb-6">
-        <!-- Participants collapsible section -->
-        <div class="mb-4 border rounded p-3">
-          <h3 class="font-medium cursor-pointer flex items-center" @click="toggleCharactersList">
-            <span v-if="isCharactersListVisible" class="transform rotate-90 inline-block mr-1"
-              >›</span
-            >
-            <span v-else class="inline-block mr-1">›</span>
-            Participants & Characters
-          </h3>
+        <BaseSection title="Campaign Summary">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <BaseCard>
+              <p class="text-xs uppercase text-muted">Participants</p>
+              <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
+              <p class="text-sm text-muted mt-1">{{ gmCount }} GM · {{ playerCount }} Player</p>
+            </BaseCard>
 
-          <div v-if="isCharactersListVisible" class="mt-2">
-            <div v-if="isLoadingCharacters" class="pl-4 py-2 text-muted">Loading characters...</div>
+            <BaseCard>
+              <p class="text-xs uppercase text-muted">Characters</p>
+              <p class="text-2xl font-bold text-default mt-1">{{ characterCount }}</p>
+              <p class="text-sm text-muted mt-1">in this campaign</p>
+            </BaseCard>
 
-            <div v-else-if="!campaign?.participants?.length" class="pl-4 py-2 text-muted">
-              No participants in this campaign yet.
-            </div>
-
-            <!-- For each participants and its characters -->
-            <div v-else>
-              <div
-                v-for="(data, participantId) in charactersByParticipant"
-                :key="participantId"
-                class="mb-3 border-l-2"
-                style="border-color: var(--color-primary-200)"
-              >
-                <div class="pl-4 py-1 font-medium flex flex-wrap items-center">
-                  <span class="mr-2 flex-shrink-0">•</span>
-                  <span
-                    class="truncate max-w-[150px] sm:max-w-none"
-                    :title="data.participant.nickname"
-                  >
-                    {{ data.participant.nickname }}
-                  </span>
-                  <span v-if="data.participant.role" class="text-secondary ml-1 truncate">
-                    ({{ data.participant.role }})
-                  </span>
-                  <span
-                    v-if="data.participant.id === campaign.ownerId"
-                    class="text-sm ml-1 whitespace-nowrap"
-                    style="color: var(--color-primary-600)"
-                  >
-                    (Campaign Owner)
-                  </span>
-                </div>
-
-                <!-- Show participants characters -->
-                <div v-if="data.characters.length > 0" class="pl-8">
-                  <div
-                    v-for="character in data.characters"
-                    :key="character.id"
-                    class="py-1 flex flex-wrap items-center text-default"
-                  >
-                    <span class="mr-1 flex-shrink-0" style="color: var(--color-primary-500)"
-                      >◦</span
-                    >
-                    <CharacterImage
-                      :src="character.imageUrl"
-                      :alt="`${character.name} portrait`"
-                      class="w-10 h-10 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
-                      style="border-color: var(--color-primary-300)"
-                    />
-                    <span
-                      class="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none"
-                      :title="character.name"
-                    >
-                      {{ character.name }}
-                    </span>
-                    <span
-                      v-if="character.characterClass"
-                      class="text-sm text-secondary ml-1 truncate"
-                    >
-                      ({{ character.characterClass
-                      }}<span v-if="character.level"> , Level {{ character.level }} </span>)
-                    </span>
-
-                    <BaseButton
-                      v-if="
-                        (userStore.currentUser && userStore.userId === character.ownerId) ||
-                        campaignStore.isUserGM(campaign.id, userStore.userId)
-                      "
-                      variant="default"
-                      @click="
-                        router.push({
-                          name: 'CharacterView',
-                          params: { id: character.id },
-                          query: { from: 'campaign', campaignId: campaign.id },
-                        })
-                      "
-                    >
-                      Open Character Details
-                    </BaseButton>
-                    <BaseButton
-                      v-if="userStore.currentUser && userStore.userId === character.ownerId"
-                      variant="remove"
-                      class="ml-auto mt-1 sm:mt-0"
-                      @click="removeCharacter(character.id)"
-                    >
-                      Remove
-                    </BaseButton>
-                  </div>
-                </div>
-
-                <!-- If the participant has no characters yet in the campaign -->
-                <div v-else class="pl-8 py-1 text-muted text-sm italic">No characters</div>
+            <BaseCard>
+              <div>
+                <p class="text-xs uppercase text-muted">Roster</p>
+                <p class="text-sm text-default mt-1">Roles, invites &amp; ownership</p>
               </div>
-            </div>
+              <BaseButton
+                variant="link"
+                class="mt-2 self-start"
+                @click="selectSection('participants')"
+              >
+                View participants
+              </BaseButton>
+            </BaseCard>
           </div>
-        </div>
+        </BaseSection>
+      </section>
 
-        <!-- Message Board collapsible section -->
-        <div class="mb-4 border rounded p-3">
-          <h3 class="font-medium cursor-pointer flex items-center" @click="toggleMessageBoard">
-            <span v-if="isMessageBoardVisible" class="transform rotate-90 inline-block mr-1"
-              >›</span
+      <!-- World Lore & Background -->
+      <BaseSection v-else-if="activeSection === 'lore'" title="World Lore &amp; Background">
+        <BaseCard>
+          <p v-if="!campaignDescription" class="italic text-muted text-sm">
+            No background has been recorded for this campaign yet.
+          </p>
+          <template v-else>
+            <p
+              class="text-default text-sm whitespace-pre-line break-words"
+              :class="{ 'line-clamp-6': !descriptionExpanded }"
             >
-            <span v-else class="inline-block mr-1">›</span>
-            Message Board
-          </h3>
+              {{ campaignDescription }}
+            </p>
+            <BaseButton
+              v-if="campaignDescription.length > 220"
+              variant="link"
+              class="mt-2"
+              @click="toggleDescription"
+            >
+              {{ descriptionExpanded ? 'Show less' : 'Read more' }}
+            </BaseButton>
+          </template>
+        </BaseCard>
+      </BaseSection>
 
-          <div v-if="isMessageBoardVisible" class="mt-2">
-            <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
-          </div>
+      <!-- Characters -->
+      <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
+        <template #actions>
+          <BaseButton
+            variant="default"
+            class="inline-flex items-center gap-1"
+            @click="showImportModal = true"
+          >
+            <CampaignNavIcon name="plus" class="w-4 h-4 flex-shrink-0" />
+            Import Character
+          </BaseButton>
+        </template>
+
+        <div v-if="isLoadingCharacters" class="py-6 text-center">
+          <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
+          <p class="mt-2 text-muted">Loading characters...</p>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-          <BaseButton variant="default" @click="toggleSettings">Campaign Settings</BaseButton>
-          <BaseButton variant="default" @click="showImportModal = true">
-            IMPORT CHARACTER
+        <div v-else-if="!campaignCharacters.length" class="empty-cta">
+          <p class="text-muted text-sm italic">
+            No characters have been added to this campaign yet.
+          </p>
+          <BaseButton variant="add" @click="showImportModal = true">
+            Import your first character
           </BaseButton>
         </div>
 
-        <EditCampaignModal
-          v-if="showEditModal && campaign"
-          :campaign="{
-            id: campaign.id,
-            title: campaignStore.getCampaignTitle(campaign.id),
-            description: campaignStore.getCampaignDescription(campaign.id),
-            imageUrl: campaignStore.getCampaignImageUrl(campaign.id),
-          }"
-          @close="showEditModal = false"
-          @save="handleSaveCampaign"
-        />
-
-        <!-- Import modal-component -->
-        <ImportCharacterModal
-          v-model="showImportModal"
-          :campaign-id="campaign.id"
-          @character-imported="onCharacterImported"
-        />
-
-        <!-- Modal overlay -->
-        <BaseModal v-if="showSettings" z-index="z-30" @close="showSettings = false">
-          <div
-            class="p-6 rounded-lg max-w-2xl max-h-[90vh] overflow-y-auto w-full m-4 shadow-lg border"
-            style="
-              background-color: var(--color-primary-100);
-              border-color: var(--color-primary-300);
-            "
-            @click.stop
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <BaseCard
+            v-for="character in campaignCharacters"
+            :key="character.id"
+            clickable
+            class="h-full"
+            @click="openCharacter(character)"
           >
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-2xl font-semibold" style="color: var(--color-third-800)">
-                Campaign Settings
-              </h3>
-              <BaseButton variant="icon" @click="showSettings = false"> &times; </BaseButton>
+            <div class="flex items-start gap-3">
+              <CharacterImage
+                :src="character.imageUrl"
+                :alt="`${character.name || 'Character'} portrait`"
+                class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
+                style="border-color: var(--color-primary-300)"
+              />
+              <div class="flex-1 min-w-0">
+                <h5
+                  class="character-name text-base font-semibold line-clamp-2 break-words"
+                  :title="character.name"
+                >
+                  {{ character.name || 'Unnamed Character' }}
+                </h5>
+                <div class="mt-1">
+                  <span class="badge badge-secondary text-xs">
+                    Played by: {{ getCharacterOwnerName(character, participants) }}
+                  </span>
+                </div>
+              </div>
             </div>
-            <CampaignSettings
-              :campaignId="String(campaign.id)"
-              @close-modal="showSettings = false"
-              @participants-updated="handleParticipantsUpdated"
-            />
-          </div>
-        </BaseModal>
-      </section>
+
+            <div class="mt-3 pt-2 border-t border-subtle">
+              <div class="flex flex-wrap gap-2">
+                <span v-if="character.race" class="character-tag">{{ character.race }}</span>
+                <span v-if="character.characterClass" class="character-tag">
+                  {{ character.characterClass }}
+                </span>
+                <span v-if="character.level" class="character-tag-level">
+                  Level {{ character.level }}
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-3 flex flex-wrap gap-2" @click.stop>
+              <BaseButton
+                v-if="canOpenCharacter(character)"
+                variant="default"
+                @click="openCharacter(character)"
+              >
+                Details
+              </BaseButton>
+              <BaseButton
+                v-if="canRemoveCharacter(character)"
+                variant="remove"
+                @click="removeCharacter(character.id)"
+              >
+                Remove from campaign
+              </BaseButton>
+            </div>
+          </BaseCard>
+
+          <!-- Discoverable import affordance -->
+          <button type="button" class="add-tile" @click="showImportModal = true">
+            <CampaignNavIcon name="plus" class="w-6 h-6" />
+            <span class="text-sm font-medium">Import a character</span>
+          </button>
+        </div>
+      </BaseSection>
+
+      <!-- Messages -->
+      <BaseSection v-else-if="activeSection === 'messages'" title="Messages">
+        <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
+      </BaseSection>
+
+      <!-- Participants -->
+      <BaseSection v-else-if="activeSection === 'participants'" title="Participants">
+        <CampaignParticipants
+          :campaign-id="String(campaign.id)"
+          @participants-updated="handleParticipantsUpdated"
+        />
+      </BaseSection>
+
+      <!-- Settings (personal) -->
+      <BaseSection v-else-if="activeSection === 'settings'" title="Settings">
+        <CampaignSettings :campaign-id="String(campaign.id)" @updated="handleParticipantsUpdated" />
+      </BaseSection>
+
+      <!-- Campaign Settings (owner only) -->
+      <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
+        <CampaignSettingsSection
+          :campaign-id="String(campaign.id)"
+          @updated="handleParticipantsUpdated"
+        />
+      </BaseSection>
     </div>
+
+    <ImportCharacterModal
+      v-model="showImportModal"
+      :campaign-id="campaign.id"
+      @character-imported="onCharacterImported"
+    />
   </div>
 </template>
