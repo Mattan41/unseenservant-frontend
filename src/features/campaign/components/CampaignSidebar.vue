@@ -59,11 +59,7 @@ function selectFromDrawer(key) {
     panel-class="campaign-gradient"
     @update:model-value="$emit('update:open', $event)"
   >
-    <CampaignNavList
-      :items="items"
-      :active-section="activeSection"
-      @select="selectFromDrawer"
-    />
+    <CampaignNavList :items="items" :active-section="activeSection" @select="selectFromDrawer" />
   </SlideOverDrawer>
 </template>
 

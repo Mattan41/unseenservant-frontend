@@ -198,4 +198,3 @@ const transferOwnership = () => {
 </template>
 
 <style scoped></style>
-

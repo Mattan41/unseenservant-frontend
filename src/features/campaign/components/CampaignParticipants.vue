@@ -188,11 +188,17 @@ const saveParticipantNickname = async (participant) => {
         :key="participant.id"
         class="flex items-center justify-between gap-2 border border-section rounded-md px-3 py-2"
       >
-        <span class="text-default font-medium truncate" :title="getParticipantDisplayName(participant)">
+        <span
+          class="text-default font-medium truncate"
+          :title="getParticipantDisplayName(participant)"
+        >
           {{ getParticipantDisplayName(participant) }}
         </span>
         <span class="flex items-center gap-1 flex-shrink-0">
-          <span v-if="String(participant.id) === String(userStore.userId)" class="text-subtle text-xs">
+          <span
+            v-if="String(participant.id) === String(userStore.userId)"
+            class="text-subtle text-xs"
+          >
             You
           </span>
           <span class="badge" :class="getRoleBadgeClass(participant.role)">
@@ -274,7 +280,10 @@ const saveParticipantNickname = async (participant) => {
                 </span>
               </div>
 
-              <div v-if="String(participant.id) === String(campaign.ownerId)" class="text-sm text-muted">
+              <div
+                v-if="String(participant.id) === String(campaign.ownerId)"
+                class="text-sm text-muted"
+              >
                 Campaign owner
               </div>
               <div
@@ -348,4 +357,3 @@ const saveParticipantNickname = async (participant) => {
 </template>
 
 <style scoped></style>
-

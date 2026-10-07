@@ -114,7 +114,12 @@ const saveNickname = async () => {
         >
           Save
         </BaseButton>
-        <BaseButton variant="ghost" class="flex-1" :disabled="isSaving" @click="cancelEditingNickname">
+        <BaseButton
+          variant="ghost"
+          class="flex-1"
+          :disabled="isSaving"
+          @click="cancelEditingNickname"
+        >
           Cancel
         </BaseButton>
       </div>

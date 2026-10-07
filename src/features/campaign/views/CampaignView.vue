@@ -318,7 +318,9 @@ watch(
         </div>
 
         <div v-else-if="!campaignCharacters.length" class="empty-cta">
-          <p class="text-muted text-sm italic">No characters have been added to this campaign yet.</p>
+          <p class="text-muted text-sm italic">
+            No characters have been added to this campaign yet.
+          </p>
           <BaseButton variant="add" @click="showImportModal = true">
             Import your first character
           </BaseButton>
