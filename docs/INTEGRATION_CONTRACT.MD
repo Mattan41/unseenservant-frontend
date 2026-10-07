@@ -60,9 +60,11 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **POST /api/characters**
 - Requires: ROLE_USER
-- Request: `PlayerCharacterInputDTO { ownerId?, campaignId?, name, level (0–20), characterClass, imageUrl?, race, playerCharacterData }`
+- Request: `CharacterInputDTO { ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e? }`
+  - `systemType`: `DND5E` | `OFFWORLDERS`
+  - `dnd5e`: `{ level (1–20), characterClass, race, hitPoints?, armorClass?, stats }` — only used when `systemType === 'DND5E'`
 - `ownerId` defaults to logged-in user if null
-- Response: `PlayerCharacterOutputDTO`
+- Response: `CharacterOutputDTO`
 - Status: 201, 400, 401
 
 **GET /api/characters**
@@ -82,13 +84,14 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **GET /api/characters/{id}**
 - Requires: ROLE_USER
-- Response: `PlayerCharacterOutputDTO { id, ownerId, campaignId, name, level, characterClass, race, imageUrl, playerCharacterData, createdAt, updatedAt }`
+- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, dnd5e, createdAt, updatedAt }`
+  - `dnd5e` is a nullable nested block `{ level, characterClass, race, hitPoints, armorClass, stats }`, present only when `systemType === 'DND5E'`
 - Status: 200, 401, 404
 
 **PATCH /api/characters/{id}**
 - Requires: ROLE_USER, must be owner
-- Request: `PlayerCharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged.
-- Response: `PlayerCharacterOutputDTO`
+- Request: `CharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged. The nested `dnd5e` object is patch-applied field-by-field when `systemType === 'DND5E'`.
+- Response: `CharacterOutputDTO`
 - Status: 200, 400, 401, 403, 404
 
 **POST /api/characters/{id}/image**

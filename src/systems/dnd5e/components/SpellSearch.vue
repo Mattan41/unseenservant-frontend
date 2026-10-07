@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useSpellStore } from '@/features/spell/spellStore.js'
+import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const props = defineProps({
 
 const emit = defineEmits(['spell-click', 'save'])
 
-const spellStore = useSpellStore()
+const spellStore = useDnd5eSpellStore()
 const {
   searchResults,
   currentQuery,

@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { getSchoolBadgeClass } from '@/features/spell/spellUtils.js'
+import { getSchoolBadgeClass } from '@/systems/dnd5e/spellUtils.js'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 

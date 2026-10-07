@@ -207,7 +207,7 @@ const guestAxios = {
     }
 
     if (url.includes('characters') && url.includes('/image')) {
-      return Promise.resolve({ data: { imageUrl: '/defaultCharacter.svg' } })
+      return Promise.resolve({ data: { avatarUrl: '/defaultCharacter.svg' } })
     }
 
     if (url.includes('characters') && url.includes('/spells')) {

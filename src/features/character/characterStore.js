@@ -25,7 +25,7 @@ export const useCharacterStore = defineStore('character', () => {
   const getCharacterImageUrl = computed(() => {
     return (id) => {
       const character = characters.value.find((char) => char.id === id)
-      return character?.imageUrl || '/defaultCharacter.svg'
+      return character?.avatarUrl || '/defaultCharacter.svg'
     }
   })
 
@@ -187,7 +187,7 @@ export const useCharacterStore = defineStore('character', () => {
         }
       }
 
-      return updatedCharacter.imageUrl
+      return updatedCharacter.avatarUrl
     } catch (error) {
       const errorMessage =
         error.response && typeof error.response.data === 'string'

@@ -57,7 +57,7 @@ const viewCharacter = (id) => {
         <div class="p-4 flex-grow">
           <div class="flex items-start space-x-3">
             <CharacterImage
-              :src="character.imageUrl"
+              :src="character.avatarUrl"
               :alt="`${character.name} portrait`"
               class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
               style="border-color: var(--color-primary-300)"
@@ -89,13 +89,12 @@ const viewCharacter = (id) => {
           <!-- Character information -->
           <div class="mt-3 pt-2 border-t" style="border-color: var(--color-third-100)">
             <div class="flex flex-wrap gap-2">
-              <span class="character-tag">
-                {{ character.race }}
-              </span>
-              <span class="character-tag">
-                {{ character.characterClass }}
-              </span>
-              <span class="character-tag-level"> Level {{ character.level }} </span>
+              <template v-if="character.dnd5e">
+                <span class="character-tag">{{ character.dnd5e.race }}</span>
+                <span class="character-tag">{{ character.dnd5e.characterClass }}</span>
+                <span class="character-tag-level"> Level {{ character.dnd5e.level }} </span>
+              </template>
+              <span v-else class="character-tag">{{ character.systemType }}</span>
             </div>
           </div>
         </div>

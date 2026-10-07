@@ -336,7 +336,7 @@ watch(
           >
             <div class="flex items-start gap-3">
               <CharacterImage
-                :src="character.imageUrl"
+                :src="character.avatarUrl"
                 :alt="`${character.name || 'Character'} portrait`"
                 class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
                 style="border-color: var(--color-primary-300)"
@@ -358,13 +358,18 @@ watch(
 
             <div class="mt-3 pt-2 border-t border-subtle">
               <div class="flex flex-wrap gap-2">
-                <span v-if="character.race" class="character-tag">{{ character.race }}</span>
-                <span v-if="character.characterClass" class="character-tag">
-                  {{ character.characterClass }}
-                </span>
-                <span v-if="character.level" class="character-tag-level">
-                  Level {{ character.level }}
-                </span>
+                <template v-if="character.dnd5e">
+                  <span v-if="character.dnd5e.race" class="character-tag">
+                    {{ character.dnd5e.race }}
+                  </span>
+                  <span v-if="character.dnd5e.characterClass" class="character-tag">
+                    {{ character.dnd5e.characterClass }}
+                  </span>
+                  <span v-if="character.dnd5e.level" class="character-tag-level">
+                    Level {{ character.dnd5e.level }}
+                  </span>
+                </template>
+                <span v-else class="character-tag">{{ character.systemType }}</span>
               </div>
             </div>
 

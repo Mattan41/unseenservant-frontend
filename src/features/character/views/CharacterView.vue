@@ -1,21 +1,17 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
-import { useSpellStore } from '@/features/spell/spellStore.js'
-import { storeToRefs } from 'pinia'
-import { useRoute, useRouter } from 'vue-router'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import SpellSearch from '@/features/spell/components/SpellSearch.vue'
-import SpellCard from '@/features/spell/components/SpellCard.vue'
-import SpellDetailModal from '@/features/spell/components/SpellDetailModal.vue'
+import SystemSheetRouter from '@/features/character/components/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()
 const userStore = useUserStore()
 const notificationStore = useNotificationStore()
-const spellStore = useSpellStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -27,66 +23,13 @@ const campaignId = route.query.campaignId || null
 const { userId } = storeToRefs(userStore)
 const { currentCharacter } = storeToRefs(characterStore)
 
-const characterSpells = ref([])
-const spellsLoading = ref(false)
-const showSpellModal = ref(false)
-const selectedSpell = ref(null)
-const showSpellSearch = ref(false)
-const removingSpellKey = ref(null)
-
 onMounted(async () => {
   try {
     await characterStore.fetchCharacter(characterId.value)
-    await fetchSpells()
   } finally {
     loading.value = false
   }
 })
-
-async function fetchSpells() {
-  spellsLoading.value = true
-  try {
-    characterSpells.value = await spellStore.fetchCharacterSpells(characterId.value)
-  } catch {
-    characterSpells.value = []
-  } finally {
-    spellsLoading.value = false
-  }
-}
-
-function openSpellDetail(spell) {
-  selectedSpell.value = spell
-  showSpellModal.value = true
-}
-
-function closeSpellModal() {
-  showSpellModal.value = false
-  selectedSpell.value = null
-}
-
-async function saveSpellToCharacter(spell) {
-  try {
-    await spellStore.saveSpellToCharacter(characterId.value, spell)
-    await fetchSpells()
-  } catch {
-    // Error is handled by the store
-  }
-}
-
-async function removeSpellFromCharacter(spell) {
-  const spellKey = spell.key || spell.slug
-  if (!spellKey) return
-
-  removingSpellKey.value = spellKey
-  try {
-    const success = await spellStore.removeSpellFromCharacter(characterId.value, spellKey)
-    if (success) {
-      await fetchSpells()
-    }
-  } finally {
-    removingSpellKey.value = null
-  }
-}
 
 const isOwner = computed(
   () =>
@@ -106,13 +49,11 @@ const deleteCharacter = async () => {
 
 <template>
   <div class="container mx-auto p-4 max-w-4xl">
-    <!-- Loading state -->
     <div v-if="loading" class="text-center py-8">
       <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2" style="color: var(--color-third-600)">Loading character...</p>
     </div>
 
-    <!-- Not found state -->
     <div v-else-if="!currentCharacter" class="text-center py-8">
       <p style="color: var(--color-third-600)">Character not found.</p>
       <BaseButton variant="default" class="mt-4" @click="router.push({ name: 'CharactersView' })">
@@ -120,7 +61,6 @@ const deleteCharacter = async () => {
       </BaseButton>
     </div>
 
-    <!-- Main content -->
     <div v-else>
       <div
         class="rounded-lg shadow-lg overflow-hidden"
@@ -148,12 +88,12 @@ const deleteCharacter = async () => {
           >
         </div>
 
-        <!-- Character header: image + basic info -->
+        <!-- Generic header: image + basic info -->
         <div class="p-6 border-b" style="border-color: var(--color-third-200)">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <div class="flex flex-col items-center md:items-start">
               <CharacterImage
-                :src="currentCharacter.imageUrl"
+                :src="currentCharacter.avatarUrl"
                 alt="Character portrait"
                 class="w-64 h-64 rounded-lg border-2 shadow-md mb-2"
                 style="border-color: var(--color-primary-300)"
@@ -161,41 +101,24 @@ const deleteCharacter = async () => {
               <h3 class="text-xl font-bold" style="color: var(--color-third-700)">
                 {{ currentCharacter.name }}
               </h3>
+              <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
             </div>
             <div
               class="flex flex-col justify-center md:col-span-1"
               style="color: var(--color-third-700)"
             >
               <div class="space-y-2">
-                <p><strong>Race:</strong> {{ currentCharacter.race }}</p>
-                <p><strong>Class:</strong> {{ currentCharacter.characterClass }}</p>
-                <p><strong>Level:</strong> {{ currentCharacter.level }}</p>
+                <p v-if="currentCharacter.notes">
+                  <strong>Notes:</strong> {{ currentCharacter.notes }}
+                </p>
+                <p v-else class="text-sm text-muted italic">No notes.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Stats -->
-        <div class="p-6" style="background-color: var(--color-third-50)">
-          <h2 class="section-heading mb-4">Character Stats</h2>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            <div v-if="currentCharacter.playerCharacterData">
-              <div
-                v-for="(value, stat) in currentCharacter.playerCharacterData"
-                :key="stat"
-                class="p-2 rounded-lg shadow text-center"
-                style="background-color: var(--color-third-200)"
-              >
-                <div class="text-lg font-bold" style="color: var(--color-primary-700)">
-                  {{ value }}
-                </div>
-                <div class="text-xs uppercase tracking-wide" style="color: var(--color-third-600)">
-                  {{ stat }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- System-specific character sheet -->
+        <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
 
         <!-- Additional info -->
         <div class="p-6 border-t border-section">
@@ -206,56 +129,10 @@ const deleteCharacter = async () => {
           </p>
           <p>
             <strong>Last Updated:</strong>
-            {{ new Date(currentCharacter.updatedAt).toLocaleDateString() }}
+            {{ currentCharacter.updatedAt ? new Date(currentCharacter.updatedAt).toLocaleDateString() : '-' }}
           </p>
         </div>
-
-        <!-- Spells -->
-        <div class="p-6 border-t border-section">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="section-heading">Spells</h2>
-            <BaseButton
-              v-if="isOwner"
-              variant="default"
-              @click="showSpellSearch = !showSpellSearch"
-            >
-              {{ showSpellSearch ? 'Hide Search' : 'Search Spells to add' }}
-            </BaseButton>
-          </div>
-
-          <div v-if="showSpellSearch" class="mb-6">
-            <SpellSearch
-              :character-id="characterId"
-              @spell-click="openSpellDetail"
-              @save="saveSpellToCharacter"
-            />
-          </div>
-
-          <div v-if="spellsLoading" class="text-center py-4">
-            <div class="spinner h-6 w-6 border-t-2 border-b-2"></div>
-            <span class="ml-2" style="color: var(--color-third-500)">Loading spells...</span>
-          </div>
-
-          <div v-else-if="characterSpells.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <SpellCard
-              v-for="spell in characterSpells"
-              :key="spell.key"
-              :spell="spell"
-              :show-remove="isOwner"
-              :is-removing="removingSpellKey === (spell.key || spell.slug)"
-              @click="openSpellDetail"
-              @remove="removeSpellFromCharacter"
-            />
-          </div>
-
-          <div v-else class="text-center py-4" style="color: var(--color-third-400)">
-            <p>No spells saved yet. Use the "Add Spell" button to search and save spells.</p>
-          </div>
-        </div>
       </div>
-
-      <!-- Spell detail modal -->
-      <SpellDetailModal :spell="selectedSpell" :visible="showSpellModal" @close="closeSpellModal" />
 
       <!-- Back navigation -->
       <div class="mt-6">

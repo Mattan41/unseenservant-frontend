@@ -1,5 +1,5 @@
 import apiClient from '@/api/apiClient.js'
-import open5eAxios from '@/api/lib/open5e-axios.js'
+import open5eAxios from '@/systems/dnd5e/api/open5e-axios.js'
 import { useAuthStore } from '@/features/auth/authStore'
 
 /**
