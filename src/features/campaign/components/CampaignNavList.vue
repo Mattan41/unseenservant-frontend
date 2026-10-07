@@ -20,14 +20,9 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  /** Whether the current user may edit campaign details (owner only). */
-  canEdit: {
-    type: Boolean,
-    default: false,
-  },
 })
 
-defineEmits(['select', 'edit'])
+defineEmits(['select'])
 
 const isActive = (key) => key === props.activeSection
 </script>
@@ -48,14 +43,6 @@ const isActive = (key) => key === props.activeSection
       <span class="campaign-sidebar-item-label">{{ item.label }}</span>
     </button>
   </nav>
-
-  <!-- Owner-only campaign action, pinned to the bottom -->
-  <div v-if="canEdit" class="campaign-sidebar-actions">
-    <button type="button" class="campaign-sidebar-action" title="Edit Campaign" @click="$emit('edit')">
-      <CampaignNavIcon name="edit" class="campaign-sidebar-icon" />
-      <span class="campaign-sidebar-item-label">Edit Campaign</span>
-    </button>
-  </div>
 </template>
 
 <style scoped></style>

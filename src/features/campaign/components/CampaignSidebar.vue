@@ -26,11 +26,6 @@ defineProps({
     type: [Number, String],
     required: true,
   },
-  /** Whether the current user may edit campaign details (owner only). */
-  canEdit: {
-    type: Boolean,
-    default: false,
-  },
   /** Whether the mobile slide-over drawer is open (use with `v-model`). */
   open: {
     type: Boolean,
@@ -38,15 +33,10 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['select', 'edit', 'update:open'])
+const emit = defineEmits(['select', 'update:open'])
 
 function selectFromDrawer(key) {
   emit('select', key)
-  emit('update:open', false)
-}
-
-function editFromDrawer() {
-  emit('edit')
   emit('update:open', false)
 }
 </script>
@@ -57,9 +47,7 @@ function editFromDrawer() {
     <CampaignNavList
       :items="items"
       :active-section="activeSection"
-      :can-edit="canEdit"
       @select="$emit('select', $event)"
-      @edit="$emit('edit')"
     />
   </aside>
 
@@ -74,9 +62,7 @@ function editFromDrawer() {
     <CampaignNavList
       :items="items"
       :active-section="activeSection"
-      :can-edit="canEdit"
       @select="selectFromDrawer"
-      @edit="editFromDrawer"
     />
   </SlideOverDrawer>
 </template>

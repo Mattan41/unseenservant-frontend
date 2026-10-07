@@ -266,13 +266,23 @@ html[data-env='prod'] {
   @apply w-5 h-5 flex-shrink-0;
 }
 
-/* Owner-only campaign action pinned to the bottom of the drawer/rail */
-.campaign-sidebar-actions {
-  @apply mt-auto flex flex-shrink-0 items-center justify-start border-t border-primary-300 pt-4;
+/* Owner-only destructive/settings grouping (Campaign Settings section) */
+.danger-zone {
+  @apply border border-red-300 rounded-lg p-4;
 }
 
-.campaign-sidebar-action {
-  @apply relative inline-flex w-full items-center justify-start gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900;
+.danger-zone-title {
+  @apply text-lg font-semibold mb-3 text-red-700;
+}
+
+/* Discovery tile for add/import actions (e.g. import a character) */
+.add-tile {
+  @apply flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-center cursor-pointer transition-colors text-primary-700 hover:bg-primary-200;
+}
+
+/* Empty-state call-to-action container */
+.empty-cta {
+  @apply flex flex-col items-center gap-3 rounded-lg border border-third-200 p-6 text-center;
 }
 
 /* Base icon button (IconButton.vue) */

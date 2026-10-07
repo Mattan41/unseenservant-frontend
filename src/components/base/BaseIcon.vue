@@ -90,6 +90,20 @@ defineProps({
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </template>
+
+    <!-- Participants: group -->
+    <template v-else-if="name === 'participants'">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+      <circle cx="4" cy="10" r="2.5" />
+      <circle cx="20" cy="10" r="2.5" />
+    </template>
+
+    <!-- Plus: add -->
+    <template v-else-if="name === 'plus'">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </template>
   </svg>
 </template>
 

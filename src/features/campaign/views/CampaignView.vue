@@ -4,10 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import CampaignSettings from '@/features/campaign/components/CampaignSettings.vue'
+import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
+import CampaignSettingsSection from '@/features/campaign/components/CampaignSettingsSection.vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.vue'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
@@ -16,11 +17,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
-import {
-  getRoleBadgeClass,
-  getCharacterOwnerName,
-  getParticipantDisplayName,
-} from '@/features/campaign/campaignUtils.js'
+import { getCharacterOwnerName } from '@/features/campaign/campaignUtils.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,7 +35,6 @@ const activeSection = ref('overview')
 // Local UI-state
 const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
-const showEditModal = ref(false)
 // Mobile campaign navigation drawer (triggered from the campaign top bar).
 const campaignNavOpen = ref(false)
 
@@ -47,18 +43,21 @@ const SECTIONS = [
   { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
   { key: 'characters', label: 'Characters', icon: 'characters' },
   { key: 'messages', label: 'Messages', icon: 'messages' },
+  { key: 'participants', label: 'Participants', icon: 'participants' },
   { key: 'settings', label: 'Settings', icon: 'settings' },
+  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'edit', ownerOnly: true },
 ]
 
 /**
  * Navigation items are computed by this smart view so the sidebar stays
- * presentational. All sections are available to every participant; the
- * Settings section internally scopes its controls by role.
+ * presentational. Every participant sees Overview/Lore/Characters/Messages/
+ * Participants/Settings; the owner-only "Campaign Settings" section is filtered
+ * out for everyone else.
  */
-const navItems = computed(() => SECTIONS)
+const navItems = computed(() => SECTIONS.filter((section) => !section.ownerOnly || isOwner.value))
 
 function selectSection(key) {
-  if (SECTIONS.some((section) => section.key === key)) {
+  if (navItems.value.some((section) => section.key === key)) {
     activeSection.value = key
   }
 }
@@ -67,7 +66,6 @@ function resetPresentationState() {
   activeSection.value = 'overview'
   descriptionExpanded.value = false
   showImportModal.value = false
-  showEditModal.value = false
   campaignNavOpen.value = false
 }
 
@@ -118,18 +116,17 @@ const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
 // Read-only participant roster (owner + players + GMs).
 const participants = computed(() => campaign.value?.participants || [])
 
+// Overview summary counts.
+const participantCount = computed(() => participants.value.length)
+const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM').length)
+const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
+const characterCount = computed(() => campaignCharacters.value.length)
+
 // Description is framed as the campaign's world lore/background block.
 const campaignDescription = computed(() => {
   if (!campaign.value) return ''
   return campaignStore.getCampaignDescription(campaign.value.id) || ''
 })
-
-function isCurrentUser(participantOrId) {
-  const id =
-    participantOrId && typeof participantOrId === 'object' ? participantOrId.id : participantOrId
-  if (id === undefined || id === null) return false
-  return String(id) === String(userStore.userId)
-}
 
 function openCharacter(character) {
   if (!canOpenCharacter(character)) return
@@ -167,38 +164,6 @@ const removeCharacter = async (characterId) => {
       console.log('Error caught in component:', error)
     }
     await campaignStore.fetchCharactersForCampaign(campaignId)
-  }
-}
-
-const openEditModal = () => {
-  if (!isOwner.value) return
-  showEditModal.value = true
-}
-
-const handleSaveCampaign = async (updatedCampaign) => {
-  const notificationStore = useNotificationStore()
-
-  try {
-    await campaignStore.updateCampaignInfo(campaign.value.id, {
-      name: updatedCampaign.title,
-      description: updatedCampaign.description,
-    })
-
-    if (updatedCampaign.imageFile) {
-      const updated = await campaignStore.uploadCampaignImage(
-        campaign.value.id,
-        updatedCampaign.imageFile,
-      )
-      campaign.value.imageUrl = updated.imageUrl
-    }
-
-    campaign.value.name = updatedCampaign.title
-    campaign.value.description = updatedCampaign.description
-    showEditModal.value = false
-
-    notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
-  } catch (error) {
-    console.error('Campaign update chain interrupted:', error)
   }
 }
 
@@ -264,10 +229,8 @@ watch(
       :items="navItems"
       :active-section="activeSection"
       :campaign-id="campaign.id"
-      :can-edit="isOwner"
       :open="campaignNavOpen"
       @select="selectSection"
-      @edit="openEditModal"
       @update:open="campaignNavOpen = $event"
     />
 
@@ -280,34 +243,34 @@ watch(
           :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
         />
 
-        <BaseSection title="Adventuring Party">
-          <ul v-if="participants.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <li
-              v-for="participant in participants"
-              :key="participant.id"
-              class="flex items-center justify-between gap-2 border border-section rounded-md px-3 py-2"
-            >
-              <span
-                class="text-default font-medium truncate"
-                :title="getParticipantDisplayName(participant)"
+        <BaseSection title="Campaign Summary">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <BaseCard>
+              <p class="text-xs uppercase text-muted">Participants</p>
+              <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
+              <p class="text-sm text-muted mt-1">{{ gmCount }} GM · {{ playerCount }} Player</p>
+            </BaseCard>
+
+            <BaseCard>
+              <p class="text-xs uppercase text-muted">Characters</p>
+              <p class="text-2xl font-bold text-default mt-1">{{ characterCount }}</p>
+              <p class="text-sm text-muted mt-1">in this campaign</p>
+            </BaseCard>
+
+            <BaseCard>
+              <div>
+                <p class="text-xs uppercase text-muted">Roster</p>
+                <p class="text-sm text-default mt-1">Roles, invites &amp; ownership</p>
+              </div>
+              <BaseButton
+                variant="link"
+                class="mt-2 self-start"
+                @click="selectSection('participants')"
               >
-                {{ getParticipantDisplayName(participant) }}
-              </span>
-              <span class="flex items-center gap-1 flex-shrink-0">
-                <span v-if="isCurrentUser(participant)" class="text-subtle text-xs">You</span>
-                <span class="badge" :class="getRoleBadgeClass(participant.role)">
-                  {{ participant.role || 'PLAYER' }}
-                </span>
-                <span
-                  v-if="String(participant.id) === String(campaign.ownerId)"
-                  class="badge badge-info"
-                >
-                  Owner
-                </span>
-              </span>
-            </li>
-          </ul>
-          <p v-else class="text-muted text-sm italic">No participants yet.</p>
+                View participants
+              </BaseButton>
+            </BaseCard>
+          </div>
         </BaseSection>
       </section>
 
@@ -339,7 +302,12 @@ watch(
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
         <template #actions>
-          <BaseButton variant="default" @click="showImportModal = true">
+          <BaseButton
+            variant="default"
+            class="inline-flex items-center gap-1"
+            @click="showImportModal = true"
+          >
+            <CampaignNavIcon name="plus" class="w-4 h-4 flex-shrink-0" />
             Import Character
           </BaseButton>
         </template>
@@ -349,12 +317,12 @@ watch(
           <p class="mt-2 text-muted">Loading characters...</p>
         </div>
 
-        <p
-          v-else-if="!campaignCharacters.length"
-          class="text-muted text-sm italic border border-section rounded-md p-4"
-        >
-          No characters have been added to this campaign yet.
-        </p>
+        <div v-else-if="!campaignCharacters.length" class="empty-cta">
+          <p class="text-muted text-sm italic">No characters have been added to this campaign yet.</p>
+          <BaseButton variant="add" @click="showImportModal = true">
+            Import your first character
+          </BaseButton>
+        </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <BaseCard
@@ -415,6 +383,12 @@ watch(
               </BaseButton>
             </div>
           </BaseCard>
+
+          <!-- Discoverable import affordance -->
+          <button type="button" class="add-tile" @click="showImportModal = true">
+            <CampaignNavIcon name="plus" class="w-6 h-6" />
+            <span class="text-sm font-medium">Import a character</span>
+          </button>
         </div>
       </BaseSection>
 
@@ -423,26 +397,27 @@ watch(
         <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
       </BaseSection>
 
-      <!-- Settings -->
-      <BaseSection v-else-if="activeSection === 'settings'" title="Campaign Settings">
-        <CampaignSettings
+      <!-- Participants -->
+      <BaseSection v-else-if="activeSection === 'participants'" title="Participants">
+        <CampaignParticipants
           :campaign-id="String(campaign.id)"
           @participants-updated="handleParticipantsUpdated"
         />
       </BaseSection>
-    </div>
 
-    <EditCampaignModal
-      v-if="showEditModal && campaign"
-      :campaign="{
-        id: campaign.id,
-        title: campaignStore.getCampaignTitle(campaign.id),
-        description: campaignStore.getCampaignDescription(campaign.id),
-        imageUrl: campaignStore.getCampaignImageUrl(campaign.id),
-      }"
-      @close="showEditModal = false"
-      @save="handleSaveCampaign"
-    />
+      <!-- Settings (personal) -->
+      <BaseSection v-else-if="activeSection === 'settings'" title="Settings">
+        <CampaignSettings :campaign-id="String(campaign.id)" @updated="handleParticipantsUpdated" />
+      </BaseSection>
+
+      <!-- Campaign Settings (owner only) -->
+      <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
+        <CampaignSettingsSection
+          :campaign-id="String(campaign.id)"
+          @updated="handleParticipantsUpdated"
+        />
+      </BaseSection>
+    </div>
 
     <ImportCharacterModal
       v-model="showImportModal"
