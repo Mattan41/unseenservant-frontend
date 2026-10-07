@@ -41,6 +41,7 @@ const showEditModal = ref(false)
 
 const SECTIONS = [
   { key: 'overview', label: 'Overview', icon: 'overview' },
+  { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
   { key: 'characters', label: 'Characters', icon: 'characters' },
   { key: 'messages', label: 'Messages', icon: 'messages' },
   { key: 'settings', label: 'Settings', icon: 'settings' },
@@ -264,30 +265,6 @@ watch(
           :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
         />
 
-        <BaseSection title="World Lore &amp; Background">
-          <BaseCard>
-            <p v-if="!campaignDescription" class="italic text-muted text-sm">
-              No background has been recorded for this campaign yet.
-            </p>
-            <template v-else>
-              <p
-                class="text-default text-sm whitespace-pre-line break-words"
-                :class="{ 'line-clamp-6': !descriptionExpanded }"
-              >
-                {{ campaignDescription }}
-              </p>
-              <BaseButton
-                v-if="campaignDescription.length > 220"
-                variant="link"
-                class="mt-2"
-                @click="toggleDescription"
-              >
-                {{ descriptionExpanded ? 'Show less' : 'Read more' }}
-              </BaseButton>
-            </template>
-          </BaseCard>
-        </BaseSection>
-
         <BaseSection title="Adventuring Party">
           <ul v-if="participants.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <li
@@ -318,6 +295,31 @@ watch(
           <p v-else class="text-muted text-sm italic">No participants yet.</p>
         </BaseSection>
       </section>
+
+      <!-- World Lore & Background -->
+      <BaseSection v-else-if="activeSection === 'lore'" title="World Lore &amp; Background">
+        <BaseCard>
+          <p v-if="!campaignDescription" class="italic text-muted text-sm">
+            No background has been recorded for this campaign yet.
+          </p>
+          <template v-else>
+            <p
+              class="text-default text-sm whitespace-pre-line break-words"
+              :class="{ 'line-clamp-6': !descriptionExpanded }"
+            >
+              {{ campaignDescription }}
+            </p>
+            <BaseButton
+              v-if="campaignDescription.length > 220"
+              variant="link"
+              class="mt-2"
+              @click="toggleDescription"
+            >
+              {{ descriptionExpanded ? 'Show less' : 'Read more' }}
+            </BaseButton>
+          </template>
+        </BaseCard>
+      </BaseSection>
 
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">

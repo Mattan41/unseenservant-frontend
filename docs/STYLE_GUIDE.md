@@ -129,15 +129,19 @@ all conditional styling in `*Utils.js` files.
 | `.element-link` | Navigation link | `text-primary-900 hover:text-primary-700` | implemented |
 | `.error-message` | Error alert | `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded` | implemented |
 | `.success-message` | Success alert | `bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded` | implemented |
-| `.campaign-sidebar` | Contextual in-campaign navigation (icon rail below md, labeled rail at md+) | `flex flex-row items-center justify-between gap-2 p-2 w-full flex-shrink-0 self-stretch md:w-56 md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4` | implemented |
-| `.campaign-sidebar-nav` | Section-button list wrapper | `flex flex-row items-center justify-center gap-2 flex-1 md:flex-col md:items-stretch md:justify-start` | implemented |
-| `.campaign-sidebar-item` | Section navigation button | `relative inline-flex items-center justify-center gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 md:justify-start md:text-left` | implemented |
+| `.campaign-sidebar` | Contextual in-campaign navigation (off-canvas drawer below md, labeled rail at md+) | `fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80vw] flex-col items-stretch justify-start gap-4 overflow-y-auto p-4 transition-transform duration-200 ease-out md:static md:z-auto md:h-full md:w-56 md:max-w-none md:flex-shrink-0 md:self-stretch md:visible md:translate-x-0 md:pointer-events-auto md:overflow-visible` | implemented |
+| `.campaign-sidebar--closed` | Mobile drawer state: off-canvas, non-interactive, out of tab order (md+ overrides keep the desktop rail visible) | `pointer-events-none invisible -translate-x-full md:visible md:pointer-events-auto md:translate-x-0` | implemented |
+| `.campaign-sidebar--open` | Mobile drawer state: slid in and interactive | `pointer-events-auto visible translate-x-0` | implemented |
+| `.campaign-sidebar-trigger-bar` | Mobile-only top bar hosting the menu trigger | `flex w-full flex-shrink-0 self-stretch p-2` | implemented |
+| `.campaign-sidebar-trigger` | Mobile-only hamburger + "Menu" button | `inline-flex items-center gap-2 rounded-md bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 transition-colors hover:bg-primary-900` | implemented |
+| `.campaign-sidebar-backdrop` | Mobile-only dimming backdrop behind the drawer | `fixed inset-0 z-40 bg-black/50` | implemented |
+| `.campaign-sidebar-nav` | Section-button list wrapper | `flex flex-col items-stretch justify-start gap-2 flex-1` | implemented |
+| `.campaign-sidebar-item` | Section navigation button | `relative inline-flex items-center justify-start gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 text-left` | implemented |
 | `.campaign-sidebar-item--active` | Active/selected section modifier | `bg-primary-700 text-primary-100 hover:bg-primary-700` | implemented |
-| `.campaign-sidebar-item-label` | Item label (hidden on mobile icon rail) | `hidden md:inline` | implemented |
+| `.campaign-sidebar-item-label` | Item label (always visible) | `inline` | implemented |
 | `.campaign-sidebar-icon` | Monochrome nav icon sizing | `w-5 h-5 flex-shrink-0` | implemented |
-| `.campaign-sidebar-tooltip` | Mobile icon-rail tooltip (hover/focus) | `absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 text-xs rounded whitespace-nowrap bg-primary-800 text-primary-100 pointer-events-none opacity-0 invisible transition-opacity z-50 md:hidden` | implemented |
-| `.campaign-sidebar-actions` | Owner-only action area pinned to sidebar bottom | `flex items-center justify-center flex-shrink-0 md:mt-auto md:pt-4 md:border-t md:border-primary-300` | implemented |
-| `.campaign-sidebar-action` | Owner-only campaign action button | `relative inline-flex items-center justify-center gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900 md:w-full md:justify-start` | implemented |
+| `.campaign-sidebar-actions` | Owner-only action area pinned to the drawer/rail bottom | `mt-auto flex flex-shrink-0 items-center justify-start border-t border-primary-300 pt-4` | implemented |
+| `.campaign-sidebar-action` | Owner-only campaign action button | `relative inline-flex w-full items-center justify-start gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900` | implemented |
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |

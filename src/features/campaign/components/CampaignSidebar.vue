@@ -1,4 +1,5 @@
 <script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 
 const props = defineProps({
@@ -29,13 +30,73 @@ const props = defineProps({
   },
 })
 
-defineEmits(['select', 'edit'])
+const emit = defineEmits(['select', 'edit'])
 
 const isActive = (key) => key === props.activeSection
+
+// Mobile navigation lives in an off-canvas drawer that slides in from the left.
+// On desktop (md+) the sidebar is an always-visible static rail and this flag is
+// irrelevant because the drawer positioning is overridden by media queries.
+const mobileOpen = ref(false)
+
+function openMobileNav() {
+  mobileOpen.value = true
+}
+
+function closeMobileNav() {
+  mobileOpen.value = false
+}
+
+function selectItem(key) {
+  emit('select', key)
+  closeMobileNav()
+}
+
+function handleEdit() {
+  emit('edit')
+  closeMobileNav()
+}
+
+function handleKeydown(event) {
+  if (event.key === 'Escape') closeMobileNav()
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
-  <aside class="campaign-sidebar custom-gradient" :data-campaign-id="campaignId">
+  <!-- Mobile-only trigger bar (hamburger + Menu) at the top-left of content -->
+  <div class="campaign-sidebar-trigger-bar">
+    <button
+      type="button"
+      class="campaign-sidebar-trigger"
+      aria-controls="campaign-sidebar-panel"
+      :aria-expanded="mobileOpen"
+      @click="openMobileNav"
+    >
+      <CampaignNavIcon name="menu" class="campaign-sidebar-icon" />
+      <span>Campaign menu</span>
+    </button>
+  </div>
+
+  <!-- Mobile-only dimming backdrop behind the drawer -->
+  <Transition name="campaign-sidebar-fade">
+    <div v-if="mobileOpen" class="campaign-sidebar-backdrop" @click="closeMobileNav"></div>
+  </Transition>
+
+  <!-- Off-canvas drawer below md, static labeled rail at md+ -->
+  <aside
+    id="campaign-sidebar-panel"
+    class="campaign-sidebar custom-gradient"
+    :class="mobileOpen ? 'campaign-sidebar--open' : 'campaign-sidebar--closed'"
+    :data-campaign-id="campaignId"
+  >
     <nav class="campaign-sidebar-nav" aria-label="Campaign sections">
       <button
         v-for="item in items"
@@ -45,27 +106,18 @@ const isActive = (key) => key === props.activeSection
         :class="{ 'campaign-sidebar-item--active': isActive(item.key) }"
         :aria-current="isActive(item.key) ? 'page' : undefined"
         :title="item.label"
-        @click="$emit('select', item.key)"
+        @click="selectItem(item.key)"
       >
         <CampaignNavIcon :name="item.icon" class="campaign-sidebar-icon" />
         <span class="campaign-sidebar-item-label">{{ item.label }}</span>
-        <span class="campaign-sidebar-tooltip" role="tooltip">{{ item.label }}</span>
-        <span class="sr-only">{{ item.label }}</span>
       </button>
     </nav>
 
-    <!-- Owner-only campaign action, pinned to the bottom on desktop -->
+    <!-- Owner-only campaign action, pinned to the bottom -->
     <div v-if="canEdit" class="campaign-sidebar-actions">
-      <button
-        type="button"
-        class="campaign-sidebar-action"
-        title="Edit Campaign"
-        @click="$emit('edit')"
-      >
+      <button type="button" class="campaign-sidebar-action" title="Edit Campaign" @click="handleEdit">
         <CampaignNavIcon name="edit" class="campaign-sidebar-icon" />
         <span class="campaign-sidebar-item-label">Edit Campaign</span>
-        <span class="campaign-sidebar-tooltip" role="tooltip">Edit Campaign</span>
-        <span class="sr-only">Edit Campaign</span>
       </button>
     </div>
   </aside>
@@ -85,5 +137,16 @@ const isActive = (key) => key === props.activeSection
       var(--color-primary-100) 100%
     );
   }
+}
+
+/* Backdrop fade transition for the mobile drawer */
+.campaign-sidebar-fade-enter-active,
+.campaign-sidebar-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.campaign-sidebar-fade-enter-from,
+.campaign-sidebar-fade-leave-to {
+  opacity: 0;
 }
 </style>

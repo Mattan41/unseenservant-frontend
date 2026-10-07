@@ -7,7 +7,7 @@
  * and the surrounding theme decides the color.
  */
 defineProps({
-  /** Icon identifier: overview | characters | messages | settings | edit */
+  /** Icon identifier: overview | lore | characters | messages | settings | edit | menu */
   name: {
     type: String,
     required: true,
@@ -32,6 +32,15 @@ defineProps({
       <path d="M12 7v14" />
       <path
         d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+      />
+    </template>
+
+    <!-- Lore: globe / world -->
+    <template v-else-if="name === 'lore'">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path
+        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
       />
     </template>
 
@@ -65,6 +74,13 @@ defineProps({
     <template v-else-if="name === 'edit'">
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </template>
+
+    <!-- Menu: hamburger -->
+    <template v-else-if="name === 'menu'">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
     </template>
   </svg>
 </template>
