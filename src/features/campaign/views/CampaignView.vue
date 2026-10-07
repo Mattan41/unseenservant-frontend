@@ -10,6 +10,7 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import EditCampaignModal from '@/features/campaign/components/EditCampaignModal.vue'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
+import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
@@ -38,6 +39,8 @@ const activeSection = ref('overview')
 const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
 const showEditModal = ref(false)
+// Mobile campaign navigation drawer (triggered from the campaign top bar).
+const campaignNavOpen = ref(false)
 
 const SECTIONS = [
   { key: 'overview', label: 'Overview', icon: 'overview' },
@@ -65,6 +68,7 @@ function resetPresentationState() {
   descriptionExpanded.value = false
   showImportModal.value = false
   showEditModal.value = false
+  campaignNavOpen.value = false
 }
 
 // Ownership is separate from table role: only the owner controls the campaign.
@@ -246,14 +250,25 @@ watch(
   </div>
 
   <div v-else-if="campaign" class="flex flex-col md:flex-row md:items-stretch md:h-full">
-    <!-- Contextual in-campaign navigation -->
+    <!-- Mobile campaign bar: title + local navigation trigger -->
+    <div class="campaign-mobile-bar">
+      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
+      <BaseButton variant="default" class="campaign-nav-trigger" @click="campaignNavOpen = true">
+        <CampaignNavIcon name="menu" class="w-5 h-5 flex-shrink-0" />
+        <span>Campaign Views</span>
+      </BaseButton>
+    </div>
+
+    <!-- Contextual in-campaign navigation (rail on desktop, drawer on mobile) -->
     <CampaignSidebar
       :items="navItems"
       :active-section="activeSection"
       :campaign-id="campaign.id"
       :can-edit="isOwner"
+      :open="campaignNavOpen"
       @select="selectSection"
       @edit="openEditModal"
+      @update:open="campaignNavOpen = $event"
     />
 
     <!-- Active section content -->

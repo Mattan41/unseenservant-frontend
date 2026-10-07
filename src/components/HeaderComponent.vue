@@ -1,37 +1,28 @@
 <script setup>
-import { useAuthStore } from '../features/auth/authStore.js'
+import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useAuthStore } from '@/features/auth/authStore.js'
+import IconButton from '@/components/base/IconButton.vue'
+import SlideOverDrawer from '@/components/base/SlideOverDrawer.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+// Global navigation overlay (mobile only). The desktop nav stays inline.
 const mobileMenuOpen = ref(false)
+
+const toggleMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
 
 const closeMenu = () => {
   mobileMenuOpen.value = false
-}
-
-const handleClickOutside = (event) => {
-  const menu = document.querySelector('.mobile-menu')
-  const button = event.target.closest('button')
-
-  if (menu && !menu.contains(event.target) && !button) {
-    closeMenu()
-  }
 }
 
 const exitGuestMode = () => {
   authStore.exitGuestMode()
   router.push('/')
 }
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
 </script>
 
 <template>
@@ -45,61 +36,17 @@ onBeforeUnmount(() => {
     </div>
 
     <nav>
-      <!-- Mobile menu -->
+      <!-- Mobile bar: logo + icon-only menu toggle -->
       <div class="flex md:hidden justify-between items-center">
         <RouterLink @click="closeMenu" to="/" class="block">
           <h5 class="uppercase header-logo-hover">Unseen Servant</h5>
         </RouterLink>
-        <button @click.stop="mobileMenuOpen = !mobileMenuOpen" class="header-nav-link py-2">
-          <span>Menu</span>
-        </button>
-      </div>
-
-      <!-- Mobile menu dropdown -->
-      <div
-        v-if="mobileMenuOpen"
-        class="mobile-menu md:hidden flex flex-col space-y-2 mt-2 transition-all duration-300"
-      >
-        <RouterLink @click="closeMenu" to="/" class="header-nav-link">
-          <h5 class="p-2 uppercase">Home</h5>
-        </RouterLink>
-        <RouterLink @click="closeMenu" to="/about" class="header-nav-link">
-          <h5 class="p-2 uppercase">About</h5>
-        </RouterLink>
-        <RouterLink @click="closeMenu" to="/spells" class="header-nav-link">
-          <h5 class="p-2 uppercase">Spells</h5>
-        </RouterLink>
-
-        <template v-if="authStore.isAuthenticated">
-          <RouterLink @click="closeMenu" to="/user-profile" class="header-nav-link">
-            <h5 class="p-2 uppercase">User Profile</h5>
-          </RouterLink>
-          <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
-            <h5 class="p-2 uppercase">Characters</h5>
-          </RouterLink>
-          <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
-            <h5 class="p-2 uppercase">Campaigns</h5>
-          </RouterLink>
-          <RouterLink @click="closeMenu" to="/logout" class="header-nav-link-secondary">
-            <h5 class="p-2 uppercase">Logout</h5>
-          </RouterLink>
-        </template>
-
-        <template v-else-if="authStore.isGuest">
-          <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
-            <h5 class="p-2 uppercase">Characters</h5>
-          </RouterLink>
-          <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
-            <h5 class="p-2 uppercase">Campaigns</h5>
-          </RouterLink>
-          <RouterLink @click="closeMenu" to="/login" class="header-nav-link-secondary">
-            <h5 class="p-2 uppercase">Login</h5>
-          </RouterLink>
-        </template>
-
-        <RouterLink v-else @click="closeMenu" to="/login" class="header-nav-link-secondary">
-          <h5 class="p-2 uppercase">Login</h5>
-        </RouterLink>
+        <IconButton
+          :icon="mobileMenuOpen ? 'close' : 'menu'"
+          :label="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+          variant="plain"
+          @click="toggleMenu"
+        />
       </div>
 
       <!-- Desktop menu -->
@@ -146,5 +93,65 @@ onBeforeUnmount(() => {
         </RouterLink>
       </div>
     </nav>
+
+    <!-- Global navigation overlay (full-screen, mobile) -->
+    <SlideOverDrawer
+      :model-value="mobileMenuOpen"
+      side="right"
+      full
+      label="Main menu"
+      panel-class="header-footer-bg"
+      @update:model-value="mobileMenuOpen = $event"
+    >
+      <div class="app-menu">
+        <div class="app-menu-header">
+          <h5 class="uppercase header-logo-hover">Unseen Servant</h5>
+          <IconButton icon="close" label="Close menu" variant="plain" @click="closeMenu" />
+        </div>
+
+        <nav class="app-menu-links">
+          <RouterLink @click="closeMenu" to="/" class="header-nav-link">
+            <h5 class="p-2 uppercase">Home</h5>
+          </RouterLink>
+          <RouterLink @click="closeMenu" to="/about" class="header-nav-link">
+            <h5 class="p-2 uppercase">About</h5>
+          </RouterLink>
+          <RouterLink @click="closeMenu" to="/spells" class="header-nav-link">
+            <h5 class="p-2 uppercase">Spells</h5>
+          </RouterLink>
+
+          <template v-if="authStore.isAuthenticated">
+            <RouterLink @click="closeMenu" to="/user-profile" class="header-nav-link">
+              <h5 class="p-2 uppercase">User Profile</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
+              <h5 class="p-2 uppercase">Characters</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
+              <h5 class="p-2 uppercase">Campaigns</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/logout" class="header-nav-link-secondary">
+              <h5 class="p-2 uppercase">Logout</h5>
+            </RouterLink>
+          </template>
+
+          <template v-else-if="authStore.isGuest">
+            <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
+              <h5 class="p-2 uppercase">Characters</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
+              <h5 class="p-2 uppercase">Campaigns</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/login" class="header-nav-link-secondary">
+              <h5 class="p-2 uppercase">Login</h5>
+            </RouterLink>
+          </template>
+
+          <RouterLink v-else @click="closeMenu" to="/login" class="header-nav-link-secondary">
+            <h5 class="p-2 uppercase">Login</h5>
+          </RouterLink>
+        </nav>
+      </div>
+    </SlideOverDrawer>
   </header>
 </template>

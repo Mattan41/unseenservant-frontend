@@ -129,12 +129,11 @@ all conditional styling in `*Utils.js` files.
 | `.element-link` | Navigation link | `text-primary-900 hover:text-primary-700` | implemented |
 | `.error-message` | Error alert | `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded` | implemented |
 | `.success-message` | Success alert | `bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded` | implemented |
-| `.campaign-sidebar` | Contextual in-campaign navigation (off-canvas drawer below md, labeled rail at md+) | `fixed inset-y-0 left-0 z-50 flex w-72 max-w-[80vw] flex-col items-stretch justify-start gap-4 overflow-y-auto p-4 transition-transform duration-200 ease-out md:static md:z-auto md:h-full md:w-56 md:max-w-none md:flex-shrink-0 md:self-stretch md:visible md:translate-x-0 md:pointer-events-auto md:overflow-visible` | implemented |
-| `.campaign-sidebar--closed` | Mobile drawer state: off-canvas, non-interactive, out of tab order (md+ overrides keep the desktop rail visible) | `pointer-events-none invisible -translate-x-full md:visible md:pointer-events-auto md:translate-x-0` | implemented |
-| `.campaign-sidebar--open` | Mobile drawer state: slid in and interactive | `pointer-events-auto visible translate-x-0` | implemented |
-| `.campaign-sidebar-trigger-bar` | Mobile-only top bar hosting the menu trigger | `flex w-full flex-shrink-0 self-stretch p-2` | implemented |
-| `.campaign-sidebar-trigger` | Mobile-only hamburger + "Menu" button | `inline-flex items-center gap-2 rounded-md bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 transition-colors hover:bg-primary-900` | implemented |
-| `.campaign-sidebar-backdrop` | Mobile-only dimming backdrop behind the drawer | `fixed inset-0 z-40 bg-black/50` | implemented |
+| `.campaign-sidebar` | Desktop-only contextual rail (md+); mobile nav is rendered via `SlideOverDrawer` | `hidden md:flex md:h-full md:w-56 md:flex-shrink-0 md:self-stretch md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4` | implemented |
+| `.campaign-gradient` | Vertical theme gradient for the campaign rail and mobile drawer | `bg-linear-to-b from-primary-100 via-primary-300 to-primary-100` | implemented |
+| `.campaign-mobile-bar` | Mobile campaign top bar: title + local nav trigger | `flex items-center justify-between gap-2 p-2 md:hidden` | implemented |
+| `.campaign-mobile-title` | Campaign title shown in the mobile top bar | `min-w-0 truncate text-lg font-bold text-third-700` | implemented |
+| `.campaign-nav-trigger` | "Campaign Views" trigger (a `BaseButton` with base margins/padding reset) | `ml-0 mt-0 inline-flex items-center gap-2 bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
 | `.campaign-sidebar-nav` | Section-button list wrapper | `flex flex-col items-stretch justify-start gap-2 flex-1` | implemented |
 | `.campaign-sidebar-item` | Section navigation button | `relative inline-flex items-center justify-start gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 text-left` | implemented |
 | `.campaign-sidebar-item--active` | Active/selected section modifier | `bg-primary-700 text-primary-100 hover:bg-primary-700` | implemented |
@@ -142,6 +141,20 @@ all conditional styling in `*Utils.js` files.
 | `.campaign-sidebar-icon` | Monochrome nav icon sizing | `w-5 h-5 flex-shrink-0` | implemented |
 | `.campaign-sidebar-actions` | Owner-only action area pinned to the drawer/rail bottom | `mt-auto flex flex-shrink-0 items-center justify-start border-t border-primary-300 pt-4` | implemented |
 | `.campaign-sidebar-action` | Owner-only campaign action button | `relative inline-flex w-full items-center justify-start gap-2 text-sm font-semibold px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-800 text-primary-100 hover:bg-primary-900` | implemented |
+| `.icon-btn` | Base icon-only button (`IconButton.vue`) | `inline-flex items-center justify-center rounded-md p-2 cursor-pointer transition-colors focus:outline-none focus:ring-2` | implemented |
+| `.icon-btn-glyph` | Icon sizing inside icon buttons | `w-5 h-5 flex-shrink-0` | implemented |
+| `.icon-btn-plain` | Icon button variant: transparent, hover tint | `text-third-700 hover:bg-primary-300/60 focus:ring-primary-600` | implemented |
+| `.icon-btn-solid` | Icon button variant: filled | `bg-primary-800 text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
+| `.icon-btn-on-dark` | Icon button variant: on dark surfaces | `text-primary-100 hover:bg-primary-800 focus:ring-primary-500` | implemented |
+| `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`) | `fixed inset-0 bg-black/50` | implemented |
+| `.slide-over-panel` | Slide-over panel base | `fixed inset-y-0 flex flex-col overflow-y-auto` | implemented |
+| `.slide-over-panel--left` / `.slide-over-panel--right` | Slide-over anchor edge | `left-0` / `right-0` | implemented |
+| `.slide-over-panel--sidebar` | Slide-over width: sidebar panel | `w-72 max-w-[80vw] gap-4 p-4` | implemented |
+| `.slide-over-panel--fullscreen` | Slide-over width: full-screen overlay | `w-full gap-4 p-4` | implemented |
+| `.slide-over-fade-*` / `.slide-over-left-*` / `.slide-over-right-*` | Slide-over fade + slide transitions | `transition-opacity` / `transition-transform`, `opacity-0`, `translate-x-*` | implemented |
+| `.app-menu` | Global nav overlay content wrapper (`HeaderComponent`) | `flex h-full flex-col gap-4` | implemented |
+| `.app-menu-header` | Overlay header row (logo + close) | `flex items-center justify-between gap-2` | implemented |
+| `.app-menu-links` | Overlay link list | `flex flex-col gap-2` | implemented |
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
@@ -164,6 +177,9 @@ all conditional styling in `*Utils.js` files.
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
 | `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close` on backdrop click). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, `ImportCharacterModal.vue`, `EditCampaignModal.vue`, and `CampaignView.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. | implemented |
+| `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `overview`, `lore`, `characters`, `messages`, `settings`, `edit`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
+| `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
+| `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `CampaignSidebar` (campaign drawer). | implemented |
 ---
 
 ## 3. Hard Constraints
