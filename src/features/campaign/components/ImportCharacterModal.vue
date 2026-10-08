@@ -106,7 +106,7 @@ watch(
           <div class="p-4 flex-grow">
             <div class="flex items-start space-x-3">
               <CharacterImage
-                :src="character.imageUrl"
+                :src="character.avatarUrl"
                 :alt="`${character.name} portrait`"
                 class="w-14 h-14 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
                 style="border-color: var(--color-primary-300)"
@@ -123,9 +123,12 @@ watch(
 
                 <!-- Character basic info -->
                 <div class="flex items-center text-xs text-secondary mt-1">
-                  <span>{{ character.race }}</span>
-                  <span class="mx-1">•</span>
-                  <span>{{ character.characterClass }} (Level {{ character.level }})</span>
+                  <template v-if="character.dnd5e">
+                    <span>{{ character.dnd5e.race }}</span>
+                    <span class="mx-1">•</span>
+                    <span>{{ character.dnd5e.characterClass }} (Level {{ character.dnd5e.level }})</span>
+                  </template>
+                  <span v-else>{{ character.systemType }}</span>
                 </div>
               </div>
             </div>

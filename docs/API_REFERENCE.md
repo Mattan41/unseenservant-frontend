@@ -301,8 +301,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ```js
 {
-  characters: Array<PlayerCharacterOutputDTO>,
-  currentCharacter: PlayerCharacterOutputDTO | null,
+  characters: Array<CharacterOutputDTO>,
+  currentCharacter: CharacterOutputDTO | null,
   isLoading: boolean
 }
 
@@ -315,8 +315,10 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.createCharacter(data)
 - **Store Action**: characterStore.createCharacter(data)
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
-- **Request**: PlayerCharacterInputDTO `{ ownerId, campaignId, name, level, characterClass, imageUrl, race, playerCharacterData }`
-- **Response**: PlayerCharacterOutputDTO
+- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e?, offworlders? }`
+  - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
+  - `offworlders = { characterClass, species, look, xp, health, armor, supply, supplyMax, stats, skills, abilities }` (used when `systemType === 'OFFWORLDERS'`)
+- **Response**: CharacterOutputDTO
 - **Status Codes**: 201, 400, 401
 - **Notes**: ownerId defaults to logged-in user if null.
 
@@ -327,7 +329,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.fetchAllCharactersForCurrentUser()
 - **Store Action**: characterStore.fetchAllCharactersForCurrentUser()
 - **Guest Mode**: Mocked — returns characters where ownerId equals guest_demo
-- **Response**: Array of PlayerCharacterOutputDTO
+- **Response**: Array of CharacterOutputDTO
 - **Status Codes**: 200, 401
 - **Notes**: Returns all characters owned by the logged-in user.
 
@@ -338,7 +340,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.fetchCharactersWithoutCampaign()
 - **Store Action**: characterStore.fetchCharactersWithoutCampaign()
 - **Guest Mode**: Mocked — returns characters with campaignId equal to null
-- **Response**: Array of PlayerCharacterOutputDTO
+- **Response**: Array of CharacterOutputDTO
 - **Status Codes**: 200, 401
 - **Notes**: Used when importing characters into campaigns.
 
@@ -349,7 +351,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.fetchCharacter(characterId)
 - **Store Action**: characterStore.fetchCharacter(characterId)
 - **Guest Mode**: Mocked — finds character by ID in guest_characters
-- **Response**: PlayerCharacterOutputDTO
+- **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 401, 404
 - **Notes**: Checks local cache first before making API call.
 
@@ -360,8 +362,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.updateCharacter(characterId, data)
 - **Store Action**: characterStore.updateCharacter(characterId, data)
 - **Guest Mode**: Mocked — merges data into character in guest_characters
-- **Request**: Full PlayerCharacterInputDTO (validated)
-- **Response**: PlayerCharacterOutputDTO
+- **Request**: Full CharacterInputDTO (validated)
+- **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Also supports updateCharacterField for single-field updates.
 
@@ -373,7 +375,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: characterStore.uploadCharacterImage(characterId, imageFile)
 - **Guest Mode**: Mocked — returns a default SVG path
 - **Request**: multipart/form-data with field name file
-- **Response**: PlayerCharacterOutputDTO (with updated imageUrl)
+- **Response**: CharacterOutputDTO (with updated imageUrl)
 - **Status Codes**: 200, 400, 401, 403
 - **Notes**: Extracts error message from response for user notification.
 
@@ -396,7 +398,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: campaignStore.importCharacterToCampaign(characterId, campaignId)
 - **Guest Mode**: Mocked — updates character campaignId in guest_characters
 - **Request**: `{ campaignId: Long }`
-- **Response**: PlayerCharacterOutputDTO
+- **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Located in CampaignService due to cross-feature API architecture.
 
@@ -407,7 +409,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.removeCharacterFromCampaign(characterId)
 - **Store Action**: campaignStore.removeCharacterFromCampaign(characterId)
 - **Guest Mode**: Mocked — sets character campaignId to null
-- **Response**: PlayerCharacterOutputDTO per contract
+- **Response**: CharacterOutputDTO per contract
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Removes character from campaign without deleting the character asset.
 
@@ -421,7 +423,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 {
   campaigns: Array<CampaignResponseDTO>,
   currentCampaign: CampaignResponseDTO | null,
-  campaignCharacters: { [campaignId]: Array<PlayerCharacterOutputDTO> },
+  campaignCharacters: { [campaignId]: Array<CharacterOutputDTO> },
   isLoading: boolean,
   loadingCharacters: boolean,
   error: string | null
@@ -564,7 +566,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.fetchCharactersForCampaign(campaignId)
 - **Store Action**: campaignStore.fetchCharactersForCampaign(campaignId)
 - **Guest Mode**: Mocked — filters character assets by campaignId
-- **Response**: Array of PlayerCharacterOutputDTO
+- **Response**: Array of CharacterOutputDTO
 - **Status Codes**: 200, 401
 - **Notes**: Fetches characters linked to a specific campaign. Stores data in the campaignCharacters map keyed by campaignId.
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
-import SpellSearch from '@/features/spell/components/SpellSearch.vue'
-import SpellDetailModal from '@/features/spell/components/SpellDetailModal.vue'
+import SpellSearch from '@/systems/dnd5e/components/SpellSearch.vue'
+import SpellDetailModal from '@/systems/dnd5e/components/SpellDetailModal.vue'
 
 const showSpellModal = ref(false)
 const selectedSpell = ref(null)

@@ -58,7 +58,7 @@ const router = createRouter({
     {
       path: '/spells',
       name: 'SpellSearch',
-      component: () => import('@/features/spell/views/SpellSearchView.vue'),
+      component: () => import('@/systems/dnd5e/views/SpellSearchView.vue'),
     },
     {
       path: '/characters/create',

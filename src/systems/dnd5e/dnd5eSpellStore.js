@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import SpellService from '@/features/spell/SpellService.js'
+import SpellService from '@/systems/dnd5e/dnd5eSpellService.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
-import { normalizeSpell } from '@/features/spell/spellUtils.js'
+import { normalizeSpell } from '@/systems/dnd5e/spellUtils.js'
 
-export const useSpellStore = defineStore('spell', () => {
+export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
   // ==========================================================================
   // State
   // ==========================================================================

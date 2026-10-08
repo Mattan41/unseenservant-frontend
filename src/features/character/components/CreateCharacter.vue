@@ -3,6 +3,13 @@ import { ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
+import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
+import { createEmptyDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
+import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import {
+  createEmptyOffworldersData,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 const characterStore = useCharacterStore()
 const router = useRouter()
@@ -10,48 +17,14 @@ const cancel = () => router.push({ name: 'CharactersView' })
 
 const character = ref({
   name: '',
-  race: '',
-  characterClass: '',
-  level: 1,
-  playerCharacterData: {
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-  },
+  systemType: DND5E_SYSTEM_TYPE,
+  notes: '',
+  dnd5e: createEmptyDnd5eData(),
+  offworlders: createEmptyOffworldersData(),
 })
 
 const isSubmitting = ref(false)
 const formError = ref('')
-
-const races = [
-  'Human',
-  'Centaur',
-  'Elf',
-  'Dwarf',
-  'Halfling',
-  'Gnome',
-  'Half-Elf',
-  'Half-Orc',
-  'Dragonborn',
-  'Tiefling',
-]
-const characterClasses = [
-  'Fighter',
-  'Wizard',
-  'Rogue',
-  'Cleric',
-  'Ranger',
-  'Paladin',
-  'Barbarian',
-  'Bard',
-  'Druid',
-  'Monk',
-  'Sorcerer',
-  'Warlock',
-]
 
 const submitCharacter = async () => {
   if (!character.value.name) {
@@ -59,12 +32,21 @@ const submitCharacter = async () => {
     return
   }
 
-  if (!character.value.race) {
-    formError.value = 'You must select a race'
-    return
+  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
+    if (!character.value.dnd5e.race) {
+      formError.value = 'You must select a race'
+      return
+    }
+    if (!character.value.dnd5e.characterClass) {
+      formError.value = 'You must select a class'
+      return
+    }
   }
 
-  if (!character.value.characterClass) {
+  if (
+    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
+    !character.value.offworlders.characterClass
+  ) {
     formError.value = 'You must select a class'
     return
   }
@@ -72,8 +54,19 @@ const submitCharacter = async () => {
   isSubmitting.value = true
   formError.value = ''
 
+  const payload = {
+    name: character.value.name,
+    systemType: character.value.systemType,
+    notes: character.value.notes,
+  }
+  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
+    payload.dnd5e = character.value.dnd5e
+  } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
+    payload.offworlders = character.value.offworlders
+  }
+
   try {
-    const newCharacter = await characterStore.createCharacter(character.value)
+    const newCharacter = await characterStore.createCharacter(payload)
     if (newCharacter) {
       router.push({ name: 'CharacterView', params: { id: newCharacter.id } })
     }
@@ -95,9 +88,7 @@ const submitCharacter = async () => {
       </div>
 
       <form @submit.prevent="submitCharacter" class="p-6">
-        <div v-if="formError" class="error-message mb-4">
-          {{ formError }}
-        </div>
+        <div v-if="formError" class="error-message mb-4">{{ formError }}</div>
 
         <!-- Basic Info -->
         <div class="mb-6">
@@ -118,70 +109,45 @@ const submitCharacter = async () => {
             />
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="mb-4">
-              <label for="race" class="block text-sm font-medium text-default mb-1">Race</label>
-              <select
-                id="race"
-                v-model="character.race"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              >
-                <option value="" disabled>Select a race</option>
-                <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label for="class" class="block text-sm font-medium text-default mb-1">Class</label>
-              <select
-                id="class"
-                v-model="character.characterClass"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              >
-                <option value="" disabled>Select a class</option>
-                <option v-for="charClass in characterClasses" :key="charClass" :value="charClass">
-                  {{ charClass }}
-                </option>
-              </select>
-            </div>
+          <div class="mb-4">
+            <label for="systemType" class="block text-sm font-medium text-default mb-1"
+              >Game System</label
+            >
+            <select
+              id="systemType"
+              v-model="character.systemType"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+            >
+              <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
+              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
+            </select>
           </div>
 
           <div class="mb-4">
-            <label for="level" class="block text-sm font-medium text-default mb-1"
-              >Level (1-20)</label
-            >
-            <input
-              id="level"
-              v-model.number="character.level"
-              type="number"
-              min="1"
-              max="20"
+            <label for="notes" class="block text-sm font-medium text-default mb-1">Notes</label>
+            <textarea
+              id="notes"
+              v-model="character.notes"
+              rows="2"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
-            />
+              placeholder="Optional notes about this character"
+            ></textarea>
           </div>
         </div>
 
-        <!-- Character Stats -->
-        <div class="mb-6">
+        <!-- System-specific fields -->
+        <div v-if="character.systemType === DND5E_SYSTEM_TYPE" class="mb-6">
           <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
-            Character Stats
+            Dungeons &amp; Dragons 5e
           </h3>
+          <Dnd5eCharacterForm v-model="character.dnd5e" />
+        </div>
 
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
-              <label :for="stat" class="block text-sm font-medium text-default mb-1 capitalize">{{
-                stat
-              }}</label>
-              <input
-                :id="stat"
-                v-model.number="character.playerCharacterData[stat]"
-                type="number"
-                min="1"
-                max="30"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              />
-            </div>
-          </div>
+        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
+            Offworlders
+          </h3>
+          <OffworldersCharacterForm v-model="character.offworlders" />
         </div>
 
         <!-- Buttons -->

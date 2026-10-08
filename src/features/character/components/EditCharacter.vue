@@ -6,6 +6,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
+import { normalizeDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
+import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import {
+  normalizeOffworldersData,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)
@@ -28,65 +35,29 @@ const selectedFile = ref(null)
 
 const character = ref({
   name: '',
-  race: '',
-  characterClass: '',
-  level: 1,
-  imageUrl: null,
-  playerCharacterData: {
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-  },
+  systemType: DND5E_SYSTEM_TYPE,
+  notes: '',
+  avatarUrl: null,
+  dnd5e: normalizeDnd5eData(null),
+  offworlders: normalizeOffworldersData(null),
 })
 
 const characterImageUrl = computed(() => {
   if (previewImage.value) return previewImage.value
-  return character.value.imageUrl
+  return character.value.avatarUrl
 })
-
-const races = [
-  'Human',
-  'Elf',
-  'Dwarf',
-  'Halfling',
-  'Gnome',
-  'Half-Elf',
-  'Half-Orc',
-  'Dragonborn',
-  'Tiefling',
-]
-const characterClasses = [
-  'Fighter',
-  'Wizard',
-  'Rogue',
-  'Cleric',
-  'Ranger',
-  'Paladin',
-  'Barbarian',
-  'Bard',
-  'Druid',
-  'Monk',
-  'Sorcerer',
-  'Warlock',
-]
 
 onMounted(async () => {
   try {
     const fetchedCharacter = await characterStore.fetchCharacter(characterId.value)
     if (fetchedCharacter) {
-      character.value = { ...fetchedCharacter }
-      if (!character.value.playerCharacterData) {
-        character.value.playerCharacterData = {
-          strength: 10,
-          dexterity: 10,
-          constitution: 10,
-          intelligence: 10,
-          wisdom: 10,
-          charisma: 10,
-        }
+      character.value = {
+        name: fetchedCharacter.name,
+        systemType: fetchedCharacter.systemType || DND5E_SYSTEM_TYPE,
+        notes: fetchedCharacter.notes || '',
+        avatarUrl: fetchedCharacter.avatarUrl,
+        dnd5e: normalizeDnd5eData(fetchedCharacter.dnd5e),
+        offworlders: normalizeOffworldersData(fetchedCharacter.offworlders),
       }
     } else {
       notificationStore.addNotification('Character not found', 'error', 4000)
@@ -123,11 +94,21 @@ const submitCharacter = async () => {
     notificationStore.addNotification('Character name is required', 'error', 4000)
     return
   }
-  if (!character.value.race) {
-    notificationStore.addNotification('You must select a race', 'error', 4000)
-    return
+  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
+    if (!character.value.dnd5e.race) {
+      notificationStore.addNotification('You must select a race', 'error', 4000)
+      return
+    }
+    if (!character.value.dnd5e.characterClass) {
+      notificationStore.addNotification('You must select a class', 'error', 4000)
+      return
+    }
   }
-  if (!character.value.characterClass) {
+
+  if (
+    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
+    !character.value.offworlders.characterClass
+  ) {
     notificationStore.addNotification('You must select a class', 'error', 4000)
     return
   }
@@ -135,28 +116,37 @@ const submitCharacter = async () => {
   isSubmitting.value = true
 
   try {
-    // 1. Handle image upload if a new file was chosen (stops here if format is invalid)
+    // 1. Handle image upload if a new file was chosen
     if (selectedFile.value) {
       const updatedCharacter = await characterStore.uploadCharacterImage(
         characterId.value,
         selectedFile.value,
       )
-      character.value.imageUrl = updatedCharacter.imageUrl || updatedCharacter
+      character.value.avatarUrl = updatedCharacter.avatarUrl || updatedCharacter
     }
 
-    // 2. Update basic info and stats
+    // 2. Update basic info and system-specific data
+    const payload = {
+      name: character.value.name,
+      systemType: character.value.systemType,
+      notes: character.value.notes,
+    }
+    if (character.value.systemType === DND5E_SYSTEM_TYPE) {
+      payload.dnd5e = character.value.dnd5e
+    } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
+      payload.offworlders = character.value.offworlders
+    }
+
     const updatedCharacter = await characterStore.updateCharacter(
       characterId.value,
-      character.value,
+      payload,
     )
 
     if (updatedCharacter) {
-      // 3. One single success message when the whole pipeline is complete
       notificationStore.addNotification('Character updated successfully!', 'success', 3000)
       await router.push(goToCharacterView())
     }
   } catch (error) {
-    // Errors are gracefully managed and displayed by the store layer actions
     console.error('Character update submission chain broke:', error)
   } finally {
     isSubmitting.value = false
@@ -166,13 +156,11 @@ const submitCharacter = async () => {
 
 <template>
   <div class="container mx-auto p-4 max-w-2xl">
-    <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
       <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2 text-secondary">Loading character...</p>
     </div>
 
-    <!-- Main Form Container -->
     <div v-else class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
       <div class="p-6 border-b border-section">
         <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">Edit Character</h1>
@@ -185,27 +173,17 @@ const submitCharacter = async () => {
             Character Image
           </h5>
 
-          <!-- Guest mode disclaimer -->
           <div v-if="isGuestMode" class="demo-notice mb-3">
             ⚠️ Image upload is not supported in guest mode. A default image will be used.
           </div>
 
           <div class="flex items-center space-x-4">
-            <div class="relative">
-              <CharacterImage
-                :src="characterImageUrl"
-                alt="Character Image"
-                class="w-24 h-24 rounded-lg object-cover border-2"
-                style="border-color: var(--color-primary-300)"
-              />
-              <div
-                v-if="!isGuestMode"
-                @click="triggerFileInput"
-                class="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-              >
-                <span class="text-white text-sm">Change</span>
-              </div>
-            </div>
+            <CharacterImage
+              :src="characterImageUrl"
+              alt="Character Image"
+              class="w-24 h-24 rounded-lg object-cover border-2"
+              style="border-color: var(--color-primary-300)"
+            />
             <input
               v-if="!isGuestMode"
               type="file"
@@ -243,67 +221,44 @@ const submitCharacter = async () => {
               placeholder="Enter character name"
             />
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="mb-4">
-              <label for="race" class="block text-sm font-medium text-default mb-1">Race</label>
-              <select
-                id="race"
-                v-model="character.race"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              >
-                <option value="" disabled>Select a race</option>
-                <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
-              </select>
-            </div>
-            <div class="mb-4">
-              <label for="class" class="block text-sm font-medium text-default mb-1">Class</label>
-              <select
-                id="class"
-                v-model="character.characterClass"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              >
-                <option value="" disabled>Select a class</option>
-                <option v-for="charClass in characterClasses" :key="charClass" :value="charClass">
-                  {{ charClass }}
-                </option>
-              </select>
-            </div>
+          <div class="mb-4">
+            <label for="systemType" class="block text-sm font-medium text-default mb-1"
+              >Game System</label
+            >
+            <select
+              id="systemType"
+              v-model="character.systemType"
+              disabled
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+            >
+              <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
+              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
+            </select>
           </div>
           <div class="mb-4">
-            <label for="level" class="block text-sm font-medium text-default mb-1"
-              >Level (1-20)</label
-            >
-            <input
-              id="level"
-              v-model.number="character.level"
-              type="number"
-              min="1"
-              max="20"
+            <label for="notes" class="block text-sm font-medium text-default mb-1">Notes</label>
+            <textarea
+              id="notes"
+              v-model="character.notes"
+              rows="2"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
-            />
+            ></textarea>
           </div>
         </div>
 
-        <!-- Character Stats Section -->
-        <div class="mb-6">
+        <!-- System-specific fields -->
+        <div v-if="character.systemType === DND5E_SYSTEM_TYPE" class="mb-6">
           <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
-            Character Stats
+            Dungeons &amp; Dragons 5e
           </h4>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div class="mb-4" v-for="(value, stat) in character.playerCharacterData" :key="stat">
-              <label :for="stat" class="block text-sm font-medium text-default mb-1 capitalize">{{
-                stat
-              }}</label>
-              <input
-                :id="stat"
-                v-model.number="character.playerCharacterData[stat]"
-                type="number"
-                min="1"
-                max="30"
-                class="input-field w-full px-3 py-2 border border-input rounded-md"
-              />
-            </div>
-          </div>
+          <Dnd5eCharacterForm v-model="character.dnd5e" />
+        </div>
+
+        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Offworlders
+          </h4>
+          <OffworldersCharacterForm v-model="character.offworlders" />
         </div>
 
         <!-- Form Action Buttons -->
