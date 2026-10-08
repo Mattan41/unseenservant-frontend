@@ -60,9 +60,12 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **POST /api/characters**
 - Requires: ROLE_USER
-- Request: `CharacterInputDTO { ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e? }`
+- Request: `CharacterInputDTO { ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e?, offworlders? }`
   - `systemType`: `DND5E` | `OFFWORLDERS`
   - `dnd5e`: `{ level (1–20), characterClass, race, hitPoints?, armorClass?, stats }` — only used when `systemType === 'DND5E'`
+  - `offworlders`: `{ characterClass?, species?, look?, xp?, health?, armor?, supply?, supplyMax?, stats?, skills?, abilities? }` — only used when `systemType === 'OFFWORLDERS'`
+    - `stats = { strength, agility, intelligence, willpower }`, each −1…+3; Health is derived as `max(1, 12 + strength + agility)`
+    - `skills` / `abilities` are arrays of strings: canonical catalog entries plus any free-text custom entries
 - `ownerId` defaults to logged-in user if null
 - Response: `CharacterOutputDTO`
 - Status: 201, 400, 401
@@ -84,13 +87,14 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **GET /api/characters/{id}**
 - Requires: ROLE_USER
-- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, dnd5e, createdAt, updatedAt }`
+- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, dnd5e, offworlders, createdAt, updatedAt }`
   - `dnd5e` is a nullable nested block `{ level, characterClass, race, hitPoints, armorClass, stats }`, present only when `systemType === 'DND5E'`
+  - `offworlders` is a nullable nested block `{ characterClass, species, look, xp, health, armor, supply, supplyMax, stats, skills, abilities }`, present only when `systemType === 'OFFWORLDERS'`
 - Status: 200, 401, 404
 
 **PATCH /api/characters/{id}**
 - Requires: ROLE_USER, must be owner
-- Request: `CharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged. The nested `dnd5e` object is patch-applied field-by-field when `systemType === 'DND5E'`.
+- Request: `CharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged. The nested `dnd5e` object is patch-applied field-by-field when `systemType === 'DND5E'`; likewise the nested `offworlders` object when `systemType === 'OFFWORLDERS'`.
 - Response: `CharacterOutputDTO`
 - Status: 200, 400, 401, 403, 404
 

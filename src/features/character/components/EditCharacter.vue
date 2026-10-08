@@ -8,6 +8,11 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
 import { normalizeDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
+import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import {
+  normalizeOffworldersData,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)
@@ -34,6 +39,7 @@ const character = ref({
   notes: '',
   avatarUrl: null,
   dnd5e: normalizeDnd5eData(null),
+  offworlders: normalizeOffworldersData(null),
 })
 
 const characterImageUrl = computed(() => {
@@ -51,6 +57,7 @@ onMounted(async () => {
         notes: fetchedCharacter.notes || '',
         avatarUrl: fetchedCharacter.avatarUrl,
         dnd5e: normalizeDnd5eData(fetchedCharacter.dnd5e),
+        offworlders: normalizeOffworldersData(fetchedCharacter.offworlders),
       }
     } else {
       notificationStore.addNotification('Character not found', 'error', 4000)
@@ -98,6 +105,14 @@ const submitCharacter = async () => {
     }
   }
 
+  if (
+    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
+    !character.value.offworlders.characterClass
+  ) {
+    notificationStore.addNotification('You must select a class', 'error', 4000)
+    return
+  }
+
   isSubmitting.value = true
 
   try {
@@ -118,6 +133,8 @@ const submitCharacter = async () => {
     }
     if (character.value.systemType === DND5E_SYSTEM_TYPE) {
       payload.dnd5e = character.value.dnd5e
+    } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
+      payload.offworlders = character.value.offworlders
     }
 
     const updatedCharacter = await characterStore.updateCharacter(
@@ -215,6 +232,7 @@ const submitCharacter = async () => {
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
               <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
+              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
             </select>
           </div>
           <div class="mb-4">
@@ -234,6 +252,13 @@ const submitCharacter = async () => {
             Dungeons &amp; Dragons 5e
           </h4>
           <Dnd5eCharacterForm v-model="character.dnd5e" />
+        </div>
+
+        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Offworlders
+          </h4>
+          <OffworldersCharacterForm v-model="character.offworlders" />
         </div>
 
         <!-- Form Action Buttons -->

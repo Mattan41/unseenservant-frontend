@@ -258,6 +258,35 @@ export const guestCharacters = [
       },
     ],
   },
+{
+    id: 'guest_char_7',
+    ownerId: 'guest_demo',
+    campaignId: 'guest_campaign_1',
+    name: 'Vex',
+    systemType: 'OFFWORLDERS',
+    notes: 'Smuggler with a stolen courier ship and a habit of talking her way out of trouble.',
+    avatarUrl: '/defaultCharacter.svg',
+    offworlders: {
+      characterClass: 'Outlaw',
+      species: 'Human',
+      look: 'Sharp-eyed, patched flight jacket',
+      xp: 3,
+      health: 15,
+      armor: 1,
+      supply: 2,
+      supplyMax: 5,
+      stats: {
+        strength: 1,
+        agility: 3,
+        intelligence: 1,
+        willpower: 0,
+      },
+      skills: ['Pilot', 'Sneak', 'Tech'],
+      abilities: ['Lucky', 'Smuggle', 'Shoot First'],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ]
 
 export const guestCampaigns = [

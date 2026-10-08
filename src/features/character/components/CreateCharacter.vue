@@ -5,6 +5,11 @@ import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
 import { createEmptyDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
+import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import {
+  createEmptyOffworldersData,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 const characterStore = useCharacterStore()
 const router = useRouter()
@@ -15,6 +20,7 @@ const character = ref({
   systemType: DND5E_SYSTEM_TYPE,
   notes: '',
   dnd5e: createEmptyDnd5eData(),
+  offworlders: createEmptyOffworldersData(),
 })
 
 const isSubmitting = ref(false)
@@ -37,6 +43,14 @@ const submitCharacter = async () => {
     }
   }
 
+  if (
+    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
+    !character.value.offworlders.characterClass
+  ) {
+    formError.value = 'You must select a class'
+    return
+  }
+
   isSubmitting.value = true
   formError.value = ''
 
@@ -47,6 +61,8 @@ const submitCharacter = async () => {
   }
   if (character.value.systemType === DND5E_SYSTEM_TYPE) {
     payload.dnd5e = character.value.dnd5e
+  } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
+    payload.offworlders = character.value.offworlders
   }
 
   try {
@@ -103,6 +119,7 @@ const submitCharacter = async () => {
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
               <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
+              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
             </select>
           </div>
 
@@ -124,6 +141,13 @@ const submitCharacter = async () => {
             Dungeons &amp; Dragons 5e
           </h3>
           <Dnd5eCharacterForm v-model="character.dnd5e" />
+        </div>
+
+        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
+          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
+            Offworlders
+          </h3>
+          <OffworldersCharacterForm v-model="character.offworlders" />
         </div>
 
         <!-- Buttons -->

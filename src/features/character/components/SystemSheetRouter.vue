@@ -1,5 +1,6 @@
 <script setup>
 import Dnd5eSheet from '@/systems/dnd5e/Dnd5eSheet.vue'
+import OffworldersSheet from '@/systems/offworlders/OffworldersSheet.vue'
 
 defineProps({
   character: {
@@ -16,6 +17,11 @@ defineProps({
 <template>
   <Dnd5eSheet
     v-if="character.systemType === 'DND5E'"
+    :character="character"
+    :is-owner="isOwner"
+  />
+  <OffworldersSheet
+    v-else-if="character.systemType === 'OFFWORLDERS'"
     :character="character"
     :is-owner="isOwner"
   />

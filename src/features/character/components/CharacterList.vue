@@ -94,6 +94,15 @@ const viewCharacter = (id) => {
                 <span class="character-tag">{{ character.dnd5e.characterClass }}</span>
                 <span class="character-tag-level"> Level {{ character.dnd5e.level }} </span>
               </template>
+              <template v-else-if="character.offworlders">
+                <span v-if="character.offworlders.species" class="character-tag">
+                  {{ character.offworlders.species }}
+                </span>
+                <span v-if="character.offworlders.characterClass" class="character-tag">
+                  {{ character.offworlders.characterClass }}
+                </span>
+                <span class="character-tag-level">Health {{ character.offworlders.health }}</span>
+              </template>
               <span v-else class="character-tag">{{ character.systemType }}</span>
             </div>
           </div>

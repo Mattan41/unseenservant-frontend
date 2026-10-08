@@ -315,7 +315,9 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.createCharacter(data)
 - **Store Action**: characterStore.createCharacter(data)
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
-- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e? }` where `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }`
+- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e?, offworlders? }`
+  - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
+  - `offworlders = { characterClass, species, look, xp, health, armor, supply, supplyMax, stats, skills, abilities }` (used when `systemType === 'OFFWORLDERS'`)
 - **Response**: CharacterOutputDTO
 - **Status Codes**: 201, 400, 401
 - **Notes**: ownerId defaults to logged-in user if null.
