@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import {
   DEFAULT_SYSTEM_TYPE,
@@ -35,6 +36,8 @@ const isSubmitting = ref(false)
 const fileInput = ref(null)
 const previewImage = ref(null)
 const selectedFile = ref(null)
+const repositionFile = ref(null)
+const showRepositionModal = ref(false)
 
 const character = ref({
   name: '',
@@ -72,16 +75,35 @@ onMounted(async () => {
   }
 })
 
+onBeforeUnmount(() => {
+  if (previewImage.value) URL.revokeObjectURL(previewImage.value)
+})
+
 function triggerFileInput() {
   fileInput.value.click()
 }
 
 function handleImageChange(event) {
   const file = event.target.files[0]
+  // Reset so selecting the same file again still fires a change event.
+  event.target.value = ''
   if (file) {
-    selectedFile.value = file
-    previewImage.value = URL.createObjectURL(file)
+    repositionFile.value = file
+    showRepositionModal.value = true
   }
+}
+
+function applyRepositionedImage(file) {
+  if (previewImage.value) URL.revokeObjectURL(previewImage.value)
+  selectedFile.value = file
+  previewImage.value = URL.createObjectURL(file)
+  repositionFile.value = null
+  showRepositionModal.value = false
+}
+
+function cancelReposition() {
+  repositionFile.value = null
+  showRepositionModal.value = false
 }
 
 function goToCharacterView() {
@@ -118,10 +140,7 @@ const submitCharacter = async () => {
     // 2. Update basic info and system-specific data
     const payload = buildPayload(character.value.systemType, character.value)
 
-    const updatedCharacter = await characterStore.updateCharacter(
-      characterId.value,
-      payload,
-    )
+    const updatedCharacter = await characterStore.updateCharacter(characterId.value, payload)
 
     if (updatedCharacter) {
       notificationStore.addNotification('Character updated successfully!', 'success', 3000)
@@ -256,5 +275,12 @@ const submitCharacter = async () => {
         </div>
       </form>
     </div>
+
+    <ImageRepositionModal
+      v-if="showRepositionModal && repositionFile"
+      :file="repositionFile"
+      @confirm="applyRepositionedImage"
+      @cancel="cancelReposition"
+    />
   </div>
 </template>
