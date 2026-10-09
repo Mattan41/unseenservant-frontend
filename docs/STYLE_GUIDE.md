@@ -10,12 +10,16 @@
 > truth** — if they ever disagree, update this table to match main.css,
 > not the other way around.
 
-### 1.1 `--color-primary` (environment-aware)
+### 1.1 `--color-primary` (theme + mode aware)
 
-Set on `<html data-env="dev|prod">`. Source: `src/assets/main.css`.
+Set on `<html data-theme="forest" data-mode="light">`. Source:
+`src/assets/main.css`. Values live in the **palette layer**
+(`html[data-theme='forest'][data-mode='light']`); the active theme/mode is
+applied at runtime by `src/utils/environment.js`. `data-env` **no longer
+affects colour** — it only drives the environment banner.
 
-| Token | dev value | prod value | Status |
-|-------|-----------|------------|--------|
+| Token | forest · light (active) | silver · light (deferred) | Status |
+|-------|-------------------------|---------------------------|--------|
 | `--color-primary-50` | #bccac1 | #f9f9f9 | implemented |
 | `--color-primary-100` | #a9bdb1 | #f2f2f2 | implemented |
 | `--color-primary-200` | #96b0a1 | #e5e5e5 | implemented |
@@ -28,7 +32,13 @@ Set on `<html data-env="dev|prod">`. Source: `src/assets/main.css`.
 | `--color-primary-900` | #171e1a | #2b2b2b | implemented |
 
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
-environment's `--primary-500` value via the `@theme` block.
+active theme's `--primary-500` value via the `@theme` block.
+
+> **Three-axis model.** `<html>` carries `data-env` (dev|prod — banner only),
+> `data-theme` (forest|silver — identity palette) and `data-mode`
+> (light|dark — surface/neutral palette). The canonical explanation and the
+> "where to add things" guide live in the header comment of the palette
+> section in `src/assets/main.css`.
 
 ### 1.2 `--color-secondary` (yellow/amber — fixed)
 
@@ -46,8 +56,9 @@ Status: implemented.
 
 ### 1.4 Additional semantic-role variables
 
-Based on patterns observed in the audit. Define in `src/assets/main.css`
-under the `:root` / `html[data-env]` blocks when approved.
+Based on patterns observed in the audit. Define role variables in the
+`:root` role layer of `src/assets/main.css`; their values may be overridden
+per theme/mode in the `html[data-theme][data-mode]` palette blocks.
 
 | Variable | Proposed value | Rationale | Status |
 |----------|---------------|-----------|--------|
@@ -176,6 +187,7 @@ all conditional styling in `*Utils.js` files.
 |-------|---------|----------|--------|
 | `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | implemented |
 | `.demo-notice` | Guest mode warning banner | `bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded` (4 sites) | proposed |
+| `.env-banner` | Environment banner (dev/demo) shown above the header | `bg-secondary-100 border-b border-secondary-400 text-secondary-900 text-xs font-medium text-center px-3 py-2` (`EnvBanner.vue`) | implemented |
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
