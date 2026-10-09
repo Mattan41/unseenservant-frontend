@@ -6,7 +6,7 @@ import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import SystemSheetRouter from '@/features/character/components/SystemSheetRouter.vue'
+import SystemSheetRouter from '@/features/character/dispatchers/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()

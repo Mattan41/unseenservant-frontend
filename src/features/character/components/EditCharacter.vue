@@ -6,13 +6,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
-import { normalizeDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
-import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import {
-  normalizeOffworldersData,
-  OFFWORLDERS_SYSTEM_TYPE,
-} from '@/systems/offworlders/constants.js'
+  DEFAULT_SYSTEM_TYPE,
+  SYSTEM_OPTIONS,
+  SYSTEM_LABELS,
+  createEmptyCharacterBlocks,
+  normalizeCharacterBlocks,
+  validate,
+  buildPayload,
+} from '@/features/character/dispatchers/systemRegistry.js'
 
 const authStore = useAuthStore()
 const isGuestMode = computed(() => authStore.isGuest)
@@ -35,12 +38,13 @@ const selectedFile = ref(null)
 
 const character = ref({
   name: '',
-  systemType: DND5E_SYSTEM_TYPE,
+  systemType: DEFAULT_SYSTEM_TYPE,
   notes: '',
   avatarUrl: null,
-  dnd5e: normalizeDnd5eData(null),
-  offworlders: normalizeOffworldersData(null),
+  ...createEmptyCharacterBlocks(),
 })
+
+const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
 const characterImageUrl = computed(() => {
   if (previewImage.value) return previewImage.value
@@ -53,11 +57,10 @@ onMounted(async () => {
     if (fetchedCharacter) {
       character.value = {
         name: fetchedCharacter.name,
-        systemType: fetchedCharacter.systemType || DND5E_SYSTEM_TYPE,
+        systemType: fetchedCharacter.systemType || DEFAULT_SYSTEM_TYPE,
         notes: fetchedCharacter.notes || '',
         avatarUrl: fetchedCharacter.avatarUrl,
-        dnd5e: normalizeDnd5eData(fetchedCharacter.dnd5e),
-        offworlders: normalizeOffworldersData(fetchedCharacter.offworlders),
+        ...normalizeCharacterBlocks(fetchedCharacter),
       }
     } else {
       notificationStore.addNotification('Character not found', 'error', 4000)
@@ -94,22 +97,9 @@ const submitCharacter = async () => {
     notificationStore.addNotification('Character name is required', 'error', 4000)
     return
   }
-  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
-    if (!character.value.dnd5e.race) {
-      notificationStore.addNotification('You must select a race', 'error', 4000)
-      return
-    }
-    if (!character.value.dnd5e.characterClass) {
-      notificationStore.addNotification('You must select a class', 'error', 4000)
-      return
-    }
-  }
-
-  if (
-    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
-    !character.value.offworlders.characterClass
-  ) {
-    notificationStore.addNotification('You must select a class', 'error', 4000)
+  const systemError = validate(character.value.systemType, character.value)
+  if (systemError) {
+    notificationStore.addNotification(systemError, 'error', 4000)
     return
   }
 
@@ -126,16 +116,7 @@ const submitCharacter = async () => {
     }
 
     // 2. Update basic info and system-specific data
-    const payload = {
-      name: character.value.name,
-      systemType: character.value.systemType,
-      notes: character.value.notes,
-    }
-    if (character.value.systemType === DND5E_SYSTEM_TYPE) {
-      payload.dnd5e = character.value.dnd5e
-    } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
-      payload.offworlders = character.value.offworlders
-    }
+    const payload = buildPayload(character.value.systemType, character.value)
 
     const updatedCharacter = await characterStore.updateCharacter(
       characterId.value,
@@ -231,8 +212,9 @@ const submitCharacter = async () => {
               disabled
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
-              <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
-              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
+              <option v-for="option in SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+                {{ option.label }}
+              </option>
             </select>
           </div>
           <div class="mb-4">
@@ -247,18 +229,15 @@ const submitCharacter = async () => {
         </div>
 
         <!-- System-specific fields -->
-        <div v-if="character.systemType === DND5E_SYSTEM_TYPE" class="mb-6">
-          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
-            Dungeons &amp; Dragons 5e
+        <div class="mb-6">
+          <h4
+            v-if="systemLabel"
+            class="text-lg font-semibold mb-3"
+            style="color: var(--color-primary-600)"
+          >
+            {{ systemLabel }}
           </h4>
-          <Dnd5eCharacterForm v-model="character.dnd5e" />
-        </div>
-
-        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
-          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
-            Offworlders
-          </h4>
-          <OffworldersCharacterForm v-model="character.offworlders" />
+          <SystemFormRouter v-model="character" :system-type="character.systemType" />
         </div>
 
         <!-- Form Action Buttons -->
