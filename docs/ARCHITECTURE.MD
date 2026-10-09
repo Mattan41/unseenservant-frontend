@@ -64,9 +64,9 @@ src/
 │   └──errorUtils.js          # Extracts a human-readable error message from an Axios error.
 ├── systems/                  # System-specific (tabletop RPG ruleset) code
 │   ├── offworlders/          # Offworlders (rules-light sci-fi)
-│   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm
-│   │   ├── constants.js      # Classes, attributes, skill/ability catalogs, empty-data factory
-│   │   └── OffworldersSheet.vue  # The Offworlders character sheet (vitals + attributes + skills/abilities)
+│   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm, OffworldersGearForm
+│   │   ├── constants.js      # Classes, attributes, skill/ability catalogs + descriptions, gear, empty-data factory
+│   │   └── OffworldersSheet.vue  # The Offworlders character sheet (vitals + attributes + skills/abilities + gear)
 │   └── dnd5e/                # Dungeons & Dragons 5e
 │       ├── api/
 │       │   └── open5e-axios.js        # Open5e API client (public, no auth)

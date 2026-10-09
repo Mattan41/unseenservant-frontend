@@ -136,7 +136,7 @@ const submitCharacter = async () => {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 max-w-2xl">
+  <div class="container mx-auto p-4 max-w-7xl">
     <div v-if="loading" class="text-center py-8">
       <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2 text-secondary">Loading character...</p>

@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
   createEmptyOffworldersData,
+  createEmptyOffworldersGear,
   normalizeOffworldersData,
   deriveHealth,
+  standardArrayUsage,
+  suggestedSkillsForClass,
+  armorRatingForType,
   addListValue,
   removeListValue,
   toggleListValue,
@@ -10,6 +14,16 @@ import {
   OFFWORLDERS_ATTRIBUTES,
   OFFWORLDERS_CLASSES,
   OFFWORLDERS_ABILITIES,
+  OFFWORLDERS_SKILLS,
+  OFFWORLDERS_SKILL_DESCRIPTIONS,
+  OFFWORLDERS_ABILITY_DESCRIPTIONS,
+  OFFWORLDERS_CLASS_INFO,
+  OFFWORLDERS_STANDARD_ARRAY,
+  OFFWORLDERS_SUPPLY_MAX,
+  OFFWORLDERS_STARTING_SUPPLY,
+  OFFWORLDERS_STARTING_CREDITS,
+  OFFWORLDERS_WEAPON_TYPES,
+  OFFWORLDERS_ARMOR_TYPES,
 } from '@/systems/offworlders/constants.js'
 
 describe('offworlders constants', () => {
@@ -21,12 +35,14 @@ describe('offworlders constants', () => {
     const data = createEmptyOffworldersData()
     expect(data.health).toBe(12)
     expect(data.armor).toBe(0)
-    expect(data.supply).toBe(0)
-    expect(data.supplyMax).toBe(0)
+    expect(data.supply).toBe(OFFWORLDERS_STARTING_SUPPLY)
+    expect(data.supplyMax).toBe(OFFWORLDERS_SUPPLY_MAX)
+    expect(data.credits).toBe(OFFWORLDERS_STARTING_CREDITS)
     expect(Object.keys(data.stats)).toEqual(OFFWORLDERS_ATTRIBUTES)
     OFFWORLDERS_ATTRIBUTES.forEach((attr) => expect(data.stats[attr]).toBe(0))
     expect(data.skills).toEqual([])
     expect(data.abilities).toEqual([])
+    expect(data.gear).toEqual(createEmptyOffworldersGear())
   })
 
   it('returns a fresh object every time (no shared references)', () => {
@@ -59,6 +75,12 @@ describe('offworlders constants', () => {
   it('normalizeOffworldersData handles null/undefined input', () => {
     expect(normalizeOffworldersData(null).health).toBe(12)
     expect(normalizeOffworldersData(undefined).stats.strength).toBe(0)
+  })
+
+  it('normalizeOffworldersData enforces the supply maximum of 3', () => {
+    const normalized = normalizeOffworldersData({ supply: 4, supplyMax: 5 })
+    expect(normalized.supplyMax).toBe(OFFWORLDERS_SUPPLY_MAX)
+    expect(normalized.supply).toBe(4)
   })
 
   it('deriveHealth follows max(1, 12 + strength + agility)', () => {
@@ -101,5 +123,90 @@ describe('offworlders list helpers', () => {
   it('toggleListValue adds when absent and removes when present', () => {
     expect(toggleListValue([], 'Medic')).toEqual(['Medic'])
     expect(toggleListValue(['Medic'], 'Medic')).toEqual([])
+  })
+})
+
+describe('offworlders catalogs (PDF audit)', () => {
+  it('exposes the eight canonical skills', () => {
+    expect(OFFWORLDERS_SKILLS).toEqual([
+      'Athletics',
+      'Culture',
+      'Manipulation',
+      'Pilot',
+      'Science',
+      'Sneak',
+      'Survival',
+      'Tech',
+    ])
+  })
+
+  it('describes every skill', () => {
+    OFFWORLDERS_SKILLS.forEach((skill) => {
+      expect(OFFWORLDERS_SKILL_DESCRIPTIONS[skill]).toBeTruthy()
+    })
+  })
+
+  it('describes every ability across all classes', () => {
+    Object.values(OFFWORLDERS_ABILITIES)
+      .flat()
+      .forEach((ability) => {
+        expect(OFFWORLDERS_ABILITY_DESCRIPTIONS[ability]).toBeTruthy()
+      })
+  })
+
+  it('gives every class a blurb and in-catalog suggested skills', () => {
+    OFFWORLDERS_CLASSES.forEach((className) => {
+      expect(OFFWORLDERS_CLASS_INFO[className].blurb).toBeTruthy()
+      expect(OFFWORLDERS_CLASS_INFO[className].suggestedSkills.length).toBeGreaterThan(0)
+      suggestedSkillsForClass(className).forEach((skill) => {
+        expect(OFFWORLDERS_SKILLS).toContain(skill)
+      })
+    })
+    expect(suggestedSkillsForClass('Unknown')).toEqual([])
+  })
+})
+
+describe('offworlders gear + attribute helpers', () => {
+  it('exposes the standard attribute array +2/+1/0/-1', () => {
+    expect(OFFWORLDERS_STANDARD_ARRAY).toEqual([2, 1, 0, -1])
+  })
+
+  it('standardArrayUsage counts how many array entries are matched', () => {
+    expect(
+      standardArrayUsage({ strength: 2, agility: 1, intelligence: 0, willpower: -1 }),
+    ).toEqual({ used: 4, total: 4 })
+    // -1 is duplicated, so only three of the four entries are matched.
+    expect(
+      standardArrayUsage({ strength: 2, agility: 1, intelligence: -1, willpower: -1 }),
+    ).toEqual({ used: 3, total: 4 })
+    // Four zeroes only match the single 0 in the array.
+    expect(standardArrayUsage(null)).toEqual({ used: 1, total: 4 })
+  })
+
+  it('armorRatingForType maps armor names to ratings', () => {
+    expect(armorRatingForType('Light')).toBe(1)
+    expect(armorRatingForType('Heavy')).toBe(2)
+    expect(armorRatingForType('Assault')).toBe(3)
+    expect(armorRatingForType('')).toBe(0)
+    expect(armorRatingForType('Unknown')).toBe(0)
+  })
+
+  it('exposes the weapon and armor reference tables from the PDF', () => {
+    expect(OFFWORLDERS_WEAPON_TYPES.map((weapon) => weapon.name)).toEqual([
+      'Unarmed',
+      'Light',
+      'Medium',
+      'Heavy',
+    ])
+    expect(OFFWORLDERS_ARMOR_TYPES.map((armor) => armor.rating)).toEqual([1, 2, 3])
+  })
+
+  it('creates a fresh gear block defaulting to a light primary weapon', () => {
+    const gear = createEmptyOffworldersGear()
+    expect(gear.primaryWeaponType).toBe('Light')
+    expect(gear.armorType).toBe('')
+    const other = createEmptyOffworldersGear()
+    other.primaryWeapon = 'X'
+    expect(gear.primaryWeapon).toBe('')
   })
 })
