@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue'
 import OffworldersStatsPanel from '@/systems/offworlders/components/OffworldersStatsPanel.vue'
-import BaseTooltip from '@/components/base/BaseTooltip.vue'
 import {
   OFFWORLDERS_ABILITY_DESCRIPTIONS,
   OFFWORLDERS_SKILL_DESCRIPTIONS,
   OFFWORLDERS_SUPPLY_MAX,
+  abilityVitalsBonus,
+  deriveArmor,
+  deriveHealth,
   resolveEntryDescription,
 } from '@/systems/offworlders/constants.js'
 
@@ -30,6 +32,17 @@ const otherItems = computed(
   () => items.value.filter((item) => item.kind !== 'weapon' && item.kind !== 'armor'),
 )
 
+// Vitals always reflect their sources (attributes, worn armor, abilities), so the
+// sheet stays correct even for characters saved before automatic derivation.
+const abilityBonus = computed(() => abilityVitalsBonus(abilities.value))
+const maxHealth = computed(() =>
+  deriveHealth(
+    offworlders.value.stats,
+    abilityBonus.value.health + (Number(offworlders.value.healthModifier) || 0),
+  ),
+)
+const effectiveArmor = computed(() => deriveArmor(items.value, abilityBonus.value.armor))
+
 function skillDescription(entry) {
   return resolveEntryDescription(entry, OFFWORLDERS_SKILL_DESCRIPTIONS)
 }
@@ -47,8 +60,8 @@ function abilityDescription(entry) {
         <p><strong>Class:</strong> {{ offworlders.characterClass || '—' }}</p>
         <p><strong>Species:</strong> {{ offworlders.species || '—' }}</p>
         <p><strong>Look:</strong> {{ offworlders.look || '—' }}</p>
-        <p><strong>Health:</strong> {{ offworlders.health ?? '—' }}</p>
-        <p><strong>Armor:</strong> {{ offworlders.armor ?? '—' }}</p>
+        <p><strong>HP:</strong> {{ offworlders.currentHealth ?? maxHealth }} / {{ maxHealth }}</p>
+        <p><strong>Armor:</strong> {{ effectiveArmor }}</p>
         <p><strong>Supply:</strong> {{ offworlders.supply ?? 0 }} / {{ OFFWORLDERS_SUPPLY_MAX }}</p>
         <p><strong>Credits:</strong> {{ offworlders.credits ?? 0 }}</p>
         <p><strong>XP:</strong> {{ offworlders.xp ?? 0 }}</p>
@@ -105,13 +118,14 @@ function abilityDescription(entry) {
     <!-- Skills -->
     <div class="p-6 border-t border-section">
       <h2 class="section-heading mb-4">Skills</h2>
-      <div v-if="skills.length" class="flex flex-wrap gap-2">
-        <span v-for="entry in skills" :key="entry.name" class="chip">
-          <BaseTooltip v-if="skillDescription(entry)" :text="skillDescription(entry)">
-            {{ entry.name }}
-          </BaseTooltip>
-          <template v-else>{{ entry.name }}</template>
-        </span>
+      <!-- The sheet has room, so every selected skill shows its text inline. -->
+      <div v-if="skills.length" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+        <div v-for="entry in skills" :key="entry.name">
+          <p class="font-medium text-default">{{ entry.name }}</p>
+          <p v-if="skillDescription(entry)" class="text-sm text-secondary">
+            {{ skillDescription(entry) }}
+          </p>
+        </div>
       </div>
       <p v-else class="text-subtle">No skills recorded.</p>
     </div>
@@ -119,13 +133,14 @@ function abilityDescription(entry) {
     <!-- Abilities -->
     <div class="p-6 border-t border-section muted-surface">
       <h2 class="section-heading mb-4">Abilities</h2>
-      <div v-if="abilities.length" class="flex flex-wrap gap-2">
-        <span v-for="entry in abilities" :key="entry.name" class="chip">
-          <BaseTooltip v-if="abilityDescription(entry)" :text="abilityDescription(entry)">
-            {{ entry.name }}
-          </BaseTooltip>
-          <template v-else>{{ entry.name }}</template>
-        </span>
+      <!-- The sheet has room, so every selected ability shows its text inline. -->
+      <div v-if="abilities.length" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+        <div v-for="entry in abilities" :key="entry.name">
+          <p class="font-medium text-default">{{ entry.name }}</p>
+          <p v-if="abilityDescription(entry)" class="text-sm text-secondary">
+            {{ abilityDescription(entry) }}
+          </p>
+        </div>
       </div>
       <p v-else class="text-subtle">No abilities recorded.</p>
     </div>

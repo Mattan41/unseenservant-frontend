@@ -5,6 +5,8 @@ import {
   normalizeOffworldersItem,
   migrateGearToItems,
   damageForWeaponType,
+  deriveArmor,
+  abilityVitalsBonus,
   createEmptyOffworldersEntry,
   normalizeOffworldersEntry,
   resolveEntryDescription,
@@ -26,6 +28,8 @@ import {
   OFFWORLDERS_SKILLS,
   OFFWORLDERS_SKILL_DESCRIPTIONS,
   OFFWORLDERS_ABILITY_DESCRIPTIONS,
+  OFFWORLDERS_ABILITY_EFFECTS,
+  OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS,
   OFFWORLDERS_CLASS_INFO,
   OFFWORLDERS_STANDARD_ARRAY,
   OFFWORLDERS_SUPPLY_MAX,
@@ -345,5 +349,91 @@ describe('skill/ability entries', () => {
     const normalized = normalizeOffworldersData({ skills: ['Pilot'], abilities: ['Lucky'] })
     expect(normalized.skills).toEqual([{ name: 'Pilot', description: '' }])
     expect(normalized.abilities).toEqual([{ name: 'Lucky', description: '' }])
+  })
+})
+
+describe('deriveArmor', () => {
+  it('is 0 with no armor items', () => {
+    expect(deriveArmor([])).toBe(0)
+    expect(deriveArmor(null)).toBe(0)
+    expect(deriveArmor([{ kind: 'weapon', armorRating: 3 }])).toBe(0)
+    expect(deriveArmor([{ kind: 'item', armorRating: 2 }])).toBe(0)
+  })
+
+  it('takes the highest rating among armor items', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }])).toBe(1)
+    expect(
+      deriveArmor([
+        { kind: 'armor', armorRating: 1 },
+        { kind: 'armor', armorRating: 2 },
+      ]),
+    ).toBe(2)
+  })
+
+  it('clamps to 0..OFFWORLDERS_ARMOR_MAX and ignores junk', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 9 }])).toBe(3)
+    expect(deriveArmor([{ kind: 'armor', armorRating: -4 }])).toBe(0)
+    expect(deriveArmor([{ kind: 'armor' }])).toBe(0)
+    expect(deriveArmor([{ kind: 'armor', armorRating: '2' }])).toBe(2)
+  })
+})
+
+describe('derived Vitals with modifiers', () => {
+  it('deriveHealth adds the manual modifier', () => {
+    expect(deriveHealth({ strength: 1, agility: 0 }, 4)).toBe(17)
+    expect(deriveHealth({ strength: 1, agility: 0 }, -1)).toBe(12)
+    // The floor of 1 still applies.
+    expect(deriveHealth({ strength: -20, agility: -20 }, -5)).toBe(1)
+  })
+
+  it('createEmptyOffworldersData includes the health-tracking fields', () => {
+    const data = createEmptyOffworldersData()
+    expect(data.currentHealth).toBe(12)
+    expect(data.healthModifier).toBe(0)
+  })
+
+  it('exposes a description for every attribute', () => {
+    OFFWORLDERS_ATTRIBUTES.forEach((attr) => {
+      expect(OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS[attr]).toBeTruthy()
+    })
+  })
+})
+
+describe('ability Vitals bonuses', () => {
+  it('sums the passive bonuses from Hardy and Unstoppable', () => {
+    const bonus = abilityVitalsBonus([{ name: 'Hardy' }, { name: 'Unstoppable' }])
+    expect(bonus.health).toBe(4)
+    expect(bonus.armor).toBe(1)
+    expect(bonus.healthSources).toEqual(['Hardy'])
+    expect(bonus.armorSources).toEqual(['Unstoppable'])
+  })
+
+  it('ignores situational abilities and custom entries', () => {
+    expect(abilityVitalsBonus([{ name: 'Lucky' }, { name: 'Homebrew' }])).toEqual({
+      health: 0,
+      armor: 0,
+      healthSources: [],
+      armorSources: [],
+    })
+    expect(abilityVitalsBonus(null)).toEqual({
+      health: 0,
+      armor: 0,
+      healthSources: [],
+      armorSources: [],
+    })
+  })
+
+  it('only lists effects for real catalog abilities', () => {
+    const catalog = Object.values(OFFWORLDERS_ABILITIES).flat()
+    Object.keys(OFFWORLDERS_ABILITY_EFFECTS).forEach((name) => {
+      expect(catalog).toContain(name)
+    })
+  })
+
+  it('deriveArmor folds the passive bonus in, still clamped to 0..3', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }], 1)).toBe(2)
+    expect(deriveArmor([{ kind: 'armor', armorRating: 3 }], 1)).toBe(3)
+    expect(deriveArmor([], 1)).toBe(1)
+    expect(deriveArmor([], 0)).toBe(0)
   })
 })

@@ -711,7 +711,7 @@ input {
    surface (mirrors .character-tag-level).
    -------------------------------------------------------------------------- */
 .suggested-choice {
-  @apply rounded bg-secondary-50 text-secondary-900 px-1;
+  @apply rounded bg-secondary-50 px-1;
 }
 .suggested-choice-group {
   @apply rounded-md bg-secondary-50;

@@ -15,6 +15,15 @@ defineProps({
     type: String,
     required: true,
   },
+  /**
+   * When true the tooltip is active on desktop only; on smaller screens the
+   * slot renders as plain text. Use this where a mobile info panel/modal
+   * covers the content and inline expansion would cause layout hopping.
+   */
+  desktopOnly: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const POPOVER_WIDTH = 256
@@ -72,7 +81,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <span class="inline-flex flex-col">
+  <!-- Mobile + desktopOnly: plain label, no trigger (avoids layout hopping). -->
+  <span v-if="desktopOnly && !isDesktop"><slot /></span>
+  <span v-else class="inline-flex flex-col">
     <span
       ref="trigger"
       class="cursor-help underline decoration-dotted underline-offset-2"

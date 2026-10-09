@@ -272,6 +272,8 @@ export const guestCharacters = [
       look: 'Sharp-eyed, patched flight jacket',
       xp: 3,
       health: 15,
+      currentHealth: 15,
+      healthModifier: 0,
       armor: 1,
       supply: 2,
       supplyMax: 3,

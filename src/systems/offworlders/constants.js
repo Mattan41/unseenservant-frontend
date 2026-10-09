@@ -3,7 +3,8 @@
  * Pure data/functions — no Vue or store dependencies.
  *
  * Offworlders is a rules-light sci-fi RPG. Attributes range from -1 to +3,
- * Armor from 0 to 3, Health is derived as `max(1, 12 + strength + agility)`.
+ * Armor from 0 to 3, Health is derived as `max(1, 12 + strength + agility)`,
+ * and Armor is derived from the worn armor items.
  */
 
 export const OFFWORLDERS_SYSTEM_TYPE = 'OFFWORLDERS'
@@ -17,6 +18,14 @@ export const OFFWORLDERS_ATTRIBUTES = ['strength', 'agility', 'intelligence', 'w
 export const OFFWORLDERS_ATTRIBUTE_MIN = -1
 export const OFFWORLDERS_ATTRIBUTE_MAX = 3
 export const OFFWORLDERS_ARMOR_MAX = 3
+
+/** One thin line of rules text per attribute (used by the on-demand info panel). */
+export const OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS = {
+  strength: 'Raw physical power — lifting, melee, and shrugging off punishment.',
+  agility: 'Coordination and reflexes — dodging, aiming, and piloting.',
+  intelligence: 'Reasoning and knowledge — science, tech, and deduction.',
+  willpower: 'Mental fortitude and psionic potential — focusing and resisting.',
+}
 
 /** The four numbers a starting character assigns, one each, in any order (p.6). */
 export const OFFWORLDERS_STANDARD_ARRAY = [2, 1, 0, -1]
@@ -108,6 +117,17 @@ export const OFFWORLDERS_ABILITY_DESCRIPTIONS = {
 }
 
 /**
+ * Passive Vitals bonuses granted by abilities (p.9). Only abilities with a
+ * permanent effect on the character sheet are listed; situational ones (extra
+ * damage, rerolls, hiding, …) are applied at the table and never stored.
+ * Keys must match the names in {@link OFFWORLDERS_ABILITIES}.
+ */
+export const OFFWORLDERS_ABILITY_EFFECTS = {
+  Hardy: { health: 4 },
+  Unstoppable: { armor: 1 },
+}
+
+/**
  * Presentation-only hints per class: a short blurb and the skills the official
  * example crew used (p.7). These are SUGGESTIONS — the rules let any class take
  * any skills, and experienced players may ignore classes entirely (p.6).
@@ -167,14 +187,58 @@ export function suggestedSkillsForClass(characterClass) {
 }
 
 /**
- * Health is derived from Strength and Agility, with a floor of 1.
+ * Maximum Health is derived from Strength and Agility, plus the passive bonuses
+ * granted by abilities and any manual ± (the Health Misc field), with a floor of 1.
  * @param {{strength?: number, agility?: number}|null|undefined} stats
+ * @param {number} [modifier=0] passive ability bonuses + manual ± adjustment
  * @returns {number}
  */
-export function deriveHealth(stats) {
+export function deriveHealth(stats, modifier = 0) {
   const strength = Number(stats?.strength) || 0
   const agility = Number(stats?.agility) || 0
-  return Math.max(1, 12 + strength + agility)
+  const bonus = Number(modifier) || 0
+  return Math.max(1, 12 + strength + agility + bonus)
+}
+
+/**
+ * Sum the passive Vitals bonuses from a list of ability entries, together with
+ * the names of the abilities that granted them (so the UI can explain the total).
+ * Custom/unknown abilities contribute nothing.
+ * @param {{name?: string}[]|null|undefined} abilities
+ * @returns {{health: number, armor: number, healthSources: string[], armorSources: string[]}}
+ */
+export function abilityVitalsBonus(abilities) {
+  const bonus = { health: 0, armor: 0, healthSources: [], armorSources: [] }
+  for (const entry of abilities || []) {
+    const effect = OFFWORLDERS_ABILITY_EFFECTS[entry?.name]
+    if (!effect) continue
+    if (effect.health) {
+      bonus.health += effect.health
+      bonus.healthSources.push(entry.name)
+    }
+    if (effect.armor) {
+      bonus.armor += effect.armor
+      bonus.armorSources.push(entry.name)
+    }
+  }
+  return bonus
+}
+
+/**
+ * Effective Armor rating: the highest `armorRating` among the worn `kind: 'armor'`
+ * items (p.12) plus any passive bonus from abilities, clamped to
+ * 0..OFFWORLDERS_ARMOR_MAX.
+ * @param {{kind?: string, armorRating?: number}[]|null|undefined} items
+ * @param {number} [bonus=0] passive bonus summed from the selected abilities
+ *   (not user-entered) — e.g. Unstoppable's +1 armor
+ * @returns {number}
+ */
+export function deriveArmor(items, bonus = 0) {
+  const ratings = (items || [])
+    .filter((item) => item?.kind === 'armor')
+    .map((item) => Number(item?.armorRating) || 0)
+  const worn = ratings.length === 0 ? 0 : Math.max(0, ...ratings)
+  return Math.max(0, Math.min(OFFWORLDERS_ARMOR_MAX, worn + (Number(bonus) || 0)))
 }
 
 /**
@@ -323,6 +387,8 @@ export function createEmptyOffworldersData() {
     look: '',
     xp: 0,
     health: 12,
+    currentHealth: 12,
+    healthModifier: 0,
     armor: 0,
     supply: OFFWORLDERS_STARTING_SUPPLY,
     supplyMax: OFFWORLDERS_SUPPLY_MAX,

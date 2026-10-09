@@ -193,7 +193,7 @@ all conditional styling in `*Utils.js` files.
 | `.info-popover--fixed` | Info popover on desktop (md+); teleported + JS-positioned | `fixed z-[60]` | implemented |
 | `.info-popover--inline` | Info popover on mobile (<md); expands under the trigger | `mt-1 block` | implemented |
 | `.text-warning` | Warning text tone (e.g. attribute array mismatch) | `text-secondary-700` | implemented |
-| `.suggested-choice` | Highlight for a suggested skill option | `rounded bg-secondary-50 text-secondary-900 px-1` | implemented |
+| `.suggested-choice` | Highlight for a suggested skill option | `rounded bg-secondary-50 px-1` | implemented |
 | `.suggested-choice-group` | Highlight panel for a class's suggested abilities | `rounded-md bg-secondary-50` | implemented |
 
 ### 2.4 Proposed new classes (not yet implemented)
