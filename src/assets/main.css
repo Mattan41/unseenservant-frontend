@@ -9,7 +9,7 @@
   --color-primary-200: var(--primary-200);
   --color-primary-300: var(--primary-300);
   --color-primary-400: var(--primary-400);
-  --color-primary-500: var(--primary-50); /* v4 defaults */
+  --color-primary-500: var(--primary-500);
   --color-primary-600: var(--primary-600);
   --color-primary-700: var(--primary-700);
   --color-primary-800: var(--primary-800);
@@ -67,24 +67,28 @@
      • A new mode (e.g. dark)       → add `[data-mode='dark']` variants and
        wire data-mode to prefers-color-scheme in environment.js (future pass).
 
-   Only ONE theme (forest) and ONE mode (light) are built today.
+   Active default: silver · light. forest · light is retained as an
+   alternative (add a switcher later to make it reachable). Dark mode is a
+   future pass.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   ROLE LAYER — semantic variables. Components reference these by meaning;
-   their VALUES may be overridden per theme/mode in the palette layer below.
+   ROLE LAYER — semantic variables that are genuinely theme-agnostic.
+   Per-theme / per-mode role values (e.g. --color-surface) live in the palette
+   layer below so each theme can set its own value.
    -------------------------------------------------------------------------- */
 :root {
-  --color-surface: #d8e7dd;
+  /* no theme-agnostic role variables yet */
 }
 
 /* --------------------------------------------------------------------------
    PALETTE LAYER — raw values per theme + mode.
    -------------------------------------------------------------------------- */
 
-/* forest · light — the active theme/mode. Migrated 1:1 from the former
-   html[data-env='dev'] green palette so rendering is unchanged. */
+/* forest · light — alternative theme (NOT the default). Retained from the
+   former html[data-env='dev'] green palette. */
 html[data-theme='forest'][data-mode='light'] {
+  --color-surface: #d8e7dd;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -98,8 +102,8 @@ html[data-theme='forest'][data-mode='light'] {
   --primary-900: #171e1a;
 }
 
-/* silver · light — future theme. NOT active; the app runs on forest.
-   To enable: uncomment this block and point DEFAULT_THEME at 'silver'.
+/* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from
+   the former html[data-env='prod'] palette. */
 html[data-theme='silver'][data-mode='light'] {
   --color-surface: #ffffff;
   --primary: #c0c0c0;
@@ -114,7 +118,6 @@ html[data-theme='silver'][data-mode='light'] {
   --primary-800: #3d3d3d;
   --primary-900: #2b2b2b;
 }
-*/
 
 /* Base button styles */
 .button {

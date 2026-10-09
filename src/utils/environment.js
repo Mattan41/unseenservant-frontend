@@ -17,8 +17,11 @@ export const IS_DEV_ENVIRONMENT = ENVIRONMENT === 'dev'
 /** True only for the local demo environment. */
 export const IS_DEMO_ENVIRONMENT = ENVIRONMENT === 'demo'
 
-/** Active theme. Only 'forest' exists today; 'silver' will follow. */
-export const DEFAULT_THEME = 'forest'
+/**
+ * Fallback theme used when no user preference is stored. A future commit
+ * adds a theme switcher under /user that persists the choice in localStorage.
+ */
+export const DEFAULT_THEME = 'silver'
 
 /** Active mode. Only 'light' exists today; prefers-color-scheme is a later pass. */
 export const DEFAULT_MODE = 'light'

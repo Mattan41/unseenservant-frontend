@@ -12,30 +12,34 @@
 
 ### 1.1 `--color-primary` (theme + mode aware)
 
-Set on `<html data-theme="forest" data-mode="light">`. Source:
+Set on `<html data-theme="silver" data-mode="light">`. Source:
 `src/assets/main.css`. Values live in the **palette layer**
-(`html[data-theme='forest'][data-mode='light']`); the active theme/mode is
+(`html[data-theme='silver'][data-mode='light']`); the active theme/mode is
 applied at runtime by `src/utils/environment.js`. `data-env` **no longer
 affects colour** — it only drives the environment banner.
 
-| Token | forest · light (active) | silver · light (deferred) | Status |
-|-------|-------------------------|---------------------------|--------|
-| `--color-primary-50` | #bccac1 | #f9f9f9 | implemented |
-| `--color-primary-100` | #a9bdb1 | #f2f2f2 | implemented |
-| `--color-primary-200` | #96b0a1 | #e5e5e5 | implemented |
-| `--color-primary-300` | #83a391 | #d8d8d8 | implemented |
-| `--color-primary-400` | #749584 | #c5c5c5 | implemented |
-| `--color-primary-500` | #6b8e7b | #c0c0c0 | implemented |
-| `--color-primary-600` | #567263 | #a0a0a0 | implemented |
-| `--color-primary-700` | #41564a | #5c5c5c | implemented |
-| `--color-primary-800` | #2c3a32 | #3d3d3d | implemented |
-| `--color-primary-900` | #171e1a | #2b2b2b | implemented |
+| Token | silver · light (active default) | forest · light (alternative) | Status |
+|-------|---------------------------------|------------------------------|--------|
+| `--color-primary-50` | #f9f9f9 | #bccac1 | implemented |
+| `--color-primary-100` | #f2f2f2 | #a9bdb1 | implemented |
+| `--color-primary-200` | #e5e5e5 | #96b0a1 | implemented |
+| `--color-primary-300` | #d8d8d8 | #83a391 | implemented |
+| `--color-primary-400` | #c5c5c5 | #749584 | implemented |
+| `--color-primary-500` | #c0c0c0 | #6b8e7b | implemented |
+| `--color-primary-600` | #a0a0a0 | #567263 | implemented |
+| `--color-primary-700` | #5c5c5c | #41564a | implemented |
+| `--color-primary-800` | #3d3d3d | #2c3a32 | implemented |
+| `--color-primary-900` | #2b2b2b | #171e1a | implemented |
 
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
 active theme's `--primary-500` value via the `@theme` block.
 
+`--color-surface` is per-theme too: `#ffffff` (silver) / `#d8e7dd` (forest).
+forest is retained but **not reachable** from the running app until a theme
+switcher lands.
+
 > **Three-axis model.** `<html>` carries `data-env` (dev|prod — banner only),
-> `data-theme` (forest|silver — identity palette) and `data-mode`
+> `data-theme` (silver|forest — identity palette) and `data-mode`
 > (light|dark — surface/neutral palette). The canonical explanation and the
 > "where to add things" guide live in the header comment of the palette
 > section in `src/assets/main.css`.
@@ -62,7 +66,7 @@ per theme/mode in the `html[data-theme][data-mode]` palette blocks.
 
 | Variable | Proposed value | Rationale | Status |
 |----------|---------------|-----------|--------|
-| `--color-surface` | `#ffffff` | Card/modals/form backgrounds — used in 10+ components. Defined as a true neutral (not derived from primary) so it supports a future dark mode without being tied to the accent hue. A dark-mode value is TBD in Phase 5. | implemented |
+| `--color-surface` | `#ffffff` / `#d8e7dd` | Card/modals/form backgrounds — used in 10+ components. **Per-theme role** (set in each `html[data-theme][data-mode]` block, not `:root`): `#ffffff` (silver), `#d8e7dd` (forest). A dark-mode value is TBD in the dark-mode pass. | implemented |
 | `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
 | `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
 ---
