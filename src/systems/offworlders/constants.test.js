@@ -1,8 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import {
   createEmptyOffworldersData,
+  createEmptyOffworldersItem,
+  normalizeOffworldersItem,
+  migrateGearToItems,
+  damageForWeaponType,
+  deriveArmor,
+  abilityVitalsBonus,
+  createEmptyOffworldersEntry,
+  normalizeOffworldersEntry,
+  resolveEntryDescription,
+  toggleEntry,
+  addEntry,
+  removeEntry,
   normalizeOffworldersData,
   deriveHealth,
+  standardArrayUsage,
+  suggestedSkillsForClass,
+  armorRatingForType,
   addListValue,
   removeListValue,
   toggleListValue,
@@ -10,6 +25,18 @@ import {
   OFFWORLDERS_ATTRIBUTES,
   OFFWORLDERS_CLASSES,
   OFFWORLDERS_ABILITIES,
+  OFFWORLDERS_SKILLS,
+  OFFWORLDERS_SKILL_DESCRIPTIONS,
+  OFFWORLDERS_ABILITY_DESCRIPTIONS,
+  OFFWORLDERS_ABILITY_EFFECTS,
+  OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS,
+  OFFWORLDERS_CLASS_INFO,
+  OFFWORLDERS_STANDARD_ARRAY,
+  OFFWORLDERS_SUPPLY_MAX,
+  OFFWORLDERS_STARTING_SUPPLY,
+  OFFWORLDERS_STARTING_CREDITS,
+  OFFWORLDERS_WEAPON_TYPES,
+  OFFWORLDERS_ARMOR_TYPES,
 } from '@/systems/offworlders/constants.js'
 
 describe('offworlders constants', () => {
@@ -21,12 +48,14 @@ describe('offworlders constants', () => {
     const data = createEmptyOffworldersData()
     expect(data.health).toBe(12)
     expect(data.armor).toBe(0)
-    expect(data.supply).toBe(0)
-    expect(data.supplyMax).toBe(0)
+    expect(data.supply).toBe(OFFWORLDERS_STARTING_SUPPLY)
+    expect(data.supplyMax).toBe(OFFWORLDERS_SUPPLY_MAX)
+    expect(data.credits).toBe(OFFWORLDERS_STARTING_CREDITS)
     expect(Object.keys(data.stats)).toEqual(OFFWORLDERS_ATTRIBUTES)
     OFFWORLDERS_ATTRIBUTES.forEach((attr) => expect(data.stats[attr]).toBe(0))
     expect(data.skills).toEqual([])
     expect(data.abilities).toEqual([])
+    expect(data.items).toEqual([])
   })
 
   it('returns a fresh object every time (no shared references)', () => {
@@ -53,12 +82,21 @@ describe('offworlders constants', () => {
     })
     expect(normalized.stats.strength).toBe(2)
     expect(normalized.stats.agility).toBe(0)
-    expect(normalized.skills).toEqual(['Pilot', 'Sneak'])
+    expect(normalized.skills).toEqual([
+      { name: 'Pilot', description: '' },
+      { name: 'Sneak', description: '' },
+    ])
   })
 
   it('normalizeOffworldersData handles null/undefined input', () => {
     expect(normalizeOffworldersData(null).health).toBe(12)
     expect(normalizeOffworldersData(undefined).stats.strength).toBe(0)
+  })
+
+  it('normalizeOffworldersData enforces the supply maximum of 3', () => {
+    const normalized = normalizeOffworldersData({ supply: 4, supplyMax: 5 })
+    expect(normalized.supplyMax).toBe(OFFWORLDERS_SUPPLY_MAX)
+    expect(normalized.supply).toBe(4)
   })
 
   it('deriveHealth follows max(1, 12 + strength + agility)', () => {
@@ -101,5 +139,301 @@ describe('offworlders list helpers', () => {
   it('toggleListValue adds when absent and removes when present', () => {
     expect(toggleListValue([], 'Medic')).toEqual(['Medic'])
     expect(toggleListValue(['Medic'], 'Medic')).toEqual([])
+  })
+})
+
+describe('offworlders catalogs (PDF audit)', () => {
+  it('exposes the eight canonical skills', () => {
+    expect(OFFWORLDERS_SKILLS).toEqual([
+      'Athletics',
+      'Culture',
+      'Manipulation',
+      'Pilot',
+      'Science',
+      'Sneak',
+      'Survival',
+      'Tech',
+    ])
+  })
+
+  it('describes every skill', () => {
+    OFFWORLDERS_SKILLS.forEach((skill) => {
+      expect(OFFWORLDERS_SKILL_DESCRIPTIONS[skill]).toBeTruthy()
+    })
+  })
+
+  it('describes every ability across all classes', () => {
+    Object.values(OFFWORLDERS_ABILITIES)
+      .flat()
+      .forEach((ability) => {
+        expect(OFFWORLDERS_ABILITY_DESCRIPTIONS[ability]).toBeTruthy()
+      })
+  })
+
+  it('gives every class a blurb and in-catalog suggested skills', () => {
+    OFFWORLDERS_CLASSES.forEach((className) => {
+      expect(OFFWORLDERS_CLASS_INFO[className].blurb).toBeTruthy()
+      expect(OFFWORLDERS_CLASS_INFO[className].suggestedSkills.length).toBeGreaterThan(0)
+      suggestedSkillsForClass(className).forEach((skill) => {
+        expect(OFFWORLDERS_SKILLS).toContain(skill)
+      })
+    })
+    expect(suggestedSkillsForClass('Unknown')).toEqual([])
+  })
+})
+
+describe('offworlders gear + attribute helpers', () => {
+  it('exposes the standard attribute array +2/+1/0/-1', () => {
+    expect(OFFWORLDERS_STANDARD_ARRAY).toEqual([2, 1, 0, -1])
+  })
+
+  it('standardArrayUsage counts how many array entries are matched', () => {
+    expect(
+      standardArrayUsage({ strength: 2, agility: 1, intelligence: 0, willpower: -1 }),
+    ).toEqual({ used: 4, total: 4 })
+    // -1 is duplicated, so only three of the four entries are matched.
+    expect(
+      standardArrayUsage({ strength: 2, agility: 1, intelligence: -1, willpower: -1 }),
+    ).toEqual({ used: 3, total: 4 })
+    // Four zeroes only match the single 0 in the array.
+    expect(standardArrayUsage(null)).toEqual({ used: 1, total: 4 })
+  })
+
+  it('armorRatingForType maps armor names to ratings', () => {
+    expect(armorRatingForType('Light')).toBe(1)
+    expect(armorRatingForType('Heavy')).toBe(2)
+    expect(armorRatingForType('Assault')).toBe(3)
+    expect(armorRatingForType('')).toBe(0)
+    expect(armorRatingForType('Unknown')).toBe(0)
+  })
+
+  it('exposes the weapon and armor reference tables from the PDF', () => {
+    expect(OFFWORLDERS_WEAPON_TYPES.map((weapon) => weapon.name)).toEqual([
+      'Unarmed',
+      'Light',
+      'Medium',
+      'Heavy',
+    ])
+    expect(OFFWORLDERS_ARMOR_TYPES.map((armor) => armor.rating)).toEqual([1, 2, 3])
+  })
+
+  it('creates a fresh, empty item', () => {
+    const item = createEmptyOffworldersItem()
+    expect(item).toEqual({
+      name: '',
+      kind: 'item',
+      damage: '',
+      armorRating: 0,
+      heavy: false,
+      notes: '',
+    })
+    const other = createEmptyOffworldersItem()
+    other.name = 'X'
+    expect(item.name).toBe('')
+  })
+
+  it('normalizeOffworldersItem fills missing fields', () => {
+    const item = normalizeOffworldersItem({ name: 'Blaster', kind: 'weapon' })
+    expect(item.name).toBe('Blaster')
+    expect(item.kind).toBe('weapon')
+    expect(item.damage).toBe('')
+    expect(item.armorRating).toBe(0)
+    expect(item.heavy).toBe(false)
+    expect(normalizeOffworldersItem(null).kind).toBe('item')
+  })
+})
+
+describe('legacy gear -> items migration', () => {
+  it('migrateGearToItems converts weapons, armor and notes', () => {
+    const items = migrateGearToItems({
+      primaryWeapon: 'Snubnosed revolver',
+      secondaryWeapon: 'Butterfly knife',
+      armorType: 'Heavy',
+      notes: 'Band t-shirts',
+    })
+    expect(items).toHaveLength(4)
+    expect(items[0]).toMatchObject({ name: 'Snubnosed revolver', kind: 'weapon', damage: '' })
+    expect(items[1]).toMatchObject({ name: 'Butterfly knife', kind: 'weapon' })
+    expect(items[2]).toMatchObject({ name: 'Heavy armor', kind: 'armor', armorRating: 2, heavy: true })
+    expect(items[3]).toMatchObject({ name: 'Gear notes', kind: 'item', notes: 'Band t-shirts' })
+  })
+
+  it('migrateGearToItems prefills damage from the legacy weapon type', () => {
+    const items = migrateGearToItems({
+      primaryWeapon: 'Rifle',
+      primaryWeaponType: 'Medium',
+      secondaryWeapon: 'Cannon',
+      secondaryWeaponType: 'Heavy',
+    })
+    expect(items[0]).toMatchObject({ name: 'Rifle', kind: 'weapon', damage: '1D6+1' })
+    expect(items[1]).toMatchObject({ name: 'Cannon', kind: 'weapon', damage: '1D6+2' })
+  })
+
+  it('damageForWeaponType maps the PDF weapon types', () => {
+    expect(damageForWeaponType('Light')).toBe('1D6')
+    expect(damageForWeaponType('Medium')).toBe('1D6+1')
+    expect(damageForWeaponType('Heavy')).toBe('1D6+2')
+    expect(damageForWeaponType('')).toBe('')
+    expect(damageForWeaponType('Unknown')).toBe('')
+  })
+
+  it('migrateGearToItems handles empty input', () => {
+    expect(migrateGearToItems(null)).toEqual([])
+    expect(migrateGearToItems({})).toEqual([])
+  })
+
+  it('normalizeOffworldersData migrates a legacy gear block when items are absent', () => {
+    const normalized = normalizeOffworldersData({
+      characterClass: 'Outlaw',
+      gear: { primaryWeapon: 'Revolver', armorType: 'Light' },
+    })
+    expect(normalized.items).toHaveLength(2)
+    expect(normalized.items[0].name).toBe('Revolver')
+    expect(normalized.items[1]).toMatchObject({ kind: 'armor', armorRating: 1 })
+    expect(normalized.gear).toBeUndefined()
+  })
+
+  it('normalizeOffworldersData prefers explicit items over a legacy gear block', () => {
+    const normalized = normalizeOffworldersData({
+      items: [{ name: 'Blaster', kind: 'weapon', damage: '2D6' }],
+      gear: { primaryWeapon: 'Old gun' },
+    })
+    expect(normalized.items).toHaveLength(1)
+    expect(normalized.items[0].name).toBe('Blaster')
+  })
+})
+
+describe('skill/ability entries', () => {
+  it('createEmptyOffworldersEntry / normalizeOffworldersEntry', () => {
+    expect(createEmptyOffworldersEntry()).toEqual({ name: '', description: '' })
+    expect(normalizeOffworldersEntry('Pilot')).toEqual({ name: 'Pilot', description: '' })
+    expect(normalizeOffworldersEntry(null)).toEqual({ name: '', description: '' })
+    expect(normalizeOffworldersEntry({ name: 'X', description: 'd' })).toEqual({
+      name: 'X',
+      description: 'd',
+    })
+  })
+
+  it('resolveEntryDescription prefers the custom description then the catalog', () => {
+    expect(resolveEntryDescription({ name: 'X', description: 'custom' }, { X: 'catalog' })).toBe(
+      'custom',
+    )
+    expect(resolveEntryDescription({ name: 'X', description: '' }, { X: 'catalog' })).toBe('catalog')
+    expect(resolveEntryDescription({ name: 'X' }, {})).toBe('')
+    expect(resolveEntryDescription(null, {})).toBe('')
+  })
+
+  it('toggleEntry adds and removes by name', () => {
+    expect(toggleEntry([], 'Pilot')).toEqual([{ name: 'Pilot', description: '' }])
+    expect(toggleEntry([{ name: 'Pilot', description: '' }], 'Pilot')).toEqual([])
+  })
+
+  it('addEntry adds a custom entry with a description, ignoring blanks/duplicates', () => {
+    expect(addEntry([], 'Homebrew', 'does stuff')).toEqual([
+      { name: 'Homebrew', description: 'does stuff' },
+    ])
+    expect(addEntry([], '   ')).toEqual([])
+    expect(addEntry([{ name: 'X', description: '' }], 'X', 'd')).toEqual([
+      { name: 'X', description: '' },
+    ])
+  })
+
+  it('removeEntry removes by name', () => {
+    expect(removeEntry([{ name: 'X', description: '' }], 'X')).toEqual([])
+    expect(removeEntry([{ name: 'X', description: '' }], 'Y')).toEqual([
+      { name: 'X', description: '' },
+    ])
+  })
+
+  it('normalizeOffworldersData upgrades legacy string skills/abilities to entries', () => {
+    const normalized = normalizeOffworldersData({ skills: ['Pilot'], abilities: ['Lucky'] })
+    expect(normalized.skills).toEqual([{ name: 'Pilot', description: '' }])
+    expect(normalized.abilities).toEqual([{ name: 'Lucky', description: '' }])
+  })
+})
+
+describe('deriveArmor', () => {
+  it('is 0 with no armor items', () => {
+    expect(deriveArmor([])).toBe(0)
+    expect(deriveArmor(null)).toBe(0)
+    expect(deriveArmor([{ kind: 'weapon', armorRating: 3 }])).toBe(0)
+    expect(deriveArmor([{ kind: 'item', armorRating: 2 }])).toBe(0)
+  })
+
+  it('takes the highest rating among armor items', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }])).toBe(1)
+    expect(
+      deriveArmor([
+        { kind: 'armor', armorRating: 1 },
+        { kind: 'armor', armorRating: 2 },
+      ]),
+    ).toBe(2)
+  })
+
+  it('clamps to 0..OFFWORLDERS_ARMOR_MAX and ignores junk', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 9 }])).toBe(3)
+    expect(deriveArmor([{ kind: 'armor', armorRating: -4 }])).toBe(0)
+    expect(deriveArmor([{ kind: 'armor' }])).toBe(0)
+    expect(deriveArmor([{ kind: 'armor', armorRating: '2' }])).toBe(2)
+  })
+})
+
+describe('derived Vitals with modifiers', () => {
+  it('deriveHealth adds the manual modifier', () => {
+    expect(deriveHealth({ strength: 1, agility: 0 }, 4)).toBe(17)
+    expect(deriveHealth({ strength: 1, agility: 0 }, -1)).toBe(12)
+    // The floor of 1 still applies.
+    expect(deriveHealth({ strength: -20, agility: -20 }, -5)).toBe(1)
+  })
+
+  it('createEmptyOffworldersData includes the health-tracking fields', () => {
+    const data = createEmptyOffworldersData()
+    expect(data.currentHealth).toBe(12)
+    expect(data.healthModifier).toBe(0)
+  })
+
+  it('exposes a description for every attribute', () => {
+    OFFWORLDERS_ATTRIBUTES.forEach((attr) => {
+      expect(OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS[attr]).toBeTruthy()
+    })
+  })
+})
+
+describe('ability Vitals bonuses', () => {
+  it('sums the passive bonuses from Hardy and Unstoppable', () => {
+    const bonus = abilityVitalsBonus([{ name: 'Hardy' }, { name: 'Unstoppable' }])
+    expect(bonus.health).toBe(4)
+    expect(bonus.armor).toBe(1)
+    expect(bonus.healthSources).toEqual(['Hardy'])
+    expect(bonus.armorSources).toEqual(['Unstoppable'])
+  })
+
+  it('ignores situational abilities and custom entries', () => {
+    expect(abilityVitalsBonus([{ name: 'Lucky' }, { name: 'Homebrew' }])).toEqual({
+      health: 0,
+      armor: 0,
+      healthSources: [],
+      armorSources: [],
+    })
+    expect(abilityVitalsBonus(null)).toEqual({
+      health: 0,
+      armor: 0,
+      healthSources: [],
+      armorSources: [],
+    })
+  })
+
+  it('only lists effects for real catalog abilities', () => {
+    const catalog = Object.values(OFFWORLDERS_ABILITIES).flat()
+    Object.keys(OFFWORLDERS_ABILITY_EFFECTS).forEach((name) => {
+      expect(catalog).toContain(name)
+    })
+  })
+
+  it('deriveArmor folds the passive bonus in, still clamped to 0..3', () => {
+    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }], 1)).toBe(2)
+    expect(deriveArmor([{ kind: 'armor', armorRating: 3 }], 1)).toBe(3)
+    expect(deriveArmor([], 1)).toBe(1)
+    expect(deriveArmor([], 0)).toBe(0)
   })
 })

@@ -17,18 +17,9 @@ function displayValue(stat) {
 
 <template>
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    <div
-      v-for="stat in OFFWORLDERS_ATTRIBUTES"
-      :key="stat"
-      class="p-2 rounded-lg shadow text-center"
-      style="background-color: var(--color-third-200)"
-    >
-      <div class="text-lg font-bold" style="color: var(--color-primary-700)">
-        {{ displayValue(stat) }}
-      </div>
-      <div class="text-xs uppercase tracking-wide" style="color: var(--color-third-600)">
-        {{ stat }}
-      </div>
+    <div v-for="stat in OFFWORLDERS_ATTRIBUTES" :key="stat" class="attribute-tile">
+      <div class="attribute-value">{{ displayValue(stat) }}</div>
+      <div class="attribute-label">{{ stat }}</div>
     </div>
   </div>
 </template>

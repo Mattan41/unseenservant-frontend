@@ -77,7 +77,8 @@ export function validate(systemType, character) {
     return null
   }
   if (systemType === OFFWORLDERS_SYSTEM_TYPE) {
-    if (!character?.offworlders?.characterClass) return 'You must select a class'
+    // Class is optional: experienced players may ignore classes entirely and
+    // build a character from any two skills and any two abilities.
     return null
   }
   return null

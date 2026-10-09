@@ -317,7 +317,9 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
 - **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, dnd5e?, offworlders? }`
   - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
-  - `offworlders = { characterClass, species, look, xp, health, armor, supply, supplyMax, stats, skills, abilities }` (used when `systemType === 'OFFWORLDERS'`)
+  - `offworlders = { characterClass, species, look, xp, health, armor, supply, supplyMax, credits, stats, skills, abilities, items }` (used when `systemType === 'OFFWORLDERS'`)
+    - `supplyMax` is fixed at `3` per the rules (not player-editable).
+    - `items = [ { name, kind: 'weapon' | 'armor' | 'item', damage, armorRating, heavy, notes } ]` (free-form, no fixed catalog)
 - **Response**: CharacterOutputDTO
 - **Status Codes**: 201, 400, 401
 - **Notes**: ownerId defaults to logged-in user if null.

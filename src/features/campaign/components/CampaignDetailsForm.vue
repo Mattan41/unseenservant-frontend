@@ -7,9 +7,10 @@
  * without a modal wrapper. Emits `save` with the edited payload — the parent
  * owns all store interactions.
  */
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 
 const props = defineProps({
   /** `{ id, title, description, imageUrl }` for the campaign being edited. */
@@ -34,6 +35,8 @@ const editedDescription = ref(props.campaign.description || '')
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const localPreviewUrl = ref(null)
+const repositionFile = ref(null)
+const showRepositionModal = ref(false)
 
 const previewImageUrl = computed(() => localPreviewUrl.value || props.campaign.imageUrl || null)
 
@@ -43,11 +46,30 @@ function triggerFileInput() {
 
 function handleImageChange(event) {
   const file = event.target.files[0]
+  // Reset so selecting the same file again still fires a change event.
+  event.target.value = ''
   if (file) {
-    selectedFile.value = file
-    localPreviewUrl.value = URL.createObjectURL(file)
+    repositionFile.value = file
+    showRepositionModal.value = true
   }
 }
+
+function applyRepositionedImage(file) {
+  if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value)
+  selectedFile.value = file
+  localPreviewUrl.value = URL.createObjectURL(file)
+  repositionFile.value = null
+  showRepositionModal.value = false
+}
+
+function cancelReposition() {
+  repositionFile.value = null
+  showRepositionModal.value = false
+}
+
+onBeforeUnmount(() => {
+  if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value)
+})
 
 function saveChanges() {
   emit('save', {
@@ -150,6 +172,13 @@ function saveChanges() {
       Save Changes
     </BaseButton>
   </div>
+
+  <ImageRepositionModal
+    v-if="showRepositionModal && repositionFile"
+    :file="repositionFile"
+    @confirm="applyRepositionedImage"
+    @cancel="cancelReposition"
+  />
 </template>
 
 <style scoped></style>
