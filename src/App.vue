@@ -4,11 +4,23 @@ import { watch } from 'vue'
 import HeaderComponent from './components/HeaderComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
 import NotificationComponent from '@/components/NotificationComponent.vue'
+import EnvBanner from '@/components/EnvBanner.vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
+import { IS_DEV_ENVIRONMENT, IS_DEMO_ENVIRONMENT } from '@/utils/environment.js'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
+
+// Environment banner message (dev + demo only; empty string hides it).
+function getEnvBannerText() {
+  if (IS_DEV_ENVIRONMENT) return 'Development environment — data may be reset.'
+  if (IS_DEMO_ENVIRONMENT) {
+    return 'Demo mode — running locally with sample data. Changes are not saved to a server.'
+  }
+  return ''
+}
+const envBannerText = getEnvBannerText()
 
 watch(
   () => authStore.isAuthenticated,
@@ -34,6 +46,7 @@ watch(
   </div>
 
   <div v-else class="flex flex-col min-h-screen overflow-x-hidden">
+    <EnvBanner v-if="envBannerText" :text="envBannerText" />
     <NotificationComponent />
     <HeaderComponent />
     <main

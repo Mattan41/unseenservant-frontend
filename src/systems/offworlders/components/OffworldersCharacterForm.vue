@@ -1,5 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
+import BaseButton from '@/components/base/BaseButton.vue'
+import IconButton from '@/components/base/IconButton.vue'
 import {
   OFFWORLDERS_CLASSES,
   OFFWORLDERS_ATTRIBUTES,
@@ -106,14 +108,15 @@ function applyDerivedHealth() {
           min="0"
           class="input-field w-full px-3 py-2 border border-input rounded-md"
         />
-        <button
+        <!-- remove ! once base-button.css is layered -->
+        <BaseButton
           type="button"
-          class="text-xs mt-1 underline"
-          style="color: var(--color-primary-600)"
+          variant="link"
+          class="!mt-1"
           @click="applyDerivedHealth"
         >
           Use derived ({{ derivedHealth }})
-        </button>
+        </BaseButton>
       </div>
       <div class="mb-4">
         <label for="ow-armor" class="block text-sm font-medium text-default mb-1">Armor (0-3)</label>
@@ -217,7 +220,9 @@ function applyDerivedHealth() {
         style="background-color: var(--color-third-200)"
       >
         {{ skill }}
-        <button type="button" aria-label="Remove skill" @click="removeSkill(skill)">×</button>
+        <IconButton variant="chip" :label="`Remove ${skill}`" @click="removeSkill(skill)">
+          ×
+        </IconButton>
       </span>
     </div>
     <p v-else class="text-sm mb-6" style="color: var(--color-third-400)">
@@ -268,7 +273,13 @@ function applyDerivedHealth() {
         style="background-color: var(--color-third-200)"
       >
         {{ ability }}
-        <button type="button" aria-label="Remove ability" @click="removeAbility(ability)">×</button>
+        <IconButton
+          variant="chip"
+          :label="`Remove ${ability}`"
+          @click="removeAbility(ability)"
+        >
+          ×
+        </IconButton>
       </span>
     </div>
     <p v-else class="text-sm" style="color: var(--color-third-400)">No abilities selected yet.</p>

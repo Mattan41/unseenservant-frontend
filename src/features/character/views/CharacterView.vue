@@ -6,7 +6,7 @@ import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import SystemSheetRouter from '@/features/character/components/SystemSheetRouter.vue'
+import SystemSheetRouter from '@/features/character/dispatchers/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 const characterStore = useCharacterStore()
@@ -48,7 +48,7 @@ const deleteCharacter = async () => {
 </script>
 
 <template>
-  <div class="container mx-auto p-4 max-w-4xl">
+  <div class="mx-auto w-full max-w-7xl p-4">
     <div v-if="loading" class="text-center py-8">
       <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
       <p class="mt-2" style="color: var(--color-third-600)">Loading character...</p>
@@ -63,74 +63,84 @@ const deleteCharacter = async () => {
 
     <div v-else>
       <div
-        class="rounded-lg shadow-lg overflow-hidden"
+        class="rounded-lg shadow-lg overflow-hidden flex flex-col lg:flex-row lg:items-stretch"
         style="background-color: var(--color-primary-50)"
       >
-        <!-- Action bar -->
-        <div v-if="isOwner" class="flex justify-end p-2 space-x-2">
-          <BaseButton
-            variant="ghost"
-            @click="
-              router.push({
-                name: 'EditCharacter',
-                params: { id: currentCharacter.id },
-                query: from === 'campaign' && campaignId ? { from, campaignId } : {},
-              })
-            "
-          >
-            Edit
-          </BaseButton>
-          <BaseButton
-            variant="remove"
-            :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
-            @click="deleteCharacter"
-            >Delete</BaseButton
-          >
-        </div>
-
-        <!-- Generic header: image + basic info -->
-        <div class="p-6 border-b" style="border-color: var(--color-third-200)">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-            <div class="flex flex-col items-center md:items-start">
-              <CharacterImage
-                :src="currentCharacter.avatarUrl"
-                alt="Character portrait"
-                class="w-64 h-64 rounded-lg border-2 shadow-md mb-2"
-                style="border-color: var(--color-primary-300)"
-              />
-              <h3 class="text-xl font-bold" style="color: var(--color-third-700)">
-                {{ currentCharacter.name }}
-              </h3>
-              <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
-            </div>
-            <div
-              class="flex flex-col justify-center md:col-span-1"
-              style="color: var(--color-third-700)"
+        <!--
+          Identity rail: system-agnostic chrome shared by every game system.
+          Stacks above the sheet on mobile; becomes a fixed-width rail on lg+.
+          Kept intentionally generic so it can later be extracted into a shared
+          CharacterViewShell.vue without touching system-specific code.
+        -->
+        <aside
+          class="flex flex-col gap-4 p-6 border-b border-section lg:border-b-0 lg:border-r lg:w-72 xl:w-80 lg:flex-shrink-0"
+        >
+          <!-- Action bar -->
+          <div v-if="isOwner" class="flex justify-end gap-2">
+            <BaseButton
+              variant="ghost"
+              @click="
+                router.push({
+                  name: 'EditCharacter',
+                  params: { id: currentCharacter.id },
+                  query: from === 'campaign' && campaignId ? { from, campaignId } : {},
+                })
+              "
             >
-              <div class="space-y-2">
-                <p v-if="currentCharacter.notes">
-                  <strong>Notes:</strong> {{ currentCharacter.notes }}
-                </p>
-                <p v-else class="text-sm text-muted italic">No notes.</p>
-              </div>
-            </div>
+              Edit
+            </BaseButton>
+            <BaseButton
+              variant="remove"
+              :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
+              @click="deleteCharacter"
+              >Delete</BaseButton
+            >
           </div>
-        </div>
 
-        <!-- System-specific character sheet -->
-        <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
+          <!-- Identity: portrait + name + system -->
+          <div class="flex flex-col items-center text-center">
+            <CharacterImage
+              :src="currentCharacter.avatarUrl"
+              alt="Character portrait"
+              class="w-full max-w-64 aspect-square rounded-lg border-2 shadow-md object-cover"
+              style="border-color: var(--color-primary-300)"
+            />
+            <h3 class="mt-3 text-xl font-bold text-default">
+              {{ currentCharacter.name }}
+            </h3>
+            <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
+          </div>
 
-        <!-- Additional info -->
-        <div class="p-6 border-t border-section">
-          <h2 class="section-heading mb-4">Additional Information</h2>
-          <p>
-            <strong>Created:</strong>
-            {{ new Date(currentCharacter.createdAt).toLocaleDateString() }}
-          </p>
-          <p>
-            <strong>Last Updated:</strong>
-            {{ currentCharacter.updatedAt ? new Date(currentCharacter.updatedAt).toLocaleDateString() : '-' }}
-          </p>
+          <!-- Notes -->
+          <div class="text-default">
+            <p v-if="currentCharacter.notes">
+              <strong>Notes:</strong> {{ currentCharacter.notes }}
+            </p>
+            <p v-else class="text-sm text-muted italic">No notes.</p>
+          </div>
+        </aside>
+
+        <!-- Main column: a clean slot for whatever the active system renders -->
+        <div class="flex-1 min-w-0">
+          <!-- System-specific character sheet -->
+          <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
+
+          <!-- Additional info -->
+          <div class="p-6 border-t border-section">
+            <h2 class="section-heading mb-4">Additional Information</h2>
+            <p>
+              <strong>Created:</strong>
+              {{ new Date(currentCharacter.createdAt).toLocaleDateString() }}
+            </p>
+            <p>
+              <strong>Last Updated:</strong>
+              {{
+                currentCharacter.updatedAt
+                  ? new Date(currentCharacter.updatedAt).toLocaleDateString()
+                  : '-'
+              }}
+            </p>
+          </div>
         </div>
       </div>
 

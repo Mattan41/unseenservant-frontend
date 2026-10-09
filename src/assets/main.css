@@ -9,7 +9,7 @@
   --color-primary-200: var(--primary-200);
   --color-primary-300: var(--primary-300);
   --color-primary-400: var(--primary-400);
-  --color-primary-500: var(--primary-50); /* v4 defaults */
+  --color-primary-500: var(--primary-500);
   --color-primary-600: var(--primary-600);
   --color-primary-700: var(--primary-700);
   --color-primary-800: var(--primary-800);
@@ -43,12 +43,51 @@
 }
 
 /* ==========================================================================
-   DYNAMIC ENVIRONMENT COLOR
+   THEME / MODE / ENVIRONMENT MODEL
+   --------------------------------------------------------------------------
+   The <html> element carries three INDEPENDENT axes:
+
+     data-env   — dev | prod        → environment signal ONLY. Drives the
+                                      environment banner; NO effect on colour.
+     data-theme — forest | silver   → identity / brand palette (--primary-*).
+     data-mode  — light | dark      → surface / neutral palette
+                                      (--color-surface and, later, neutrals).
+
+   Rendered together, e.g.:
+     <html data-env="dev" data-theme="forest" data-mode="light">
+
+   WHERE TO ADD THINGS
+     • A new semantic role variable → the `:root` role layer below.
+       Components should reference roles by meaning, not palette shades.
+     • A new brand palette value    → the matching
+       `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
+     • A new theme (e.g. silver)    → add
+       `html[data-theme='newtheme'][data-mode='light']` (+ a dark variant
+       later) and point the runtime (src/utils/environment.js) at it.
+     • A new mode (e.g. dark)       → add `[data-mode='dark']` variants and
+       wire data-mode to prefers-color-scheme in environment.js (future pass).
+
+   Active default: silver · light. forest · light is retained as an
+   alternative (add a switcher later to make it reachable). Dark mode is a
+   future pass.
    ========================================================================== */
 
-/* Standard (if not set) or explicit DEV (Greenish) */
-:root,
-html[data-env='dev'] {
+/* --------------------------------------------------------------------------
+   ROLE LAYER — semantic variables that are genuinely theme-agnostic.
+   Per-theme / per-mode role values (e.g. --color-surface) live in the palette
+   layer below so each theme can set its own value.
+   -------------------------------------------------------------------------- */
+:root {
+  /* no theme-agnostic role variables yet */
+}
+
+/* --------------------------------------------------------------------------
+   PALETTE LAYER — raw values per theme + mode.
+   -------------------------------------------------------------------------- */
+
+/* forest · light — alternative theme (NOT the default). Retained from the
+   former html[data-env='dev'] green palette. */
+html[data-theme='forest'][data-mode='light'] {
   --color-surface: #d8e7dd;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
@@ -63,8 +102,9 @@ html[data-env='dev'] {
   --primary-900: #171e1a;
 }
 
-/* PROD-environment (Silver/Grey) */
-html[data-env='prod'] {
+/* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from
+   the former html[data-env='prod'] palette. */
+html[data-theme='silver'][data-mode='light'] {
   --color-surface: #ffffff;
   --primary: #c0c0c0;
   --primary-50: #f9f9f9;
@@ -215,6 +255,13 @@ html[data-env='prod'] {
   @apply bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded;
 }
 
+/* Environment banner (EnvBanner.vue) — one line, ~32px, amber.
+   A semantic role so it can be re-themed for dark mode later without touching
+   templates. Shown for dev and demo environments only. */
+.env-banner {
+  @apply bg-secondary-100 border-b border-secondary-400 text-secondary-900 text-xs font-medium text-center px-3 py-2;
+}
+
 /* Primary section wrapper */
 .section-primary {
   @apply bg-primary-500 p-4 rounded-lg;
@@ -304,6 +351,11 @@ html[data-env='prod'] {
 
 .icon-btn-on-dark {
   @apply text-primary-100 hover:bg-primary-800 focus:ring-primary-500;
+}
+
+/* Icon button variant: chip remove — small, no background, colour-only hover */
+.icon-btn-chip {
+  @apply p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0;
 }
 
 /* Slide-over drawer / overlay (SlideOverDrawer.vue) */

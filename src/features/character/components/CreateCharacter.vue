@@ -1,15 +1,17 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
-import Dnd5eCharacterForm from '@/systems/dnd5e/components/Dnd5eCharacterForm.vue'
-import { createEmptyDnd5eData, DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
-import OffworldersCharacterForm from '@/systems/offworlders/components/OffworldersCharacterForm.vue'
+import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import {
-  createEmptyOffworldersData,
-  OFFWORLDERS_SYSTEM_TYPE,
-} from '@/systems/offworlders/constants.js'
+  DEFAULT_SYSTEM_TYPE,
+  SYSTEM_OPTIONS,
+  SYSTEM_LABELS,
+  createEmptyCharacterBlocks,
+  validate,
+  buildPayload,
+} from '@/features/character/dispatchers/systemRegistry.js'
 
 const characterStore = useCharacterStore()
 const router = useRouter()
@@ -17,11 +19,12 @@ const cancel = () => router.push({ name: 'CharactersView' })
 
 const character = ref({
   name: '',
-  systemType: DND5E_SYSTEM_TYPE,
+  systemType: DEFAULT_SYSTEM_TYPE,
   notes: '',
-  dnd5e: createEmptyDnd5eData(),
-  offworlders: createEmptyOffworldersData(),
+  ...createEmptyCharacterBlocks(),
 })
+
+const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
 const isSubmitting = ref(false)
 const formError = ref('')
@@ -32,38 +35,16 @@ const submitCharacter = async () => {
     return
   }
 
-  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
-    if (!character.value.dnd5e.race) {
-      formError.value = 'You must select a race'
-      return
-    }
-    if (!character.value.dnd5e.characterClass) {
-      formError.value = 'You must select a class'
-      return
-    }
-  }
-
-  if (
-    character.value.systemType === OFFWORLDERS_SYSTEM_TYPE &&
-    !character.value.offworlders.characterClass
-  ) {
-    formError.value = 'You must select a class'
+  const systemError = validate(character.value.systemType, character.value)
+  if (systemError) {
+    formError.value = systemError
     return
   }
 
   isSubmitting.value = true
   formError.value = ''
 
-  const payload = {
-    name: character.value.name,
-    systemType: character.value.systemType,
-    notes: character.value.notes,
-  }
-  if (character.value.systemType === DND5E_SYSTEM_TYPE) {
-    payload.dnd5e = character.value.dnd5e
-  } else if (character.value.systemType === OFFWORLDERS_SYSTEM_TYPE) {
-    payload.offworlders = character.value.offworlders
-  }
+  const payload = buildPayload(character.value.systemType, character.value)
 
   try {
     const newCharacter = await characterStore.createCharacter(payload)
@@ -118,8 +99,9 @@ const submitCharacter = async () => {
               v-model="character.systemType"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
-              <option :value="DND5E_SYSTEM_TYPE">Dungeons &amp; Dragons 5e</option>
-              <option :value="OFFWORLDERS_SYSTEM_TYPE">Offworlders</option>
+              <option v-for="option in SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+                {{ option.label }}
+              </option>
             </select>
           </div>
 
@@ -136,18 +118,15 @@ const submitCharacter = async () => {
         </div>
 
         <!-- System-specific fields -->
-        <div v-if="character.systemType === DND5E_SYSTEM_TYPE" class="mb-6">
-          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
-            Dungeons &amp; Dragons 5e
+        <div class="mb-6">
+          <h3
+            v-if="systemLabel"
+            class="text-lg font-semibold mb-3"
+            style="color: var(--color-primary-700)"
+          >
+            {{ systemLabel }}
           </h3>
-          <Dnd5eCharacterForm v-model="character.dnd5e" />
-        </div>
-
-        <div v-else-if="character.systemType === OFFWORLDERS_SYSTEM_TYPE" class="mb-6">
-          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
-            Offworlders
-          </h3>
-          <OffworldersCharacterForm v-model="character.offworlders" />
+          <SystemFormRouter v-model="character" :system-type="character.systemType" />
         </div>
 
         <!-- Buttons -->

@@ -10,25 +10,39 @@
 > truth** — if they ever disagree, update this table to match main.css,
 > not the other way around.
 
-### 1.1 `--color-primary` (environment-aware)
+### 1.1 `--color-primary` (theme + mode aware)
 
-Set on `<html data-env="dev|prod">`. Source: `src/assets/main.css`.
+Set on `<html data-theme="silver" data-mode="light">`. Source:
+`src/assets/main.css`. Values live in the **palette layer**
+(`html[data-theme='silver'][data-mode='light']`); the active theme/mode is
+applied at runtime by `src/utils/environment.js`. `data-env` **no longer
+affects colour** — it only drives the environment banner.
 
-| Token | dev value | prod value | Status |
-|-------|-----------|------------|--------|
-| `--color-primary-50` | #bccac1 | #f9f9f9 | implemented |
-| `--color-primary-100` | #a9bdb1 | #f2f2f2 | implemented |
-| `--color-primary-200` | #96b0a1 | #e5e5e5 | implemented |
-| `--color-primary-300` | #83a391 | #d8d8d8 | implemented |
-| `--color-primary-400` | #749584 | #c5c5c5 | implemented |
-| `--color-primary-500` | #6b8e7b | #c0c0c0 | implemented |
-| `--color-primary-600` | #567263 | #a0a0a0 | implemented |
-| `--color-primary-700` | #41564a | #5c5c5c | implemented |
-| `--color-primary-800` | #2c3a32 | #3d3d3d | implemented |
-| `--color-primary-900` | #171e1a | #2b2b2b | implemented |
+| Token | silver · light (active default) | forest · light (alternative) | Status |
+|-------|---------------------------------|------------------------------|--------|
+| `--color-primary-50` | #f9f9f9 | #bccac1 | implemented |
+| `--color-primary-100` | #f2f2f2 | #a9bdb1 | implemented |
+| `--color-primary-200` | #e5e5e5 | #96b0a1 | implemented |
+| `--color-primary-300` | #d8d8d8 | #83a391 | implemented |
+| `--color-primary-400` | #c5c5c5 | #749584 | implemented |
+| `--color-primary-500` | #c0c0c0 | #6b8e7b | implemented |
+| `--color-primary-600` | #a0a0a0 | #567263 | implemented |
+| `--color-primary-700` | #5c5c5c | #41564a | implemented |
+| `--color-primary-800` | #3d3d3d | #2c3a32 | implemented |
+| `--color-primary-900` | #2b2b2b | #171e1a | implemented |
 
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
-environment's `--primary-500` value via the `@theme` block.
+active theme's `--primary-500` value via the `@theme` block.
+
+`--color-surface` is per-theme too: `#ffffff` (silver) / `#d8e7dd` (forest).
+forest is retained but **not reachable** from the running app until a theme
+switcher lands.
+
+> **Three-axis model.** `<html>` carries `data-env` (dev|prod — banner only),
+> `data-theme` (silver|forest — identity palette) and `data-mode`
+> (light|dark — surface/neutral palette). The canonical explanation and the
+> "where to add things" guide live in the header comment of the palette
+> section in `src/assets/main.css`.
 
 ### 1.2 `--color-secondary` (yellow/amber — fixed)
 
@@ -46,12 +60,13 @@ Status: implemented.
 
 ### 1.4 Additional semantic-role variables
 
-Based on patterns observed in the audit. Define in `src/assets/main.css`
-under the `:root` / `html[data-env]` blocks when approved.
+Based on patterns observed in the audit. Define role variables in the
+`:root` role layer of `src/assets/main.css`; their values may be overridden
+per theme/mode in the `html[data-theme][data-mode]` palette blocks.
 
 | Variable | Proposed value | Rationale | Status |
 |----------|---------------|-----------|--------|
-| `--color-surface` | `#ffffff` | Card/modals/form backgrounds — used in 10+ components. Defined as a true neutral (not derived from primary) so it supports a future dark mode without being tied to the accent hue. A dark-mode value is TBD in Phase 5. | implemented |
+| `--color-surface` | `#ffffff` / `#d8e7dd` | Card/modals/form backgrounds — used in 10+ components. **Per-theme role** (set in each `html[data-theme][data-mode]` block, not `:root`): `#ffffff` (silver), `#d8e7dd` (forest). A dark-mode value is TBD in the dark-mode pass. | implemented |
 | `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
 | `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
 ---
@@ -148,6 +163,7 @@ all conditional styling in `*Utils.js` files.
 | `.icon-btn-plain` | Icon button variant: transparent, hover tint | `text-third-700 hover:bg-primary-300/60 focus:ring-primary-600` | implemented |
 | `.icon-btn-solid` | Icon button variant: filled | `bg-primary-800 text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
 | `.icon-btn-on-dark` | Icon button variant: on dark surfaces | `text-primary-100 hover:bg-primary-800 focus:ring-primary-500` | implemented |
+| `.icon-btn-chip` | Icon button variant: chip remove (small, no background, colour-only hover) | `p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0` | implemented |
 | `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`) | `fixed inset-0 bg-black/50` | implemented |
 | `.slide-over-panel` | Slide-over panel base | `fixed inset-y-0 flex flex-col overflow-y-auto` | implemented |
 | `.slide-over-panel--left` / `.slide-over-panel--right` | Slide-over anchor edge | `left-0` / `right-0` | implemented |
@@ -175,6 +191,7 @@ all conditional styling in `*Utils.js` files.
 |-------|---------|----------|--------|
 | `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | implemented |
 | `.demo-notice` | Guest mode warning banner | `bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded` (4 sites) | proposed |
+| `.env-banner` | Environment banner (dev/demo) shown above the header | `bg-secondary-100 border-b border-secondary-400 text-secondary-900 text-xs font-medium text-center px-3 py-2` (`EnvBanner.vue`) | implemented |
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
