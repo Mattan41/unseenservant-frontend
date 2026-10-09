@@ -198,16 +198,78 @@ export function standardArrayUsage(stats) {
   return { used, total: OFFWORLDERS_STANDARD_ARRAY.length }
 }
 
-/** A fresh gear block: one light weapon by default, no armor or extras. */
-export function createEmptyOffworldersGear() {
+/** Item categories. Purely for grouping on the sheet. */
+export const OFFWORLDERS_ITEM_KINDS = ['weapon', 'armor', 'item']
+
+/** Display labels for the item categories. */
+export const OFFWORLDERS_ITEM_KIND_LABELS = {
+  weapon: 'Weapon',
+  armor: 'Armor',
+  item: 'Item',
+}
+
+/** A fresh, empty free-form inventory entry. */
+export function createEmptyOffworldersItem() {
   return {
-    primaryWeapon: '',
-    primaryWeaponType: 'Light',
-    secondaryWeapon: '',
-    secondaryWeaponType: '',
-    armorType: '',
+    name: '',
+    kind: 'item',
+    damage: '',
+    armorRating: 0,
+    heavy: false,
     notes: '',
   }
+}
+
+/** Normalize a single item coming from the API, filling in defaults. */
+export function normalizeOffworldersItem(item) {
+  const empty = createEmptyOffworldersItem()
+  if (!item || typeof item !== 'object') return empty
+  return { ...empty, ...item }
+}
+
+/** Default damage die for a legacy weapon type (Light / Medium / Heavy). */
+export function damageForWeaponType(type) {
+  return OFFWORLDERS_WEAPON_TYPES.find((weapon) => weapon.name === type)?.damage ?? ''
+}
+
+/**
+ * Convert a legacy Step 1 `gear` block into the free-form `items` list.
+ * Mirrors the backend V5 migration so cached / guest data upgrades too.
+ * @param {object|null|undefined} gear
+ * @returns {object[]}
+ */
+export function migrateGearToItems(gear) {
+  const items = []
+  if (!gear) return items
+  if (gear.primaryWeapon) {
+    items.push({
+      ...createEmptyOffworldersItem(),
+      name: gear.primaryWeapon,
+      kind: 'weapon',
+      damage: damageForWeaponType(gear.primaryWeaponType),
+    })
+  }
+  if (gear.secondaryWeapon) {
+    items.push({
+      ...createEmptyOffworldersItem(),
+      name: gear.secondaryWeapon,
+      kind: 'weapon',
+      damage: damageForWeaponType(gear.secondaryWeaponType),
+    })
+  }
+  if (gear.armorType) {
+    items.push({
+      ...createEmptyOffworldersItem(),
+      name: `${gear.armorType} armor`,
+      kind: 'armor',
+      armorRating: armorRatingForType(gear.armorType),
+      heavy: gear.armorType === 'Heavy' || gear.armorType === 'Assault',
+    })
+  }
+  if (gear.notes) {
+    items.push({ ...createEmptyOffworldersItem(), name: 'Gear notes', kind: 'item', notes: gear.notes })
+  }
+  return items
 }
 
 /**
@@ -233,7 +295,7 @@ export function createEmptyOffworldersData() {
     },
     skills: [],
     abilities: [],
-    gear: createEmptyOffworldersGear(),
+    items: [],
   }
 }
 
@@ -246,7 +308,13 @@ export function createEmptyOffworldersData() {
 export function normalizeOffworldersData(data) {
   const empty = createEmptyOffworldersData()
   if (!data) return empty
-  return {
+  // Prefer explicit items; otherwise migrate a legacy `gear` block from Step 1.
+  let items = Array.isArray(data.items) ? data.items.map(normalizeOffworldersItem) : []
+  if (items.length === 0 && data.gear) {
+    items = migrateGearToItems(data.gear)
+  }
+
+  const normalized = {
     ...empty,
     ...data,
     // Supply is always capped at 3 (p.11); ignore any stored/derived value.
@@ -254,8 +322,10 @@ export function normalizeOffworldersData(data) {
     stats: { ...empty.stats, ...(data.stats || {}) },
     skills: Array.isArray(data.skills) ? [...data.skills] : [],
     abilities: Array.isArray(data.abilities) ? [...data.abilities] : [],
-    gear: { ...empty.gear, ...(data.gear || {}) },
+    items,
   }
+  delete normalized.gear
+  return normalized
 }
 
 /**

@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   createEmptyOffworldersData,
-  createEmptyOffworldersGear,
+  createEmptyOffworldersItem,
+  normalizeOffworldersItem,
+  migrateGearToItems,
+  damageForWeaponType,
   normalizeOffworldersData,
   deriveHealth,
   standardArrayUsage,
@@ -42,7 +45,7 @@ describe('offworlders constants', () => {
     OFFWORLDERS_ATTRIBUTES.forEach((attr) => expect(data.stats[attr]).toBe(0))
     expect(data.skills).toEqual([])
     expect(data.abilities).toEqual([])
-    expect(data.gear).toEqual(createEmptyOffworldersGear())
+    expect(data.items).toEqual([])
   })
 
   it('returns a fresh object every time (no shared references)', () => {
@@ -201,12 +204,88 @@ describe('offworlders gear + attribute helpers', () => {
     expect(OFFWORLDERS_ARMOR_TYPES.map((armor) => armor.rating)).toEqual([1, 2, 3])
   })
 
-  it('creates a fresh gear block defaulting to a light primary weapon', () => {
-    const gear = createEmptyOffworldersGear()
-    expect(gear.primaryWeaponType).toBe('Light')
-    expect(gear.armorType).toBe('')
-    const other = createEmptyOffworldersGear()
-    other.primaryWeapon = 'X'
-    expect(gear.primaryWeapon).toBe('')
+  it('creates a fresh, empty item', () => {
+    const item = createEmptyOffworldersItem()
+    expect(item).toEqual({
+      name: '',
+      kind: 'item',
+      damage: '',
+      armorRating: 0,
+      heavy: false,
+      notes: '',
+    })
+    const other = createEmptyOffworldersItem()
+    other.name = 'X'
+    expect(item.name).toBe('')
+  })
+
+  it('normalizeOffworldersItem fills missing fields', () => {
+    const item = normalizeOffworldersItem({ name: 'Blaster', kind: 'weapon' })
+    expect(item.name).toBe('Blaster')
+    expect(item.kind).toBe('weapon')
+    expect(item.damage).toBe('')
+    expect(item.armorRating).toBe(0)
+    expect(item.heavy).toBe(false)
+    expect(normalizeOffworldersItem(null).kind).toBe('item')
+  })
+})
+
+describe('legacy gear -> items migration', () => {
+  it('migrateGearToItems converts weapons, armor and notes', () => {
+    const items = migrateGearToItems({
+      primaryWeapon: 'Snubnosed revolver',
+      secondaryWeapon: 'Butterfly knife',
+      armorType: 'Heavy',
+      notes: 'Band t-shirts',
+    })
+    expect(items).toHaveLength(4)
+    expect(items[0]).toMatchObject({ name: 'Snubnosed revolver', kind: 'weapon', damage: '' })
+    expect(items[1]).toMatchObject({ name: 'Butterfly knife', kind: 'weapon' })
+    expect(items[2]).toMatchObject({ name: 'Heavy armor', kind: 'armor', armorRating: 2, heavy: true })
+    expect(items[3]).toMatchObject({ name: 'Gear notes', kind: 'item', notes: 'Band t-shirts' })
+  })
+
+  it('migrateGearToItems prefills damage from the legacy weapon type', () => {
+    const items = migrateGearToItems({
+      primaryWeapon: 'Rifle',
+      primaryWeaponType: 'Medium',
+      secondaryWeapon: 'Cannon',
+      secondaryWeaponType: 'Heavy',
+    })
+    expect(items[0]).toMatchObject({ name: 'Rifle', kind: 'weapon', damage: '1D6+1' })
+    expect(items[1]).toMatchObject({ name: 'Cannon', kind: 'weapon', damage: '1D6+2' })
+  })
+
+  it('damageForWeaponType maps the PDF weapon types', () => {
+    expect(damageForWeaponType('Light')).toBe('1D6')
+    expect(damageForWeaponType('Medium')).toBe('1D6+1')
+    expect(damageForWeaponType('Heavy')).toBe('1D6+2')
+    expect(damageForWeaponType('')).toBe('')
+    expect(damageForWeaponType('Unknown')).toBe('')
+  })
+
+  it('migrateGearToItems handles empty input', () => {
+    expect(migrateGearToItems(null)).toEqual([])
+    expect(migrateGearToItems({})).toEqual([])
+  })
+
+  it('normalizeOffworldersData migrates a legacy gear block when items are absent', () => {
+    const normalized = normalizeOffworldersData({
+      characterClass: 'Outlaw',
+      gear: { primaryWeapon: 'Revolver', armorType: 'Light' },
+    })
+    expect(normalized.items).toHaveLength(2)
+    expect(normalized.items[0].name).toBe('Revolver')
+    expect(normalized.items[1]).toMatchObject({ kind: 'armor', armorRating: 1 })
+    expect(normalized.gear).toBeUndefined()
+  })
+
+  it('normalizeOffworldersData prefers explicit items over a legacy gear block', () => {
+    const normalized = normalizeOffworldersData({
+      items: [{ name: 'Blaster', kind: 'weapon', damage: '2D6' }],
+      gear: { primaryWeapon: 'Old gun' },
+    })
+    expect(normalized.items).toHaveLength(1)
+    expect(normalized.items[0].name).toBe('Blaster')
   })
 })

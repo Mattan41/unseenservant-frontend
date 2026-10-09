@@ -704,3 +704,15 @@ input {
     font-size: 18px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Offworlders: options suggested by the selected class.
+   Amber background so a suggestion is clearly distinct from the neutral card
+   surface (mirrors .character-tag-level).
+   -------------------------------------------------------------------------- */
+.suggested-choice {
+  @apply rounded bg-secondary-200 text-secondary-900 px-1;
+}
+.suggested-choice-group {
+  @apply rounded-md bg-secondary-50;
+}

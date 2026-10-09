@@ -22,17 +22,12 @@ const props = defineProps({
 const offworlders = computed(() => props.character?.offworlders || {})
 const skills = computed(() => offworlders.value.skills || [])
 const abilities = computed(() => offworlders.value.abilities || [])
-const gear = computed(() => offworlders.value.gear || {})
-
-/** Named weapons from the gear block, rendered as "Name (Type)" strings. */
-const weapons = computed(() => {
-  const entries = []
-  const g = gear.value
-  if (g.primaryWeapon) entries.push(`${g.primaryWeapon} (${g.primaryWeaponType || 'Light'})`)
-  if (g.secondaryWeapon)
-    entries.push(`${g.secondaryWeapon} (${g.secondaryWeaponType || 'Unspecified'})`)
-  return entries
-})
+const items = computed(() => offworlders.value.items || [])
+const weapons = computed(() => items.value.filter((item) => item.kind === 'weapon'))
+const armorItems = computed(() => items.value.filter((item) => item.kind === 'armor'))
+const otherItems = computed(
+  () => items.value.filter((item) => item.kind !== 'weapon' && item.kind !== 'armor'),
+)
 </script>
 
 <template>
@@ -54,14 +49,60 @@ const weapons = computed(() => {
       </div>
     </div>
 
-    <!-- Gear -->
+    <!-- Items -->
     <div class="p-6 border-t border-section">
-      <h2 class="section-heading mb-4">Gear</h2>
-      <div class="flex flex-wrap gap-6" style="color: var(--color-third-700)">
-        <p v-if="weapons.length"><strong>Weapons:</strong> {{ weapons.join(', ') }}</p>
-        <p v-else><strong>Weapons:</strong> —</p>
-        <p><strong>Armor:</strong> {{ gear.armorType || (offworlders.armor ? 'Custom' : 'None') }}</p>
-        <p v-if="gear.notes"><strong>Other:</strong> {{ gear.notes }}</p>
+      <h2 class="section-heading mb-4">Items</h2>
+
+      <div class="mb-4">
+        <h3 class="text-sm font-semibold uppercase mb-1" style="color: var(--color-third-500)">
+          Weapons
+        </h3>
+        <ul v-if="weapons.length" class="flex flex-col gap-1" style="color: var(--color-third-700)">
+          <li v-for="(item, index) in weapons" :key="index">
+            <span class="font-medium">{{ item.name || 'Unnamed weapon' }}</span>
+            <span v-if="item.damage"> — damage {{ item.damage }}</span>
+            <span
+              v-if="item.heavy"
+              class="ml-1 px-1 rounded text-xs"
+              style="background-color: var(--color-third-200)"
+              >Heavy</span
+            >
+            <span v-if="item.notes" class="text-muted"> ({{ item.notes }})</span>
+          </li>
+        </ul>
+        <p v-else style="color: var(--color-third-400)">No weapons recorded.</p>
+      </div>
+
+      <div class="mb-4">
+        <h3 class="text-sm font-semibold uppercase mb-1" style="color: var(--color-third-500)">
+          Armor
+        </h3>
+        <ul v-if="armorItems.length" class="flex flex-col gap-1" style="color: var(--color-third-700)">
+          <li v-for="(item, index) in armorItems" :key="index">
+            <span class="font-medium">{{ item.name || 'Unnamed armor' }}</span>
+            <span> — {{ item.armorRating }}-armor</span>
+            <span
+              v-if="item.heavy"
+              class="ml-1 px-1 rounded text-xs"
+              style="background-color: var(--color-third-200)"
+              >Heavy</span
+            >
+            <span v-if="item.notes" class="text-muted"> ({{ item.notes }})</span>
+          </li>
+        </ul>
+        <p v-else style="color: var(--color-third-400)">No armor recorded.</p>
+      </div>
+
+      <div v-if="otherItems.length">
+        <h3 class="text-sm font-semibold uppercase mb-1" style="color: var(--color-third-500)">
+          Gear
+        </h3>
+        <ul class="flex flex-col gap-1" style="color: var(--color-third-700)">
+          <li v-for="(item, index) in otherItems" :key="index">
+            <span class="font-medium">{{ item.name || 'Unnamed item' }}</span>
+            <span v-if="item.notes" class="text-muted"> — {{ item.notes }}</span>
+          </li>
+        </ul>
       </div>
     </div>
 

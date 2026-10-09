@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseTooltip from '@/components/base/BaseTooltip.vue'
 import IconButton from '@/components/base/IconButton.vue'
-import OffworldersGearForm from '@/systems/offworlders/components/OffworldersGearForm.vue'
+import OffworldersItemsForm from '@/systems/offworlders/components/OffworldersItemsForm.vue'
 import {
   OFFWORLDERS_CLASSES,
   OFFWORLDERS_ATTRIBUTES,
@@ -277,9 +277,7 @@ function applyDerivedHealth() {
         v-for="skill in orderedSkills"
         :key="skill"
         class="inline-flex items-center gap-1 text-sm"
-        :style="
-          isSuggestedSkill(skill) ? 'background-color: var(--color-third-100); border-radius: 4px; padding: 0 4px;' : ''
-        "
+        :class="isSuggestedSkill(skill) ? 'suggested-choice' : ''"
       >
         <input
           type="checkbox"
@@ -344,11 +342,7 @@ function applyDerivedHealth() {
         v-for="group in abilityGroups"
         :key="group.className"
         class="p-2 rounded-md"
-        :style="
-          group.className === offworlders.characterClass
-            ? 'background-color: var(--color-third-100)'
-            : ''
-        "
+        :class="group.className === offworlders.characterClass ? 'suggested-choice-group' : ''"
       >
         <p class="text-xs font-semibold uppercase mb-1" style="color: var(--color-third-500)">
           {{ group.className }}
@@ -411,11 +405,7 @@ function applyDerivedHealth() {
       No abilities selected yet.
     </p>
 
-    <!-- Gear -->
-    <OffworldersGearForm
-      v-model:gear="offworlders.gear"
-      v-model:armor="offworlders.armor"
-      v-model:credits="offworlders.credits"
-    />
+    <!-- Items -->
+    <OffworldersItemsForm v-model:items="offworlders.items" v-model:credits="offworlders.credits" />
   </div>
 </template>
