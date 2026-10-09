@@ -148,6 +148,7 @@ all conditional styling in `*Utils.js` files.
 | `.icon-btn-plain` | Icon button variant: transparent, hover tint | `text-third-700 hover:bg-primary-300/60 focus:ring-primary-600` | implemented |
 | `.icon-btn-solid` | Icon button variant: filled | `bg-primary-800 text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
 | `.icon-btn-on-dark` | Icon button variant: on dark surfaces | `text-primary-100 hover:bg-primary-800 focus:ring-primary-500` | implemented |
+| `.icon-btn-chip` | Icon button variant: chip remove (small, no background, colour-only hover) | `p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0` | implemented |
 | `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`) | `fixed inset-0 bg-black/50` | implemented |
 | `.slide-over-panel` | Slide-over panel base | `fixed inset-y-0 flex flex-col overflow-y-auto` | implemented |
 | `.slide-over-panel--left` / `.slide-over-panel--right` | Slide-over anchor edge | `left-0` / `right-0` | implemented |

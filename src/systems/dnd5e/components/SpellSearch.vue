@@ -220,12 +220,9 @@ async function onSaveSpell(spell) {
             <div class="prose prose-sm max-w-none text-secondary whitespace-pre-line mb-2">
               {{ spell.desc }}
             </div>
-            <button
-              class="element-link text-xs font-medium underline mt-1"
-              @click="emit('spell-click', spell)"
-            >
+            <BaseButton variant="link" @click="emit('spell-click', spell)">
               Open Full Details
-            </button>
+            </BaseButton>
           </div>
         </div>
       </div>

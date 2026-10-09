@@ -18,7 +18,7 @@ defineProps({
     type: String,
     required: true,
   },
-  /** Visual variant: plain | solid | on-dark. */
+  /** Visual variant: plain | solid | on-dark | chip. */
   variant: {
     type: String,
     default: 'plain',

@@ -306,6 +306,11 @@ html[data-env='prod'] {
   @apply text-primary-100 hover:bg-primary-800 focus:ring-primary-500;
 }
 
+/* Icon button variant: chip remove — small, no background, colour-only hover */
+.icon-btn-chip {
+  @apply p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0;
+}
+
 /* Slide-over drawer / overlay (SlideOverDrawer.vue) */
 .slide-over-backdrop {
   @apply fixed inset-0 bg-black/50;
