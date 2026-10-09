@@ -6,6 +6,7 @@ import { useNotificationStore } from '@/stores/notificationStore.js'
 import CampaignList from '@/features/campaign/components/CampaignList.vue'
 import CharacterList from '@/features/character/components/CharacterList.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import { AVAILABLE_THEMES, theme, setTheme } from '@/utils/environment.js'
 
 const userStore = useUserStore()
 const notificationStore = useNotificationStore()
@@ -130,6 +131,25 @@ const saveDisplayName = async () => {
                 <label class="block text-sm font-medium text-default mb-1">Account Type</label>
                 <div class="profile-value">{{ userRole }}</div>
               </div>
+            </div>
+          </section>
+
+          <!-- Appearance section -->
+          <section class="profile-section">
+            <h2 class="text-xl font-semibold mb-4" style="color: var(--color-primary-700)">
+              Appearance
+            </h2>
+            <p class="text-sm text-muted mb-3">Choose a colour theme. Changes apply immediately.</p>
+            <div class="flex flex-wrap gap-2" role="group" aria-label="Colour theme">
+              <BaseButton
+                v-for="option in AVAILABLE_THEMES"
+                :key="option.id"
+                :variant="theme === option.id ? 'default' : 'ghost'"
+                :aria-pressed="theme === option.id"
+                @click="setTheme(option.id)"
+              >
+                {{ option.label }}
+              </BaseButton>
             </div>
           </section>
 
