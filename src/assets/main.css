@@ -711,8 +711,45 @@ input {
    surface (mirrors .character-tag-level).
    -------------------------------------------------------------------------- */
 .suggested-choice {
-  @apply rounded bg-secondary-200 text-secondary-900 px-1;
+  @apply rounded bg-secondary-50 text-secondary-900 px-1;
 }
 .suggested-choice-group {
   @apply rounded-md bg-secondary-50;
+}
+
+/* Neutral removable pill for skill/ability chips */
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full bg-third-200 px-2 py-1 text-xs text-third-700;
+}
+
+/* Warning text tone (e.g. attribute array not matching) */
+.text-warning {
+  @apply text-secondary-700;
+}
+
+/* Muted inset surface (e.g. repeated form rows) */
+.muted-surface {
+  @apply rounded-md bg-third-50;
+}
+
+/* Attribute score tile (shared by system stats panels) */
+.attribute-tile {
+  @apply rounded-lg bg-third-200 p-2 text-center;
+}
+.attribute-value {
+  @apply text-lg font-bold text-primary-700;
+}
+.attribute-label {
+  @apply text-xs uppercase tracking-wide text-secondary;
+}
+
+/* Info popover: hover tooltip on desktop, inline block on mobile */
+.info-popover {
+  @apply rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg;
+}
+.info-popover--fixed {
+  @apply fixed z-[60];
+}
+.info-popover--inline {
+  @apply mt-1 block;
 }

@@ -4,10 +4,8 @@
  *
  * There is no fixed catalog: the player writes any name, and for weapons any
  * damage expression. `kind` only decides how the sheet groups the rows.
- *
- * The list uses index keys because an item is persisted as a plain object with
- * no id. Inputs are `v-model`-bound, so this is safe for add/remove/edit.
  */
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseTooltip from '@/components/base/BaseTooltip.vue'
 import {
   OFFWORLDERS_ITEM_KIND_LABELS,
@@ -45,24 +43,17 @@ function takeArmorAlternative() {
 
 <template>
   <div>
-    <h3 class="text-lg font-semibold mb-1" style="color: var(--color-primary-700)">
+    <h3 class="section-heading mb-1">
       <BaseTooltip
         text="Free-form inventory. Write whatever you like and (for weapons) any damage expression such as 1D6, 1D6+2, 2D8, or 'Lower of 2D6'. Nothing here is limited to a fixed list."
       >
         Items
       </BaseTooltip>
     </h3>
-    <p class="text-xs mb-3" style="color: var(--color-third-500)">
-      Add any weapon, armor, or item. Names and damage are free text.
-    </p>
+    <p class="text-xs mb-3 text-muted">Add any weapon, armor, or item. Names and damage are free text.</p>
 
     <div class="space-y-3 mb-3">
-      <div
-        v-for="(item, index) in items"
-        :key="index"
-        class="p-3 rounded-md"
-        style="background-color: var(--color-third-50)"
-      >
+      <div v-for="(item, index) in items" :key="index" class="muted-surface p-3">
         <div class="flex flex-wrap items-end gap-2">
           <div class="w-28">
             <label :for="`ow-item-kind-${index}`" class="block text-xs text-muted mb-1">Kind</label>
@@ -86,23 +77,13 @@ function takeArmorAlternative() {
               placeholder="e.g. Prototype plasma lance"
             />
           </div>
-          <button
-            type="button"
-            class="px-2 py-1 rounded-md text-xs"
-            style="background-color: var(--color-third-200)"
-            :aria-label="`Remove item ${index + 1}`"
-            @click="removeItem(index)"
-          >
-            Remove
-          </button>
+          <BaseButton variant="remove" type="button" @click="removeItem(index)">Remove</BaseButton>
         </div>
 
         <div class="flex flex-wrap items-end gap-2 mt-2">
           <div v-if="item.kind === 'weapon'" class="flex-1 min-w-[10rem]">
             <label :for="`ow-item-damage-${index}`" class="block text-xs text-muted mb-1">
-              <BaseTooltip text="Any expression: 1D6, 1D6+2, 2D8, 'Lower of 2D6'.">
-                Damage
-              </BaseTooltip>
+              <BaseTooltip text="Any expression: 1D6, 1D6+2, 2D8, 'Lower of 2D6'.">Damage</BaseTooltip>
             </label>
             <input
               :id="`ow-item-damage-${index}`"
@@ -124,7 +105,7 @@ function takeArmorAlternative() {
           </div>
           <label
             v-if="item.kind === 'weapon' || item.kind === 'armor'"
-            class="inline-flex items-center gap-1 text-sm mb-1"
+            class="inline-flex items-center gap-1 text-sm text-default mb-1"
           >
             <input v-model="item.heavy" type="checkbox" />
             <BaseTooltip text="A display label for now — heavy weapons/armor are clumsy and hard to hide.">
@@ -146,44 +127,31 @@ function takeArmorAlternative() {
     </div>
 
     <div class="flex flex-wrap gap-2 mb-4">
-      <button
+      <BaseButton
         v-for="kind in OFFWORLDERS_ITEM_KINDS"
         :key="kind"
+        variant="ghost"
         type="button"
-        class="px-3 py-2 rounded-md text-sm"
-        style="background-color: var(--color-third-200)"
         @click="addItem(kind)"
       >
         + {{ OFFWORLDERS_ITEM_KIND_LABELS[kind] }}
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Starting gear choice (rules p.6) -->
-    <div class="mb-2 flex flex-wrap items-center gap-2 text-sm" style="color: var(--color-third-600)">
+    <div class="mb-2 flex flex-wrap items-center gap-2 text-sm text-secondary">
       <BaseTooltip
         text="Every character starts with 3 Supply, 3 Credits and one light weapon, then chooses EITHER +7 Credits OR Light armor and a second weapon."
       >
         Starting gear
       </BaseTooltip>
       <span>— choose one:</span>
-      <button
-        type="button"
-        class="px-2 py-1 rounded-md text-xs"
-        style="background-color: var(--color-third-200)"
-        @click="takeCreditsAlternative"
-      >
+      <BaseButton variant="ghost" type="button" @click="takeCreditsAlternative">
         +{{ OFFWORLDERS_CREDITS_ALTERNATIVE }} Credits (no armor)
-      </button>
-      <button
-        type="button"
-        class="px-2 py-1 rounded-md text-xs"
-        style="background-color: var(--color-third-200)"
-        @click="takeArmorAlternative"
-      >
+      </BaseButton>
+      <BaseButton variant="ghost" type="button" @click="takeArmorAlternative">
         Light armor + 2nd weapon
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>
-
-<style scoped></style>

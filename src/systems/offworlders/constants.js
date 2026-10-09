@@ -208,6 +208,46 @@ export const OFFWORLDERS_ITEM_KIND_LABELS = {
   item: 'Item',
 }
 
+/** A fresh, empty skill/ability entry (name + optional description). */
+export function createEmptyOffworldersEntry() {
+  return { name: '', description: '' }
+}
+
+/** Normalize a skill/ability entry, upgrading a legacy plain string to an entry. */
+export function normalizeOffworldersEntry(entry) {
+  const empty = createEmptyOffworldersEntry()
+  if (typeof entry === 'string') return { ...empty, name: entry }
+  if (!entry || typeof entry !== 'object') return empty
+  return { ...empty, ...entry }
+}
+
+/**
+ * Resolve the description for an entry: the custom description if present,
+ * otherwise the canonical catalog text keyed by name.
+ */
+export function resolveEntryDescription(entry, descriptions) {
+  return entry?.description || descriptions?.[entry?.name] || ''
+}
+
+/** Toggle a catalog entry (by name) in a skill/ability entry list. */
+export function toggleEntry(list, name) {
+  return list.some((entry) => entry.name === name)
+    ? list.filter((entry) => entry.name !== name)
+    : [...list, { name, description: '' }]
+}
+
+/** Add a custom entry (name + description), ignoring blanks and duplicates. */
+export function addEntry(list, name, description = '') {
+  const trimmed = (name ?? '').trim()
+  if (!trimmed || list.some((entry) => entry.name === trimmed)) return [...list]
+  return [...list, { name: trimmed, description: (description ?? '').trim() }]
+}
+
+/** Remove an entry by name. */
+export function removeEntry(list, name) {
+  return list.filter((entry) => entry.name !== name)
+}
+
 /** A fresh, empty free-form inventory entry. */
 export function createEmptyOffworldersItem() {
   return {
@@ -320,8 +360,8 @@ export function normalizeOffworldersData(data) {
     // Supply is always capped at 3 (p.11); ignore any stored/derived value.
     supplyMax: OFFWORLDERS_SUPPLY_MAX,
     stats: { ...empty.stats, ...(data.stats || {}) },
-    skills: Array.isArray(data.skills) ? [...data.skills] : [],
-    abilities: Array.isArray(data.abilities) ? [...data.abilities] : [],
+    skills: Array.isArray(data.skills) ? data.skills.map(normalizeOffworldersEntry) : [],
+    abilities: Array.isArray(data.abilities) ? data.abilities.map(normalizeOffworldersEntry) : [],
     items,
   }
   delete normalized.gear

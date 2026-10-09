@@ -282,8 +282,16 @@ export const guestCharacters = [
         intelligence: 1,
         willpower: 0,
       },
-      skills: ['Pilot', 'Sneak', 'Tech'],
-      abilities: ['Lucky', 'Smuggle', 'Shoot First'],
+      skills: [
+        { name: 'Pilot', description: '' },
+        { name: 'Sneak', description: '' },
+        { name: 'Tech', description: '' },
+      ],
+      abilities: [
+        { name: 'Lucky', description: '' },
+        { name: 'Smuggle', description: '' },
+        { name: 'Shoot First', description: '' },
+      ],
       items: [
         {
           name: 'Snubnosed revolver',

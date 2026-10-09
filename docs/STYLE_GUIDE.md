@@ -184,6 +184,17 @@ all conditional styling in `*Utils.js` files.
 | `.border-subtle` | Light dividers between grouped items | `border-third-100` | implemented |
 | `.border-section` | Section dividers between major content areas | `border-third-200` | implemented |
 | `.border-input` | Input and button borders | `border-third-300` | implemented |
+| `.chip` | Removable skill/ability chip (name + inline remove button) | `inline-flex items-center gap-1 rounded-full bg-third-200 px-2 py-1 text-xs text-third-700` | implemented |
+| `.muted-surface` | Muted inset surface for repeated form rows / panels | `rounded-md bg-third-50` | implemented |
+| `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-third-200 p-2 text-center` | implemented |
+| `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
+| `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
+| `.info-popover` | Info popover body (`BaseTooltip.vue`) | `rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg` | implemented |
+| `.info-popover--fixed` | Info popover on desktop (md+); teleported + JS-positioned | `fixed z-[60]` | implemented |
+| `.info-popover--inline` | Info popover on mobile (<md); expands under the trigger | `mt-1 block` | implemented |
+| `.text-warning` | Warning text tone (e.g. attribute array mismatch) | `text-secondary-700` | implemented |
+| `.suggested-choice` | Highlight for a suggested skill option | `rounded bg-secondary-50 text-secondary-900 px-1` | implemented |
+| `.suggested-choice-group` | Highlight panel for a class's suggested abilities | `rounded-md bg-secondary-50` | implemented |
 
 ### 2.4 Proposed new classes (not yet implemented)
 

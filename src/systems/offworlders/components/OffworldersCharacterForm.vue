@@ -20,23 +20,24 @@ import {
   deriveHealth,
   standardArrayUsage,
   suggestedSkillsForClass,
-  addListValue,
-  removeListValue,
-  toggleListValue,
+  resolveEntryDescription,
+  toggleEntry,
+  addEntry,
+  removeEntry,
 } from '@/systems/offworlders/constants.js'
 
 // Two-way bound to the `offworlders` block of the character form model.
 const offworlders = defineModel({ type: Object, required: true })
 
-const customSkill = ref('')
-const customAbility = ref('')
+const customSkill = ref({ name: '', description: '' })
+const customAbility = ref({ name: '', description: '' })
 
 const classInfo = computed(() => OFFWORLDERS_CLASS_INFO[offworlders.value.characterClass] || null)
 const suggestedSkills = computed(() => suggestedSkillsForClass(offworlders.value.characterClass))
 const derivedHealth = computed(() => deriveHealth(offworlders.value.stats))
 
 // Every class's abilities, grouped, so the form can show them all and simply
-// highlight the ones tied to the selected class (mirrors how skills work).
+// highlight the ones tied to the selected class.
 const abilityGroups = computed(() =>
   OFFWORLDERS_CLASSES.map((className) => ({
     className,
@@ -57,32 +58,47 @@ function isSuggestedSkill(skill) {
   return suggestedSkills.value.includes(skill)
 }
 
+function skillEntry(name) {
+  return offworlders.value.skills.find((entry) => entry.name === name)
+}
+function abilityEntry(name) {
+  return offworlders.value.abilities.find((entry) => entry.name === name)
+}
+function skillDescription(name) {
+  return resolveEntryDescription(skillEntry(name) ?? { name }, OFFWORLDERS_SKILL_DESCRIPTIONS)
+}
+function abilityDescription(name) {
+  return resolveEntryDescription(abilityEntry(name) ?? { name }, OFFWORLDERS_ABILITY_DESCRIPTIONS)
+}
+
 function toggleSkill(skill) {
-  offworlders.value.skills = toggleListValue(offworlders.value.skills, skill)
+  offworlders.value.skills = toggleEntry(offworlders.value.skills, skill)
 }
-
-function addCustomSkill() {
-  offworlders.value.skills = addListValue(offworlders.value.skills, customSkill.value)
-  customSkill.value = ''
-}
-
-function removeSkill(skill) {
-  offworlders.value.skills = removeListValue(offworlders.value.skills, skill)
-}
-
 function toggleAbility(ability) {
-  offworlders.value.abilities = toggleListValue(offworlders.value.abilities, ability)
+  offworlders.value.abilities = toggleEntry(offworlders.value.abilities, ability)
 }
-
+function addCustomSkill() {
+  offworlders.value.skills = addEntry(
+    offworlders.value.skills,
+    customSkill.value.name,
+    customSkill.value.description,
+  )
+  customSkill.value = { name: '', description: '' }
+}
 function addCustomAbility() {
-  offworlders.value.abilities = addListValue(offworlders.value.abilities, customAbility.value)
-  customAbility.value = ''
+  offworlders.value.abilities = addEntry(
+    offworlders.value.abilities,
+    customAbility.value.name,
+    customAbility.value.description,
+  )
+  customAbility.value = { name: '', description: '' }
 }
-
-function removeAbility(ability) {
-  offworlders.value.abilities = removeListValue(offworlders.value.abilities, ability)
+function removeSkill(name) {
+  offworlders.value.skills = removeEntry(offworlders.value.skills, name)
 }
-
+function removeAbility(name) {
+  offworlders.value.abilities = removeEntry(offworlders.value.abilities, name)
+}
 function applyDerivedHealth() {
   offworlders.value.health = derivedHealth.value
 }
@@ -110,9 +126,7 @@ function applyDerivedHealth() {
             {{ charClass }}
           </option>
         </select>
-        <p v-if="classInfo" class="text-xs mt-1" style="color: var(--color-third-500)">
-          {{ classInfo.blurb }}
-        </p>
+        <p v-if="classInfo" class="text-xs mt-1 text-muted">{{ classInfo.blurb }}</p>
       </div>
 
       <div class="mb-4">
@@ -151,7 +165,7 @@ function applyDerivedHealth() {
     </div>
 
     <!-- Vitals -->
-    <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">Vitals</h3>
+    <h3 class="section-heading mb-3">Vitals</h3>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
       <div class="mb-4">
         <label for="ow-health" class="block text-sm font-medium text-default mb-1">
@@ -164,14 +178,20 @@ function applyDerivedHealth() {
           min="0"
           class="input-field w-full px-3 py-2 border border-input rounded-md"
         />
-        <!-- remove ! once base-button.css is layered -->
-        <BaseButton type="button" variant="link" class="!mt-1" @click="applyDerivedHealth">
+        <BaseButton
+          variant="default"
+          type="button"
+          class="w-full mt-2"
+          @click="applyDerivedHealth"
+        >
           Use derived ({{ derivedHealth }})
         </BaseButton>
       </div>
       <div class="mb-4">
         <label for="ow-armor" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip text="Subtract your armor rating from incoming damage. Set it via the gear section below, or override it here.">
+          <BaseTooltip
+            text="Subtract your armor rating from incoming damage. Set it via the items section below, or override it here."
+          >
             Armor (0-3)
           </BaseTooltip>
         </label>
@@ -186,7 +206,9 @@ function applyDerivedHealth() {
       </div>
       <div class="mb-4">
         <label for="ow-supply" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip text="Supply abstracts the tools you carry: spend 1 to produce a mundane item. It refills on downtime aboard the ship, and the maximum is always 3.">
+          <BaseTooltip
+            text="Supply abstracts the tools you carry: spend 1 to produce a mundane item. It refills on downtime aboard the ship, and the maximum is always 3."
+          >
             Supply
           </BaseTooltip>
         </label>
@@ -199,12 +221,14 @@ function applyDerivedHealth() {
             :max="OFFWORLDERS_SUPPLY_MAX"
             class="input-field w-full px-3 py-2 border border-input rounded-md"
           />
-          <span class="text-sm" style="color: var(--color-third-500)">/ {{ OFFWORLDERS_SUPPLY_MAX }}</span>
+          <span class="text-sm text-muted">/ {{ OFFWORLDERS_SUPPLY_MAX }}</span>
         </div>
       </div>
       <div class="mb-4">
         <label for="ow-credits" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip text="The game's smallest tracked currency unit. You start with 3 (or 10 if you traded armor for credits).">
+          <BaseTooltip
+            text="The game's smallest tracked currency unit. You start with 3 (or 10 if you traded armor for credits)."
+          >
             Credits
           </BaseTooltip>
         </label>
@@ -229,18 +253,16 @@ function applyDerivedHealth() {
     </div>
 
     <!-- Attributes -->
-    <h3 class="text-lg font-semibold mb-1" style="color: var(--color-primary-700)">
+    <h3 class="section-heading mb-1">
       <BaseTooltip text="A starting character uses the standard array. You are free to deviate — this is guidance, not a rule.">
         Attributes
       </BaseTooltip>
     </h3>
-    <p class="text-xs mb-3" style="color: var(--color-third-500)">
+    <p class="text-xs mb-3 text-muted">
       Assign each of
       <strong>{{ OFFWORLDERS_STANDARD_ARRAY.join(', ') }}</strong>
       once, in any order.
-      <span
-        :style="{ color: arrayMatches ? 'var(--color-third-500)' : 'var(--color-secondary-700)' }"
-      >
+      <span :class="arrayMatches ? 'text-muted' : 'text-warning'">
         ({{ arrayUsage.used }}/{{ arrayUsage.total }} of the array used)
       </span>
     </p>
@@ -261,80 +283,70 @@ function applyDerivedHealth() {
     </div>
 
     <!-- Skills -->
-    <h3 class="text-lg font-semibold mb-1" style="color: var(--color-primary-700)">
+    <h3 class="section-heading mb-1">
       <BaseTooltip text="Choose any two skills. You are not limited to the list — add custom skills below.">
         Skills
       </BaseTooltip>
-      <span class="text-sm font-normal" style="color: var(--color-third-500)">
+      <span class="text-sm font-normal normal-case text-muted">
         — pick two ({{ offworlders.skills.length }} chosen)
       </span>
     </h3>
-    <p v-if="suggestedSkills.length" class="text-xs mb-3" style="color: var(--color-third-500)">
+    <p v-if="suggestedSkills.length" class="text-xs mb-3 text-muted">
       Highlighted skills are the usual picks for a {{ offworlders.characterClass }} — suggestions only.
     </p>
     <div class="flex flex-wrap gap-3 mb-3">
       <label
         v-for="skill in orderedSkills"
         :key="skill"
-        class="inline-flex items-center gap-1 text-sm"
+        class="inline-flex items-center gap-1 text-sm text-default"
         :class="isSuggestedSkill(skill) ? 'suggested-choice' : ''"
       >
-        <input
-          type="checkbox"
-          :checked="offworlders.skills.includes(skill)"
-          @change="toggleSkill(skill)"
-        />
-        <BaseTooltip
-          v-if="OFFWORLDERS_SKILL_DESCRIPTIONS[skill]"
-          :text="OFFWORLDERS_SKILL_DESCRIPTIONS[skill]"
-        >{{ skill }}</BaseTooltip>
+        <input type="checkbox" :checked="!!skillEntry(skill)" @change="toggleSkill(skill)" />
+        <BaseTooltip v-if="skillDescription(skill)" :text="skillDescription(skill)">
+          {{ skill }}
+        </BaseTooltip>
         <template v-else>{{ skill }}</template>
       </label>
     </div>
-    <div class="flex gap-2 mb-3">
+    <div class="flex flex-wrap gap-2 mb-3">
       <input
-        v-model="customSkill"
+        v-model="customSkill.name"
         type="text"
-        class="input-field flex-1 px-3 py-2 border border-input rounded-md"
-        placeholder="Add a custom skill"
+        class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
+        placeholder="Custom skill name"
+      />
+      <input
+        v-model="customSkill.description"
+        type="text"
+        class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"
+        placeholder="Description (shown on hover)"
         @keyup.enter.prevent="addCustomSkill"
       />
-      <button
-        type="button"
-        class="px-3 py-2 rounded-md text-sm"
-        style="background-color: var(--color-third-200)"
-        @click="addCustomSkill"
-      >
-        Add
-      </button>
+      <BaseButton variant="add" type="button" @click="addCustomSkill">Add</BaseButton>
     </div>
     <div v-if="offworlders.skills.length" class="flex flex-wrap gap-2 mb-6">
-      <span
-        v-for="skill in offworlders.skills"
-        :key="skill"
-        class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-        style="background-color: var(--color-third-200)"
-      >
-        {{ skill }}
-        <IconButton variant="chip" :label="`Remove ${skill}`" @click="removeSkill(skill)">
+      <span v-for="entry in offworlders.skills" :key="entry.name" class="chip">
+        <BaseTooltip v-if="skillDescription(entry.name)" :text="skillDescription(entry.name)">
+          {{ entry.name }}
+        </BaseTooltip>
+        <template v-else>{{ entry.name }}</template>
+        <IconButton variant="chip" :label="`Remove ${entry.name}`" @click="removeSkill(entry.name)">
           ×
         </IconButton>
       </span>
     </div>
-    <p v-else class="text-sm mb-6" style="color: var(--color-third-400)">
-      No skills selected yet.
-    </p>
+    <p v-else class="text-sm mb-6 text-subtle">No skills selected yet.</p>
 
     <!-- Abilities -->
-    <h3 class="text-lg font-semibold mb-1" style="color: var(--color-primary-700)">
+    <h3 class="section-heading mb-1">
       <BaseTooltip text="Choose any two abilities. The group matching your class is highlighted; with 'No class', pick any two. Custom abilities are allowed too.">
         Abilities
       </BaseTooltip>
-      <span class="text-sm font-normal" style="color: var(--color-third-500)">
+      <span class="text-sm font-normal normal-case text-muted">
         — pick two ({{ offworlders.abilities.length }} chosen)
       </span>
     </h3>
-    <p v-if="offworlders.characterClass" class="text-xs mb-3" style="color: var(--color-third-500)">
+    <p v-if="offworlders.characterClass" class="text-xs mb-3 text-muted">
       {{ offworlders.characterClass }} abilities are highlighted — suggestions only.
     </p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
@@ -344,66 +356,54 @@ function applyDerivedHealth() {
         class="p-2 rounded-md"
         :class="group.className === offworlders.characterClass ? 'suggested-choice-group' : ''"
       >
-        <p class="text-xs font-semibold uppercase mb-1" style="color: var(--color-third-500)">
-          {{ group.className }}
-        </p>
+        <p class="text-xs font-semibold uppercase mb-1 text-muted">{{ group.className }}</p>
         <div class="flex flex-wrap gap-3">
           <label
             v-for="ability in group.abilities"
             :key="ability"
-            class="inline-flex items-center gap-1 text-sm"
+            class="inline-flex items-center gap-1 text-sm text-default"
           >
-            <input
-              type="checkbox"
-              :checked="offworlders.abilities.includes(ability)"
-              @change="toggleAbility(ability)"
-            />
-            <BaseTooltip
-              v-if="OFFWORLDERS_ABILITY_DESCRIPTIONS[ability]"
-              :text="OFFWORLDERS_ABILITY_DESCRIPTIONS[ability]"
-            >{{ ability }}</BaseTooltip>
+            <input type="checkbox" :checked="!!abilityEntry(ability)" @change="toggleAbility(ability)" />
+            <BaseTooltip v-if="abilityDescription(ability)" :text="abilityDescription(ability)">
+              {{ ability }}
+            </BaseTooltip>
             <template v-else>{{ ability }}</template>
           </label>
         </div>
       </div>
     </div>
-    <div class="flex gap-2 mb-3">
+    <div class="flex flex-wrap gap-2 mb-3">
       <input
-        v-model="customAbility"
+        v-model="customAbility.name"
         type="text"
-        class="input-field flex-1 px-3 py-2 border border-input rounded-md"
-        placeholder="Add a custom ability"
+        class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
+        placeholder="Custom ability name"
+      />
+      <input
+        v-model="customAbility.description"
+        type="text"
+        class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"
+        placeholder="Description (shown on hover)"
         @keyup.enter.prevent="addCustomAbility"
       />
-      <button
-        type="button"
-        class="px-3 py-2 rounded-md text-sm"
-        style="background-color: var(--color-third-200)"
-        @click="addCustomAbility"
-      >
-        Add
-      </button>
+      <BaseButton variant="add" type="button" @click="addCustomAbility">Add</BaseButton>
     </div>
     <div v-if="offworlders.abilities.length" class="flex flex-wrap gap-2 mb-6">
-      <span
-        v-for="ability in offworlders.abilities"
-        :key="ability"
-        class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-        style="background-color: var(--color-third-200)"
-      >
-        {{ ability }}
+      <span v-for="entry in offworlders.abilities" :key="entry.name" class="chip">
+        <BaseTooltip v-if="abilityDescription(entry.name)" :text="abilityDescription(entry.name)">
+          {{ entry.name }}
+        </BaseTooltip>
+        <template v-else>{{ entry.name }}</template>
         <IconButton
           variant="chip"
-          :label="`Remove ${ability}`"
-          @click="removeAbility(ability)"
+          :label="`Remove ${entry.name}`"
+          @click="removeAbility(entry.name)"
         >
           ×
         </IconButton>
       </span>
     </div>
-    <p v-else class="text-sm mb-6" style="color: var(--color-third-400)">
-      No abilities selected yet.
-    </p>
+    <p v-else class="text-sm mb-6 text-subtle">No abilities selected yet.</p>
 
     <!-- Items -->
     <OffworldersItemsForm v-model:items="offworlders.items" v-model:credits="offworlders.credits" />

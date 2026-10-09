@@ -5,6 +5,12 @@ import {
   normalizeOffworldersItem,
   migrateGearToItems,
   damageForWeaponType,
+  createEmptyOffworldersEntry,
+  normalizeOffworldersEntry,
+  resolveEntryDescription,
+  toggleEntry,
+  addEntry,
+  removeEntry,
   normalizeOffworldersData,
   deriveHealth,
   standardArrayUsage,
@@ -72,7 +78,10 @@ describe('offworlders constants', () => {
     })
     expect(normalized.stats.strength).toBe(2)
     expect(normalized.stats.agility).toBe(0)
-    expect(normalized.skills).toEqual(['Pilot', 'Sneak'])
+    expect(normalized.skills).toEqual([
+      { name: 'Pilot', description: '' },
+      { name: 'Sneak', description: '' },
+    ])
   })
 
   it('normalizeOffworldersData handles null/undefined input', () => {
@@ -287,5 +296,54 @@ describe('legacy gear -> items migration', () => {
     })
     expect(normalized.items).toHaveLength(1)
     expect(normalized.items[0].name).toBe('Blaster')
+  })
+})
+
+describe('skill/ability entries', () => {
+  it('createEmptyOffworldersEntry / normalizeOffworldersEntry', () => {
+    expect(createEmptyOffworldersEntry()).toEqual({ name: '', description: '' })
+    expect(normalizeOffworldersEntry('Pilot')).toEqual({ name: 'Pilot', description: '' })
+    expect(normalizeOffworldersEntry(null)).toEqual({ name: '', description: '' })
+    expect(normalizeOffworldersEntry({ name: 'X', description: 'd' })).toEqual({
+      name: 'X',
+      description: 'd',
+    })
+  })
+
+  it('resolveEntryDescription prefers the custom description then the catalog', () => {
+    expect(resolveEntryDescription({ name: 'X', description: 'custom' }, { X: 'catalog' })).toBe(
+      'custom',
+    )
+    expect(resolveEntryDescription({ name: 'X', description: '' }, { X: 'catalog' })).toBe('catalog')
+    expect(resolveEntryDescription({ name: 'X' }, {})).toBe('')
+    expect(resolveEntryDescription(null, {})).toBe('')
+  })
+
+  it('toggleEntry adds and removes by name', () => {
+    expect(toggleEntry([], 'Pilot')).toEqual([{ name: 'Pilot', description: '' }])
+    expect(toggleEntry([{ name: 'Pilot', description: '' }], 'Pilot')).toEqual([])
+  })
+
+  it('addEntry adds a custom entry with a description, ignoring blanks/duplicates', () => {
+    expect(addEntry([], 'Homebrew', 'does stuff')).toEqual([
+      { name: 'Homebrew', description: 'does stuff' },
+    ])
+    expect(addEntry([], '   ')).toEqual([])
+    expect(addEntry([{ name: 'X', description: '' }], 'X', 'd')).toEqual([
+      { name: 'X', description: '' },
+    ])
+  })
+
+  it('removeEntry removes by name', () => {
+    expect(removeEntry([{ name: 'X', description: '' }], 'X')).toEqual([])
+    expect(removeEntry([{ name: 'X', description: '' }], 'Y')).toEqual([
+      { name: 'X', description: '' },
+    ])
+  })
+
+  it('normalizeOffworldersData upgrades legacy string skills/abilities to entries', () => {
+    const normalized = normalizeOffworldersData({ skills: ['Pilot'], abilities: ['Lucky'] })
+    expect(normalized.skills).toEqual([{ name: 'Pilot', description: '' }])
+    expect(normalized.abilities).toEqual([{ name: 'Lucky', description: '' }])
   })
 })

@@ -1,14 +1,11 @@
 <script setup>
 /**
- * Inline info tooltip.
+ * Inline info affordance.
  *
- * The slot content IS the trigger (usually the field label): it gets a dotted
- * underline and reveals `text` on hover, focus, or click. There is deliberately
- * no separate icon, so the help text stays attached to the words it explains.
- *
- * The popover is teleported to <body> and positioned with `position: fixed`,
- * then clamped to the viewport, so it can never be clipped by an ancestor's
- * overflow or pushed off-screen.
+ * The slot content is the trigger (usually the field/option label) and reveals
+ * `text` on hover/focus/click. On desktop (md+) the text is a teleported fixed
+ * popover clamped to the viewport; on small screens it expands inline beneath
+ * the trigger, which is friendlier on touch and never clipped.
  */
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
@@ -20,12 +17,14 @@ defineProps({
   },
 })
 
-const POPOVER_WIDTH = 256 // matches the w-64 class below
+const POPOVER_WIDTH = 256
 const GAP = 8
 
 const trigger = ref(null)
 const open = ref(false)
 const popoverStyle = ref({})
+const isDesktop = ref(true)
+let mediaQuery = null
 
 function reposition() {
   const el = trigger.value
@@ -33,67 +32,74 @@ function reposition() {
   const rect = el.getBoundingClientRect()
   const maxLeft = Math.max(GAP, window.innerWidth - POPOVER_WIDTH - GAP)
   const left = Math.min(Math.max(GAP, rect.left + rect.width / 2 - POPOVER_WIDTH / 2), maxLeft)
-  // Prefer below; flip above when there is not enough room.
   const fitsBelow = rect.bottom + GAP + 80 < window.innerHeight
   const top = fitsBelow ? rect.bottom + GAP : Math.max(GAP, rect.top - GAP - 90)
   popoverStyle.value = { left: `${left}px`, top: `${top}px`, width: `${POPOVER_WIDTH}px` }
-  open.value = true
 }
 
 function show() {
-  reposition()
+  if (isDesktop.value) reposition()
+  open.value = true
 }
-
 function hide() {
   open.value = false
 }
-
 function toggle() {
-  open.value ? hide() : show()
+  if (open.value) hide()
+  else show()
 }
-
-// Keep the fixed popover aligned (or dismiss it) while the page moves.
 function onWindowChange() {
-  if (open.value) reposition()
+  if (open.value && isDesktop.value) reposition()
+}
+function onMediaChange(event) {
+  isDesktop.value = event.matches
+  open.value = false
 }
 
 onMounted(() => {
+  mediaQuery = window.matchMedia('(min-width: 768px)')
+  isDesktop.value = mediaQuery.matches
+  mediaQuery.addEventListener('change', onMediaChange)
   window.addEventListener('scroll', onWindowChange, true)
   window.addEventListener('resize', onWindowChange)
 })
 
 onBeforeUnmount(() => {
+  if (mediaQuery) mediaQuery.removeEventListener('change', onMediaChange)
   window.removeEventListener('scroll', onWindowChange, true)
   window.removeEventListener('resize', onWindowChange)
 })
 </script>
 
 <template>
-  <span
-    ref="trigger"
-    class="cursor-help underline decoration-dotted underline-offset-2"
-    tabindex="0"
-    role="button"
-    :aria-expanded="open"
-    @mouseenter="show"
-    @mouseleave="hide"
-    @focus="show"
-    @blur="hide"
-    @click.prevent="toggle"
-    @keydown.escape="hide"
-  >
-    <slot />
-  </span>
-  <Teleport to="body">
+  <span class="inline-flex flex-col">
     <span
-      v-if="open"
-      role="tooltip"
-      class="fixed z-[60] w-64 rounded-md p-2 text-left text-xs font-normal normal-case leading-snug shadow-lg"
-      :style="{ ...popoverStyle, backgroundColor: 'var(--color-third-800)', color: '#fff' }"
+      ref="trigger"
+      class="cursor-help underline decoration-dotted underline-offset-2"
+      tabindex="0"
+      role="button"
+      :aria-expanded="open"
+      @mouseenter="isDesktop && show()"
+      @mouseleave="isDesktop && hide()"
+      @focus="isDesktop && show()"
+      @blur="hide"
+      @click.prevent="toggle"
+      @keydown.escape="hide"
     >
+      <slot />
+    </span>
+    <span v-if="open && !isDesktop" role="tooltip" class="info-popover info-popover--inline">
       {{ text }}
     </span>
-  </Teleport>
+    <Teleport v-if="isDesktop" to="body">
+      <span
+        v-if="open"
+        role="tooltip"
+        class="info-popover info-popover--fixed"
+        :style="popoverStyle"
+      >
+        {{ text }}
+      </span>
+    </Teleport>
+  </span>
 </template>
-
-<style scoped></style>
