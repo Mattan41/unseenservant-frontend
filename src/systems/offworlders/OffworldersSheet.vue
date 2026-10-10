@@ -73,7 +73,7 @@ function abilityDescription(entry) {
       <h2 class="section-heading mb-4">Gear</h2>
 
       <div class="mb-4">
-        <h3 class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</h3>
+        <p class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</p>
         <ul v-if="weapons.length" class="flex flex-col gap-1 text-default">
           <li v-for="(weapon, index) in weapons" :key="index">
             <span class="font-medium">{{ weapon.description || 'Unnamed weapon' }}</span>
@@ -85,7 +85,7 @@ function abilityDescription(entry) {
       </div>
 
       <div>
-        <h3 class="text-sm font-semibold uppercase mb-1 text-muted">Items</h3>
+        <p class="text-sm font-semibold uppercase mb-1 text-muted">Items</p>
         <ul v-if="items.length" class="flex flex-col gap-1 text-default">
           <li v-for="(item, index) in items" :key="index">
             <span class="font-medium">{{ item.name || 'Unnamed item' }}</span>

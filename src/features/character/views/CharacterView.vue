@@ -124,20 +124,11 @@ const deleteCharacter = async () => {
             <p><strong>Appearance:</strong></p>
             <p class="text-sm whitespace-pre-line break-words">{{ currentCharacter.appearance }}</p>
           </div>
-        </aside>
 
-        <!-- Main column: a clean slot for whatever the active system renders -->
-        <div class="flex-1 min-w-0">
-          <!-- System-specific character sheet -->
-          <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
-
-          <!-- Backstory (core character, shared by every system) -->
-          <div class="p-6 border-t border-section">
-            <h2 class="section-heading mb-4">Backstory</h2>
-            <p
-              v-if="currentCharacter.backstory"
-              class="text-default whitespace-pre-line break-words"
-            >
+          <!-- Backstory (generic, any system) — sits with Notes/Appearance -->
+          <div class="text-default">
+            <p class="mb-1"><strong>Backstory:</strong></p>
+            <p v-if="currentCharacter.backstory" class="text-sm whitespace-pre-line break-words">
               {{ currentCharacter.backstory }}
             </p>
             <p v-else class="text-sm text-muted italic">No backstory recorded.</p>
@@ -145,16 +136,22 @@ const deleteCharacter = async () => {
             <!-- Only rendered when the API returned it (owner or campaign GM). -->
             <div
               v-if="currentCharacter.privateBackstory"
-              class="mt-6 pt-4 border-t border-section"
+              class="mt-4 pt-3 border-t border-section"
             >
               <p class="text-xs italic mb-1 text-muted">
                 Private — only you and the GM can see this
               </p>
-              <p class="text-default whitespace-pre-line break-words">
+              <p class="text-sm whitespace-pre-line break-words">
                 {{ currentCharacter.privateBackstory }}
               </p>
             </div>
           </div>
+        </aside>
+
+        <!-- Main column: a clean slot for whatever the active system renders -->
+        <div class="flex-1 min-w-0">
+          <!-- System-specific character sheet -->
+          <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
 
           <!-- Additional info -->
           <div class="p-6 border-t border-section">

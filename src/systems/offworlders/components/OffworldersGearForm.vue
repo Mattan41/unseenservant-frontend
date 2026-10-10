@@ -80,7 +80,7 @@ function takeArmorAlternative() {
     </p>
 
     <!-- Weapons -->
-    <h4 class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</h4>
+    <p class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</p>
     <div class="space-y-3 mb-3">
       <div v-for="(weapon, index) in weapons" :key="index" class="muted-surface p-3">
         <div class="flex flex-wrap items-end gap-2">
@@ -124,7 +124,7 @@ function takeArmorAlternative() {
     </div>
 
     <!-- Items -->
-    <h4 class="text-sm font-semibold uppercase mb-1 text-muted">Items</h4>
+    <p class="text-sm font-semibold uppercase mb-1 text-muted">Items</p>
     <div class="space-y-3 mb-3">
       <div v-for="(item, index) in items" :key="index" class="muted-surface p-3">
         <div class="flex flex-wrap items-end gap-2">
