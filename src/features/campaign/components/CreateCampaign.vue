@@ -3,22 +3,29 @@ import { ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
 
 const campaignStore = useCampaignStore()
 
 const showCreateCampaignModal = ref(false)
 const newCampaignName = ref('')
 const newCampaignDescription = ref('')
+const newCampaignSystem = ref('')
 const isCreating = ref(false)
 const errorMessage = ref('')
 
 const createCampaign = async () => {
   isCreating.value = true
   try {
-    await campaignStore.createCampaign(newCampaignName.value, newCampaignDescription.value)
+    await campaignStore.createCampaign(
+      newCampaignName.value,
+      newCampaignDescription.value,
+      newCampaignSystem.value || null,
+    )
     showCreateCampaignModal.value = false
     newCampaignName.value = ''
     newCampaignDescription.value = ''
+    newCampaignSystem.value = ''
     errorMessage.value = ''
   } catch (error) {
     console.error(error)
@@ -60,6 +67,21 @@ const createCampaign = async () => {
               rows="5"
             >
             </textarea>
+          </div>
+          <div class="mb-4">
+            <label for="primary-system" class="block text-sm font-medium text-default">
+              Game system (optional)
+            </label>
+            <select
+              id="primary-system"
+              v-model="newCampaignSystem"
+              class="mt-1 block w-full rounded-md shadow-sm"
+            >
+              <option value="">No system yet</option>
+              <option v-for="option in CAMPAIGN_SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+                {{ option.label }}
+              </option>
+            </select>
           </div>
           <BaseButton variant="add" type="submit" :loading="isCreating"> create </BaseButton>
           <BaseButton

@@ -45,12 +45,19 @@ src/
 │   ├── campaign/
 │   │   ├── CampaignService.js
 │   │   ├── campaignStore.js
+│   │   ├── campaignSystems.js   # Campaign primary-system options/labels + isOffworlders/isDnd5e
+│   │   ├── campaignUtils.js
 │   │   ├── components/
+│   │   ├── dispatchers/        # CampaignSystemRouter.vue (Ship / spell search per primary system)
 │   │   └── views/
 │   ├── message/
 │   │   ├── MessageService.js
 │   │   ├── messageStore.js
 │   │   └── components/       # MessageBoard.vue (no views/ — rendered within CampaignView)
+│   ├── ship/
+│   │   ├── ShipService.js
+│   │   ├── shipStore.js
+│   │   └── components/       # ShipSection.vue + ShipSheet.vue (rendered within CampaignView)
 │   ├── character/
 │   │   ├── CharacterService.js
 │   │   ├── characterStore.js
@@ -66,11 +73,12 @@ src/
 │   ├── offworlders/          # Offworlders (rules-light sci-fi)
 │   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm, OffworldersGearForm
 │   │   ├── constants.js      # Classes, attributes, skill/ability catalogs + descriptions, weapons/armor/items, empty-data factory
+│   │   ├── shipConstants.js  # Ship defaults + upgrade catalog + upgrade helpers (pp.13/26)
 │   │   └── OffworldersSheet.vue  # The Offworlders character sheet (vitals + gear + attributes + skills/abilities)
 │   └── dnd5e/                # Dungeons & Dragons 5e
 │       ├── api/
 │       │   └── open5e-axios.js        # Open5e API client (public, no auth)
-│       ├── components/       # SpellSearch, SpellCard, SpellDetailModal, Dnd5eStatsPanel, Dnd5eCharacterForm
+│       ├── components/       # SpellSearch, SpellCard, SpellDetailModal, Dnd5eSpellSearchPanel, Dnd5eStatsPanel, Dnd5eCharacterForm
 │       ├── views/            # SpellSearchView
 │       ├── constants.js      # Races, classes, ability scores, empty-data factory
 │       ├── Dnd5eSheet.vue    # The D&D 5e character sheet (stats + spells + Open5e search)

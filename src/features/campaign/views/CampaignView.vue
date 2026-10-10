@@ -18,6 +18,11 @@ import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import { getCharacterOwnerName } from '@/features/campaign/campaignUtils.js'
+import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
+import {
+  DND5E_SYSTEM_TYPE,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/features/campaign/campaignSystems.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -43,6 +48,8 @@ const SECTIONS = [
   { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
   { key: 'characters', label: 'Characters', icon: 'characters' },
   { key: 'messages', label: 'Messages', icon: 'messages' },
+  { key: 'ship', label: 'Ship', icon: 'ship', system: OFFWORLDERS_SYSTEM_TYPE },
+  { key: 'spells', label: 'Spell Search', icon: 'spells', system: DND5E_SYSTEM_TYPE },
   { key: 'participants', label: 'Participants', icon: 'participants' },
   { key: 'settings', label: 'Settings', icon: 'settings' },
   { key: 'campaign-settings', label: 'Campaign Settings', icon: 'edit', ownerOnly: true },
@@ -54,7 +61,15 @@ const SECTIONS = [
  * Participants/Settings; the owner-only "Campaign Settings" section is filtered
  * out for everyone else.
  */
-const navItems = computed(() => SECTIONS.filter((section) => !section.ownerOnly || isOwner.value))
+const navItems = computed(() =>
+  SECTIONS.filter((section) => {
+    if (section.ownerOnly && !isOwner.value) return false
+    // System-specific sections only appear when the campaign's primary system
+    // matches (e.g. the Offworlders Ship, the D&D 5e spell search).
+    if (section.system && campaign.value?.primarySystem !== section.system) return false
+    return true
+  }),
+)
 
 function selectSection(key) {
   if (navItems.value.some((section) => section.key === key)) {
@@ -68,6 +83,17 @@ function resetPresentationState() {
   showImportModal.value = false
   campaignNavOpen.value = false
 }
+
+// Keep the active section valid when the campaign's primary system (and thus
+// the available system-specific sections) changes: fall back to Overview.
+watch(
+  () => campaign.value?.primarySystem,
+  () => {
+    if (!navItems.value.some((section) => section.key === activeSection.value)) {
+      activeSection.value = 'overview'
+    }
+  },
+)
 
 // Ownership is separate from table role: only the owner controls the campaign.
 const isOwner = computed(() => {
@@ -412,6 +438,23 @@ watch(
       <!-- Messages -->
       <BaseSection v-else-if="activeSection === 'messages'" title="Messages">
         <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
+      </BaseSection>
+
+      <!-- System-specific sections (Offworlders Ship / D&D 5e spell search) -->
+      <BaseSection v-else-if="activeSection === 'ship'" title="Ship">
+        <CampaignSystemRouter
+          :system-type="campaign.primarySystem"
+          section="ship"
+          :campaign-id="campaign.id"
+        />
+      </BaseSection>
+
+      <BaseSection v-else-if="activeSection === 'spells'" title="Spell Search">
+        <CampaignSystemRouter
+          :system-type="campaign.primarySystem"
+          section="spells"
+          :campaign-id="campaign.id"
+        />
       </BaseSection>
 
       <!-- Participants -->

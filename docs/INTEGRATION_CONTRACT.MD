@@ -130,8 +130,9 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 ## Campaigns
 
 **POST /api/campaigns**
-- Request: `CampaignCreationDTO { name, description, ownerId?, participants? }`
+- Request: `CampaignCreationDTO { name, description, ownerId?, participants?, primarySystem? }`
 - `ownerId` defaults to logged-in user if null
+- `primarySystem`: `DND5E` | `OFFWORLDERS` | null (optional; `null` = not chosen). If `OFFWORLDERS`, the backend also creates the campaign's default ship.
 - Response: `CampaignResponseDTO`
 - Status: 201, 400, 401
 
@@ -147,11 +148,12 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **GET /api/campaigns/{id}**
 - Requires: authorized participant
-- Response: `CampaignResponseDTO { id, name, description, imageUrl, ownerId, participants: [ { id, nickname, role } ] }`
+- Response: `CampaignResponseDTO { id, name, description, imageUrl, primarySystem, ownerId, participants: [ { id, nickname, role } ] }`
 - Status: 200, 401, 403, 404
 
 **PUT /api/campaigns/{id}**
-- Request: `CampaignUpdateDTO { name, description }`
+- Request: `CampaignUpdateDTO { name, description, primarySystem }` (`primarySystem`: `DND5E` | `OFFWORLDERS` | null)
+- Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent). Changing away from `OFFWORLDERS` keeps the ship.
 - Response: `CampaignResponseDTO`
 - Status: 200, 400, 401, 403, 404
 
@@ -184,6 +186,29 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 **DELETE /api/campaigns/{id}**
 - Requires: owner
 - Status: 204, 401, 403, 404
+- Note: A campaign's ship (if any) is removed with the campaign.
+
+---
+
+## Campaign Ship (Offworlders)
+
+A ship is `1:1` with a campaign (unique `campaign_id` FK) and only meaningful when the
+campaign's `primarySystem` is `OFFWORLDERS`. Defaults mirror the Offworlders rulebook
+(p.13): 15 Hull, 0 Armor, 1D6 Damage, 4 Max Drive Fuel, no upgrades. Every campaign
+participant may view and edit; there is **no delete**.
+
+**GET /api/campaigns/{id}/ship**
+- Requires: campaign participant
+- Response: `ShipDTO` (see Data Structure Examples)
+- Status: 200, 401, 403, 404 (`404` when the campaign has no ship yet)
+
+**PUT /api/campaigns/{id}/ship**
+- Requires: campaign participant
+- Request: `ShipDTO` fields including `version`
+- Upsert: creates the ship with the defaults if the campaign has none, otherwise updates it in place
+- Optimistic concurrency: a stale `version` is rejected with `409` (no pessimistic locking)
+- Response: `ShipDTO` (with the incremented `version`)
+- Status: 200, 400, 401, 403, 409
 
 ---
 
@@ -344,11 +369,30 @@ Intended as per-campaign message boards. Messages are visible only to campaign p
   "name": "Neptune",
   "description": "...",
   "imageUrl": "https://...",
+  "primarySystem": "OFFWORLDERS",
   "ownerId": 2,
   "participants": [
     { "id": 1, "nickname": "User1", "role": "PLAYER" },
     { "id": 2, "nickname": "User2", "role": "GM" }
   ]
+}
+```
+
+### ShipDTO
+```json
+{
+  "id": 1,
+  "campaignId": 2,
+  "name": "The Null Gravitas",
+  "hull": 15,
+  "hullMax": 15,
+  "armor": 1,
+  "damage": "1D6",
+  "driveFuel": 4,
+  "maxDriveFuel": 6,
+  "upgrades": ["Additional Armor", "Fuel Tanks"],
+  "notes": "Cargo: a sealed crate.",
+  "version": 3
 }
 ```
 

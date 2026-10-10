@@ -11,6 +11,7 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
+import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
 
 const props = defineProps({
   /** `{ id, title, description, imageUrl }` for the campaign being edited. */
@@ -32,6 +33,7 @@ const isGuestMode = computed(() => authStore.isGuest)
 
 const editedName = ref(props.campaign.title || '')
 const editedDescription = ref(props.campaign.description || '')
+const editedPrimarySystem = ref(props.campaign.primarySystem || '')
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const localPreviewUrl = ref(null)
@@ -76,6 +78,7 @@ function saveChanges() {
     id: props.campaign.id,
     title: editedName.value,
     description: editedDescription.value,
+    primarySystem: editedPrimarySystem.value || null,
     imageFile: selectedFile.value,
   })
 }
@@ -111,6 +114,27 @@ function saveChanges() {
           rows="8"
           placeholder="Enter campaign description"
         ></textarea>
+      </div>
+
+      <div>
+        <label for="campaign-system" class="block text-sm font-medium text-default mb-1">
+          Game system
+        </label>
+        <select
+          id="campaign-system"
+          v-model="editedPrimarySystem"
+          class="p-3 rounded w-full"
+          style="background-color: var(--color-primary-50)"
+        >
+          <option value="">No system yet</option>
+          <option v-for="option in CAMPAIGN_SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+            {{ option.label }}
+          </option>
+        </select>
+        <p class="text-xs text-muted mt-1">
+          System-specific sections (Offworlders ship, D&amp;D 5e spell search) appear for members
+          when a system is chosen.
+        </p>
       </div>
     </div>
 

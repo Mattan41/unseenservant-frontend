@@ -1,0 +1,60 @@
+<script setup>
+/**
+ * Smart container for the Offworlders ship (rendered inside CampaignView like
+ * `MessageBoard`). Owns all store interaction: loading on mount, saving, and
+ * clearing state on unmount.
+ */
+import { onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useShipStore } from '@/features/ship/shipStore.js'
+import ShipSheet from '@/features/ship/components/ShipSheet.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
+
+const props = defineProps({
+  campaignId: {
+    type: [Number, String],
+    required: true,
+  },
+})
+
+const shipStore = useShipStore()
+const { ship, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+
+async function loadShip() {
+  await shipStore.fetchShip(props.campaignId)
+}
+
+async function handleSave(shipData) {
+  try {
+    await shipStore.saveShip(props.campaignId, shipData)
+  } catch {
+    // Error is surfaced by the store (notification + conflict banner).
+  }
+}
+
+onMounted(loadShip)
+onUnmounted(() => shipStore.clearShip())
+</script>
+
+<template>
+  <div>
+    <div v-if="isLoading" class="flex items-center justify-center py-4">
+      <div class="spinner h-6 w-6"></div>
+      <span class="ml-2 text-muted">Loading ship...</span>
+    </div>
+
+    <div v-else-if="error" class="py-4 text-center">
+      <p class="error-message mb-2">{{ error }}</p>
+      <BaseButton variant="retry" @click="loadShip">Retry</BaseButton>
+    </div>
+
+    <ShipSheet
+      v-else-if="ship"
+      :ship="ship"
+      :saving="isSaving"
+      :conflict="hasConflict"
+      @save="handleSave"
+      @reload="loadShip"
+    />
+  </div>
+</template>

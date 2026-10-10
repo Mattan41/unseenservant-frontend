@@ -70,6 +70,7 @@ const details = computed(() => ({
   id: campaign.value?.id,
   title: campaign.value?.name || '',
   description: campaign.value?.description || '',
+  primarySystem: campaign.value?.primarySystem || null,
   imageUrl: campaign.value?.imageUrl || '/default-campaign.svg',
 }))
 
@@ -80,6 +81,7 @@ const saveDetails = async (updated) => {
     await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updated.title,
       description: updated.description,
+      primarySystem: updated.primarySystem,
     })
 
     if (updated.imageFile) {
@@ -89,6 +91,7 @@ const saveDetails = async (updated) => {
 
     campaign.value.name = updated.title
     campaign.value.description = updated.description
+    campaign.value.primarySystem = updated.primarySystem
     emit('updated')
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
   } catch (error) {

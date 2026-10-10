@@ -77,12 +77,12 @@ export const useCampaignStore = defineStore('campaign', () => {
   // ==========================================================================
   // Actions
   // ==========================================================================
-  async function createCampaign(name, description) {
+  async function createCampaign(name, description, primarySystem = null) {
     const notificationStore = useNotificationStore()
     isLoading.value = true
 
     try {
-      const newCampaign = await CampaignService.createCampaign(name, description)
+      const newCampaign = await CampaignService.createCampaign(name, description, primarySystem)
       notificationStore.addNotification('Campaign created successfully!', 'success')
       await fetchAllCampaignsForCurrentUser()
       return newCampaign
