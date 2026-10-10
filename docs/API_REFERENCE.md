@@ -599,7 +599,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, upgrades, notes, version }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, upgrades, notes, imageUrl, imageUrls, version }`
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
 
@@ -614,6 +614,41 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Response**: ShipDTO
 - **Status Codes**: 200, 400, 401, 403, 409
 - **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload.
+
+---
+
+### POST /api/campaigns/{id}/ship/image
+
+- **Service**: ShipService.uploadShipImage(campaignId, imageFile)
+- **Store Action**: shipStore.uploadShipImage(campaignId, imageFile)
+- **Guest Mode**: Mocked — returns a stock placeholder image URL
+- **Request**: multipart/form-data with field name file
+- **Response**: ShipDTO (with the updated `imageUrl`)
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset.
+
+---
+
+### POST /api/campaigns/{id}/ship/images
+
+- **Service**: ShipService.addShipGalleryImage(campaignId, imageFile)
+- **Store Action**: shipStore.addGalleryImage(campaignId, imageFile)
+- **Guest Mode**: Mocked — appends a stock placeholder image URL
+- **Request**: multipart/form-data with field name file
+- **Response**: ShipDTO (with the image appended to `imageUrls`)
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Gallery images (drawings, maps, handouts). The UI shows them in a grid with a lightbox overlay.
+
+---
+
+### DELETE /api/campaigns/{id}/ship/images?url=
+
+- **Service**: ShipService.removeShipGalleryImage(campaignId, url)
+- **Store Action**: shipStore.removeGalleryImage(campaignId, url)
+- **Guest Mode**: Mocked — removes the matching URL from `imageUrls`
+- **Query Params**: url (the stored image URL)
+- **Response**: ShipDTO (with the image removed)
+- **Status Codes**: 200, 401, 403, 404
 
 ---
 

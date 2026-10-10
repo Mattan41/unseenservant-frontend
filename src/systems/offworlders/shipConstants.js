@@ -18,6 +18,9 @@ export const OFFWORLDERS_SHIP_ARMOR_DEFAULT = 0
 export const OFFWORLDERS_SHIP_DAMAGE_DEFAULT = '1D6'
 export const OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT = 4
 
+/** Placeholder profile image (in /public) for a ship without one. */
+export const OFFWORLDERS_SHIP_DEFAULT_IMAGE = '/defaultShip.svg'
+
 /** The rules let the players choose this many upgrades when making the ship. */
 export const OFFWORLDERS_SHIP_STARTING_UPGRADES = 2
 
@@ -103,6 +106,8 @@ export function createEmptyShipData() {
     maxDriveFuel: OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
     upgrades: [],
     notes: '',
+    imageUrl: '',
+    imageUrls: [],
   }
 }
 
@@ -174,6 +179,10 @@ export function normalizeShipData(data) {
       ? data.upgrades.filter((entry) => typeof entry === 'string')
       : [],
     notes: typeof data.notes === 'string' ? data.notes : '',
+    imageUrl: typeof data.imageUrl === 'string' ? data.imageUrl : '',
+    imageUrls: Array.isArray(data.imageUrls)
+      ? data.imageUrls.filter((entry) => typeof entry === 'string')
+      : [],
   }
 }
 

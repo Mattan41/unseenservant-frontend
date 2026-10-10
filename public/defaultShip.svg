@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <!-- Background -->
+  <rect width="800" height="800" fill="#FFFFFF"/>
+
+  <!-- Background Layer: Distant Crescent Planet & Space Swirls -->
+  <!-- Stylized dynamic energy background curves (matching character/dragon dynamic shapes) -->
+  <path fill="#C4C4C4" d="M 120 720 C 180 500 350 320 580 220 C 660 185 730 170 780 165 C 720 220 620 310 500 420 C 360 550 240 680 180 750 Z"/>
+  <path fill="#A6A6A6" d="M 60 620 C 110 440 240 280 460 170 C 560 120 660 90 750 70 C 670 120 540 210 400 330 C 250 460 130 610 80 690 Z"/>
+  
+  <!-- Large Distant Planet / Moon Silhouette -->
+  <path fill="#A6A6A6" d="M 620 180 A 160 160 0 1 0 740 460 A 180 180 0 1 1 620 180 Z"/>
+
+  <!-- Foreground/Midground Terrain Ridge (Dark Foreground Silhouette) -->
+  <path fill="#383B3E" d="M -10 810 L -10 680 C 120 670 250 710 420 760 C 580 805 720 780 810 750 L 810 810 Z"/>
+
+  <!-- Rocky Details & Spikes on Hill Contour -->
+  <path fill="#383B3E" d="M 80 675 L 95 650 L 110 672 L 130 645 L 155 675 L 320 720 L 340 695 L 360 725 L 390 690 L 420 735 Z"/>
+  <path fill="#A6A6A6" d="M 0 690 C 150 680 280 725 450 775 L 450 785 C 280 735 150 690 0 700 Z"/>
+
+  <!-- Main Spaceship Object (Pitched at an angled landing / ready-for-takeoff posture) -->
+  <g id="spaceship">
+    
+    <!-- Wing Shadow & Back Wing -->
+    <path fill="#6A6E73" d="M 380 430 L 520 370 L 490 410 L 410 455 Z"/>
+
+    <!-- Thruster Plume / Engine Glow Silhouette (Light Gray) -->
+    <path fill="#A6A6A6" d="M 170 545 Q 110 565 40 580 Q 120 540 190 520 Z"/>
+    <path fill="#A6A6A6" d="M 185 570 Q 130 600 70 625 Q 140 580 200 550 Z"/>
+
+    <!-- Main Hull Body (Dark Charcoal) -->
+    <path fill="#383B3E" d="M 680 340 
+             C 610 370 520 405 390 460 
+             L 220 510 
+             L 180 540 
+             L 160 520 
+             L 190 495 
+             L 280 455 
+             L 420 375 
+             C 520 315 610 300 680 340 Z"/>
+
+    <!-- Main Swept Forward / Angled Wing (Foreground) -->
+    <path fill="#383B3E" d="M 440 435 
+             L 260 590 
+             L 230 580 
+             L 210 525 
+             L 330 480 
+             L 510 405 Z"/>
+
+    <!-- Wing Underside Shadow/Structure -->
+    <path fill="#252729" d="M 260 590 L 230 580 L 310 500 L 350 485 Z"/>
+
+    <!-- Vertical Stabilizer / Fin Top -->
+    <path fill="#383B3E" d="M 410 380 L 330 270 L 365 275 L 450 360 Z"/>
+    <!-- Fin Accent Shadow -->
+    <path fill="#252729" d="M 330 270 L 365 275 L 385 320 L 350 300 Z"/>
+
+    <!-- CANOPY / COCKPIT & HULL CUTOUT HIGHLIGHTS (White Cutouts like Dragon/Character details) -->
+    
+    <!-- Cockpit Glass Cutout -->
+    <polygon fill="#FFFFFF" points="610,342 550,352 520,345 570,332"/>
+    <polygon fill="#FFFFFF" points="510,347 470,357 450,352 490,341"/>
+
+    <!-- Panel Cutout Lines along the Fuselage -->
+    <path fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" d="M 640 348 C 550 380 430 425 310 470"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" d="M 520 375 L 480 440"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" d="M 440 398 L 400 460"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M 370 420 L 340 475"/>
+
+    <!-- Wing Panel Cutout Accent Lines -->
+    <path fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" d="M 480 415 L 270 568"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M 430 435 L 290 535"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M 360 460 L 330 545"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M 410 440 L 380 520"/>
+
+    <!-- Fin Accent Line -->
+    <path fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" d="M 395 365 L 345 285"/>
+
+    <!-- Engine Intake / Exhaust Cutout Accents -->
+    <polygon fill="#FFFFFF" points="220,505 200,512 205,498 230,492"/>
+    <polygon fill="#FFFFFF" points="195,535 180,540 183,528 200,523"/>
+
+  </g>
+
+  <!-- Foreground Silhouetted Tech Antenna / Ground Details (Right) -->
+  <path fill="#383B3E" d="M 680 760 L 690 670 L 695 670 L 693 755 L 730 745 L 732 752 Z"/>
+  <path fill="#383B3E" d="M 688 680 L 705 675 L 689 690 Z"/>
+</svg>

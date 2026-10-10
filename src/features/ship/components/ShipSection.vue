@@ -32,6 +32,30 @@ async function handleSave(shipData) {
   }
 }
 
+async function handleUploadProfile(file) {
+  try {
+    await shipStore.uploadShipImage(props.campaignId, file)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
+async function handleAddGallery(file) {
+  try {
+    await shipStore.addGalleryImage(props.campaignId, file)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
+async function handleRemoveGallery(url) {
+  try {
+    await shipStore.removeGalleryImage(props.campaignId, url)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
 onMounted(loadShip)
 onUnmounted(() => shipStore.clearShip())
 </script>
@@ -55,6 +79,9 @@ onUnmounted(() => shipStore.clearShip())
       :conflict="hasConflict"
       @save="handleSave"
       @reload="loadShip"
+      @upload-profile="handleUploadProfile"
+      @add-gallery="handleAddGallery"
+      @remove-gallery="handleRemoveGallery"
     />
   </div>
 </template>

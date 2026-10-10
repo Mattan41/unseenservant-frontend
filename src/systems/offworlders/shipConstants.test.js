@@ -97,4 +97,10 @@ describe('normalizeShipData', () => {
     expect(ship.damage).toBe('2D6')
     expect(ship.hull).toBe(0)
   })
+
+  it('keeps only string image URLs', () => {
+    const ship = normalizeShipData({ imageUrl: '/b.png', imageUrls: ['/a.png', 5, null] })
+    expect(ship.imageUrl).toBe('/b.png')
+    expect(ship.imageUrls).toEqual(['/a.png'])
+  })
 })

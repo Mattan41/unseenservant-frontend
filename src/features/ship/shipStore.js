@@ -93,6 +93,57 @@ export const useShipStore = defineStore('ship', () => {
     }
   }
 
+  /**
+   * Shared handler for the image endpoints: they all return the updated ship.
+   * @param {Promise<object>} request
+   * @param {string} successMessage
+   */
+  async function applyImageResult(request, successMessage) {
+    const notificationStore = useNotificationStore()
+    isSaving.value = true
+    try {
+      const saved = await request
+      ship.value = normalizeShipData(saved)
+      notificationStore.addNotification(successMessage, 'success')
+      return ship.value
+    } catch (err) {
+      console.error('Ship image operation failed:', err)
+      if (!err.handled) {
+        notificationStore.addNotification(
+          extractErrorMessage(err, 'Failed to update the ship images.'),
+          'error',
+        )
+      }
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /** Upload/replace the ship's profile image. */
+  function uploadShipImage(campaignId, imageFile) {
+    return applyImageResult(
+      ShipService.uploadShipImage(campaignId, imageFile),
+      'Ship image updated.',
+    )
+  }
+
+  /** Add a drawing/map/photo to the ship's gallery. */
+  function addGalleryImage(campaignId, imageFile) {
+    return applyImageResult(
+      ShipService.addShipGalleryImage(campaignId, imageFile),
+      'Image added to the ship gallery.',
+    )
+  }
+
+  /** Remove an image from the ship's gallery. */
+  function removeGalleryImage(campaignId, url) {
+    return applyImageResult(
+      ShipService.removeShipGalleryImage(campaignId, url),
+      'Image removed from the ship gallery.',
+    )
+  }
+
   /** Clear ship state (e.g. when leaving a campaign). */
   function clearShip() {
     ship.value = null
@@ -116,6 +167,9 @@ export const useShipStore = defineStore('ship', () => {
     // Actions
     fetchShip,
     saveShip,
+    uploadShipImage,
+    addGalleryImage,
+    removeGalleryImage,
     clearShip,
   }
 })

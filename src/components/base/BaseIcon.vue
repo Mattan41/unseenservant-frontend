@@ -134,6 +134,16 @@ defineProps({
       <path d="M3 5h4" />
       <path d="M17 19h4" />
     </template>
+
+    <!-- Chevron left: previous -->
+    <template v-else-if="name === 'chevron-left'">
+      <path d="m15 18-6-6 6-6" />
+    </template>
+
+    <!-- Chevron right: next -->
+    <template v-else-if="name === 'chevron-right'">
+      <path d="m9 18 6-6-6-6" />
+    </template>
   </svg>
 </template>
 

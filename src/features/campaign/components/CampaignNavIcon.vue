@@ -9,7 +9,7 @@
 import BaseIcon from '@/components/base/BaseIcon.vue'
 
 defineProps({
-  /** Icon identifier: overview | lore | characters | messages | ship | spells | settings | edit | participants | menu | close | plus */
+  /** Icon identifier: overview | lore | characters | messages | ship | spells | settings | edit | participants | menu | close | plus | chevron-left | chevron-right */
   name: {
     type: String,
     required: true,

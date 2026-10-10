@@ -64,11 +64,13 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
   - `systemType`: `DND5E` | `OFFWORLDERS`
   - `appearance` / `backstory` / `privateBackstory`: free-text fields on the core character (any system). `appearance` and `backstory` are visible to every campaign member; `privateBackstory` is visible to the owner and the campaign GM only. Writes are owner-only (PATCH already requires ownership; a GM has read access, not write).
   - `dnd5e`: `{ level (1–20), characterClass, race, hitPoints?, armorClass?, stats }` — only used when `systemType === 'DND5E'`
-  - `offworlders`: `{ characterClass?, species?, xp?, health?, armor?, supply?, supplyMax?, credits?, stats?, skills?, abilities?, weapons?, items? }` — only used when `systemType === 'OFFWORLDERS'`
+  - `offworlders`: `{ characterClass?, species?, xp?, health?, currentHealth?, healthModifier?, armor?, supply?, supplyMax?, credits?, stats?, skills?, abilities?, weapons?, items? }` — only used when `systemType === 'OFFWORLDERS'`
     - `stats = { strength, agility, intelligence, willpower }`, each −1…+3; Health is derived as `max(1, 12 + strength + agility)`
-    - `armor` is a single value 0–3 (0 None / 1 Light / 2 Heavy / 3 Assault)
+    - `characterClass` is optional — it may be empty ("no class"), since experienced players may ignore classes
+    - `armor` is a single value 0–3 (0 None / 1 Light / 2 Heavy / 3 Assault); `supplyMax` is fixed at `3` by the rules
     - `weapons = [ { type: 'Light' | 'Medium' | 'Heavy', description } ]` — damage (1D6 / 1D6+1 / 1D6+2) and `heavy` follow from `type`, not stored
-    - `items = [ { name, description } ]` — free-text catch-all (custom weapons and everything else)
+    - `items = [ { name, description } ]` — free-text catch-all (custom weapons and everything else); `credits` is the tracked currency
+    - `currentHealth` is the running HP (it may exceed `health` for temporary HP); `healthModifier` is a manual ± adjustment to the derived maximum
     - `skills` / `abilities` are arrays of entries `{ name, description }`: canonical catalog entries plus any free-text custom entries
 - `ownerId` defaults to logged-in user if null
 - Response: `CharacterOutputDTO`
@@ -76,22 +78,22 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **GET /api/characters**
 - Query params: `campaignId` (optional)
-- Response: `[ PlayerCharacterOutputDTO ]`
+- Response: `[ CharacterOutputDTO ]`
 - Status: 200, 401
 
 **GET /api/characters/me**
 - Requires: ROLE_USER
-- Response: `[ PlayerCharacterOutputDTO ]` — all characters owned by the logged-in user
+- Response: `[ CharacterOutputDTO ]` — all characters owned by the logged-in user
 - Status: 200, 401
 
 **GET /api/characters/without-campaign**
 - Requires: ROLE_USER
-- Response: `[ PlayerCharacterOutputDTO ]` — owned characters not linked to any campaign
+- Response: `[ CharacterOutputDTO ]` — owned characters not linked to any campaign
 - Status: 200, 401
 
 **GET /api/characters/{id}**
 - Requires: ROLE_USER
-- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, backstory, privateBackstory, dnd5e, offworlders, createdAt, updatedAt }`
+- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, appearance, backstory, privateBackstory, dnd5e, offworlders, createdAt, updatedAt }`
   - `privateBackstory` is `null` unless the requester is the character's owner or the campaign GM
   - `dnd5e` is a nullable nested block `{ level, characterClass, race, hitPoints, armorClass, stats }`, present only when `systemType === 'DND5E'`
   - `offworlders` is a nullable nested block `{ characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }`, present only when `systemType === 'OFFWORLDERS'`
@@ -106,19 +108,19 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 **POST /api/characters/{id}/image**
 - Requires: ROLE_USER, must be owner
 - Request: `multipart/form-data`, field: `file`
-- Response: `PlayerCharacterOutputDTO` (with updated imageUrl)
+- Response: `CharacterOutputDTO` (with updated avatarUrl)
 - Status: 200, 400, 401, 403
 
 **PATCH /api/characters/{id}/campaign**
 - Requires: ROLE_USER, must be owner
 - Request: `{ campaignId: Long }`
-- Response: `PlayerCharacterOutputDTO`
+- Response: `CharacterOutputDTO`
 - Status: 200, 400, 401, 403, 404
 
 **DELETE /api/characters/{id}/campaign**
 - Requires: ROLE_USER, must be owner
 - Sets campaignId = null without deleting the character
-- Response: `PlayerCharacterOutputDTO`
+- Response: `CharacterOutputDTO`
 - Status: 200, 401, 403, 404
 
 **DELETE /api/characters/{id}**
@@ -211,6 +213,26 @@ participant may view and edit; there is **no delete**.
 - Optimistic concurrency: a stale `version` is rejected with `409` (no pessimistic locking)
 - Response: `ShipDTO` (with the incremented `version`)
 - Status: 200, 400, 401, 403, 409
+
+**POST /api/campaigns/{id}/ship/image**
+- Requires: campaign participant
+- Request: multipart/form-data with field `file`
+- Replaces the ship's profile image (`imageUrl`); the UI falls back to `/defaultShip.svg`
+- Response: `ShipDTO`
+- Status: 200, 400, 401, 403, 404
+
+**POST /api/campaigns/{id}/ship/images**
+- Requires: campaign participant
+- Request: multipart/form-data with field `file`
+- Appends an image to the ship's gallery (`imageUrls`)
+- Response: `ShipDTO`
+- Status: 200, 400, 401, 403, 404
+
+**DELETE /api/campaigns/{id}/ship/images?url={url}**
+- Requires: campaign participant
+- Removes the matching image from the ship's gallery (`imageUrls`)
+- Response: `ShipDTO`
+- Status: 200, 401, 403, 404
 
 ---
 
@@ -340,29 +362,42 @@ Intended as per-campaign message boards. Messages are visible only to campaign p
 }
 ```
 
-### PlayerCharacterOutputDTO
+### CharacterOutputDTO
 ```json
 {
   "id": 14,
   "ownerId": 7,
   "campaignId": null,
   "name": "Aragorn",
-  "level": 5,
-  "characterClass": "Fighter",
-  "race": "Human",
-  "imageUrl": null,
-  "playerCharacterData": {
-    "strength": 16,
-    "dexterity": 14,
-    "constitution": 15,
-    "intelligence": 12,
-    "wisdom": 14,
-    "charisma": 13
+  "systemType": "DND5E",
+  "notes": null,
+  "avatarUrl": null,
+  "appearance": null,
+  "backstory": null,
+  "privateBackstory": null,
+  "dnd5e": {
+    "level": 5,
+    "characterClass": "Fighter",
+    "race": "Human",
+    "hitPoints": 44,
+    "armorClass": 17,
+    "stats": {
+      "strength": 16,
+      "dexterity": 14,
+      "constitution": 15,
+      "intelligence": 12,
+      "wisdom": 14,
+      "charisma": 13
+    }
   },
+  "offworlders": null,
   "createdAt": "2026-05-29T09:00:00",
   "updatedAt": null
 }
 ```
+
+> The nested `dnd5e` / `offworlders` block is populated only for the matching `systemType`; the other is `null`.
+> `privateBackstory` is `null` unless the requester is the character's owner or the campaign GM.
 
 ### CampaignResponseDTO
 ```json
@@ -395,6 +430,8 @@ Intended as per-campaign message boards. Messages are visible only to campaign p
   "maxDriveFuel": 6,
   "upgrades": ["Additional Armor", "Fuel Tanks"],
   "notes": "Cargo: a sealed crate.",
+  "imageUrl": null,
+  "imageUrls": [],
   "version": 3
 }
 ```

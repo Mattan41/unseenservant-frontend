@@ -17,6 +17,7 @@ import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import { getCharacterOwnerName, getParticipantDisplayName, getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
+import { useShipStore } from '@/features/ship/shipStore.js'
 import {
   DND5E_SYSTEM_TYPE,
   OFFWORLDERS_SYSTEM_TYPE,
@@ -27,6 +28,7 @@ const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+const shipStore = useShipStore()
 
 const campaign = ref(null)
 const isLoading = ref(false)
@@ -65,6 +67,16 @@ const navItems = computed(() =>
     return true
   }),
 )
+
+/**
+ * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
+ * so the name is not repeated inside the sheet itself. Falls back to plain
+ * "Ship" while the ship is still loading or unnamed.
+ */
+const shipSectionTitle = computed(() => {
+  const name = shipStore.ship?.name
+  return name ? `Ship: ${name}` : 'Ship'
+})
 
 function selectSection(key) {
   if (navItems.value.some((section) => section.key === key)) {
@@ -234,11 +246,11 @@ watch(
   <div v-else-if="campaign" class="flex flex-col md:flex-row md:items-stretch md:h-full">
     <!-- Mobile campaign bar: title + local navigation trigger -->
     <div class="campaign-mobile-bar">
-      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
       <BaseButton variant="default" class="campaign-nav-trigger" @click="campaignNavOpen = true">
         <CampaignNavIcon name="menu" class="w-5 h-5 flex-shrink-0" />
         <span>Campaign Views</span>
       </BaseButton>
+      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
     </div>
 
     <!-- Contextual in-campaign navigation (rail on desktop, drawer on mobile) -->
@@ -253,8 +265,9 @@ watch(
 
     <!-- Active section content -->
     <div class="flex-1 min-w-0 p-4">
-      <!-- Campaign image is shown for every section -->
+      <!-- Campaign image for every section except the ship, which shows its own image. -->
       <CampaignHeader
+        v-if="activeSection !== 'ship'"
         :title="campaignStore.getCampaignTitle(campaign.id)"
         :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
       />
@@ -436,7 +449,7 @@ watch(
       </BaseSection>
 
       <!-- System-specific sections (Offworlders Ship / D&D 5e spell search) -->
-      <BaseSection v-else-if="activeSection === 'ship'" title="Ship">
+      <BaseSection v-else-if="activeSection === 'ship'" :title="shipSectionTitle">
         <CampaignSystemRouter
           :system-type="campaign.primarySystem"
           section="ship"

@@ -411,6 +411,8 @@ export const guestShips = [
     maxDriveFuel: 6,
     upgrades: ['Additional Armor', 'Fuel Tanks'],
     notes: 'Cargo: a sealed crate for the Lundenwic job. Passengers: none yet.',
+    imageUrl: '',
+    imageUrls: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },

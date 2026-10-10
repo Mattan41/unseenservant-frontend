@@ -101,6 +101,46 @@ function ensureDefaultShip(campaignId) {
   return ship
 }
 
+/** Guest mode can't really store uploads, so images resolve to a stock placeholder. */
+const SHIP_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe'
+
+/**
+ * Apply a (mocked) ship image upload: set the profile image, or append to the
+ * gallery. Returns the updated ship, or null when the campaign has no ship.
+ */
+function applyShipImageUpload(campaignId, gallery) {
+  const ships = getData(KEYS.SHIPS, [])
+  const index = ships.findIndex((ship) => String(ship.campaignId) === String(campaignId))
+  if (index === -1) return null
+
+  const ship = { ...ships[index] }
+  if (gallery) {
+    ship.imageUrls = [...(ship.imageUrls || []), SHIP_IMAGE_FALLBACK]
+  } else {
+    ship.imageUrl = SHIP_IMAGE_FALLBACK
+  }
+  ship.version = Number(ship.version || 0) + 1
+  ship.updatedAt = new Date().toISOString()
+  ships[index] = ship
+  setData(KEYS.SHIPS, ships)
+  return ship
+}
+
+/** Remove a gallery image (by URL) from a campaign's ship. */
+function removeShipGalleryImage(campaignId, imageUrl) {
+  const ships = getData(KEYS.SHIPS, [])
+  const index = ships.findIndex((ship) => String(ship.campaignId) === String(campaignId))
+  if (index === -1) return null
+
+  const ship = { ...ships[index] }
+  ship.imageUrls = (ship.imageUrls || []).filter((url) => url !== imageUrl)
+  ship.version = Number(ship.version || 0) + 1
+  ship.updatedAt = new Date().toISOString()
+  ships[index] = ship
+  setData(KEYS.SHIPS, ships)
+  return ship
+}
+
 function extractId(url) {
   const cleanUrl = url.split('?')[0]
   const parts = cleanUrl.split('/').filter(Boolean)
@@ -291,6 +331,16 @@ const guestAxios = {
   post(url, data = {}) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] POST -> ${url}`)
+
+    // Ship images (must precede the campaign image branch)
+    if (url.includes('campaigns') && url.includes('/ship/image')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/image/)
+      return Promise.resolve({ data: applyShipImageUpload(match ? match[1] : null, false) })
+    }
+    if (url.includes('campaigns') && url.includes('/ship/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/images/)
+      return Promise.resolve({ data: applyShipImageUpload(match ? match[1] : null, true) })
+    }
 
     if (url.includes('campaigns') && url.includes('/image')) {
       return Promise.resolve({
@@ -644,6 +694,14 @@ const guestAxios = {
         )
         return Promise.resolve({ data: { deleted: true } })
       }
+    }
+
+    // 3b. Remove a ship gallery image (must precede the campaign delete block)
+    if (url.includes('campaigns') && url.includes('/ship/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/images/)
+      const campaignId = match ? match[1] : null
+      const params = new URLSearchParams(url.split('?')[1] || '')
+      return Promise.resolve({ data: removeShipGalleryImage(campaignId, params.get('url')) })
     }
 
     // 4. Delete Campaign Fully
