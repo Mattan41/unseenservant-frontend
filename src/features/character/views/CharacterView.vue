@@ -79,7 +79,8 @@ const deleteCharacter = async () => {
           <!-- Action bar -->
           <div v-if="isOwner" class="flex justify-end gap-2">
             <BaseButton
-              variant="ghost"
+              variant="update"
+              icon="edit"
               @click="
                 router.push({
                   name: 'EditCharacter',

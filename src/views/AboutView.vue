@@ -43,6 +43,26 @@
         </div>
       </div>
 
+      <!-- Legal: third-party game attribution. Required by the Offworlders
+           Creative Commons Attribution licence (CC BY 3.0 US). -->
+      <section class="mb-8">
+        <h2 class="feature-title">Credits &amp; Licences</h2>
+        <p class="text-secondary mb-3">
+          <strong>Offworlders</strong> is a game by Chris Wolf. Illustrations and book design by
+          Olivia Gulin. It is inspired by <em>World of Dungeons</em> by John Harper, and also owes
+          inspiration to <em>Dungeon World</em> by Sage Latorra and Adam Koebel, as well as
+          <em>Traveller</em> by Marc Miller and <em>Stars Without Number</em> by Kevin Crawford. It
+          is licensed under a
+          <a
+            class="element-link"
+            href="https://creativecommons.org/licenses/by/3.0/us/legalcode"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Creative Commons Attribution licence (CC BY 3.0 US)</a
+          >.
+        </p>
+      </section>
+
       <div
         class="text-center text-sm text-default mt-6 border-t pt-4"
         style="border-color: var(--color-primary-200)"

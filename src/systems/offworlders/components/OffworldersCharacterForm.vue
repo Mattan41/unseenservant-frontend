@@ -19,9 +19,7 @@ import {
   OFFWORLDERS_SUPPLY_MAX,
   OFFWORLDERS_STANDARD_ARRAY,
   OFFWORLDERS_ARMOR_OPTIONS,
-  abilityVitalsBonus,
-  effectiveArmor,
-  deriveHealth,
+  offworldersVitals,
   standardArrayUsage,
   suggestedSkillsForClass,
   resolveEntryDescription,
@@ -46,18 +44,12 @@ const suggestedSkills = computed(() => suggestedSkillsForClass(offworlders.value
 // Vitals follow their source automatically, including the passive bonuses from
 // the selected abilities (Hardy's +4 Health, Unstoppable's +1 armor) and the
 // manual Health Misc ±. A hand-written value is never needed.
-const abilityBonus = computed(() => abilityVitalsBonus(offworlders.value.abilities))
-const derivedHealth = computed(() =>
-  deriveHealth(
-    offworlders.value.stats,
-    abilityBonus.value.health + (Number(offworlders.value.healthModifier) || 0),
-  ),
-)
+const vitals = computed(() => offworldersVitals(offworlders.value))
+const abilityBonus = computed(() => vitals.value.abilityBonus)
+const derivedHealth = computed(() => vitals.value.maxHealth)
 // Armor is a single chosen value; only the passive ability bonus is added on
 // top for display, so the stored value stays the player's pick.
-const effectiveArmorValue = computed(() =>
-  effectiveArmor(offworlders.value.armor, abilityBonus.value.armor),
-)
+const effectiveArmorValue = computed(() => vitals.value.effectiveArmor)
 
 // Keep the derived Max Health in step with its source. Current HP and the
 // chosen Armor are left alone (both are deliberate player input).

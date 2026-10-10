@@ -22,6 +22,8 @@ import {
   removeEntry,
   normalizeOffworldersData,
   deriveHealth,
+  offworldersHealthLabel,
+  offworldersVitals,
   standardArrayUsage,
   suggestedSkillsForClass,
   armorRatingForType,
@@ -507,5 +509,65 @@ describe('ability Vitals bonuses', () => {
     Object.keys(OFFWORLDERS_ABILITY_EFFECTS).forEach((name) => {
       expect(catalog).toContain(name)
     })
+  })
+})
+
+describe('offworldersVitals', () => {
+  const baseStats = { strength: 0, agility: 0 }
+
+  it('adds the manual Health Misc to Max Health (base 12, misc 1 becomes 13)', () => {
+    expect(offworldersVitals({ stats: baseStats, healthModifier: 1 }).maxHealth).toBe(13)
+  })
+
+  it('keeps Current HP above Max Health so temporary HP can be held', () => {
+    const vitals = offworldersVitals({ stats: baseStats, healthModifier: 1, currentHealth: 15 })
+    expect(vitals.maxHealth).toBe(13)
+    expect(vitals.currentHealth).toBe(15)
+  })
+
+  it('keeps tracking damage after the temporary HP is spent', () => {
+    const vitals = offworldersVitals({ stats: baseStats, healthModifier: 1, currentHealth: 5 })
+    expect(vitals.currentHealth).toBe(5)
+    expect(vitals.maxHealth).toBe(13)
+  })
+
+  it('adds passive ability bonuses to Max Health and effective Armor', () => {
+    const vitals = offworldersVitals({
+      stats: { strength: 1, agility: 1 },
+      abilities: [{ name: 'Hardy' }, { name: 'Unstoppable' }],
+      armor: 1,
+    })
+    expect(vitals.maxHealth).toBe(18) // 12 + 1 Strength + 1 Agility + Hardy's +4
+    expect(vitals.effectiveArmor).toBe(2) // 1 worn + Unstoppable's +1
+  })
+
+  it('falls back to full health when Current HP was never recorded', () => {
+    expect(offworldersVitals({ stats: baseStats }).currentHealth).toBe(12)
+    expect(offworldersVitals({ stats: baseStats, currentHealth: null }).currentHealth).toBe(12)
+    expect(offworldersVitals({ stats: baseStats, currentHealth: '' }).currentHealth).toBe(12)
+  })
+
+  it('never drops Max Health below 1', () => {
+    const vitals = offworldersVitals({
+      stats: { strength: -1, agility: -1 },
+      healthModifier: -20,
+    })
+    expect(vitals.maxHealth).toBe(1)
+  })
+
+  it('handles a missing data block', () => {
+    expect(offworldersVitals(null)).toMatchObject({ maxHealth: 12, currentHealth: 12 })
+  })
+})
+
+describe('offworldersHealthLabel', () => {
+  it('renders current over max, including temporary HP and damage', () => {
+    const character = { stats: { strength: 0, agility: 0 }, healthModifier: 1, currentHealth: 15 }
+    expect(offworldersHealthLabel(character)).toBe('15/13')
+    expect(offworldersHealthLabel({ ...character, currentHealth: 5 })).toBe('5/13')
+  })
+
+  it('falls back to full health when nothing was recorded', () => {
+    expect(offworldersHealthLabel({ stats: { strength: 1, agility: 1 } })).toBe('14/14')
   })
 })

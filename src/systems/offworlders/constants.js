@@ -273,6 +273,60 @@ export function effectiveArmor(armor, bonus = 0) {
 }
 
 /**
+ * Everything the UI needs to render a character's Vitals, derived from its
+ * sources so the same numbers appear everywhere (sheet, form and list badges),
+ * including for characters saved before automatic derivation.
+ *
+ * Max Health = `12 + Strength + Agility` plus the passive bonuses granted by
+ * abilities and the manual Health Misc ±, with a floor of 1 (p.5). Current HP is
+ * the running total the player ticks down; it may sit above Max Health to hold
+ * temporary HP (e.g. 15/13).
+ *
+ * @param {object|null|undefined} offworlders the character's Offworlders data block
+ * @returns {{
+ *   maxHealth: number,
+ *   currentHealth: number,
+ *   effectiveArmor: number,
+ *   abilityBonus: {health: number, armor: number, healthSources: string[], armorSources: string[]},
+ * }}
+ */
+export function offworldersVitals(offworlders) {
+  const data = offworlders || {}
+  const bonus = abilityVitalsBonus(data.abilities)
+  const maxHealth = deriveHealth(data.stats, bonus.health + (Number(data.healthModifier) || 0))
+  return {
+    maxHealth,
+    currentHealth: resolveCurrentHealth(data.currentHealth, maxHealth),
+    effectiveArmor: effectiveArmor(data.armor, bonus.armor),
+    abilityBonus: bonus,
+  }
+}
+
+/**
+ * Current HP, falling back to full health when nothing has been recorded
+ * (null/undefined/blank) so pre-V7 characters and unsaved drafts still render.
+ * @param {number|string|null|undefined} raw
+ * @param {number} maxHealth
+ * @returns {number}
+ */
+function resolveCurrentHealth(raw, maxHealth) {
+  if (raw === null || raw === undefined || raw === '') return maxHealth
+  const value = Number(raw)
+  return Number.isFinite(value) ? value : maxHealth
+}
+
+/**
+ * Compact HP label for list/party badges, e.g. `"15/13"` — temporary HP shows as
+ * a current value above the maximum, and damage simply lowers the first number.
+ * @param {object|null|undefined} offworlders the character's Offworlders data block
+ * @returns {string}
+ */
+export function offworldersHealthLabel(offworlders) {
+  const vitals = offworldersVitals(offworlders)
+  return `${vitals.currentHealth}/${vitals.maxHealth}`
+}
+
+/**
  * Count how many of the standard array values (+2, +1, 0, -1) the given stats
  * use. Each array entry can only be matched once, so this is the number of
  * attributes that still line up with a valid starting spread.
