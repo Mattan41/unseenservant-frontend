@@ -1,10 +1,11 @@
 <script setup>
 /**
  * Smart container for the Offworlders ship (rendered inside CampaignView like
- * `MessageBoard`). Owns all store interaction: loading on mount, saving, and
- * clearing state on unmount.
+ * `MessageBoard`). Owns the section's store interaction: refreshing on mount and
+ * handling saving/image events. Loading and clearing are owned by CampaignView,
+ * which shares the ship store with the Overview summary card.
  */
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
@@ -56,8 +57,9 @@ async function handleRemoveGallery(url) {
   }
 }
 
+// The ship is loaded (and cleared) by the parent CampaignView so the Overview
+// summary and this section share one store; mount just refreshes it.
 onMounted(loadShip)
-onUnmounted(() => shipStore.clearShip())
 </script>
 
 <template>

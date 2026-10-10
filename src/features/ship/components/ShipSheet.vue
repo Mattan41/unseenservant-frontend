@@ -497,6 +497,7 @@ useUnsavedChanges(
     <!-- Sticky edit actions: a compact floating tag keeps Cancel / Save
          reachable while scrolling a long sheet, on mobile and desktop. -->
     <BaseStickyActions
+      v-if="editing"
       :dirty="isDirty"
       :saving="saving"
       save-label="Save ship"

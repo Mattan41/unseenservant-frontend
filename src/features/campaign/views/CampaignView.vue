@@ -11,18 +11,27 @@ import { characterHealthLabel } from '@/features/character/dispatchers/systemReg
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
+import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
+import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
-import { getCharacterOwnerName, getParticipantDisplayName, getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
+import {
+  getCharacterOwnerName,
+  getParticipantDisplayName,
+  getRoleBadgeClass,
+} from '@/features/campaign/campaignUtils.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
 import { useShipStore } from '@/features/ship/shipStore.js'
+import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConstants.js'
 import { confirmDiscardUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
+  CAMPAIGN_SYSTEM_LABELS,
   DND5E_SYSTEM_TYPE,
   OFFWORLDERS_SYSTEM_TYPE,
+  isOffworlders,
 } from '@/features/campaign/campaignSystems.js'
 
 const route = useRoute()
@@ -131,9 +140,17 @@ const loadCampaignData = async (campaignId) => {
   resetPresentationState()
   messageStore.clearMessages()
 
+  // Fresh campaign: drop any ship state from a previously viewed campaign,
+  // then load this campaign's ship (when Offworlders) so the Overview summary
+  // and the Ship section share a single store.
+  shipStore.clearShip()
+
   try {
     campaign.value = await campaignStore.fetchCampaign(campaignId)
     await campaignStore.fetchCharactersForCampaign(campaignId)
+    if (isOffworlders(campaign.value?.primarySystem)) {
+      await shipStore.fetchShip(campaignId)
+    }
   } catch (error) {
     console.error('Failed to load campaign:', error)
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
@@ -160,6 +177,16 @@ const participantCount = computed(() => participants.value.length)
 const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM').length)
 const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
 const characterCount = computed(() => campaignCharacters.value.length)
+
+// Overview: the campaign's ruleset label, a capped party preview, and the
+// Offworlders-only ship card (data is loaded by `loadCampaignData`).
+const primarySystemLabel = computed(
+  () => CAMPAIGN_SYSTEM_LABELS[campaign.value?.primarySystem] || 'Not set',
+)
+const isOffworldersCampaign = computed(() => isOffworlders(campaign.value?.primarySystem))
+const partyPreview = computed(() => campaignCharacters.value.slice(0, 6))
+const shipSummary = computed(() => shipStore.ship)
+const isShipLoading = computed(() => shipStore.isLoading)
 
 // Description is framed as the campaign's world lore/background block.
 const campaignDescription = computed(() => {
@@ -230,6 +257,7 @@ onUnmounted(() => {
     campaignStore.clearCampaignCharacters(safeId)
   }
   messageStore.clearMessages()
+  shipStore.clearShip()
 })
 
 // Load data and reset presentation mode when changing campaign
@@ -282,7 +310,7 @@ watch(
       <!-- Overview -->
       <section v-if="activeSection === 'overview'">
         <BaseSection title="Campaign Summary">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <BaseCard>
               <p class="text-xs uppercase text-muted">Participants</p>
               <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
@@ -294,7 +322,108 @@ watch(
               <p class="text-2xl font-bold text-default mt-1">{{ characterCount }}</p>
               <p class="text-sm text-muted mt-1">in this campaign</p>
             </BaseCard>
+
+            <BaseCard>
+              <p class="text-xs uppercase text-muted">System</p>
+              <p class="text-lg font-bold text-default mt-1">{{ primarySystemLabel }}</p>
+              <p class="text-sm text-muted mt-1">primary ruleset</p>
+            </BaseCard>
           </div>
+        </BaseSection>
+
+        <!-- Campaign background (opening lines; expands in place) -->
+        <BaseSection title="About This Campaign">
+          <BaseCard>
+            <p v-if="!campaignDescription" class="italic text-muted text-sm">
+              No background has been recorded for this campaign yet.
+            </p>
+            <BaseClampedText v-else :text="campaignDescription" :lines="4" />
+          </BaseCard>
+        </BaseSection>
+
+        <!-- Party preview -->
+        <BaseSection title="The Party">
+          <template #actions>
+            <BaseButton variant="default" @click="selectSection('characters')">
+              View all characters
+            </BaseButton>
+          </template>
+
+          <div v-if="!partyPreview.length" class="empty-cta">
+            <p class="text-muted text-sm italic">
+              No characters have been added to this campaign yet.
+            </p>
+            <BaseButton variant="add" @click="showImportModal = true">
+              Import your first character
+            </BaseButton>
+          </div>
+
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <BaseCard
+              v-for="character in partyPreview"
+              :key="character.id"
+              clickable
+              class="h-full"
+              @click="openCharacter(character)"
+            >
+              <div class="flex items-start gap-3">
+                <CharacterImage
+                  :src="character.avatarUrl"
+                  :alt="`${character.name || 'Character'} portrait`"
+                  class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
+                  style="border-color: var(--color-primary-300)"
+                />
+                <div class="flex-1 min-w-0">
+                  <h5
+                    class="character-name text-base font-semibold line-clamp-2 break-words"
+                    :title="character.name"
+                  >
+                    {{ character.name || 'Unnamed Character' }}
+                  </h5>
+                  <div class="mt-1">
+                    <span class="badge badge-secondary text-xs">
+                      Played by: {{ getCharacterOwnerName(character, participants) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </BaseCard>
+          </div>
+        </BaseSection>
+
+        <!-- Ship summary (Offworlders campaigns only) -->
+        <BaseSection v-if="isOffworldersCampaign" title="The Ship">
+          <template #actions>
+            <BaseButton variant="default" @click="selectSection('ship')">View ship</BaseButton>
+          </template>
+
+          <BaseCard v-if="shipSummary" clickable @click="selectSection('ship')">
+            <div class="flex items-start gap-4">
+              <CampaignImage
+                :src="shipSummary.imageUrl"
+                :alt="shipSummary.name || 'Ship'"
+                :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
+                class="w-24 h-24 rounded-lg border-2 object-cover flex-shrink-0"
+                style="border-color: var(--color-primary-300)"
+              />
+              <div class="flex-1 min-w-0">
+                <h5 class="text-base font-semibold break-words">
+                  {{ shipSummary.name || 'Unnamed Ship' }}
+                </h5>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <span class="character-tag">
+                    Hull {{ shipSummary.hull }}/{{ shipSummary.hullMax }}
+                  </span>
+                  <span class="character-tag">Armor {{ shipSummary.armor }}</span>
+                  <span class="character-tag">Damage {{ shipSummary.damage }}</span>
+                  <span class="character-tag">
+                    Fuel {{ shipSummary.driveFuel }}/{{ shipSummary.maxDriveFuel }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </BaseCard>
+          <p v-else-if="isShipLoading" class="text-sm text-muted italic">Loading ship…</p>
         </BaseSection>
 
         <BaseSection title="Participants &amp; Roles">
