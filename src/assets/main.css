@@ -245,9 +245,23 @@ html[data-theme='silver'][data-mode='light'] {
   @apply inline-block animate-spin rounded-full border-primary-500 border-t-transparent;
 }
 
-/* Form input focus ring */
+/* Form field — single source of truth for editable-input styling.
+   Used by `input`, `select` and `textarea`. Editable fields get a light
+   surface so they read as fields; disabled (read-only) fields fall back to a
+   transparent background so view mode stays text-like. Do not re-add
+   `style="background-color: var(--color-primary-50)"` at call sites. */
 .input-field {
+  background-color: var(--color-primary-50);
   @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+.input-field:disabled {
+  background-color: transparent;
+}
+
+/* Invalid state for `<BaseInput>` — replaces `.border-input` on error. */
+.input-field--error {
+  @apply border-secondary-400;
 }
 
 /* Guest/demo mode notice banner */
@@ -730,6 +744,27 @@ input {
 /* Muted inset surface (e.g. repeated form rows) */
 .muted-surface {
   @apply rounded-md bg-third-50;
+}
+
+/* Floating edit action bar (e.g. the ship sheet). A compact "tag" so the primary
+   save action stays reachable while scrolling a long form, instead of a
+   full-width strip. Position it with `sticky bottom-*` on the wrapper. */
+.edit-bar {
+  @apply flex items-center gap-2 rounded-full border border-third-300 bg-third-100 px-2 py-1 shadow-lg;
+}
+
+.edit-bar-label {
+  @apply hidden pl-2 text-xs font-medium text-third-600 sm:inline;
+}
+
+/* Button variant that renders an optional leading `BaseIcon` (see the `icon`
+   prop of `BaseButton.vue`). */
+.base-btn-with-icon {
+  @apply inline-flex items-center gap-1;
+}
+
+.base-btn-icon {
+  @apply h-4 w-4 flex-shrink-0;
 }
 
 /* Attribute score tile (shared by system stats panels) */

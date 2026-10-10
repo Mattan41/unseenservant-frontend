@@ -14,6 +14,7 @@ const KEYS = {
   CHARACTERS: 'guest_characters',
   CAMPAIGNS: 'guest_campaigns',
   MESSAGES: 'guest_messages',
+  SHIPS: 'guest_ships',
 }
 
 // ============================================================================
@@ -35,6 +36,7 @@ function getData(key, defaultValue = null) {
       if (key === 'guest_characters') data = localStorage.getItem('characters')
       if (key === 'guest_campaigns') data = localStorage.getItem('campaigns')
       if (key === 'guest_users') data = localStorage.getItem('users')
+      if (key === 'guest_ships') data = localStorage.getItem('ships')
 
       // Auto-repair/normalize the location for immediate alignment
       if (data) {
@@ -60,6 +62,83 @@ function setData(key, data) {
 
 function generateId() {
   return `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+}
+
+/** Default Offworlders ship (rulebook p.13): 15 Hull, 0 Armor, 1D6, 4 Fuel. */
+function defaultShip(campaignId) {
+  return {
+    id: generateId(),
+    campaignId: String(campaignId),
+    version: 0,
+    name: '',
+    hull: 15,
+    hullMax: 15,
+    armor: 0,
+    damage: '1D6',
+    driveFuel: 4,
+    maxDriveFuel: 4,
+    upgrades: [],
+    notes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+/** Find a campaign's ship in localStorage, or null. */
+function findShip(campaignId) {
+  const ships = getData(KEYS.SHIPS, [])
+  return ships.find((ship) => String(ship.campaignId) === String(campaignId)) || null
+}
+
+/** Create the default ship for a campaign if it has none (idempotent). */
+function ensureDefaultShip(campaignId) {
+  const ships = getData(KEYS.SHIPS, [])
+  const existing = ships.find((ship) => String(ship.campaignId) === String(campaignId))
+  if (existing) return existing
+  const ship = defaultShip(campaignId)
+  ships.push(ship)
+  setData(KEYS.SHIPS, ships)
+  return ship
+}
+
+/** Guest mode can't really store uploads, so images resolve to a stock placeholder. */
+const SHIP_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe'
+
+/**
+ * Apply a (mocked) ship image upload: set the profile image, or append to the
+ * gallery. Returns the updated ship, or null when the campaign has no ship.
+ */
+function applyShipImageUpload(campaignId, gallery) {
+  const ships = getData(KEYS.SHIPS, [])
+  const index = ships.findIndex((ship) => String(ship.campaignId) === String(campaignId))
+  if (index === -1) return null
+
+  const ship = { ...ships[index] }
+  if (gallery) {
+    ship.imageUrls = [...(ship.imageUrls || []), SHIP_IMAGE_FALLBACK]
+  } else {
+    ship.imageUrl = SHIP_IMAGE_FALLBACK
+  }
+  ship.version = Number(ship.version || 0) + 1
+  ship.updatedAt = new Date().toISOString()
+  ships[index] = ship
+  setData(KEYS.SHIPS, ships)
+  return ship
+}
+
+/** Remove a gallery image (by URL) from a campaign's ship. */
+function removeShipGalleryImage(campaignId, imageUrl) {
+  const ships = getData(KEYS.SHIPS, [])
+  const index = ships.findIndex((ship) => String(ship.campaignId) === String(campaignId))
+  if (index === -1) return null
+
+  const ship = { ...ships[index] }
+  ship.imageUrls = (ship.imageUrls || []).filter((url) => url !== imageUrl)
+  ship.version = Number(ship.version || 0) + 1
+  ship.updatedAt = new Date().toISOString()
+  ships[index] = ship
+  setData(KEYS.SHIPS, ships)
+  return ship
 }
 
 function extractId(url) {
@@ -192,6 +271,23 @@ const guestAxios = {
       return Promise.resolve({ data: withVisibleBackstories(characters) })
     }
 
+    // Campaign Ship Routing Logic (must precede the campaigns block)
+    if (url.includes('campaigns') && url.includes('/ship')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship/)
+      const campaignId = match ? match[1] : null
+      const ship = campaignId ? findShip(campaignId) : null
+      if (!ship) {
+        return Promise.reject({
+          response: {
+            data: { message: 'Ship not found for campaign: ' + campaignId },
+            status: 404,
+            handled: false,
+          },
+        })
+      }
+      return Promise.resolve({ data: ship })
+    }
+
     // Campaigns Routing Logic
     if (url.includes('campaigns')) {
       const id = extractId(url)
@@ -235,6 +331,16 @@ const guestAxios = {
   post(url, data = {}) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] POST -> ${url}`)
+
+    // Ship images (must precede the campaign image branch)
+    if (url.includes('campaigns') && url.includes('/ship/image')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/image/)
+      return Promise.resolve({ data: applyShipImageUpload(match ? match[1] : null, false) })
+    }
+    if (url.includes('campaigns') && url.includes('/ship/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/images/)
+      return Promise.resolve({ data: applyShipImageUpload(match ? match[1] : null, true) })
+    }
 
     if (url.includes('campaigns') && url.includes('/image')) {
       return Promise.resolve({
@@ -309,13 +415,21 @@ const guestAxios = {
         ownerId: 'guest_demo',
         name: data.name || 'New Campaign',
         description: data.description || '',
+        privateDescription: data.privateDescription || null,
         imageUrl: '/default-campaign.svg',
+        primarySystem: data.primarySystem || null,
         participants: [{ id: 'guest_demo', nickname: 'You (DM)', role: 'GM' }],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
       campaigns.push(newCampaign)
       setData(KEYS.CAMPAIGNS, campaigns)
+
+      // An Offworlders campaign always owns a ship.
+      if (newCampaign.primarySystem === 'OFFWORLDERS') {
+        ensureDefaultShip(newCampaign.id)
+      }
+
       return Promise.resolve({ data: newCampaign })
     }
 
@@ -343,6 +457,52 @@ const guestAxios = {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] PUT -> ${url}`)
 
+    // Campaign Ship (upsert with optimistic concurrency)
+    if (url.includes('campaigns') && url.includes('/ship')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship/)
+      const campaignId = match ? match[1] : null
+      const ships = getData(KEYS.SHIPS, [])
+      const index = ships.findIndex((s) => String(s.campaignId) === String(campaignId))
+
+      if (index === -1) {
+        const ship = {
+          ...data,
+          id: generateId(),
+          campaignId: String(campaignId),
+          version: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        ships.push(ship)
+        setData(KEYS.SHIPS, ships)
+        return Promise.resolve({ data: ship })
+      }
+
+      const current = ships[index]
+      if (
+        data.version !== undefined &&
+        data.version !== null &&
+        Number(data.version) !== Number(current.version)
+      ) {
+        return Promise.reject({
+          response: {
+            data: { message: 'The ship was updated by someone else. Reload and try again.' },
+            status: 409,
+            handled: false,
+          },
+        })
+      }
+
+      ships[index] = {
+        ...current,
+        ...data,
+        version: Number(current.version) + 1,
+        updatedAt: new Date().toISOString(),
+      }
+      setData(KEYS.SHIPS, ships)
+      return Promise.resolve({ data: ships[index] })
+    }
+
     if (url.includes('campaigns')) {
       const id = extractId(url)
       if (id) {
@@ -351,6 +511,12 @@ const guestAxios = {
         if (index !== -1) {
           campaigns[index] = { ...campaigns[index], ...data, updatedAt: new Date().toISOString() }
           setData(KEYS.CAMPAIGNS, campaigns)
+
+          // Switching a campaign to Offworlders creates its ship the first time.
+          if (campaigns[index].primarySystem === 'OFFWORLDERS') {
+            ensureDefaultShip(campaigns[index].id)
+          }
+
           return Promise.resolve({ data: campaigns[index] })
         }
       }
@@ -530,6 +696,14 @@ const guestAxios = {
       }
     }
 
+    // 3b. Remove a ship gallery image (must precede the campaign delete block)
+    if (url.includes('campaigns') && url.includes('/ship/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/images/)
+      const campaignId = match ? match[1] : null
+      const params = new URLSearchParams(url.split('?')[1] || '')
+      return Promise.resolve({ data: removeShipGalleryImage(campaignId, params.get('url')) })
+    }
+
     // 4. Delete Campaign Fully
     if (url.includes('campaigns')) {
       const id = extractId(url)
@@ -546,6 +720,13 @@ const guestAxios = {
           characters.map((c) =>
             String(c.campaignId) === String(id) ? { ...c, campaignId: null } : c,
           ),
+        )
+
+        // A campaign's ship is removed with the campaign.
+        const ships = getData(KEYS.SHIPS, [])
+        setData(
+          KEYS.SHIPS,
+          ships.filter((s) => String(s.campaignId) !== String(id)),
         )
         return Promise.resolve({ data: { deleted: true } })
       }

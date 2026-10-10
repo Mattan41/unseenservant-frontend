@@ -13,6 +13,7 @@ import {
 import {
   createEmptyOffworldersData,
   normalizeOffworldersData,
+  offworldersHealthLabel,
   OFFWORLDERS_SYSTEM_TYPE,
 } from '@/systems/offworlders/constants.js'
 
@@ -46,6 +47,18 @@ export function normalizeData(systemType, raw) {
   if (systemType === DND5E_SYSTEM_TYPE) return normalizeDnd5eData(raw)
   if (systemType === OFFWORLDERS_SYSTEM_TYPE) return normalizeOffworldersData(raw)
   return null
+}
+
+/**
+ * Compact health label for the character list / party badges (e.g. `"15/13"`),
+ * derived from the character's system data so a badge can never drift from the
+ * sheet it links to.
+ * @param {object|null|undefined} character
+ * @returns {string} the label, or an empty string for systems without health
+ */
+export function characterHealthLabel(character) {
+  if (character?.offworlders) return offworldersHealthLabel(character.offworlders)
+  return ''
 }
 
 /** Every system's empty block, keyed by property name (for the form model). */

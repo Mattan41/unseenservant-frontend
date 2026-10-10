@@ -4,6 +4,7 @@ import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
+import { characterHealthLabel } from '@/features/character/dispatchers/systemRegistry.js'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
@@ -101,7 +102,7 @@ const viewCharacter = (id) => {
                 <span v-if="character.offworlders.characterClass" class="character-tag">
                   {{ character.offworlders.characterClass }}
                 </span>
-                <span class="character-tag-level">Health {{ character.offworlders.health }}</span>
+                <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
               </template>
               <span v-else class="character-tag">{{ character.systemType }}</span>
             </div>

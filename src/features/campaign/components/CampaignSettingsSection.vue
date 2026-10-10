@@ -13,6 +13,8 @@ import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CampaignDetailsForm from '@/features/campaign/components/CampaignDetailsForm.vue'
+import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
+import CampaignSettings from '@/features/campaign/components/CampaignSettings.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { getParticipantDisplayName } from '@/features/campaign/campaignUtils.js'
 
@@ -70,6 +72,8 @@ const details = computed(() => ({
   id: campaign.value?.id,
   title: campaign.value?.name || '',
   description: campaign.value?.description || '',
+  privateDescription: campaign.value?.privateDescription || '',
+  primarySystem: campaign.value?.primarySystem || null,
   imageUrl: campaign.value?.imageUrl || '/default-campaign.svg',
 }))
 
@@ -80,6 +84,8 @@ const saveDetails = async (updated) => {
     await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updated.title,
       description: updated.description,
+      privateDescription: updated.privateDescription,
+      primarySystem: updated.primarySystem,
     })
 
     if (updated.imageFile) {
@@ -89,6 +95,8 @@ const saveDetails = async (updated) => {
 
     campaign.value.name = updated.title
     campaign.value.description = updated.description
+    campaign.value.privateDescription = updated.privateDescription
+    campaign.value.primarySystem = updated.primarySystem
     emit('updated')
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
   } catch (error) {
@@ -133,15 +141,25 @@ const transferOwnership = () => {
 }
 </script>
 <template>
-  <div v-if="campaign && isOwner" class="space-y-6">
-    <!-- Details -->
-    <div class="rounded-lg shadow-md p-4" style="background-color: var(--color-primary-200)">
+  <div v-if="campaign" class="space-y-6">
+    <!-- Personal settings — every participant sets their own nickname here -->
+    <CampaignSettings :campaign-id="campaignId" @updated="$emit('updated')" />
+
+    <!-- Participant roster (view for all; owner/GM manage) -->
+    <CampaignParticipants :campaign-id="campaignId" @participants-updated="$emit('updated')" />
+
+    <!-- Details (owner only) -->
+    <div
+      v-if="isOwner"
+      class="rounded-lg shadow-md p-4"
+      style="background-color: var(--color-primary-200)"
+    >
       <h4 class="text-lg font-semibold mb-4">Campaign Details</h4>
       <CampaignDetailsForm :campaign="details" :saving="isSaving" @save="saveDetails" />
     </div>
 
-    <!-- Danger Zone -->
-    <div class="danger-zone">
+    <!-- Danger Zone (owner only) -->
+    <div v-if="isOwner" class="danger-zone">
       <h4 class="danger-zone-title">Danger Zone</h4>
 
       <!-- Transfer ownership -->
@@ -151,11 +169,7 @@ const transferOwnership = () => {
           Hand over full control of this campaign to another participant.
         </p>
         <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <select
-            v-model="transferTargetId"
-            class="p-2 rounded"
-            style="background-color: var(--color-primary-50)"
-          >
+          <select v-model="transferTargetId" class="input-field p-2 rounded">
             <option value="">Select a participant…</option>
             <option
               v-for="participant in transferCandidates"

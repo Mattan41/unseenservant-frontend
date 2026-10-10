@@ -5,12 +5,10 @@ import {
   OFFWORLDERS_ABILITY_DESCRIPTIONS,
   OFFWORLDERS_SKILL_DESCRIPTIONS,
   OFFWORLDERS_SUPPLY_MAX,
-  abilityVitalsBonus,
   armorLabel,
   damageForWeaponType,
-  deriveHealth,
-  effectiveArmor,
   isWeaponHeavy,
+  offworldersVitals,
   resolveEntryDescription,
 } from '@/systems/offworlders/constants.js'
 
@@ -33,16 +31,8 @@ const items = computed(() => offworlders.value.items || [])
 
 // Vitals always reflect their sources (attributes, worn armor, abilities), so the
 // sheet stays correct even for characters saved before automatic derivation.
-const abilityBonus = computed(() => abilityVitalsBonus(abilities.value))
-const maxHealth = computed(() =>
-  deriveHealth(
-    offworlders.value.stats,
-    abilityBonus.value.health + (Number(offworlders.value.healthModifier) || 0),
-  ),
-)
-const effectiveArmorValue = computed(() =>
-  effectiveArmor(offworlders.value.armor, abilityBonus.value.armor),
-)
+const vitals = computed(() => offworldersVitals(offworlders.value))
+const effectiveArmorValue = computed(() => vitals.value.effectiveArmor)
 
 function skillDescription(entry) {
   return resolveEntryDescription(entry, OFFWORLDERS_SKILL_DESCRIPTIONS)
@@ -60,7 +50,7 @@ function abilityDescription(entry) {
       <div class="flex flex-wrap gap-6 text-default">
         <p><strong>Class:</strong> {{ offworlders.characterClass || '—' }}</p>
         <p><strong>Species:</strong> {{ offworlders.species || '—' }}</p>
-        <p><strong>HP:</strong> {{ offworlders.currentHealth ?? maxHealth }} / {{ maxHealth }}</p>
+        <p><strong>HP:</strong> {{ vitals.currentHealth }} / {{ vitals.maxHealth }}</p>
         <p><strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}</p>
         <p><strong>Supply:</strong> {{ offworlders.supply ?? 0 }} / {{ OFFWORLDERS_SUPPLY_MAX }}</p>
         <p><strong>Credits:</strong> {{ offworlders.credits ?? 0 }}</p>

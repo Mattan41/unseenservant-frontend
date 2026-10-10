@@ -3,27 +3,43 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
-import CampaignSettings from '@/features/campaign/components/CampaignSettings.vue'
-import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
 import CampaignSettingsSection from '@/features/campaign/components/CampaignSettingsSection.vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
+import { characterHealthLabel } from '@/features/character/dispatchers/systemRegistry.js'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
+import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
+import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
-import { getCharacterOwnerName } from '@/features/campaign/campaignUtils.js'
+import {
+  getCharacterOwnerName,
+  getParticipantDisplayName,
+  getRoleBadgeClass,
+} from '@/features/campaign/campaignUtils.js'
+import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
+import { useShipStore } from '@/features/ship/shipStore.js'
+import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConstants.js'
+import { confirmDiscardUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import {
+  CAMPAIGN_SYSTEM_LABELS,
+  DND5E_SYSTEM_TYPE,
+  OFFWORLDERS_SYSTEM_TYPE,
+  isOffworlders,
+} from '@/features/campaign/campaignSystems.js'
 
 const route = useRoute()
 const router = useRouter()
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
+const shipStore = useShipStore()
 
 const campaign = ref(null)
 const isLoading = ref(false)
@@ -33,7 +49,6 @@ const isInitialLoad = ref(true)
 const activeSection = ref('overview')
 
 // Local UI-state
-const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
 // Mobile campaign navigation drawer (triggered from the campaign top bar).
 const campaignNavOpen = ref(false)
@@ -43,9 +58,9 @@ const SECTIONS = [
   { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
   { key: 'characters', label: 'Characters', icon: 'characters' },
   { key: 'messages', label: 'Messages', icon: 'messages' },
-  { key: 'participants', label: 'Participants', icon: 'participants' },
-  { key: 'settings', label: 'Settings', icon: 'settings' },
-  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'edit', ownerOnly: true },
+  { key: 'ship', label: 'Ship', icon: 'ship', system: OFFWORLDERS_SYSTEM_TYPE },
+  { key: 'spells', label: 'Spell Search', icon: 'spells', system: DND5E_SYSTEM_TYPE },
+  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'settings' },
 ]
 
 /**
@@ -54,9 +69,32 @@ const SECTIONS = [
  * Participants/Settings; the owner-only "Campaign Settings" section is filtered
  * out for everyone else.
  */
-const navItems = computed(() => SECTIONS.filter((section) => !section.ownerOnly || isOwner.value))
+const navItems = computed(() =>
+  SECTIONS.filter((section) => {
+    if (section.ownerOnly && !isOwner.value) return false
+    // System-specific sections only appear when the campaign's primary system
+    // matches (e.g. the Offworlders Ship, the D&D 5e spell search).
+    if (section.system && campaign.value?.primarySystem !== section.system) return false
+    return true
+  }),
+)
+
+/**
+ * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
+ * so the name is not repeated inside the sheet itself. Falls back to plain
+ * "Ship" while the ship is still loading or unnamed.
+ */
+const shipSectionTitle = computed(() => {
+  const name = shipStore.ship?.name
+  return name ? `Ship: ${name}` : 'Ship'
+})
 
 function selectSection(key) {
+  if (key === activeSection.value) return
+  // Section switching is local state, so the router guards never fire — ask any
+  // active form (e.g. the ship sheet or campaign details) to confirm discarding
+  // unsaved edits before we swap the section out.
+  if (!confirmDiscardUnsavedChanges()) return
   if (navItems.value.some((section) => section.key === key)) {
     activeSection.value = key
   }
@@ -64,10 +102,20 @@ function selectSection(key) {
 
 function resetPresentationState() {
   activeSection.value = 'overview'
-  descriptionExpanded.value = false
   showImportModal.value = false
   campaignNavOpen.value = false
 }
+
+// Keep the active section valid when the campaign's primary system (and thus
+// the available system-specific sections) changes: fall back to Overview.
+watch(
+  () => campaign.value?.primarySystem,
+  () => {
+    if (!navItems.value.some((section) => section.key === activeSection.value)) {
+      activeSection.value = 'overview'
+    }
+  },
+)
 
 // Ownership is separate from table role: only the owner controls the campaign.
 const isOwner = computed(() => {
@@ -92,9 +140,17 @@ const loadCampaignData = async (campaignId) => {
   resetPresentationState()
   messageStore.clearMessages()
 
+  // Fresh campaign: drop any ship state from a previously viewed campaign,
+  // then load this campaign's ship (when Offworlders) so the Overview summary
+  // and the Ship section share a single store.
+  shipStore.clearShip()
+
   try {
     campaign.value = await campaignStore.fetchCampaign(campaignId)
     await campaignStore.fetchCharactersForCampaign(campaignId)
+    if (isOffworlders(campaign.value?.primarySystem)) {
+      await shipStore.fetchShip(campaignId)
+    }
   } catch (error) {
     console.error('Failed to load campaign:', error)
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
@@ -121,6 +177,16 @@ const participantCount = computed(() => participants.value.length)
 const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM').length)
 const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
 const characterCount = computed(() => campaignCharacters.value.length)
+
+// Overview: the campaign's ruleset label, a capped party preview, and the
+// Offworlders-only ship card (data is loaded by `loadCampaignData`).
+const primarySystemLabel = computed(
+  () => CAMPAIGN_SYSTEM_LABELS[campaign.value?.primarySystem] || 'Not set',
+)
+const isOffworldersCampaign = computed(() => isOffworlders(campaign.value?.primarySystem))
+const partyPreview = computed(() => campaignCharacters.value.slice(0, 6))
+const shipSummary = computed(() => shipStore.ship)
+const isShipLoading = computed(() => shipStore.isLoading)
 
 // Description is framed as the campaign's world lore/background block.
 const campaignDescription = computed(() => {
@@ -168,10 +234,6 @@ const removeCharacter = async (characterId) => {
   }
 }
 
-const toggleDescription = () => {
-  descriptionExpanded.value = !descriptionExpanded.value
-}
-
 /**
  * Refresh role/participant data after a mutation without losing the section
  * the user is currently looking at.
@@ -195,6 +257,7 @@ onUnmounted(() => {
     campaignStore.clearCampaignCharacters(safeId)
   }
   messageStore.clearMessages()
+  shipStore.clearShip()
 })
 
 // Load data and reset presentation mode when changing campaign
@@ -218,11 +281,11 @@ watch(
   <div v-else-if="campaign" class="flex flex-col md:flex-row md:items-stretch md:h-full">
     <!-- Mobile campaign bar: title + local navigation trigger -->
     <div class="campaign-mobile-bar">
-      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
       <BaseButton variant="default" class="campaign-nav-trigger" @click="campaignNavOpen = true">
         <CampaignNavIcon name="menu" class="w-5 h-5 flex-shrink-0" />
         <span>Campaign Views</span>
       </BaseButton>
+      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
     </div>
 
     <!-- Contextual in-campaign navigation (rail on desktop, drawer on mobile) -->
@@ -237,15 +300,17 @@ watch(
 
     <!-- Active section content -->
     <div class="flex-1 min-w-0 p-4">
+      <!-- Campaign image for every section except the ship, which shows its own image. -->
+      <CampaignHeader
+        v-if="activeSection !== 'ship'"
+        :title="campaignStore.getCampaignTitle(campaign.id)"
+        :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
+      />
+
       <!-- Overview -->
       <section v-if="activeSection === 'overview'">
-        <CampaignHeader
-          :title="campaignStore.getCampaignTitle(campaign.id)"
-          :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
-        />
-
         <BaseSection title="Campaign Summary">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <BaseCard>
               <p class="text-xs uppercase text-muted">Participants</p>
               <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
@@ -259,56 +324,159 @@ watch(
             </BaseCard>
 
             <BaseCard>
-              <div>
-                <p class="text-xs uppercase text-muted">Roster</p>
-                <p class="text-sm text-default mt-1">Roles, invites &amp; ownership</p>
-              </div>
-              <BaseButton
-                variant="link"
-                class="mt-2 self-start"
-                @click="selectSection('participants')"
-              >
-                View participants
-              </BaseButton>
+              <p class="text-xs uppercase text-muted">System</p>
+              <p class="text-lg font-bold text-default mt-1">{{ primarySystemLabel }}</p>
+              <p class="text-sm text-muted mt-1">primary ruleset</p>
             </BaseCard>
           </div>
         </BaseSection>
-      </section>
 
-      <!-- World Lore & Background -->
-      <BaseSection v-else-if="activeSection === 'lore'" title="World Lore &amp; Background">
-        <BaseCard>
-          <p v-if="!campaignDescription" class="italic text-muted text-sm">
-            No background has been recorded for this campaign yet.
-          </p>
-          <template v-else>
-            <p
-              class="text-default text-sm whitespace-pre-line break-words"
-              :class="{ 'line-clamp-6': !descriptionExpanded }"
-            >
-              {{ campaignDescription }}
+        <!-- Campaign background (opening lines; expands in place) -->
+        <BaseSection title="About This Campaign">
+          <BaseCard>
+            <p v-if="!campaignDescription" class="italic text-muted text-sm">
+              No background has been recorded for this campaign yet.
             </p>
-            <BaseButton
-              v-if="campaignDescription.length > 220"
-              variant="link"
-              class="mt-2"
-              @click="toggleDescription"
-            >
-              {{ descriptionExpanded ? 'Show less' : 'Read more' }}
+            <BaseClampedText v-else :text="campaignDescription" :lines="4" />
+          </BaseCard>
+        </BaseSection>
+
+        <!-- Party preview -->
+        <BaseSection title="The Party">
+          <template #actions>
+            <BaseButton variant="default" @click="selectSection('characters')">
+              View all characters
             </BaseButton>
           </template>
-        </BaseCard>
-      </BaseSection>
+
+          <div v-if="!partyPreview.length" class="empty-cta">
+            <p class="text-muted text-sm italic">
+              No characters have been added to this campaign yet.
+            </p>
+            <BaseButton variant="add" @click="showImportModal = true">
+              Import your first character
+            </BaseButton>
+          </div>
+
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <BaseCard
+              v-for="character in partyPreview"
+              :key="character.id"
+              clickable
+              class="h-full"
+              @click="openCharacter(character)"
+            >
+              <div class="flex items-start gap-3">
+                <CharacterImage
+                  :src="character.avatarUrl"
+                  :alt="`${character.name || 'Character'} portrait`"
+                  class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
+                  style="border-color: var(--color-primary-300)"
+                />
+                <div class="flex-1 min-w-0">
+                  <h5
+                    class="character-name text-base font-semibold line-clamp-2 break-words"
+                    :title="character.name"
+                  >
+                    {{ character.name || 'Unnamed Character' }}
+                  </h5>
+                  <div class="mt-1">
+                    <span class="badge badge-secondary text-xs">
+                      Played by: {{ getCharacterOwnerName(character, participants) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </BaseCard>
+          </div>
+        </BaseSection>
+
+        <!-- Ship summary (Offworlders campaigns only) -->
+        <BaseSection v-if="isOffworldersCampaign" title="The Ship">
+          <template #actions>
+            <BaseButton variant="default" @click="selectSection('ship')">View ship</BaseButton>
+          </template>
+
+          <BaseCard v-if="shipSummary" clickable @click="selectSection('ship')">
+            <div class="flex items-start gap-4">
+              <CampaignImage
+                :src="shipSummary.imageUrl"
+                :alt="shipSummary.name || 'Ship'"
+                :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
+                class="w-24 h-24 rounded-lg border-2 object-cover flex-shrink-0"
+                style="border-color: var(--color-primary-300)"
+              />
+              <div class="flex-1 min-w-0">
+                <h5 class="text-base font-semibold break-words">
+                  {{ shipSummary.name || 'Unnamed Ship' }}
+                </h5>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <span class="character-tag">
+                    Hull {{ shipSummary.hull }}/{{ shipSummary.hullMax }}
+                  </span>
+                  <span class="character-tag">Armor {{ shipSummary.armor }}</span>
+                  <span class="character-tag">Damage {{ shipSummary.damage }}</span>
+                  <span class="character-tag">
+                    Fuel {{ shipSummary.driveFuel }}/{{ shipSummary.maxDriveFuel }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </BaseCard>
+          <p v-else-if="isShipLoading" class="text-sm text-muted italic">Loading ship…</p>
+        </BaseSection>
+
+        <BaseSection title="Participants &amp; Roles">
+          <ul class="flex flex-col gap-2">
+            <li
+              v-for="participant in participants"
+              :key="participant.id"
+              class="flex items-center justify-between gap-2 border border-section rounded p-3"
+            >
+              <span class="text-default truncate">
+                {{ getParticipantDisplayName(participant) }}
+                <span
+                  v-if="String(participant.id) === String(campaign.ownerId)"
+                  class="text-sm text-muted"
+                >
+                  · Owner
+                </span>
+              </span>
+              <span class="badge" :class="getRoleBadgeClass(participant.role)">
+                {{ participant.role || 'PLAYER' }}
+              </span>
+            </li>
+          </ul>
+        </BaseSection>
+      </section>
+
+      <!-- World Lore & Background (public block + GM-only block for owner/GM) -->
+      <template v-else-if="activeSection === 'lore'">
+        <BaseSection title="World Lore &amp; Background">
+          <BaseCard>
+            <p v-if="!campaignDescription" class="italic text-muted text-sm">
+              No background has been recorded for this campaign yet.
+            </p>
+            <p v-else class="text-default text-sm whitespace-pre-line break-words">
+              {{ campaignDescription }}
+            </p>
+          </BaseCard>
+        </BaseSection>
+
+        <!-- Only returned to the owner/GM by the API, so this block is hidden for players. -->
+        <BaseSection v-if="campaign.privateDescription" title="Only the GM Can See This">
+          <BaseCard>
+            <p class="text-default text-sm whitespace-pre-line break-words">
+              {{ campaign.privateDescription }}
+            </p>
+          </BaseCard>
+        </BaseSection>
+      </template>
 
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
         <template #actions>
-          <BaseButton
-            variant="default"
-            class="inline-flex items-center gap-1"
-            @click="showImportModal = true"
-          >
-            <CampaignNavIcon name="plus" class="w-4 h-4 flex-shrink-0" />
+          <BaseButton variant="default" icon="plus" @click="showImportModal = true">
             Import Character
           </BaseButton>
         </template>
@@ -377,7 +545,7 @@ watch(
                   <span v-if="character.offworlders.characterClass" class="character-tag">
                     {{ character.offworlders.characterClass }}
                   </span>
-                  <span class="character-tag-level">Health {{ character.offworlders.health }}</span>
+                  <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
                 </template>
                 <span v-else class="character-tag">{{ character.systemType }}</span>
               </div>
@@ -414,20 +582,24 @@ watch(
         <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
       </BaseSection>
 
-      <!-- Participants -->
-      <BaseSection v-else-if="activeSection === 'participants'" title="Participants">
-        <CampaignParticipants
-          :campaign-id="String(campaign.id)"
-          @participants-updated="handleParticipantsUpdated"
+      <!-- System-specific sections (Offworlders Ship / D&D 5e spell search) -->
+      <BaseSection v-else-if="activeSection === 'ship'" :title="shipSectionTitle">
+        <CampaignSystemRouter
+          :system-type="campaign.primarySystem"
+          section="ship"
+          :campaign-id="campaign.id"
         />
       </BaseSection>
 
-      <!-- Settings (personal) -->
-      <BaseSection v-else-if="activeSection === 'settings'" title="Settings">
-        <CampaignSettings :campaign-id="String(campaign.id)" @updated="handleParticipantsUpdated" />
+      <BaseSection v-else-if="activeSection === 'spells'" title="Spell Search">
+        <CampaignSystemRouter
+          :system-type="campaign.primarySystem"
+          section="spells"
+          :campaign-id="campaign.id"
+        />
       </BaseSection>
 
-      <!-- Campaign Settings (owner only) -->
+      <!-- Settings: personal nickname + participants + (owner) campaign details -->
       <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
         <CampaignSettingsSection
           :campaign-id="String(campaign.id)"

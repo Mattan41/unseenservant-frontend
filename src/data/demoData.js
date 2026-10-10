@@ -277,8 +277,8 @@ export const guestCharacters = [
       characterClass: 'Outlaw',
       species: 'Human',
       xp: 3,
-      health: 15,
-      currentHealth: 15,
+      health: 16,
+      currentHealth: 16,
       healthModifier: 0,
       armor: 1,
       supply: 2,
@@ -336,6 +336,9 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
 Game Etiquette: Pay attention when it’s not your turn, avoid distracting side conversations, and minimize phone use during sessions.
 Have Fun: Remember, the goal is collective storytelling and enjoyment. Support your fellow players and embrace the horror-adventure together!`,
     imageUrl: 'https://www.dndbeyond.com/attachments/8/220/cos-cover-4k.jpg',
+    primarySystem: 'DND5E',
+    privateDescription:
+      'Strahd is not merely toying with the party: he believes one of them carries the reincarnated soul of Tatyana. The amber sarcophagi in the catacombs each hold a dark vestige that will bargain for freedom.',
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_demo', nickname: 'You - Guest', role: 'GM' },
@@ -358,6 +361,7 @@ Have Fun: Remember, the goal is collective storytelling and enjoyment. Support y
                  Dynamic Consequences: Choices matter—a trusting word or a misstep could change the course of your investigation, and the fate of Lundenwic itself.`,
     imageUrl:
       'https://c4.wallpaperflare.com/wallpaper/925/634/481/league-of-legends-bilgewater-fantasy-art-pirates-wallpaper-preview.jpg',
+    primarySystem: 'OFFWORLDERS',
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_player_1', nickname: 'User1', role: 'PLAYER' },
@@ -382,11 +386,33 @@ Have Fun: Remember, the goal is collective storytelling and enjoyment. Support y
                         or will the Iron Colossus become your tomb beneath the relentless steam and steel?
                         `,
     imageUrl: 'https://slyflourish.com/images/eberron_warforged.jpg',
+    primarySystem: null,
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_player_1', nickname: 'User1', role: 'GM' },
       { id: 'guest_demo', nickname: 'You - Guest', role: 'PLAYER' },
     ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+]
+
+export const guestShips = [
+  {
+    id: 'guest_ship_1',
+    campaignId: 'guest_campaign_2',
+    version: 0,
+    name: 'The Null Gravitas',
+    hull: 15,
+    hullMax: 15,
+    armor: 1,
+    damage: '1D6',
+    driveFuel: 4,
+    maxDriveFuel: 6,
+    upgrades: ['Additional Armor', 'Fuel Tanks'],
+    notes: 'Cargo: a sealed crate for the Lundenwic job. Passengers: none yet.',
+    imageUrl: '',
+    imageUrls: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -440,6 +466,7 @@ export function seedLocalStorage() {
     localStorage.setItem('guest_users', JSON.stringify(guestUsers))
     localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
     localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
+    localStorage.setItem('guest_ships', JSON.stringify(guestShips))
     localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
     console.log('[Seed] Guest data successfully initialized in localStorage!')
   }

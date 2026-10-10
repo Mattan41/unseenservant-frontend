@@ -72,12 +72,14 @@ const saveDisplayName = async () => {
               <div>
                 <label class="block text-sm font-medium text-default mb-1">Display Name</label>
 
-                <!-- View mode - uppdateras automatiskt! -->
+                <!-- View mode - updates automatically -->
                 <div v-if="!editForm.isEditing" class="flex justify-between items-center">
                   <div class="profile-value flex-grow">
                     {{ displayName }}
                   </div>
-                  <BaseButton variant="default" class="ml-2" @click="startEditing">Edit</BaseButton>
+                  <BaseButton variant="update" icon="edit" class="ml-2" @click="startEditing">
+                    Edit
+                  </BaseButton>
                 </div>
 
                 <!-- Edit mode -->

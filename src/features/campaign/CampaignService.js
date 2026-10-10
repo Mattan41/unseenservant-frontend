@@ -11,8 +11,13 @@ const CampaignService = {
     return response.data
   },
 
-  async createCampaign(name, description) {
-    const response = await apiClient.post('api/campaigns', { name, description })
+  async createCampaign(name, description, primarySystem = null, privateDescription = null) {
+    const response = await apiClient.post('api/campaigns', {
+      name,
+      description,
+      privateDescription,
+      primarySystem,
+    })
     return response.data
   },
 
@@ -27,9 +32,18 @@ const CampaignService = {
     return response.data
   },
 
-  // this method updates the campaign name and description together
-  async updateCampaignInfo(campaignId, { name, description }) {
-    const response = await apiClient.put(`api/campaigns/${campaignId}`, { name, description })
+  // this method updates the campaign name, description, private (GM-only)
+  // description and primary system together
+  async updateCampaignInfo(
+    campaignId,
+    { name, description, privateDescription = null, primarySystem = null },
+  ) {
+    const response = await apiClient.put(`api/campaigns/${campaignId}`, {
+      name,
+      description,
+      privateDescription,
+      primarySystem,
+    })
     return response.data
   },
 
