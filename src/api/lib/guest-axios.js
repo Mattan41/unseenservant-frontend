@@ -365,6 +365,7 @@ const guestAxios = {
         ownerId: 'guest_demo',
         name: data.name || 'New Campaign',
         description: data.description || '',
+        privateDescription: data.privateDescription || null,
         imageUrl: '/default-campaign.svg',
         primarySystem: data.primarySystem || null,
         participants: [{ id: 'guest_demo', nickname: 'You (DM)', role: 'GM' }],

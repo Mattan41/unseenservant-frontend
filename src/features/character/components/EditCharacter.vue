@@ -8,6 +8,7 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DEFAULT_SYSTEM_TYPE,
   SYSTEM_OPTIONS,
@@ -49,6 +50,18 @@ const character = ref({
 
 const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
+// Warn before leaving the edit form with unsaved changes. The snapshot is
+// taken once the character has loaded.
+const characterSnapshot = ref('')
+let hasSaved = false
+useUnsavedChanges(
+  () =>
+    !hasSaved &&
+    !!characterSnapshot.value &&
+    JSON.stringify(character.value) !== characterSnapshot.value,
+  'You have unsaved changes. Leave without saving?',
+)
+
 const characterImageUrl = computed(() => {
   if (previewImage.value) return previewImage.value
   return character.value.avatarUrl
@@ -68,6 +81,7 @@ onMounted(async () => {
         avatarUrl: fetchedCharacter.avatarUrl,
         ...normalizeCharacterBlocks(fetchedCharacter),
       }
+      characterSnapshot.value = JSON.stringify(character.value)
     } else {
       notificationStore.addNotification('Character not found', 'error', 4000)
     }
@@ -146,6 +160,7 @@ const submitCharacter = async () => {
     const updatedCharacter = await characterStore.updateCharacter(characterId.value, payload)
 
     if (updatedCharacter) {
+      hasSaved = true
       notificationStore.addNotification('Character updated successfully!', 'success', 3000)
       await router.push(goToCharacterView())
     }

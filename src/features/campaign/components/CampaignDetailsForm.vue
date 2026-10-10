@@ -12,6 +12,7 @@ import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const props = defineProps({
   /** `{ id, title, description, imageUrl }` for the campaign being edited. */
@@ -33,6 +34,7 @@ const isGuestMode = computed(() => authStore.isGuest)
 
 const editedName = ref(props.campaign.title || '')
 const editedDescription = ref(props.campaign.description || '')
+const editedPrivateDescription = ref(props.campaign.privateDescription || '')
 const editedPrimarySystem = ref(props.campaign.primarySystem || '')
 const fileInput = ref(null)
 const selectedFile = ref(null)
@@ -78,10 +80,22 @@ function saveChanges() {
     id: props.campaign.id,
     title: editedName.value,
     description: editedDescription.value,
+    privateDescription: editedPrivateDescription.value,
     primarySystem: editedPrimarySystem.value || null,
     imageFile: selectedFile.value,
   })
 }
+
+// Warn before navigating away with unsaved edits. Image-only changes are not
+// tracked here (the file is uploaded by the parent on save).
+useUnsavedChanges(
+  () =>
+    editedName.value !== (props.campaign.title || '') ||
+    editedDescription.value !== (props.campaign.description || '') ||
+    editedPrivateDescription.value !== (props.campaign.privateDescription || '') ||
+    (editedPrimarySystem.value || '') !== (props.campaign.primarySystem || ''),
+  'You have unsaved campaign changes. Leave without saving?',
+)
 </script>
 
 <template>
@@ -113,6 +127,21 @@ function saveChanges() {
           style="background-color: var(--color-primary-50)"
           rows="8"
           placeholder="Enter campaign description"
+        ></textarea>
+      </div>
+
+      <div>
+        <label for="campaign-private-description" class="block text-sm font-medium text-default mb-1">
+          Private description
+        </label>
+        <p class="text-xs text-muted mb-1">Only the GM can see this.</p>
+        <textarea
+          id="campaign-private-description"
+          v-model="editedPrivateDescription"
+          class="p-3 rounded w-full"
+          style="background-color: var(--color-primary-50)"
+          rows="6"
+          placeholder="Secrets only the GM should know"
         ></textarea>
       </div>
 

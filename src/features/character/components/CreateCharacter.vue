@@ -4,6 +4,7 @@ import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DEFAULT_SYSTEM_TYPE,
   SYSTEM_OPTIONS,
@@ -29,6 +30,14 @@ const character = ref({
 
 const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
+// Warn before leaving the create form with unsaved input.
+const characterSnapshot = JSON.stringify(character.value)
+let hasSaved = false
+useUnsavedChanges(
+  () => !hasSaved && JSON.stringify(character.value) !== characterSnapshot,
+  'You have unsaved changes. Leave without saving?',
+)
+
 const isSubmitting = ref(false)
 const formError = ref('')
 
@@ -52,6 +61,7 @@ const submitCharacter = async () => {
   try {
     const newCharacter = await characterStore.createCharacter(payload)
     if (newCharacter) {
+      hasSaved = true
       router.push({ name: 'CharacterView', params: { id: newCharacter.id } })
     }
   } catch (error) {

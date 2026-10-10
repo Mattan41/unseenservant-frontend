@@ -11,8 +11,13 @@ const CampaignService = {
     return response.data
   },
 
-  async createCampaign(name, description, primarySystem = null) {
-    const response = await apiClient.post('api/campaigns', { name, description, primarySystem })
+  async createCampaign(name, description, primarySystem = null, privateDescription = null) {
+    const response = await apiClient.post('api/campaigns', {
+      name,
+      description,
+      privateDescription,
+      primarySystem,
+    })
     return response.data
   },
 

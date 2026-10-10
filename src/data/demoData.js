@@ -337,6 +337,8 @@ Game Etiquette: Pay attention when it’s not your turn, avoid distracting side 
 Have Fun: Remember, the goal is collective storytelling and enjoyment. Support your fellow players and embrace the horror-adventure together!`,
     imageUrl: 'https://www.dndbeyond.com/attachments/8/220/cos-cover-4k.jpg',
     primarySystem: 'DND5E',
+    privateDescription:
+      'Strahd is not merely toying with the party: he believes one of them carries the reincarnated soul of Tatyana. The amber sarcophagi in the catacombs each hold a dark vestige that will bargain for freedom.',
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_demo', nickname: 'You - Guest', role: 'GM' },

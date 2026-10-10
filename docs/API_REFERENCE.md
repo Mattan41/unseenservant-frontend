@@ -443,7 +443,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.createCampaign(name, description)
 - **Store Action**: campaignStore.createCampaign(name, description)
 - **Guest Mode**: Mocked — creates campaign in guest_campaigns with generated ID
-- **Request**: `{ name, description, primarySystem? }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null
+- **Request**: `{ name, description, privateDescription?, primarySystem? }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null and `privateDescription` is the GM-only description
 - **Response**: CampaignResponseDTO
 - **Status Codes**: 201, 400, 401
 - **Notes**: Automatically fetches updated campaign list after successful creation. If `primarySystem` is `OFFWORLDERS`, the backend also creates the campaign's default ship.
@@ -477,7 +477,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.fetchCampaign(id)
 - **Store Action**: campaignStore.fetchCampaign(id)
 - **Guest Mode**: Mocked — finds campaign by ID in guest_campaigns
-- **Response**: CampaignResponseDTO `{ id, name, description, imageUrl, primarySystem, ownerId, participants }`
+- **Response**: CampaignResponseDTO `{ id, name, description, privateDescription, imageUrl, primarySystem, ownerId, participants }`
+- **Notes**: `privateDescription` is `null` unless the requester is the campaign owner or a campaign GM.
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires authorized participant per contract definition.
 
@@ -488,7 +489,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.updateCampaignInfo(campaignId, { name, description, primarySystem })
 - **Store Action**: campaignStore.updateCampaignInfo(campaignId, campaignData)
 - **Guest Mode**: Mocked — updates campaign in guest_campaigns
-- **Request**: `{ name, description, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null
+- **Request**: `{ name, description, privateDescription, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null and `privateDescription` is the GM-only description
 - **Response**: CampaignResponseDTO
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Updates local state immediately after successful API callback. Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent); changing away from `OFFWORLDERS` keeps the ship.

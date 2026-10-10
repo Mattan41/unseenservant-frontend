@@ -3,8 +3,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
-import CampaignSettings from '@/features/campaign/components/CampaignSettings.vue'
-import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
 import CampaignSettingsSection from '@/features/campaign/components/CampaignSettingsSection.vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
@@ -17,7 +15,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
-import { getCharacterOwnerName } from '@/features/campaign/campaignUtils.js'
+import { getCharacterOwnerName, getParticipantDisplayName, getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
 import {
   DND5E_SYSTEM_TYPE,
@@ -38,7 +36,6 @@ const isInitialLoad = ref(true)
 const activeSection = ref('overview')
 
 // Local UI-state
-const descriptionExpanded = ref(false)
 const showImportModal = ref(false)
 // Mobile campaign navigation drawer (triggered from the campaign top bar).
 const campaignNavOpen = ref(false)
@@ -50,9 +47,7 @@ const SECTIONS = [
   { key: 'messages', label: 'Messages', icon: 'messages' },
   { key: 'ship', label: 'Ship', icon: 'ship', system: OFFWORLDERS_SYSTEM_TYPE },
   { key: 'spells', label: 'Spell Search', icon: 'spells', system: DND5E_SYSTEM_TYPE },
-  { key: 'participants', label: 'Participants', icon: 'participants' },
-  { key: 'settings', label: 'Settings', icon: 'settings' },
-  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'edit', ownerOnly: true },
+  { key: 'campaign-settings', label: 'Campaign Settings', icon: 'settings' },
 ]
 
 /**
@@ -79,7 +74,6 @@ function selectSection(key) {
 
 function resetPresentationState() {
   activeSection.value = 'overview'
-  descriptionExpanded.value = false
   showImportModal.value = false
   campaignNavOpen.value = false
 }
@@ -194,10 +188,6 @@ const removeCharacter = async (characterId) => {
   }
 }
 
-const toggleDescription = () => {
-  descriptionExpanded.value = !descriptionExpanded.value
-}
-
 /**
  * Refresh role/participant data after a mutation without losing the section
  * the user is currently looking at.
@@ -263,15 +253,16 @@ watch(
 
     <!-- Active section content -->
     <div class="flex-1 min-w-0 p-4">
+      <!-- Campaign image is shown for every section -->
+      <CampaignHeader
+        :title="campaignStore.getCampaignTitle(campaign.id)"
+        :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
+      />
+
       <!-- Overview -->
       <section v-if="activeSection === 'overview'">
-        <CampaignHeader
-          :title="campaignStore.getCampaignTitle(campaign.id)"
-          :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
-        />
-
         <BaseSection title="Campaign Summary">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <BaseCard>
               <p class="text-xs uppercase text-muted">Participants</p>
               <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
@@ -283,21 +274,30 @@ watch(
               <p class="text-2xl font-bold text-default mt-1">{{ characterCount }}</p>
               <p class="text-sm text-muted mt-1">in this campaign</p>
             </BaseCard>
-
-            <BaseCard>
-              <div>
-                <p class="text-xs uppercase text-muted">Roster</p>
-                <p class="text-sm text-default mt-1">Roles, invites &amp; ownership</p>
-              </div>
-              <BaseButton
-                variant="link"
-                class="mt-2 self-start"
-                @click="selectSection('participants')"
-              >
-                View participants
-              </BaseButton>
-            </BaseCard>
           </div>
+        </BaseSection>
+
+        <BaseSection title="Participants &amp; Roles">
+          <ul class="flex flex-col gap-2">
+            <li
+              v-for="participant in participants"
+              :key="participant.id"
+              class="flex items-center justify-between gap-2 border border-section rounded p-3"
+            >
+              <span class="text-default truncate">
+                {{ getParticipantDisplayName(participant) }}
+                <span
+                  v-if="String(participant.id) === String(campaign.ownerId)"
+                  class="text-sm text-muted"
+                >
+                  · Owner
+                </span>
+              </span>
+              <span class="badge" :class="getRoleBadgeClass(participant.role)">
+                {{ participant.role || 'PLAYER' }}
+              </span>
+            </li>
+          </ul>
         </BaseSection>
       </section>
 
@@ -307,22 +307,17 @@ watch(
           <p v-if="!campaignDescription" class="italic text-muted text-sm">
             No background has been recorded for this campaign yet.
           </p>
-          <template v-else>
-            <p
-              class="text-default text-sm whitespace-pre-line break-words"
-              :class="{ 'line-clamp-6': !descriptionExpanded }"
-            >
-              {{ campaignDescription }}
+          <p v-else class="text-default text-sm whitespace-pre-line break-words">
+            {{ campaignDescription }}
+          </p>
+
+          <!-- Private description — only returned to the owner/GM by the API. -->
+          <div v-if="campaign.privateDescription" class="mt-4 pt-3 border-t border-section">
+            <p class="text-xs italic mb-1 text-muted">Private — only the GM can see this</p>
+            <p class="text-default text-sm whitespace-pre-line break-words">
+              {{ campaign.privateDescription }}
             </p>
-            <BaseButton
-              v-if="campaignDescription.length > 220"
-              variant="link"
-              class="mt-2"
-              @click="toggleDescription"
-            >
-              {{ descriptionExpanded ? 'Show less' : 'Read more' }}
-            </BaseButton>
-          </template>
+          </div>
         </BaseCard>
       </BaseSection>
 
@@ -457,20 +452,7 @@ watch(
         />
       </BaseSection>
 
-      <!-- Participants -->
-      <BaseSection v-else-if="activeSection === 'participants'" title="Participants">
-        <CampaignParticipants
-          :campaign-id="String(campaign.id)"
-          @participants-updated="handleParticipantsUpdated"
-        />
-      </BaseSection>
-
-      <!-- Settings (personal) -->
-      <BaseSection v-else-if="activeSection === 'settings'" title="Settings">
-        <CampaignSettings :campaign-id="String(campaign.id)" @updated="handleParticipantsUpdated" />
-      </BaseSection>
-
-      <!-- Campaign Settings (owner only) -->
+      <!-- Settings: personal nickname + participants + (owner) campaign details -->
       <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
         <CampaignSettingsSection
           :campaign-id="String(campaign.id)"
