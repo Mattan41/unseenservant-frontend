@@ -12,6 +12,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import {
@@ -268,14 +269,7 @@ useUnsavedChanges(
       />
     </div>
     <div v-else class="flex justify-end">
-      <BaseButton
-        variant="update"
-        class="inline-flex items-center gap-1"
-        @click="startEditing"
-      >
-        <CampaignNavIcon name="edit" class="w-4 h-4 flex-shrink-0" />
-        Edit ship
-      </BaseButton>
+      <BaseButton variant="update" icon="edit" @click="startEditing">Edit ship</BaseButton>
     </div>
 
     <!-- Profile image: in view mode it mirrors the campaign image banner; while
@@ -466,7 +460,9 @@ useUnsavedChanges(
         <h4 class="font-semibold text-default">Images</h4>
         <div class="flex items-center gap-2">
           <span class="text-xs text-muted">Drawings, maps, handouts — click to view</span>
-          <BaseButton v-if="editing" variant="add" @click="triggerGalleryInput">Add image</BaseButton>
+          <template v-if="editing">
+            <BaseButton variant="add" @click="triggerGalleryInput">Add image</BaseButton>
+          </template>
         </div>
       </div>
 
@@ -500,13 +496,13 @@ useUnsavedChanges(
 
     <!-- Sticky edit actions: a compact floating tag keeps Cancel / Save
          reachable while scrolling a long sheet, on mobile and desktop. -->
-    <div v-if="editing" class="sticky bottom-3 z-20 flex justify-end">
-      <div class="edit-bar">
-        <span v-if="isDirty" class="edit-bar-label">Unsaved changes</span>
-        <BaseButton variant="ghost" :disabled="saving" @click="cancelEditing">Cancel</BaseButton>
-        <BaseButton variant="add" :loading="saving" @click="submit">Save ship</BaseButton>
-      </div>
-    </div>
+    <BaseStickyActions
+      :dirty="isDirty"
+      :saving="saving"
+      save-label="Save ship"
+      @cancel="cancelEditing"
+      @save="submit"
+    />
 
     <!-- Image lightbox -->
     <BaseModal v-if="lightboxUrl" @close="lightboxUrl = null">

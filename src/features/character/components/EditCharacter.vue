@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
@@ -50,17 +51,17 @@ const character = ref({
 
 const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
-// Warn before leaving the edit form with unsaved changes. The snapshot is
-// taken once the character has loaded.
+// Warn before leaving the edit form with unsaved changes. The snapshot is taken
+// once the character has loaded and refreshed after every successful save, so
+// editing again re-arms the guard.
 const characterSnapshot = ref('')
-let hasSaved = false
-useUnsavedChanges(
-  () =>
-    !hasSaved &&
-    !!characterSnapshot.value &&
-    JSON.stringify(character.value) !== characterSnapshot.value,
-  'You have unsaved changes. Leave without saving?',
+
+/** True while the form differs from the last saved character. */
+const isDirty = computed(
+  () => !!characterSnapshot.value && JSON.stringify(character.value) !== characterSnapshot.value,
 )
+
+useUnsavedChanges(() => isDirty.value, 'You have unsaved changes. Leave without saving?')
 
 const characterImageUrl = computed(() => {
   if (previewImage.value) return previewImage.value
@@ -160,7 +161,9 @@ const submitCharacter = async () => {
     const updatedCharacter = await characterStore.updateCharacter(characterId.value, payload)
 
     if (updatedCharacter) {
-      hasSaved = true
+      // Re-arm the unsaved-changes guard: the current form state is now the
+      // saved baseline, and any further edit should warn again.
+      characterSnapshot.value = JSON.stringify(character.value)
       notificationStore.addNotification('Character updated successfully!', 'success', 3000)
       await router.push(goToCharacterView())
     }
@@ -179,7 +182,9 @@ const submitCharacter = async () => {
       <p class="mt-2 text-secondary">Loading character...</p>
     </div>
 
-    <div v-else class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
+    <!-- No `overflow-hidden` on the card: it would break the sticky save bar
+         rendered inside the form below. -->
+    <div v-else class="bg-[var(--color-surface)] rounded-lg shadow-lg">
       <div class="p-6 border-b border-section">
         <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">Edit Character</h1>
       </div>
@@ -317,20 +322,16 @@ const submitCharacter = async () => {
           <SystemFormRouter v-model="character" :system-type="character.systemType" />
         </div>
 
-        <!-- Form Action Buttons -->
-        <div class="flex justify-end space-x-3 mt-8">
-          <BaseButton
-            variant="ghost"
-            type="button"
-            :disabled="isSubmitting"
-            @click="router.push(goToCharacterView())"
-          >
-            Cancel
-          </BaseButton>
-          <BaseButton variant="add" type="submit" :disabled="isSubmitting" :loading="isSubmitting">
-            Save Changes
-          </BaseButton>
-        </div>
+        <!-- Sticky edit actions (shared base component): keeps Cancel / Save
+             reachable while scrolling the long system form. -->
+        <BaseStickyActions
+          class="mt-8"
+          :dirty="isDirty"
+          :saving="isSubmitting"
+          save-label="Save Changes"
+          @cancel="router.push(goToCharacterView())"
+          @save="submitCharacter"
+        />
       </form>
     </div>
 

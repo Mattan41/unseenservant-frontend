@@ -219,6 +219,9 @@ while editing a long form (e.g. the ship sheet's Cancel / Save). It deliberately
 uses the neutral `third` palette instead of a full-width white strip, so it reads
 as a floating tag. Position the wrapper with `sticky bottom-*`.
 
+Don't hand-roll the markup: use `<BaseStickyActions>` (see §2.6), which owns the
+sticky wrapper, the tag and the buttons.
+
 ### 2.6 Proposed new classes (not yet implemented)
 
 | Class | Purpose | Replaces | Status |
@@ -232,6 +235,8 @@ as a floating tag. Position the wrapper with `sticky bottom-*`.
 | `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close` on backdrop click). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. | implemented |
 | `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `plus`, `overview`, `lore`, `characters`, `participants`, `messages`, `settings`, `edit`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
 | `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
+| `<BaseButton icon="…">` prop | Leading icon on a text button | `icon` prop on `src/components/base/BaseButton.vue` renders a `BaseIcon` before the label (`.base-btn-with-icon` / `.base-btn-icon`: `inline-flex items-center gap-1`, `h-4 w-4`). Use it instead of hand-rolled `<CampaignNavIcon …>` + `inline-flex items-center gap-1` wrappers. Edit affordances should be `variant="update" icon="edit"` (`.base-btn-update`) so they read as the prominent action. | implemented |
+| `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue` and `EditCharacter.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
 | `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `CampaignSidebar` (campaign drawer). | implemented |
 ---
 

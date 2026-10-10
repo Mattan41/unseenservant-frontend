@@ -752,6 +752,16 @@ input {
   @apply hidden pl-2 text-xs font-medium text-third-600 sm:inline;
 }
 
+/* Button variant that renders an optional leading `BaseIcon` (see the `icon`
+   prop of `BaseButton.vue`). */
+.base-btn-with-icon {
+  @apply inline-flex items-center gap-1;
+}
+
+.base-btn-icon {
+  @apply h-4 w-4 flex-shrink-0;
+}
+
 /* Attribute score tile (shared by system stats panels) */
 .attribute-tile {
   @apply rounded-lg bg-third-200 p-2 text-center;

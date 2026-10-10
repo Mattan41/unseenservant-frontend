@@ -343,12 +343,7 @@ watch(
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
         <template #actions>
-          <BaseButton
-            variant="default"
-            class="inline-flex items-center gap-1"
-            @click="showImportModal = true"
-          >
-            <CampaignNavIcon name="plus" class="w-4 h-4 flex-shrink-0" />
+          <BaseButton variant="default" icon="plus" @click="showImportModal = true">
             Import Character
           </BaseButton>
         </template>
