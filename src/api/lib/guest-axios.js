@@ -83,6 +83,40 @@ function isGuestMode() {
   }
 }
 
+function currentGuestUserId() {
+  return getData(KEYS.USER, null)?.id || 'guest_demo'
+}
+
+function isGuestGameMaster(campaignId, userId) {
+  if (!campaignId) return false
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const campaign = campaigns.find((c) => String(c.id) === String(campaignId))
+  if (!campaign || !Array.isArray(campaign.participants)) return false
+  return campaign.participants.some((p) => String(p.id) === String(userId) && p.role === 'GM')
+}
+
+/**
+ * Mirrors the backend rule: the private backstory is returned only to the
+ * character's owner or the campaign GM. Everyone else gets it stripped out.
+ */
+function withVisibleBackstory(character) {
+  if (!character || typeof character !== 'object' || !('privateBackstory' in character)) {
+    return character
+  }
+  const viewerId = currentGuestUserId()
+  const isOwner = String(character.ownerId) === String(viewerId)
+  if (isOwner || isGuestGameMaster(character.campaignId, viewerId)) {
+    return character
+  }
+  const stripped = { ...character }
+  delete stripped.privateBackstory
+  return stripped
+}
+
+function withVisibleBackstories(characters) {
+  return Array.isArray(characters) ? characters.map(withVisibleBackstory) : characters
+}
+
 // ============================================================================
 // Guest Axios Mock Interface
 // ============================================================================
@@ -136,24 +170,26 @@ const guestAxios = {
         const match = url.match(/campaignId=([^&]+)/)
         const campaignId = match ? match[1] : null
         const filtered = characters.filter((c) => String(c.campaignId) === String(campaignId))
-        return Promise.resolve({ data: filtered })
+        return Promise.resolve({ data: withVisibleBackstories(filtered) })
       }
 
       if (url.includes('without-campaign')) {
-        return Promise.resolve({ data: characters.filter((c) => !c.campaignId) })
+        return Promise.resolve({ data: withVisibleBackstories(characters.filter((c) => !c.campaignId)) })
       }
 
       const id = extractId(url)
       if (id && id !== 'characters' && id !== 'me') {
         const character = characters.find((c) => String(c.id) === String(id))
-        return Promise.resolve({ data: character || null })
+        return Promise.resolve({ data: withVisibleBackstory(character || null) })
       }
 
       // Default profile filter or fallback all array rows
       if (url.includes('/me')) {
-        return Promise.resolve({ data: characters.filter((c) => c.ownerId === 'guest_demo') })
+        return Promise.resolve({
+          data: withVisibleBackstories(characters.filter((c) => c.ownerId === 'guest_demo')),
+        })
       }
-      return Promise.resolve({ data: characters })
+      return Promise.resolve({ data: withVisibleBackstories(characters) })
     }
 
     // Campaigns Routing Logic

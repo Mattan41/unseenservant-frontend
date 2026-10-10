@@ -4,7 +4,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import BaseTooltip from '@/components/base/BaseTooltip.vue'
 import IconButton from '@/components/base/IconButton.vue'
-import OffworldersItemsForm from '@/systems/offworlders/components/OffworldersItemsForm.vue'
+import OffworldersGearForm from '@/systems/offworlders/components/OffworldersGearForm.vue'
 import {
   OFFWORLDERS_CLASSES,
   OFFWORLDERS_ATTRIBUTES,
@@ -18,8 +18,9 @@ import {
   OFFWORLDERS_CLASS_INFO,
   OFFWORLDERS_SUPPLY_MAX,
   OFFWORLDERS_STANDARD_ARRAY,
+  OFFWORLDERS_ARMOR_OPTIONS,
   abilityVitalsBonus,
-  deriveArmor,
+  effectiveArmor,
   deriveHealth,
   standardArrayUsage,
   suggestedSkillsForClass,
@@ -52,13 +53,16 @@ const derivedHealth = computed(() =>
     abilityBonus.value.health + (Number(offworlders.value.healthModifier) || 0),
   ),
 )
-const derivedArmor = computed(() => deriveArmor(offworlders.value.items, abilityBonus.value.armor))
+// Armor is a single chosen value; only the passive ability bonus is added on
+// top for display, so the stored value stays the player's pick.
+const effectiveArmorValue = computed(() =>
+  effectiveArmor(offworlders.value.armor, abilityBonus.value.armor),
+)
 
-// Keep the stored vitals in step with their sources. Current HP is left alone:
-// it may deliberately exceed Max Health to represent temporary HP.
+// Keep the derived Max Health in step with its source. Current HP and the
+// chosen Armor are left alone (both are deliberate player input).
 watchEffect(() => {
   offworlders.value.health = derivedHealth.value
-  offworlders.value.armor = derivedArmor.value
 })
 
 // Every class's abilities, grouped, so the form can show them all and simply
@@ -169,23 +173,6 @@ function removeAbility(name) {
       </div>
     </div>
 
-    <div class="mb-4">
-      <label for="ow-look" class="block text-sm font-medium text-default mb-1">
-        <BaseTooltip
-          text="At least one distinct visual detail — clothing, a feature, or a possession — to help everyone picture the character."
-        >
-          Look
-        </BaseTooltip>
-      </label>
-      <input
-        id="ow-look"
-        v-model="offworlders.look"
-        type="text"
-        class="input-field w-full px-3 py-2 border border-input rounded-md"
-        placeholder="A short physical description"
-      />
-    </div>
-
     <!-- Vitals -->
     <h3 class="section-heading mb-3">Vitals</h3>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -237,21 +224,30 @@ function removeAbility(name) {
         />
       </div>
       <div class="mb-4">
-        <span class="block text-sm font-medium text-default mb-1">
+        <label for="ow-armor" class="block text-sm font-medium text-default mb-1">
           <BaseTooltip
-            text="The effective rating of the armor you wear, plus passive ability bonuses (e.g. Unstoppable's +1). Calculated automatically."
+            text="The armor you are wearing. Passive ability bonuses (e.g. Unstoppable's +1) are added on top automatically."
+            desktop-only
           >
             Armor
           </BaseTooltip>
-        </span>
-        <input
-          :value="derivedArmor"
-          type="number"
-          disabled
-          class="input-field w-full px-3 py-2 border border-input rounded-md opacity-70"
-        />
+        </label>
+        <select
+          id="ow-armor"
+          v-model.number="offworlders.armor"
+          class="input-field w-full px-3 py-2 border border-input rounded-md"
+        >
+          <option
+            v-for="option in OFFWORLDERS_ARMOR_OPTIONS"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.value }} — {{ option.label }}
+          </option>
+        </select>
         <p v-if="abilityBonus.armorSources.length" class="text-xs mt-1 text-muted">
-          +{{ abilityBonus.armor }} from {{ abilityBonus.armorSources.join(', ') }}
+          Effective {{ effectiveArmorValue }} (+{{ abilityBonus.armor }} from
+          {{ abilityBonus.armorSources.join(', ') }})
         </p>
       </div>
       <div class="mb-4">
@@ -482,8 +478,13 @@ function removeAbility(name) {
     </div>
     <p v-else class="text-sm mb-6 text-subtle">No abilities selected yet.</p>
 
-    <!-- Items -->
-    <OffworldersItemsForm v-model:items="offworlders.items" v-model:credits="offworlders.credits" />
+    <!-- Gear (typed weapons + free-text items) -->
+    <OffworldersGearForm
+      v-model:weapons="offworlders.weapons"
+      v-model:items="offworlders.items"
+      v-model:credits="offworlders.credits"
+      v-model:armor="offworlders.armor"
+    />
 
     <!-- Mobile info overlays (the full catalog does not fit inline). -->
     <BaseModal v-if="showDescriptions" @close="showDescriptions = false">

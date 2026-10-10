@@ -1,11 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import {
   createEmptyOffworldersData,
+  createEmptyOffworldersWeapon,
+  normalizeOffworldersWeapon,
   createEmptyOffworldersItem,
   normalizeOffworldersItem,
-  migrateGearToItems,
+  migrateLegacyOffworldersGear,
   damageForWeaponType,
-  deriveArmor,
+  weaponTypeForDamage,
+  normalizeWeaponCategory,
+  isWeaponHeavy,
+  clampArmor,
+  armorLabel,
+  effectiveArmor,
   abilityVitalsBonus,
   createEmptyOffworldersEntry,
   normalizeOffworldersEntry,
@@ -36,7 +43,10 @@ import {
   OFFWORLDERS_STARTING_SUPPLY,
   OFFWORLDERS_STARTING_CREDITS,
   OFFWORLDERS_WEAPON_TYPES,
+  OFFWORLDERS_WEAPON_CATEGORIES,
   OFFWORLDERS_ARMOR_TYPES,
+  OFFWORLDERS_ARMOR_OPTIONS,
+  OFFWORLDERS_ARMOR_MAX,
 } from '@/systems/offworlders/constants.js'
 
 describe('offworlders constants', () => {
@@ -55,6 +65,7 @@ describe('offworlders constants', () => {
     OFFWORLDERS_ATTRIBUTES.forEach((attr) => expect(data.stats[attr]).toBe(0))
     expect(data.skills).toEqual([])
     expect(data.abilities).toEqual([])
+    expect(data.weapons).toEqual([])
     expect(data.items).toEqual([])
   })
 
@@ -214,92 +225,165 @@ describe('offworlders gear + attribute helpers', () => {
       'Medium',
       'Heavy',
     ])
+    expect(OFFWORLDERS_WEAPON_CATEGORIES).toEqual(['Light', 'Medium', 'Heavy'])
     expect(OFFWORLDERS_ARMOR_TYPES.map((armor) => armor.rating)).toEqual([1, 2, 3])
+    expect(OFFWORLDERS_ARMOR_OPTIONS.map((option) => option.value)).toEqual([0, 1, 2, 3])
+    expect(OFFWORLDERS_ARMOR_OPTIONS.map((option) => option.label)).toEqual([
+      'None',
+      'Light',
+      'Heavy',
+      'Assault',
+    ])
   })
 
-  it('creates a fresh, empty item', () => {
-    const item = createEmptyOffworldersItem()
-    expect(item).toEqual({
-      name: '',
-      kind: 'item',
-      damage: '',
-      armorRating: 0,
-      heavy: false,
-      notes: '',
-    })
-    const other = createEmptyOffworldersItem()
-    other.name = 'X'
-    expect(item.name).toBe('')
-  })
-
-  it('normalizeOffworldersItem fills missing fields', () => {
-    const item = normalizeOffworldersItem({ name: 'Blaster', kind: 'weapon' })
-    expect(item.name).toBe('Blaster')
-    expect(item.kind).toBe('weapon')
-    expect(item.damage).toBe('')
-    expect(item.armorRating).toBe(0)
-    expect(item.heavy).toBe(false)
-    expect(normalizeOffworldersItem(null).kind).toBe('item')
-  })
-})
-
-describe('legacy gear -> items migration', () => {
-  it('migrateGearToItems converts weapons, armor and notes', () => {
-    const items = migrateGearToItems({
-      primaryWeapon: 'Snubnosed revolver',
-      secondaryWeapon: 'Butterfly knife',
-      armorType: 'Heavy',
-      notes: 'Band t-shirts',
-    })
-    expect(items).toHaveLength(4)
-    expect(items[0]).toMatchObject({ name: 'Snubnosed revolver', kind: 'weapon', damage: '' })
-    expect(items[1]).toMatchObject({ name: 'Butterfly knife', kind: 'weapon' })
-    expect(items[2]).toMatchObject({ name: 'Heavy armor', kind: 'armor', armorRating: 2, heavy: true })
-    expect(items[3]).toMatchObject({ name: 'Gear notes', kind: 'item', notes: 'Band t-shirts' })
-  })
-
-  it('migrateGearToItems prefills damage from the legacy weapon type', () => {
-    const items = migrateGearToItems({
-      primaryWeapon: 'Rifle',
-      primaryWeaponType: 'Medium',
-      secondaryWeapon: 'Cannon',
-      secondaryWeaponType: 'Heavy',
-    })
-    expect(items[0]).toMatchObject({ name: 'Rifle', kind: 'weapon', damage: '1D6+1' })
-    expect(items[1]).toMatchObject({ name: 'Cannon', kind: 'weapon', damage: '1D6+2' })
-  })
-
-  it('damageForWeaponType maps the PDF weapon types', () => {
+  it('derives weapon damage and heavy from the type', () => {
     expect(damageForWeaponType('Light')).toBe('1D6')
     expect(damageForWeaponType('Medium')).toBe('1D6+1')
     expect(damageForWeaponType('Heavy')).toBe('1D6+2')
     expect(damageForWeaponType('')).toBe('')
     expect(damageForWeaponType('Unknown')).toBe('')
+    expect(isWeaponHeavy('Heavy')).toBe(true)
+    expect(isWeaponHeavy('Light')).toBe(false)
+    expect(isWeaponHeavy('Medium')).toBe(false)
   })
 
-  it('migrateGearToItems handles empty input', () => {
-    expect(migrateGearToItems(null)).toEqual([])
-    expect(migrateGearToItems({})).toEqual([])
+  it('normalizeWeaponCategory falls back to Light', () => {
+    expect(normalizeWeaponCategory('Medium')).toBe('Medium')
+    expect(normalizeWeaponCategory('Unarmed')).toBe('Light')
+    expect(normalizeWeaponCategory('')).toBe('Light')
+    expect(normalizeWeaponCategory(null)).toBe('Light')
   })
 
-  it('normalizeOffworldersData migrates a legacy gear block when items are absent', () => {
+  it('clampArmor / armorLabel map a value to 0..OFFWORLDERS_ARMOR_MAX', () => {
+    expect(clampArmor(9)).toBe(OFFWORLDERS_ARMOR_MAX)
+    expect(clampArmor(-4)).toBe(0)
+    expect(clampArmor('2')).toBe(2)
+    expect(clampArmor(null)).toBe(0)
+    expect(armorLabel(0)).toBe('None')
+    expect(armorLabel(1)).toBe('Light')
+    expect(armorLabel(3)).toBe('Assault')
+    expect(armorLabel(99)).toBe('Assault')
+  })
+
+  it('creates a fresh, empty weapon and item', () => {
+    expect(createEmptyOffworldersWeapon()).toEqual({ type: 'Light', description: '' })
+    expect(createEmptyOffworldersWeapon('Heavy')).toEqual({ type: 'Heavy', description: '' })
+    expect(createEmptyOffworldersItem()).toEqual({ name: '', description: '' })
+    const other = createEmptyOffworldersItem()
+    other.name = 'X'
+    expect(createEmptyOffworldersItem().name).toBe('')
+  })
+
+  it('normalize weapon/item entries fill missing fields', () => {
+    expect(normalizeOffworldersWeapon({ type: 'Heavy' })).toEqual({
+      type: 'Heavy',
+      description: '',
+    })
+    expect(normalizeOffworldersWeapon({ type: 'Bogus' }).type).toBe('Light')
+    expect(normalizeOffworldersWeapon(null)).toEqual({ type: 'Light', description: '' })
+    // Legacy weapon entries map name -> description.
+    expect(normalizeOffworldersWeapon({ name: 'Blaster' })).toEqual({
+      type: 'Light',
+      description: 'Blaster',
+    })
+    expect(normalizeOffworldersItem({ name: 'Rope' })).toEqual({ name: 'Rope', description: '' })
+    expect(normalizeOffworldersItem({ name: 'Rope', notes: 'coil' })).toEqual({
+      name: 'Rope',
+      description: 'coil',
+    })
+    expect(normalizeOffworldersItem(null)).toEqual({ name: '', description: '' })
+  })
+})
+
+describe('legacy gear -> 1.6 gear migration', () => {
+  it('migrateLegacyOffworldersGear converts a Step-1 gear block', () => {
+    const gear = migrateLegacyOffworldersGear({
+      gear: {
+        primaryWeapon: 'Snubnosed revolver',
+        secondaryWeapon: 'Butterfly knife',
+        armorType: 'Heavy',
+        notes: 'Band t-shirts',
+      },
+    })
+    expect(gear.weapons).toEqual([
+      { type: 'Light', description: 'Snubnosed revolver' },
+      { type: 'Light', description: 'Butterfly knife' },
+    ])
+    expect(gear.armor).toBe(2)
+    expect(gear.items).toEqual([{ name: 'Gear notes', description: 'Band t-shirts' }])
+  })
+
+  it('migrateLegacyOffworldersGear uses the legacy weapon type', () => {
+    const gear = migrateLegacyOffworldersGear({
+      gear: {
+        primaryWeapon: 'Rifle',
+        primaryWeaponType: 'Medium',
+        secondaryWeapon: 'Cannon',
+        secondaryWeaponType: 'Heavy',
+      },
+    })
+    expect(gear.weapons).toEqual([
+      { type: 'Medium', description: 'Rifle' },
+      { type: 'Heavy', description: 'Cannon' },
+    ])
+  })
+
+  it('migrateLegacyOffworldersGear converts a 1.5 items list', () => {
+    const gear = migrateLegacyOffworldersGear({
+      items: [
+        { name: 'Blaster', kind: 'weapon', damage: '1D6+2' },
+        { name: 'Light armor', kind: 'armor', armorRating: 1 },
+        { name: 'Rope', kind: 'item', notes: '50 ft' },
+      ],
+    })
+    expect(gear.weapons).toEqual([{ type: 'Heavy', description: 'Blaster' }])
+    expect(gear.armor).toBe(1)
+    expect(gear.items).toEqual([{ name: 'Rope', description: '50 ft' }])
+  })
+
+  it('weaponTypeForDamage reverse-maps legacy damage, defaulting to Light', () => {
+    expect(weaponTypeForDamage('1D6')).toBe('Light')
+    expect(weaponTypeForDamage('1D6+1')).toBe('Medium')
+    expect(weaponTypeForDamage('1D6+2')).toBe('Heavy')
+    expect(weaponTypeForDamage('2D8')).toBe('Light')
+    expect(weaponTypeForDamage('')).toBe('Light')
+  })
+
+  it('migrateLegacyOffworldersGear handles empty input', () => {
+    expect(migrateLegacyOffworldersGear(null)).toEqual({ weapons: [], armor: 0, items: [] })
+    expect(migrateLegacyOffworldersGear({})).toEqual({ weapons: [], armor: 0, items: [] })
+  })
+
+  it('armorRatingForType maps legacy armor names to ratings', () => {
+    expect(armorRatingForType('Light')).toBe(1)
+    expect(armorRatingForType('Heavy')).toBe(2)
+    expect(armorRatingForType('Assault')).toBe(3)
+    expect(armorRatingForType('Unknown')).toBe(0)
+  })
+
+  it('normalizeOffworldersData migrates a legacy gear block', () => {
     const normalized = normalizeOffworldersData({
       characterClass: 'Outlaw',
       gear: { primaryWeapon: 'Revolver', armorType: 'Light' },
     })
-    expect(normalized.items).toHaveLength(2)
-    expect(normalized.items[0].name).toBe('Revolver')
-    expect(normalized.items[1]).toMatchObject({ kind: 'armor', armorRating: 1 })
+    expect(normalized.weapons).toEqual([{ type: 'Light', description: 'Revolver' }])
+    expect(normalized.armor).toBe(1)
+    expect(normalized.items).toEqual([])
     expect(normalized.gear).toBeUndefined()
   })
 
-  it('normalizeOffworldersData prefers explicit items over a legacy gear block', () => {
+  it('normalizeOffworldersData normalizes the 1.6 gear shape', () => {
     const normalized = normalizeOffworldersData({
-      items: [{ name: 'Blaster', kind: 'weapon', damage: '2D6' }],
-      gear: { primaryWeapon: 'Old gun' },
+      armor: 7,
+      weapons: [{ type: 'Heavy', description: 'Cannon' }, { type: 'Bogus' }],
+      items: [{ name: 'Rope', notes: 'coil' }],
     })
-    expect(normalized.items).toHaveLength(1)
-    expect(normalized.items[0].name).toBe('Blaster')
+    expect(normalized.armor).toBe(3)
+    expect(normalized.weapons).toEqual([
+      { type: 'Heavy', description: 'Cannon' },
+      { type: 'Light', description: '' },
+    ])
+    expect(normalized.items).toEqual([{ name: 'Rope', description: 'coil' }])
   })
 })
 
@@ -352,29 +436,24 @@ describe('skill/ability entries', () => {
   })
 })
 
-describe('deriveArmor', () => {
-  it('is 0 with no armor items', () => {
-    expect(deriveArmor([])).toBe(0)
-    expect(deriveArmor(null)).toBe(0)
-    expect(deriveArmor([{ kind: 'weapon', armorRating: 3 }])).toBe(0)
-    expect(deriveArmor([{ kind: 'item', armorRating: 2 }])).toBe(0)
-  })
-
-  it('takes the highest rating among armor items', () => {
-    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }])).toBe(1)
-    expect(
-      deriveArmor([
-        { kind: 'armor', armorRating: 1 },
-        { kind: 'armor', armorRating: 2 },
-      ]),
-    ).toBe(2)
+describe('effectiveArmor', () => {
+  it('returns the single chosen armor value', () => {
+    expect(effectiveArmor(0)).toBe(0)
+    expect(effectiveArmor(2)).toBe(2)
+    expect(effectiveArmor(null)).toBe(0)
   })
 
   it('clamps to 0..OFFWORLDERS_ARMOR_MAX and ignores junk', () => {
-    expect(deriveArmor([{ kind: 'armor', armorRating: 9 }])).toBe(3)
-    expect(deriveArmor([{ kind: 'armor', armorRating: -4 }])).toBe(0)
-    expect(deriveArmor([{ kind: 'armor' }])).toBe(0)
-    expect(deriveArmor([{ kind: 'armor', armorRating: '2' }])).toBe(2)
+    expect(effectiveArmor(9)).toBe(OFFWORLDERS_ARMOR_MAX)
+    expect(effectiveArmor(-4)).toBe(0)
+    expect(effectiveArmor('2')).toBe(2)
+  })
+
+  it('folds the passive ability bonus in, still clamped to 0..OFFWORLDERS_ARMOR_MAX', () => {
+    expect(effectiveArmor(1, 1)).toBe(2)
+    expect(effectiveArmor(3, 1)).toBe(OFFWORLDERS_ARMOR_MAX)
+    expect(effectiveArmor(0, 1)).toBe(1)
+    expect(effectiveArmor(0, 0)).toBe(0)
   })
 })
 
@@ -428,12 +507,5 @@ describe('ability Vitals bonuses', () => {
     Object.keys(OFFWORLDERS_ABILITY_EFFECTS).forEach((name) => {
       expect(catalog).toContain(name)
     })
-  })
-
-  it('deriveArmor folds the passive bonus in, still clamped to 0..3', () => {
-    expect(deriveArmor([{ kind: 'armor', armorRating: 1 }], 1)).toBe(2)
-    expect(deriveArmor([{ kind: 'armor', armorRating: 3 }], 1)).toBe(3)
-    expect(deriveArmor([], 1)).toBe(1)
-    expect(deriveArmor([], 0)).toBe(0)
   })
 })

@@ -6,8 +6,11 @@ import {
   OFFWORLDERS_SKILL_DESCRIPTIONS,
   OFFWORLDERS_SUPPLY_MAX,
   abilityVitalsBonus,
-  deriveArmor,
+  armorLabel,
+  damageForWeaponType,
   deriveHealth,
+  effectiveArmor,
+  isWeaponHeavy,
   resolveEntryDescription,
 } from '@/systems/offworlders/constants.js'
 
@@ -25,12 +28,8 @@ const props = defineProps({
 const offworlders = computed(() => props.character?.offworlders || {})
 const skills = computed(() => offworlders.value.skills || [])
 const abilities = computed(() => offworlders.value.abilities || [])
+const weapons = computed(() => offworlders.value.weapons || [])
 const items = computed(() => offworlders.value.items || [])
-const weapons = computed(() => items.value.filter((item) => item.kind === 'weapon'))
-const armorItems = computed(() => items.value.filter((item) => item.kind === 'armor'))
-const otherItems = computed(
-  () => items.value.filter((item) => item.kind !== 'weapon' && item.kind !== 'armor'),
-)
 
 // Vitals always reflect their sources (attributes, worn armor, abilities), so the
 // sheet stays correct even for characters saved before automatic derivation.
@@ -41,7 +40,9 @@ const maxHealth = computed(() =>
     abilityBonus.value.health + (Number(offworlders.value.healthModifier) || 0),
   ),
 )
-const effectiveArmor = computed(() => deriveArmor(items.value, abilityBonus.value.armor))
+const effectiveArmorValue = computed(() =>
+  effectiveArmor(offworlders.value.armor, abilityBonus.value.armor),
+)
 
 function skillDescription(entry) {
   return resolveEntryDescription(entry, OFFWORLDERS_SKILL_DESCRIPTIONS)
@@ -59,53 +60,39 @@ function abilityDescription(entry) {
       <div class="flex flex-wrap gap-6 text-default">
         <p><strong>Class:</strong> {{ offworlders.characterClass || '—' }}</p>
         <p><strong>Species:</strong> {{ offworlders.species || '—' }}</p>
-        <p><strong>Look:</strong> {{ offworlders.look || '—' }}</p>
         <p><strong>HP:</strong> {{ offworlders.currentHealth ?? maxHealth }} / {{ maxHealth }}</p>
-        <p><strong>Armor:</strong> {{ effectiveArmor }}</p>
+        <p><strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}</p>
         <p><strong>Supply:</strong> {{ offworlders.supply ?? 0 }} / {{ OFFWORLDERS_SUPPLY_MAX }}</p>
         <p><strong>Credits:</strong> {{ offworlders.credits ?? 0 }}</p>
         <p><strong>XP:</strong> {{ offworlders.xp ?? 0 }}</p>
       </div>
     </div>
 
-    <!-- Items -->
+    <!-- Gear -->
     <div class="p-6 border-t border-section">
-      <h2 class="section-heading mb-4">Items</h2>
+      <h2 class="section-heading mb-4">Gear</h2>
 
       <div class="mb-4">
-        <h3 class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</h3>
+        <p class="text-sm font-semibold uppercase mb-1 text-muted">Weapons</p>
         <ul v-if="weapons.length" class="flex flex-col gap-1 text-default">
-          <li v-for="(item, index) in weapons" :key="index">
-            <span class="font-medium">{{ item.name || 'Unnamed weapon' }}</span>
-            <span v-if="item.damage"> — damage {{ item.damage }}</span>
-            <span v-if="item.heavy" class="chip ml-1">Heavy</span>
-            <span v-if="item.notes" class="text-muted"> ({{ item.notes }})</span>
+          <li v-for="(weapon, index) in weapons" :key="index">
+            <span class="font-medium">{{ weapon.description || 'Unnamed weapon' }}</span>
+            <span> — {{ weapon.type }} (damage {{ damageForWeaponType(weapon.type) }})</span>
+            <span v-if="isWeaponHeavy(weapon.type)" class="chip ml-1">Heavy</span>
           </li>
         </ul>
         <p v-else class="text-subtle">No weapons recorded.</p>
       </div>
 
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold uppercase mb-1 text-muted">Armor</h3>
-        <ul v-if="armorItems.length" class="flex flex-col gap-1 text-default">
-          <li v-for="(item, index) in armorItems" :key="index">
-            <span class="font-medium">{{ item.name || 'Unnamed armor' }}</span>
-            <span> — {{ item.armorRating }}-armor</span>
-            <span v-if="item.heavy" class="chip ml-1">Heavy</span>
-            <span v-if="item.notes" class="text-muted"> ({{ item.notes }})</span>
-          </li>
-        </ul>
-        <p v-else class="text-subtle">No armor recorded.</p>
-      </div>
-
-      <div v-if="otherItems.length">
-        <h3 class="text-sm font-semibold uppercase mb-1 text-muted">Gear</h3>
-        <ul class="flex flex-col gap-1 text-default">
-          <li v-for="(item, index) in otherItems" :key="index">
+      <div>
+        <p class="text-sm font-semibold uppercase mb-1 text-muted">Items</p>
+        <ul v-if="items.length" class="flex flex-col gap-1 text-default">
+          <li v-for="(item, index) in items" :key="index">
             <span class="font-medium">{{ item.name || 'Unnamed item' }}</span>
-            <span v-if="item.notes" class="text-muted"> — {{ item.notes }}</span>
+            <span v-if="item.description" class="text-muted"> — {{ item.description }}</span>
           </li>
         </ul>
+        <p v-else class="text-subtle">No items recorded.</p>
       </div>
     </div>
 

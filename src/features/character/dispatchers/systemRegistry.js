@@ -84,12 +84,21 @@ export function validate(systemType, character) {
   return null
 }
 
-/** Request payload for the active system ({ name, systemType, notes, <block> }). */
+/**
+ * Request payload for the active system
+ * ({ name, systemType, notes, backstory, privateBackstory, <block> }).
+ *
+ * The backstory fields live on the core character (shared by every system) and
+ * are owner-written; `privateBackstory` is only ever read back by the owner or
+ * a campaign GM, but the owner may always send it.
+ */
 export function buildPayload(systemType, character) {
   const payload = {
     name: character.name,
     systemType: character.systemType,
     notes: character.notes,
+    backstory: character.backstory,
+    privateBackstory: character.privateBackstory,
   }
   const key = SYSTEM_DATA_KEYS[systemType]
   if (key) payload[key] = character[key]

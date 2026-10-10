@@ -62,6 +62,9 @@ onMounted(async () => {
         name: fetchedCharacter.name,
         systemType: fetchedCharacter.systemType || DEFAULT_SYSTEM_TYPE,
         notes: fetchedCharacter.notes || '',
+        appearance: fetchedCharacter.appearance || '',
+        backstory: fetchedCharacter.backstory || '',
+        privateBackstory: fetchedCharacter.privateBackstory || '',
         avatarUrl: fetchedCharacter.avatarUrl,
         ...normalizeCharacterBlocks(fetchedCharacter),
       }
@@ -243,6 +246,46 @@ const submitCharacter = async () => {
               v-model="character.notes"
               rows="2"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
+            ></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="appearance" class="block text-sm font-medium text-default mb-1"
+              >Appearance</label
+            >
+            <textarea
+              id="appearance"
+              v-model="character.appearance"
+              rows="2"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Distinct visual details — clothing, features, possessions"
+            ></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="backstory" class="block text-sm font-medium text-default mb-1">
+              Backstory — visible to everyone in the campaign
+            </label>
+            <textarea
+              id="backstory"
+              v-model="character.backstory"
+              rows="4"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Where does this character come from?"
+            ></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="privateBackstory" class="block text-sm font-medium text-default mb-1">
+              Private backstory
+            </label>
+            <p class="text-xs text-muted mb-1">Only you and the GM can see this.</p>
+            <textarea
+              id="privateBackstory"
+              v-model="character.privateBackstory"
+              rows="4"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Secrets only the GM should know"
             ></textarea>
           </div>
         </div>
