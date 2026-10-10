@@ -62,6 +62,8 @@ onMounted(async () => {
         name: fetchedCharacter.name,
         systemType: fetchedCharacter.systemType || DEFAULT_SYSTEM_TYPE,
         notes: fetchedCharacter.notes || '',
+        backstory: fetchedCharacter.backstory || '',
+        privateBackstory: fetchedCharacter.privateBackstory || '',
         avatarUrl: fetchedCharacter.avatarUrl,
         ...normalizeCharacterBlocks(fetchedCharacter),
       }
@@ -243,6 +245,39 @@ const submitCharacter = async () => {
               v-model="character.notes"
               rows="2"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Backstory (core character fields, shared by every system) -->
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
+            Backstory
+          </h4>
+
+          <div class="mb-4">
+            <label for="backstory" class="block text-sm font-medium text-default mb-1">
+              Public backstory — visible to everyone in the campaign
+            </label>
+            <textarea
+              id="backstory"
+              v-model="character.backstory"
+              rows="4"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Where does this character come from?"
+            ></textarea>
+          </div>
+
+          <div class="mb-4">
+            <label for="privateBackstory" class="block text-sm font-medium text-default mb-1">
+              Private backstory — visible to you and the GM only
+            </label>
+            <textarea
+              id="privateBackstory"
+              v-model="character.privateBackstory"
+              rows="4"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Secrets only the GM should know"
             ></textarea>
           </div>
         </div>

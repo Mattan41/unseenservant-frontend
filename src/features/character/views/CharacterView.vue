@@ -125,6 +125,28 @@ const deleteCharacter = async () => {
           <!-- System-specific character sheet -->
           <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
 
+          <!-- Backstory (core character, shared by every system) -->
+          <div class="p-6 border-t border-section">
+            <h2 class="section-heading mb-4">Backstory</h2>
+            <p
+              v-if="currentCharacter.backstory"
+              class="text-default whitespace-pre-line break-words"
+            >
+              {{ currentCharacter.backstory }}
+            </p>
+            <p v-else class="text-sm text-muted italic">No backstory recorded.</p>
+
+            <!-- Only rendered when the API returned it (owner or campaign GM). -->
+            <div v-if="currentCharacter.privateBackstory" class="mt-4">
+              <h3 class="text-sm font-semibold uppercase mb-1 text-muted">
+                Private — you &amp; the GM
+              </h3>
+              <p class="text-default whitespace-pre-line break-words">
+                {{ currentCharacter.privateBackstory }}
+              </p>
+            </div>
+          </div>
+
           <!-- Additional info -->
           <div class="p-6 border-t border-section">
             <h2 class="section-heading mb-4">Additional Information</h2>

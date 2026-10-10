@@ -28,6 +28,8 @@ export const guestCharacters = [
     name: 'Gandalf',
     systemType: 'DND5E',
     notes: '',
+    backstory: 'A wandering wizard who arrives exactly when he means to.',
+    privateBackstory: 'Secretly searching for the missing pages of a forbidden tome.',
     avatarUrl: '/defaultCharacter.svg',
     dnd5e: {
       level: 10,
@@ -265,6 +267,10 @@ export const guestCharacters = [
     name: 'Vex',
     systemType: 'OFFWORLDERS',
     notes: 'Smuggler with a stolen courier ship and a habit of talking her way out of trouble.',
+    backstory:
+      'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
+    privateBackstory:
+      'She is being hunted by a syndicate she double-crossed, and never files a flight plan.',
     avatarUrl: '/defaultCharacter.svg',
     offworlders: {
       characterClass: 'Outlaw',
@@ -294,39 +300,12 @@ export const guestCharacters = [
         { name: 'Smuggle', description: '' },
         { name: 'Shoot First', description: '' },
       ],
+      weapons: [
+        { type: 'Light', description: 'Snubnosed revolver' },
+        { type: 'Light', description: 'Butterfly knife' },
+      ],
       items: [
-        {
-          name: 'Snubnosed revolver',
-          kind: 'weapon',
-          damage: '1D6',
-          armorRating: 0,
-          heavy: false,
-          notes: '',
-        },
-        {
-          name: 'Butterfly knife',
-          kind: 'weapon',
-          damage: '1D6',
-          armorRating: 0,
-          heavy: false,
-          notes: '',
-        },
-        {
-          name: 'Light armor',
-          kind: 'armor',
-          damage: '',
-          armorRating: 1,
-          heavy: false,
-          notes: '',
-        },
-        {
-          name: 'Rotating collection of band t-shirts.',
-          kind: 'item',
-          damage: '',
-          armorRating: 0,
-          heavy: false,
-          notes: '',
-        },
+        { name: 'Band t-shirts', description: 'Rotating collection of band t-shirts.' },
       ],
     },
     createdAt: new Date().toISOString(),

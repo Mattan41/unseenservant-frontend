@@ -2,9 +2,10 @@
  * Offworlders system constants and helpers.
  * Pure data/functions — no Vue or store dependencies.
  *
- * Offworlders is a rules-light sci-fi RPG. Attributes range from -1 to +3,
- * Armor from 0 to 3, Health is derived as `max(1, 12 + strength + agility)`,
- * and Armor is derived from the worn armor items.
+ * Offworlders is a rules-light sci-fi RPG. Attributes range from -1 to +3 and
+ * Health is derived as `max(1, 12 + strength + agility)`. Armor is a single
+ * value from 0 to 3, weapons are typed (damage/heavy derived from the type),
+ * and everything else lives in a free-text item list.
  */
 
 export const OFFWORLDERS_SYSTEM_TYPE = 'OFFWORLDERS'
@@ -152,13 +153,28 @@ export const OFFWORLDERS_CLASS_INFO = {
   },
 }
 
-/** Weapon categories (p.12). Damage/cost are reference only; automation is Step 1.5. */
+/** Weapon categories (p.12). Cost is reference only; damage is derived from the name. */
 export const OFFWORLDERS_WEAPON_TYPES = [
   { name: 'Unarmed', damage: 'Lower of 2D6', cost: 0, notes: 'Kicks, punches.' },
   { name: 'Light', damage: '1D6', cost: 1, notes: 'Pistols, knives. Easily hidden.' },
   { name: 'Medium', damage: '1D6+1', cost: 2, notes: 'Rifles, shotguns, swords.' },
   { name: 'Heavy', damage: '1D6+2', cost: 5, notes: 'Plasma cannons, sniper rifles, huge swords. Heavy.' },
 ]
+
+/** Selectable weapon categories (p.12). Unarmed is not a carried weapon. */
+export const OFFWORLDERS_WEAPON_CATEGORIES = OFFWORLDERS_WEAPON_TYPES.map(
+  (weapon) => weapon.name,
+).filter((name) => name !== 'Unarmed')
+
+/** Force an arbitrary value to a valid weapon category (unknown / '' → Light). */
+export function normalizeWeaponCategory(type) {
+  return OFFWORLDERS_WEAPON_CATEGORIES.includes(type) ? type : 'Light'
+}
+
+/** Heavy weapons are clumsy and hard to hide (p.12). Derived from the type. */
+export function isWeaponHeavy(type) {
+  return type === 'Heavy'
+}
 
 /** Armor categories (p.12). Rating is the damage subtracted from incoming hits. */
 export const OFFWORLDERS_ARMOR_TYPES = [
@@ -175,6 +191,26 @@ export const OFFWORLDERS_ARMOR_TYPES = [
 /** Armor rating for a type name (unknown / '' → 0). */
 export function armorRatingForType(type) {
   return OFFWORLDERS_ARMOR_TYPES.find((armor) => armor.name === type)?.rating ?? 0
+}
+
+/** The single armor value (p.12): None 0, Light 1, Heavy 2, Assault 3. */
+export const OFFWORLDERS_ARMOR_OPTIONS = [
+  { value: 0, label: 'None' },
+  { value: 1, label: 'Light' },
+  { value: 2, label: 'Heavy' },
+  { value: 3, label: 'Assault' },
+]
+
+/** Force an arbitrary value to a valid armor rating (0..OFFWORLDERS_ARMOR_MAX). */
+export function clampArmor(value) {
+  const number = Math.trunc(Number(value) || 0)
+  return Math.max(0, Math.min(OFFWORLDERS_ARMOR_MAX, number))
+}
+
+/** Display label for an armor value (unknown → None). */
+export function armorLabel(value) {
+  const clamped = clampArmor(value)
+  return OFFWORLDERS_ARMOR_OPTIONS.find((option) => option.value === clamped)?.label ?? 'None'
 }
 
 /**
@@ -225,20 +261,15 @@ export function abilityVitalsBonus(abilities) {
 }
 
 /**
- * Effective Armor rating: the highest `armorRating` among the worn `kind: 'armor'`
- * items (p.12) plus any passive bonus from abilities, clamped to
- * 0..OFFWORLDERS_ARMOR_MAX.
- * @param {{kind?: string, armorRating?: number}[]|null|undefined} items
+ * Effective Armor rating: the single worn armor value (p.12) plus any passive
+ * bonus from abilities, clamped to 0..OFFWORLDERS_ARMOR_MAX.
+ * @param {number|null|undefined} armor the worn armor value (0 = None … 3 = Assault)
  * @param {number} [bonus=0] passive bonus summed from the selected abilities
  *   (not user-entered) — e.g. Unstoppable's +1 armor
  * @returns {number}
  */
-export function deriveArmor(items, bonus = 0) {
-  const ratings = (items || [])
-    .filter((item) => item?.kind === 'armor')
-    .map((item) => Number(item?.armorRating) || 0)
-  const worn = ratings.length === 0 ? 0 : Math.max(0, ...ratings)
-  return Math.max(0, Math.min(OFFWORLDERS_ARMOR_MAX, worn + (Number(bonus) || 0)))
+export function effectiveArmor(armor, bonus = 0) {
+  return Math.max(0, Math.min(OFFWORLDERS_ARMOR_MAX, clampArmor(armor) + (Number(bonus) || 0)))
 }
 
 /**
@@ -260,16 +291,6 @@ export function standardArrayUsage(stats) {
     }
   }
   return { used, total: OFFWORLDERS_STANDARD_ARRAY.length }
-}
-
-/** Item categories. Purely for grouping on the sheet. */
-export const OFFWORLDERS_ITEM_KINDS = ['weapon', 'armor', 'item']
-
-/** Display labels for the item categories. */
-export const OFFWORLDERS_ITEM_KIND_LABELS = {
-  weapon: 'Weapon',
-  armor: 'Armor',
-  item: 'Item',
 }
 
 /** A fresh, empty skill/ability entry (name + optional description). */
@@ -312,68 +333,123 @@ export function removeEntry(list, name) {
   return list.filter((entry) => entry.name !== name)
 }
 
-/** A fresh, empty free-form inventory entry. */
-export function createEmptyOffworldersItem() {
+/** A fresh, empty typed weapon entry (type + free-text description). */
+export function createEmptyOffworldersWeapon(type = 'Light') {
+  return { type: normalizeWeaponCategory(type), description: '' }
+}
+
+/**
+ * Normalize a single weapon coming from the API, filling in defaults.
+ * Damage and `heavy` are derived from `type` and never stored.
+ */
+export function normalizeOffworldersWeapon(weapon) {
+  const empty = createEmptyOffworldersWeapon()
+  if (!weapon || typeof weapon !== 'object') return empty
   return {
-    name: '',
-    kind: 'item',
-    damage: '',
-    armorRating: 0,
-    heavy: false,
-    notes: '',
+    ...empty,
+    type: normalizeWeaponCategory(weapon.type),
+    description: String(weapon.description ?? weapon.notes ?? weapon.name ?? ''),
   }
+}
+
+/** A fresh, empty free-text inventory entry (name + description). */
+export function createEmptyOffworldersItem() {
+  return { name: '', description: '' }
 }
 
 /** Normalize a single item coming from the API, filling in defaults. */
 export function normalizeOffworldersItem(item) {
   const empty = createEmptyOffworldersItem()
   if (!item || typeof item !== 'object') return empty
-  return { ...empty, ...item }
+  return {
+    ...empty,
+    name: String(item.name ?? ''),
+    description: String(item.description ?? item.notes ?? ''),
+  }
 }
 
-/** Default damage die for a legacy weapon type (Light / Medium / Heavy). */
+/** Default damage die for a weapon type (Light / Medium / Heavy). Derived, never stored. */
 export function damageForWeaponType(type) {
   return OFFWORLDERS_WEAPON_TYPES.find((weapon) => weapon.name === type)?.damage ?? ''
 }
 
 /**
- * Convert a legacy Step 1 `gear` block into the free-form `items` list.
- * Mirrors the backend V5 migration so cached / guest data upgrades too.
- * @param {object|null|undefined} gear
- * @returns {object[]}
+ * Reverse-map a legacy damage expression to a weapon category so old
+ * hand-typed values survive the 1.6 migration (unknown / '' → Light).
+ * @param {string|null|undefined} damage
+ * @returns {string}
  */
-export function migrateGearToItems(gear) {
-  const items = []
-  if (!gear) return items
-  if (gear.primaryWeapon) {
-    items.push({
-      ...createEmptyOffworldersItem(),
-      name: gear.primaryWeapon,
-      kind: 'weapon',
-      damage: damageForWeaponType(gear.primaryWeaponType),
-    })
+export function weaponTypeForDamage(damage) {
+  const trimmed = (damage ?? '').trim()
+  const entry = OFFWORLDERS_WEAPON_TYPES.find((weapon) => weapon.damage === trimmed)
+  return normalizeWeaponCategory(entry?.name)
+}
+
+/**
+ * Upgrade legacy Offworlders gear to the 1.6 `{ weapons, armor, items }` shape.
+ * Handles both the Step-1 `gear` block and the 1.5 `kind`-discriminated
+ * `items[]`, mirroring the backend migrations so cached / guest data upgrades too.
+ * @param {object|null|undefined} data the raw character data block
+ * @returns {{weapons: object[], armor: number, items: object[]}}
+ */
+export function migrateLegacyOffworldersGear(data) {
+  const result = { weapons: [], armor: 0, items: [] }
+  if (!data || typeof data !== 'object') return result
+
+  for (const entry of Array.isArray(data.items) ? data.items : []) {
+    if (!entry || typeof entry !== 'object') continue
+    if (entry.kind === 'armor') {
+      result.armor = Math.max(result.armor, clampArmor(entry.armorRating))
+    } else if (entry.kind === 'weapon') {
+      result.weapons.push({
+        type: weaponTypeForDamage(entry.damage),
+        description: String(entry.name || entry.notes || ''),
+      })
+    } else {
+      result.items.push({ name: String(entry.name || ''), description: String(entry.notes || '') })
+    }
   }
-  if (gear.secondaryWeapon) {
-    items.push({
-      ...createEmptyOffworldersItem(),
-      name: gear.secondaryWeapon,
-      kind: 'weapon',
-      damage: damageForWeaponType(gear.secondaryWeaponType),
-    })
+
+  // Step-1 `gear` block — only used when there is no 1.5 items array.
+  const gear = data.gear
+  if (gear && result.weapons.length === 0 && result.items.length === 0 && result.armor === 0) {
+    if (gear.primaryWeapon) {
+      result.weapons.push({
+        type: normalizeWeaponCategory(gear.primaryWeaponType),
+        description: gear.primaryWeapon,
+      })
+    }
+    if (gear.secondaryWeapon) {
+      result.weapons.push({
+        type: normalizeWeaponCategory(gear.secondaryWeaponType),
+        description: gear.secondaryWeapon,
+      })
+    }
+    if (gear.armorType) result.armor = armorRatingForType(gear.armorType)
+    if (gear.notes) result.items.push({ name: 'Gear notes', description: gear.notes })
   }
-  if (gear.armorType) {
-    items.push({
-      ...createEmptyOffworldersItem(),
-      name: `${gear.armorType} armor`,
-      kind: 'armor',
-      armorRating: armorRatingForType(gear.armorType),
-      heavy: gear.armorType === 'Heavy' || gear.armorType === 'Assault',
-    })
-  }
-  if (gear.notes) {
-    items.push({ ...createEmptyOffworldersItem(), name: 'Gear notes', kind: 'item', notes: gear.notes })
-  }
-  return items
+  return result
+}
+
+/** True for a 1.5 item entry (`{ name, kind, damage, armorRating, heavy, notes }`). */
+function isLegacyOffworldersItem(entry) {
+  return (
+    !!entry &&
+    typeof entry === 'object' &&
+    ('kind' in entry || 'damage' in entry || 'armorRating' in entry)
+  )
+}
+
+/**
+ * True when the payload predates 1.6 — i.e. a Step-1 `gear` block or a 1.5
+ * `kind`-discriminated `items[]` rather than the new `{ weapons, items }` shape.
+ * @param {object} data
+ * @returns {boolean}
+ */
+function isLegacyOffworldersPayload(data) {
+  if (Array.isArray(data.weapons)) return false
+  if (data.gear) return true
+  return Array.isArray(data.items) && data.items.some(isLegacyOffworldersItem)
 }
 
 /**
@@ -401,6 +477,7 @@ export function createEmptyOffworldersData() {
     },
     skills: [],
     abilities: [],
+    weapons: [],
     items: [],
   }
 }
@@ -414,21 +491,30 @@ export function createEmptyOffworldersData() {
 export function normalizeOffworldersData(data) {
   const empty = createEmptyOffworldersData()
   if (!data) return empty
-  // Prefer explicit items; otherwise migrate a legacy `gear` block from Step 1.
-  let items = Array.isArray(data.items) ? data.items.map(normalizeOffworldersItem) : []
-  if (items.length === 0 && data.gear) {
-    items = migrateGearToItems(data.gear)
-  }
+
+  // Prefer the 1.6 shape; otherwise upgrade a legacy gear/items payload.
+  const legacy = isLegacyOffworldersPayload(data)
+  const migrated = legacy ? migrateLegacyOffworldersGear(data) : null
 
   const normalized = {
     ...empty,
     ...data,
     // Supply is always capped at 3 (p.11); ignore any stored/derived value.
     supplyMax: OFFWORLDERS_SUPPLY_MAX,
+    armor: clampArmor(migrated ? Math.max(migrated.armor, Number(data.armor) || 0) : data.armor),
     stats: { ...empty.stats, ...(data.stats || {}) },
     skills: Array.isArray(data.skills) ? data.skills.map(normalizeOffworldersEntry) : [],
     abilities: Array.isArray(data.abilities) ? data.abilities.map(normalizeOffworldersEntry) : [],
-    items,
+    weapons: migrated
+      ? migrated.weapons
+      : Array.isArray(data.weapons)
+        ? data.weapons.map(normalizeOffworldersWeapon)
+        : [],
+    items: migrated
+      ? migrated.items
+      : Array.isArray(data.items)
+        ? data.items.map(normalizeOffworldersItem)
+        : [],
   }
   delete normalized.gear
   return normalized
