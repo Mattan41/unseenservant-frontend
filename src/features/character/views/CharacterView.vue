@@ -118,6 +118,12 @@ const deleteCharacter = async () => {
             </p>
             <p v-else class="text-sm text-muted italic">No notes.</p>
           </div>
+
+          <!-- Appearance (generic, any system) -->
+          <div v-if="currentCharacter.appearance" class="text-default">
+            <p><strong>Appearance:</strong></p>
+            <p class="text-sm whitespace-pre-line break-words">{{ currentCharacter.appearance }}</p>
+          </div>
         </aside>
 
         <!-- Main column: a clean slot for whatever the active system renders -->
@@ -137,10 +143,13 @@ const deleteCharacter = async () => {
             <p v-else class="text-sm text-muted italic">No backstory recorded.</p>
 
             <!-- Only rendered when the API returned it (owner or campaign GM). -->
-            <div v-if="currentCharacter.privateBackstory" class="mt-4">
-              <h3 class="text-sm font-semibold uppercase mb-1 text-muted">
-                Private — you &amp; the GM
-              </h3>
+            <div
+              v-if="currentCharacter.privateBackstory"
+              class="mt-6 pt-4 border-t border-section"
+            >
+              <p class="text-xs italic mb-1 text-muted">
+                Private — only you and the GM can see this
+              </p>
               <p class="text-default whitespace-pre-line break-words">
                 {{ currentCharacter.privateBackstory }}
               </p>

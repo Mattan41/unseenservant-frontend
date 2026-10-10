@@ -267,6 +267,7 @@ export const guestCharacters = [
     name: 'Vex',
     systemType: 'OFFWORLDERS',
     notes: 'Smuggler with a stolen courier ship and a habit of talking her way out of trouble.',
+    appearance: 'Sharp-eyed, patched flight jacket.',
     backstory:
       'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
     privateBackstory:
@@ -275,7 +276,6 @@ export const guestCharacters = [
     offworlders: {
       characterClass: 'Outlaw',
       species: 'Human',
-      look: 'Sharp-eyed, patched flight jacket',
       xp: 3,
       health: 15,
       currentHealth: 15,

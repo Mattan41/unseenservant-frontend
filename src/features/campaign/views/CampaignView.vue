@@ -144,10 +144,11 @@ function canRemoveCharacter(character) {
   return isOwner.value || isGm.value || String(character.ownerId) === String(userStore.userId)
 }
 
-// The owner has full access; GMs and the character's owner may open details.
+// Every campaign participant may open a character's details (they receive the
+// public view — the private backstory stays owner/GM only). Removing a character
+// is still restricted by canRemoveCharacter above.
 function canOpenCharacter(character) {
-  if (isOwner.value || isGm.value) return true
-  return userStore.currentUser && String(userStore.userId) === String(character.ownerId)
+  return !!character && !!userStore.currentUser
 }
 
 const onCharacterImported = async () => {

@@ -460,7 +460,6 @@ export function createEmptyOffworldersData() {
   return {
     characterClass: '',
     species: '',
-    look: '',
     xp: 0,
     health: 12,
     currentHealth: 12,

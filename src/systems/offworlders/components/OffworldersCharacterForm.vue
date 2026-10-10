@@ -173,23 +173,6 @@ function removeAbility(name) {
       </div>
     </div>
 
-    <div class="mb-4">
-      <label for="ow-look" class="block text-sm font-medium text-default mb-1">
-        <BaseTooltip
-          text="At least one distinct visual detail — clothing, a feature, or a possession — to help everyone picture the character."
-        >
-          Look
-        </BaseTooltip>
-      </label>
-      <input
-        id="ow-look"
-        v-model="offworlders.look"
-        type="text"
-        class="input-field w-full px-3 py-2 border border-input rounded-md"
-        placeholder="A short physical description"
-      />
-    </div>
-
     <!-- Vitals -->
     <h3 class="section-heading mb-3">Vitals</h3>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

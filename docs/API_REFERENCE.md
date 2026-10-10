@@ -315,10 +315,10 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CharacterService.createCharacter(data)
 - **Store Action**: characterStore.createCharacter(data)
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
-- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
+- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
   - `backstory` / `privateBackstory` are free-text core-character fields (any system). `backstory` is public to the campaign; `privateBackstory` is returned only to the owner or the campaign GM. Writes are owner-only.
   - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
-  - `offworlders = { characterClass, species, look, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }` (used when `systemType === 'OFFWORLDERS'`)
+  - `offworlders = { characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }` (used when `systemType === 'OFFWORLDERS'`)
     - `supplyMax` is fixed at `3` per the rules (not player-editable).
     - `armor` is a single value 0–3 (0 None / 1 Light / 2 Heavy / 3 Assault) — there are no armor items.
     - `weapons = [ { type: 'Light' | 'Medium' | 'Heavy', description } ]`; damage and `heavy` are derived from `type`, never stored.

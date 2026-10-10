@@ -60,7 +60,6 @@ function abilityDescription(entry) {
       <div class="flex flex-wrap gap-6 text-default">
         <p><strong>Class:</strong> {{ offworlders.characterClass || '—' }}</p>
         <p><strong>Species:</strong> {{ offworlders.species || '—' }}</p>
-        <p><strong>Look:</strong> {{ offworlders.look || '—' }}</p>
         <p><strong>HP:</strong> {{ offworlders.currentHealth ?? maxHealth }} / {{ maxHealth }}</p>
         <p><strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}</p>
         <p><strong>Supply:</strong> {{ offworlders.supply ?? 0 }} / {{ OFFWORLDERS_SUPPLY_MAX }}</p>

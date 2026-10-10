@@ -21,6 +21,7 @@ const character = ref({
   name: '',
   systemType: DEFAULT_SYSTEM_TYPE,
   notes: '',
+  appearance: '',
   backstory: '',
   privateBackstory: '',
   ...createEmptyCharacterBlocks(),
@@ -117,17 +118,23 @@ const submitCharacter = async () => {
               placeholder="Optional notes about this character"
             ></textarea>
           </div>
-        </div>
 
-        <!-- Backstory (core character fields, shared by every system) -->
-        <div class="mb-6">
-          <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
-            Backstory
-          </h3>
+          <div class="mb-4">
+            <label for="appearance" class="block text-sm font-medium text-default mb-1"
+              >Appearance</label
+            >
+            <textarea
+              id="appearance"
+              v-model="character.appearance"
+              rows="2"
+              class="input-field w-full px-3 py-2 border border-input rounded-md"
+              placeholder="Distinct visual details — clothing, features, possessions"
+            ></textarea>
+          </div>
 
           <div class="mb-4">
             <label for="backstory" class="block text-sm font-medium text-default mb-1">
-              Public backstory — visible to everyone in the campaign
+              Backstory — visible to everyone in the campaign
             </label>
             <textarea
               id="backstory"
@@ -140,8 +147,9 @@ const submitCharacter = async () => {
 
           <div class="mb-4">
             <label for="privateBackstory" class="block text-sm font-medium text-default mb-1">
-              Private backstory — visible to you and the GM only
+              Private backstory
             </label>
+            <p class="text-xs text-muted mb-1">Only you and the GM can see this.</p>
             <textarea
               id="privateBackstory"
               v-model="character.privateBackstory"
