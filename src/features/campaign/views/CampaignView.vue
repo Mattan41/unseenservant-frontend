@@ -18,6 +18,7 @@ import { useMessageStore } from '@/features/message/messageStore.js'
 import { getCharacterOwnerName, getParticipantDisplayName, getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
 import { useShipStore } from '@/features/ship/shipStore.js'
+import { confirmDiscardUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DND5E_SYSTEM_TYPE,
   OFFWORLDERS_SYSTEM_TYPE,
@@ -79,6 +80,11 @@ const shipSectionTitle = computed(() => {
 })
 
 function selectSection(key) {
+  if (key === activeSection.value) return
+  // Section switching is local state, so the router guards never fire — ask any
+  // active form (e.g. the ship sheet or campaign details) to confirm discarding
+  // unsaved edits before we swap the section out.
+  if (!confirmDiscardUnsavedChanges()) return
   if (navItems.value.some((section) => section.key === key)) {
     activeSection.value = key
   }

@@ -169,11 +169,7 @@ const transferOwnership = () => {
           Hand over full control of this campaign to another participant.
         </p>
         <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-          <select
-            v-model="transferTargetId"
-            class="p-2 rounded"
-            style="background-color: var(--color-primary-50)"
-          >
+          <select v-model="transferTargetId" class="input-field p-2 rounded">
             <option value="">Select a participant…</option>
             <option
               v-for="participant in transferCandidates"

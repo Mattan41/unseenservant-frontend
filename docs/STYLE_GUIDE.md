@@ -114,7 +114,23 @@ Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
 
 Props: `variant`, `disabled`, `loading`, `confirmMessage`. Emits: `click`.
 
-### 2.2 Badges → `src/assets/main.css`
+### 2.2 Form fields → `src/assets/main.css`
+
+`.input-field` is the **single source of truth** for `input`, `select` and
+`textarea` styling. It gives editable fields their surface and focus ring:
+
+| Concern | Rule |
+|---------|------|
+| Surface | `background-color: var(--color-primary-50)` |
+| Focus | `focus:ring-2 focus:ring-primary-500 focus:border-transparent` |
+| Read-only | `:disabled` → transparent background, so view mode stays text-like |
+
+**Do not** set `style="background-color: var(--color-primary-50)"` (or any other
+per-element colour) on a field — add the `input-field` class instead. The light
+surface is what makes edit fields read as editable, while `:disabled` keeps
+read-only views looking like plain text.
+
+### 2.3 Badges → `src/assets/main.css`
 
 | Class | Color pair | School mapping | Status |
 |-------|-----------|----------------|--------|
@@ -136,7 +152,7 @@ School → badge mapping lives in `src/features/spell/spellUtils.js` →
 never contain school → color logic. This is the canonical pattern for
 all conditional styling in `*Utils.js` files.
 
-### 2.3 Other utility classes → `src/assets/main.css`
+### 2.4 Other utility classes → `src/assets/main.css`
 
 | Class | Purpose | Tailwind | Status |
 |-------|---------|----------|--------|
@@ -196,7 +212,14 @@ all conditional styling in `*Utils.js` files.
 | `.suggested-choice` | Highlight for a suggested skill option | `rounded bg-secondary-50 px-1` | implemented |
 | `.suggested-choice-group` | Highlight panel for a class's suggested abilities | `rounded-md bg-secondary-50` | implemented |
 
-### 2.4 Proposed new classes (not yet implemented)
+### 2.5 Edit action bar → `src/assets/main.css`
+
+`.edit-bar` / `.edit-bar-label` render the floating, right-aligned action tag used
+while editing a long form (e.g. the ship sheet's Cancel / Save). It deliberately
+uses the neutral `third` palette instead of a full-width white strip, so it reads
+as a floating tag. Position the wrapper with `sticky bottom-*`.
+
+### 2.6 Proposed new classes (not yet implemented)
 
 | Class | Purpose | Replaces | Status |
 |-------|---------|----------|--------|

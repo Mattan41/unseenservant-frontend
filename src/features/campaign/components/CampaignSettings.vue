@@ -96,8 +96,7 @@ const saveNickname = async () => {
       <input
         v-model="nickname"
         type="text"
-        class="p-3 rounded w-full mb-3"
-        style="background-color: var(--color-primary-50)"
+        class="input-field p-3 rounded w-full mb-3"
         :readonly="!isEditingNickname"
         :disabled="isSaving"
         :placeholder="currentUserNickname || 'Enter your nickname'"

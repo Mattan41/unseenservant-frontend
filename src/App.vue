@@ -45,7 +45,7 @@ watch(
     <p class="mt-4 font-medium" style="color: var(--color-primary-800)">Loading...</p>
   </div>
 
-  <div v-else class="flex flex-col min-h-screen overflow-x-hidden">
+  <div v-else class="flex flex-col min-h-screen overflow-x-clip">
     <EnvBanner v-if="envBannerText" :text="envBannerText" />
     <NotificationComponent />
     <HeaderComponent />

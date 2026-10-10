@@ -221,8 +221,7 @@ const saveParticipantNickname = async (participant) => {
           <input
             v-model="searchTerm"
             type="text"
-            class="p-3 rounded flex-grow"
-            style="background-color: var(--color-primary-50)"
+            class="input-field p-3 rounded flex-grow"
             placeholder="username or email"
             @keyup.enter="searchUsers"
           />
@@ -324,8 +323,7 @@ const saveParticipantNickname = async (participant) => {
               <input
                 v-model="participant.nickname"
                 type="text"
-                class="p-2 rounded w-full"
-                style="background-color: var(--color-primary-50)"
+                class="input-field p-2 rounded w-full"
                 :disabled="isSaving"
                 placeholder="Enter new nickname"
               />

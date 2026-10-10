@@ -24,6 +24,7 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
 } from '@/systems/offworlders/shipConstants.js'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const props = defineProps({
   /** Normalized ship data block. */
@@ -48,9 +49,28 @@ const emit = defineEmits(['save', 'reload', 'upload-profile', 'add-gallery', 're
 const editing = ref(false)
 const draft = reactive(createEmptyShipData())
 
+// Signature of the editable fields, used to detect unsaved edits so we can warn
+// before navigating away (image fields are excluded — they save on their own).
+const baseline = ref('')
+
+function draftSignature() {
+  return JSON.stringify({
+    name: draft.name,
+    hull: draft.hull,
+    hullMax: draft.hullMax,
+    armor: draft.armor,
+    damage: draft.damage,
+    driveFuel: draft.driveFuel,
+    maxDriveFuel: draft.maxDriveFuel,
+    upgrades: draft.upgrades,
+    notes: draft.notes,
+  })
+}
+
 function resetDraft() {
   Object.assign(draft, createEmptyShipData(), props.ship)
   draft.upgrades = [...(props.ship.upgrades || [])]
+  baseline.value = draftSignature()
 }
 
 // A pending image upload/replace also replaces `ship`, but must not drop the
@@ -217,6 +237,14 @@ function onLightboxKeydown(event) {
 
 onMounted(() => window.addEventListener('keydown', onLightboxKeydown))
 onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
+
+const isDirty = computed(() => editing.value && draftSignature() !== baseline.value)
+
+// Warn before leaving the campaign while the ship has unsaved edits.
+useUnsavedChanges(
+  () => isDirty.value,
+  'You have unsaved changes to the ship. Leave without saving?',
+)
 </script>
 
 <template>
@@ -227,28 +255,27 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
       <BaseButton variant="retry" @click="$emit('reload')">Reload</BaseButton>
     </div>
 
-    <!-- Actions. The ship name lives in the section heading ("Ship: <name>"),
-         so the editable name field only appears while editing. -->
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div v-if="editing" class="flex-1 min-w-0">
-        <label for="ship-name" class="block text-sm font-medium text-default mb-1">Name</label>
-        <input
-          id="ship-name"
-          v-model="draft.name"
-          type="text"
-          class="input-field p-2 rounded w-full"
-          placeholder="The Desert Rose"
-        />
-      </div>
-      <div v-else class="flex-1"></div>
-
-      <div class="flex flex-wrap gap-2">
-        <template v-if="editing">
-          <BaseButton variant="ghost" :disabled="saving" @click="cancelEditing">Cancel</BaseButton>
-          <BaseButton variant="add" :loading="saving" @click="submit">Save ship</BaseButton>
-        </template>
-        <BaseButton v-else variant="default" @click="startEditing">Edit ship</BaseButton>
-      </div>
+    <!-- Name (editable only while editing — the value itself is in the section
+         heading). In view mode this row carries the primary action. -->
+    <div v-if="editing" class="min-w-0">
+      <label for="ship-name" class="block text-sm font-medium text-default mb-1">Name</label>
+      <input
+        id="ship-name"
+        v-model="draft.name"
+        type="text"
+        class="input-field p-2 rounded w-full"
+        placeholder="The Desert Rose"
+      />
+    </div>
+    <div v-else class="flex justify-end">
+      <BaseButton
+        variant="update"
+        class="inline-flex items-center gap-1"
+        @click="startEditing"
+      >
+        <CampaignNavIcon name="edit" class="w-4 h-4 flex-shrink-0" />
+        Edit ship
+      </BaseButton>
     </div>
 
     <!-- Profile image: in view mode it mirrors the campaign image banner; while
@@ -280,11 +307,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
         />
       </div>
 
-      <p v-if="editing" class="text-sm text-muted pt-1">
-        Hover the image and click
-        <span class="font-medium text-default">Change image</span>
-        to upload or reposition the ship's profile picture.
-      </p>
+      <div v-if="editing" class="flex-1 min-w-0 space-y-2">
+        <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
+        <!-- A real button, so touch devices (no hover) can change the image. -->
+        <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+      </div>
     </div>
 
     <!-- Vitals: Hull / Max, Armor, Damage, Fuel / Max -->
@@ -469,6 +496,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
         class="hidden"
         @change="onGalleryFileChange"
       />
+    </div>
+
+    <!-- Sticky edit actions: a compact floating tag keeps Cancel / Save
+         reachable while scrolling a long sheet, on mobile and desktop. -->
+    <div v-if="editing" class="sticky bottom-3 z-20 flex justify-end">
+      <div class="edit-bar">
+        <span v-if="isDirty" class="edit-bar-label">Unsaved changes</span>
+        <BaseButton variant="ghost" :disabled="saving" @click="cancelEditing">Cancel</BaseButton>
+        <BaseButton variant="add" :loading="saving" @click="submit">Save ship</BaseButton>
+      </div>
     </div>
 
     <!-- Image lightbox -->

@@ -110,8 +110,7 @@ useUnsavedChanges(
           id="campaign-name"
           v-model="editedName"
           type="text"
-          class="p-3 rounded w-full"
-          style="background-color: var(--color-primary-50)"
+          class="input-field p-3 rounded w-full"
           placeholder="Enter campaign name"
         />
       </div>
@@ -123,8 +122,7 @@ useUnsavedChanges(
         <textarea
           id="campaign-description"
           v-model="editedDescription"
-          class="p-3 rounded w-full"
-          style="background-color: var(--color-primary-50)"
+          class="input-field p-3 rounded w-full"
           rows="8"
           placeholder="Enter campaign description"
         ></textarea>
@@ -138,8 +136,7 @@ useUnsavedChanges(
         <textarea
           id="campaign-private-description"
           v-model="editedPrivateDescription"
-          class="p-3 rounded w-full"
-          style="background-color: var(--color-primary-50)"
+          class="input-field p-3 rounded w-full"
           rows="6"
           placeholder="Secrets only the GM should know"
         ></textarea>
@@ -152,8 +149,7 @@ useUnsavedChanges(
         <select
           id="campaign-system"
           v-model="editedPrimarySystem"
-          class="p-3 rounded w-full"
-          style="background-color: var(--color-primary-50)"
+          class="input-field p-3 rounded w-full"
         >
           <option value="">No system yet</option>
           <option v-for="option in CAMPAIGN_SYSTEM_OPTIONS" :key="option.id" :value="option.id">
