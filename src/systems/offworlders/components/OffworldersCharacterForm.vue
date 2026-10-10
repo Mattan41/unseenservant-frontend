@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watchEffect } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseInput from '@/components/base/BaseInput.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import BaseTooltip from '@/components/base/BaseTooltip.vue'
 import IconButton from '@/components/base/IconButton.vue'
@@ -47,6 +48,11 @@ const suggestedSkills = computed(() => suggestedSkillsForClass(offworlders.value
 const vitals = computed(() => offworldersVitals(offworlders.value))
 const abilityBonus = computed(() => vitals.value.abilityBonus)
 const derivedHealth = computed(() => vitals.value.maxHealth)
+const healthBonusHint = computed(() =>
+  abilityBonus.value.healthSources.length
+    ? `+${abilityBonus.value.health} from ${abilityBonus.value.healthSources.join(', ')}`
+    : '',
+)
 // Armor is a single chosen value; only the passive ability bonus is added on
 // top for display, so the stored value stays the player's pick.
 const effectiveArmorValue = computed(() => vitals.value.effectiveArmor)
@@ -147,74 +153,42 @@ function removeAbility(name) {
         <p v-if="classInfo" class="text-xs mt-1 text-muted">{{ classInfo.blurb }}</p>
       </div>
 
-      <div class="mb-4">
-        <label for="ow-species" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip
-            text="Offworlders has no species rules — decide as a group whether aliens exist. Not a core sheet field."
-          >
-            Species
-          </BaseTooltip>
-        </label>
-        <input
-          id="ow-species"
-          v-model="offworlders.species"
-          type="text"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-          placeholder="e.g. Human, Synthetic"
-        />
-      </div>
+      <BaseInput
+        class="mb-4"
+        v-model="offworlders.species"
+        label="Species"
+        tooltip="Offworlders has no species rules — decide as a group whether aliens exist. Not a core sheet field."
+        placeholder="e.g. Human, Synthetic"
+      />
     </div>
 
     <!-- Vitals -->
     <h3 class="section-heading mb-3">Vitals</h3>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      <div class="mb-4">
-        <span class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip
-            text="Maximum Health = 12 + Strength + Agility, plus passive bonuses from your abilities (e.g. Hardy's +4) and Misc. Calculated automatically."
-          >
-            Max Health
-          </BaseTooltip>
-        </span>
-        <input
-          :value="derivedHealth"
-          type="number"
-          disabled
-          class="input-field w-full px-3 py-2 border border-input rounded-md opacity-70"
-        />
-        <p v-if="abilityBonus.healthSources.length" class="text-xs mt-1 text-muted">
-          +{{ abilityBonus.health }} from {{ abilityBonus.healthSources.join(', ') }}
-        </p>
-      </div>
-      <div class="mb-4">
-        <label for="ow-health-modifier" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip text="Any other flat ± to Max Health, on top of what your abilities already grant.">
-            Health Misc ±
-          </BaseTooltip>
-        </label>
-        <input
-          id="ow-health-modifier"
-          v-model.number="offworlders.healthModifier"
-          type="number"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-        />
-      </div>
-      <div class="mb-4">
-        <label for="ow-current-health" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip
-            text="Your running HP. Damage reduces it — it may go above Max Health to hold temporary HP."
-          >
-            Current HP
-          </BaseTooltip>
-        </label>
-        <input
-          id="ow-current-health"
-          v-model.number="offworlders.currentHealth"
-          type="number"
-          min="0"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-        />
-      </div>
+      <BaseInput
+        class="mb-4"
+        :model-value="derivedHealth"
+        type="number"
+        label="Max Health"
+        tooltip="Maximum Health = 12 + Strength + Agility, plus passive bonuses from your abilities (e.g. Hardy's +4) and Misc. Calculated automatically."
+        :hint="healthBonusHint"
+        disabled
+      />
+      <BaseInput
+        class="mb-4"
+        v-model="offworlders.healthModifier"
+        type="number"
+        label="Health Misc ±"
+        tooltip="Any other flat ± to Max Health, on top of what your abilities already grant."
+      />
+      <BaseInput
+        class="mb-4"
+        v-model="offworlders.currentHealth"
+        type="number"
+        label="Current HP"
+        tooltip="Your running HP. Damage reduces it — it may go above Max Health to hold temporary HP."
+        :min="0"
+      />
       <div class="mb-4">
         <label for="ow-armor" class="block text-sm font-medium text-default mb-1">
           <BaseTooltip
@@ -262,32 +236,15 @@ function removeAbility(name) {
           <span class="text-sm text-muted">/ {{ OFFWORLDERS_SUPPLY_MAX }}</span>
         </div>
       </div>
-      <div class="mb-4">
-        <label for="ow-credits" class="block text-sm font-medium text-default mb-1">
-          <BaseTooltip
-            text="The game's smallest tracked currency unit. You start with 3 (or 10 if you traded armor for credits)."
-          >
-            Credits
-          </BaseTooltip>
-        </label>
-        <input
-          id="ow-credits"
-          v-model.number="offworlders.credits"
-          type="number"
-          min="0"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-        />
-      </div>
-      <div class="mb-4">
-        <label for="ow-xp" class="block text-sm font-medium text-default mb-1">XP</label>
-        <input
-          id="ow-xp"
-          v-model.number="offworlders.xp"
-          type="number"
-          min="0"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-        />
-      </div>
+      <BaseInput
+        class="mb-4"
+        v-model="offworlders.credits"
+        type="number"
+        label="Credits"
+        tooltip="The game's smallest tracked currency unit. You start with 3 (or 10 if you traded armor for credits)."
+        :min="0"
+      />
+      <BaseInput class="mb-4" v-model="offworlders.xp" type="number" label="XP" :min="0" />
     </div>
 
     <!-- Attributes -->
@@ -310,19 +267,17 @@ function removeAbility(name) {
       </span>
     </p>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div v-for="attr in OFFWORLDERS_ATTRIBUTES" :key="attr" class="mb-4">
-        <label :for="`ow-attr-${attr}`" class="block text-sm font-medium text-default mb-1 capitalize">
-          {{ attr }}
-        </label>
-        <input
-          :id="`ow-attr-${attr}`"
-          v-model.number="offworlders.stats[attr]"
-          type="number"
-          :min="OFFWORLDERS_ATTRIBUTE_MIN"
-          :max="OFFWORLDERS_ATTRIBUTE_MAX"
-          class="input-field w-full px-3 py-2 border border-input rounded-md"
-        />
-      </div>
+      <BaseInput
+        v-for="attr in OFFWORLDERS_ATTRIBUTES"
+        :key="attr"
+        class="mb-4"
+        v-model="offworlders.stats[attr]"
+        type="number"
+        :label="attr"
+        label-class="capitalize"
+        :min="OFFWORLDERS_ATTRIBUTE_MIN"
+        :max="OFFWORLDERS_ATTRIBUTE_MAX"
+      />
     </div>
 
     <!-- Skills -->
