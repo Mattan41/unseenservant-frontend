@@ -32,11 +32,16 @@ const CampaignService = {
     return response.data
   },
 
-  // this method updates the campaign name, description and primary system together
-  async updateCampaignInfo(campaignId, { name, description, primarySystem = null }) {
+  // this method updates the campaign name, description, private (GM-only)
+  // description and primary system together
+  async updateCampaignInfo(
+    campaignId,
+    { name, description, privateDescription = null, primarySystem = null },
+  ) {
     const response = await apiClient.put(`api/campaigns/${campaignId}`, {
       name,
       description,
+      privateDescription,
       primarySystem,
     })
     return response.data

@@ -486,7 +486,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### PUT /api/campaigns/{id}
 
-- **Service**: CampaignService.updateCampaignInfo(campaignId, { name, description, primarySystem })
+- **Service**: CampaignService.updateCampaignInfo(campaignId, { name, description, privateDescription, primarySystem })
 - **Store Action**: campaignStore.updateCampaignInfo(campaignId, campaignData)
 - **Guest Mode**: Mocked — updates campaign in guest_campaigns
 - **Request**: `{ name, description, privateDescription, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null and `privateDescription` is the GM-only description

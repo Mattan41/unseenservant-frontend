@@ -450,25 +450,28 @@ watch(
         </BaseSection>
       </section>
 
-      <!-- World Lore & Background -->
-      <BaseSection v-else-if="activeSection === 'lore'" title="World Lore &amp; Background">
-        <BaseCard>
-          <p v-if="!campaignDescription" class="italic text-muted text-sm">
-            No background has been recorded for this campaign yet.
-          </p>
-          <p v-else class="text-default text-sm whitespace-pre-line break-words">
-            {{ campaignDescription }}
-          </p>
+      <!-- World Lore & Background (public block + GM-only block for owner/GM) -->
+      <template v-else-if="activeSection === 'lore'">
+        <BaseSection title="World Lore &amp; Background">
+          <BaseCard>
+            <p v-if="!campaignDescription" class="italic text-muted text-sm">
+              No background has been recorded for this campaign yet.
+            </p>
+            <p v-else class="text-default text-sm whitespace-pre-line break-words">
+              {{ campaignDescription }}
+            </p>
+          </BaseCard>
+        </BaseSection>
 
-          <!-- Private description — only returned to the owner/GM by the API. -->
-          <div v-if="campaign.privateDescription" class="mt-4 pt-3 border-t border-section">
-            <p class="text-xs italic mb-1 text-muted">Private — only the GM can see this</p>
+        <!-- Only returned to the owner/GM by the API, so this block is hidden for players. -->
+        <BaseSection v-if="campaign.privateDescription" title="Only the GM Can See This">
+          <BaseCard>
             <p class="text-default text-sm whitespace-pre-line break-words">
               {{ campaign.privateDescription }}
             </p>
-          </div>
-        </BaseCard>
-      </BaseSection>
+          </BaseCard>
+        </BaseSection>
+      </template>
 
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
