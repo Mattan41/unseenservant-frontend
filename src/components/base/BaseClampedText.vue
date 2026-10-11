@@ -1,13 +1,16 @@
 <script setup>
 /**
- * Long free-text block that is clamped to a few lines, with a "Read more" /
- * "Show less" link toggle (the same pattern as the campaign description).
+ * Long free-text markdown block, clamped to a few lines with a "Read more" /
+ * "Show less" toggle (the same pattern as the campaign description).
  *
- * The toggle only appears when the text is longer than `threshold` characters,
- * so short values render as plain paragraphs.
+ * The clamp sits on the wrapper, because `line-clamp` has to own the block, and
+ * the toggle only appears when the *plain text* is longer than `threshold`
+ * characters — markdown markers never count towards the cut-off.
  */
 import { computed, ref } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
+import { toPlainText } from '@/utils/markdown.js'
 
 const props = defineProps({
   /** The text to display. */
@@ -45,7 +48,7 @@ const CLAMP_CLASSES = {
   6: 'line-clamp-6',
 }
 const clampClass = computed(() => CLAMP_CLASSES[props.lines] || 'line-clamp-4')
-const isLong = computed(() => (props.text || '').length > props.threshold)
+const isLong = computed(() => toPlainText(props.text).length > props.threshold)
 
 function toggle() {
   expanded.value = !expanded.value
@@ -60,12 +63,9 @@ function toggle() {
       {{ lessLabel }}
     </BaseButton>
 
-    <p
-      class="text-default whitespace-pre-line break-words"
-      :class="isLong && !expanded ? clampClass : null"
-    >
-      {{ text }}
-    </p>
+    <div :class="isLong && !expanded ? clampClass : null">
+      <MarkdownText :text="text" />
+    </div>
 
     <BaseButton v-if="isLong" variant="link" class="mt-1" @click="toggle">
       {{ expanded ? lessLabel : moreLabel }}

@@ -1,3 +1,5 @@
+import { decodeHtmlEntities } from '@/utils/htmlEntities.js'
+
 /**
  * Format a spell level number into a human-readable label.
  * Pure function — no Vue or store dependencies.
@@ -36,7 +38,9 @@ export function formatComponents(components) {
 
 /**
  * Normalize an Open5e v2 spell object into a clean homebrew-ready format.
- * Flattens nested objects (school, document) into top-level strings.
+ * Flattens nested objects (school, document) into top-level strings and decodes
+ * the HTML entities the API delivers pre-escaped (e.g. `aren&#x27;t`), which
+ * would otherwise show up literally in the app.
  * Pure function — no Vue or store dependencies.
  *
  * @param {object} rawSpell - Raw spell from Open5e API
@@ -105,18 +109,18 @@ export function normalizeSpell(rawSpell) {
     documentName: docName,
     sourceLabel,
     classes: (rawSpell.classes || []).map((c) => c.name || c),
-    desc: rawSpell.desc || rawSpell.description || '',
+    desc: decodeHtmlEntities(rawSpell.desc || rawSpell.description || ''),
     duration: rawSpell.duration || '',
     casting_time: rawSpell.casting_time || '',
     range,
     components,
-    materialText,
+    materialText: decodeHtmlEntities(materialText),
     verbal: rawSpell.verbal || false,
     somatic: rawSpell.somatic || false,
     material: !!rawSpell.material,
     ritual: rawSpell.ritual || false,
     concentration: rawSpell.concentration || false,
-    higher_level: rawSpell.higher_level || '',
+    higher_level: decodeHtmlEntities(rawSpell.higher_level || ''),
     isHomebrew: false,
   }
 }

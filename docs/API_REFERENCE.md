@@ -440,10 +440,10 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### POST /api/campaigns
 
-- **Service**: CampaignService.createCampaign(name, description)
-- **Store Action**: campaignStore.createCampaign(name, description)
+- **Service**: CampaignService.createCampaign({ name, description, worldLore?, privateDescription?, primarySystem? })
+- **Store Action**: campaignStore.createCampaign({ name, description, worldLore?, privateDescription?, primarySystem? })
 - **Guest Mode**: Mocked — creates campaign in guest_campaigns with generated ID
-- **Request**: `{ name, description, privateDescription?, primarySystem? }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null and `privateDescription` is the GM-only description
+- **Request**: `{ name, description, worldLore?, privateDescription?, primarySystem? }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null, `worldLore` is the public setting material and `privateDescription` is the GM-only notes (labelled "GM notes" in the UI)
 - **Response**: CampaignResponseDTO
 - **Status Codes**: 201, 400, 401
 - **Notes**: Automatically fetches updated campaign list after successful creation. If `primarySystem` is `OFFWORLDERS`, the backend also creates the campaign's default ship.
@@ -477,8 +477,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: CampaignService.fetchCampaign(id)
 - **Store Action**: campaignStore.fetchCampaign(id)
 - **Guest Mode**: Mocked — finds campaign by ID in guest_campaigns
-- **Response**: CampaignResponseDTO `{ id, name, description, privateDescription, imageUrl, primarySystem, ownerId, participants }`
-- **Notes**: `privateDescription` is `null` unless the requester is the campaign owner or a campaign GM.
+- **Response**: CampaignResponseDTO `{ id, name, description, worldLore, privateDescription, imageUrl, primarySystem, ownerId, participants }`
+- **Notes**: `privateDescription` is `null` unless the requester is the campaign owner or a campaign GM; `worldLore` is always included.
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires authorized participant per contract definition.
 
@@ -486,10 +486,10 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ### PUT /api/campaigns/{id}
 
-- **Service**: CampaignService.updateCampaignInfo(campaignId, { name, description, privateDescription, primarySystem })
+- **Service**: CampaignService.updateCampaignInfo(campaignId, { name, description, worldLore, privateDescription, primarySystem })
 - **Store Action**: campaignStore.updateCampaignInfo(campaignId, campaignData)
 - **Guest Mode**: Mocked — updates campaign in guest_campaigns
-- **Request**: `{ name, description, privateDescription, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null and `privateDescription` is the GM-only description
+- **Request**: `{ name, description, worldLore, privateDescription, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null, `worldLore` is the public setting material and `privateDescription` is the GM-only notes (labelled "GM notes" in the UI)
 - **Response**: CampaignResponseDTO
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Updates local state immediately after successful API callback. Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent); changing away from `OFFWORLDERS` keeps the ship.

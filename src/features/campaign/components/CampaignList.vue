@@ -1,11 +1,28 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import { toPlainText } from '@/utils/markdown.js'
 
 const campaignStore = useCampaignStore()
 const expandedDescriptions = ref({})
+
+/**
+ * Descriptions as plain text, keyed by campaign id.
+ *
+ * The card shows a truncation of the description inside a link, so the markdown
+ * syntax is stripped: a cut must never land inside `**bold**`, and rendered
+ * links cannot be nested inside the card's own anchor. The full, rendered
+ * description lives on the campaign page.
+ */
+const descriptionPreviews = computed(() => {
+  const previews = {}
+  for (const campaign of campaignStore.campaigns) {
+    previews[campaign.id] = toPlainText(campaignStore.getCampaignDescription(campaign.id) || '')
+  }
+  return previews
+})
 
 const toggleDescription = (campaignId) => {
   expandedDescriptions.value[campaignId] = !expandedDescriptions.value[campaignId]
@@ -17,10 +34,10 @@ onMounted(async () => {
 </script>
 <template>
   <div>
-    <h2 class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      Campaigns
+    <div class="mb-4 flex flex-col gap-2 sm:flex-row justify-between items-start sm:items-center">
+      <h2>Campaigns</h2>
       <CreateCampaign />
-    </h2>
+    </div>
     <div v-if="campaignStore.isLoading" class="text-center p-8">
       <div class="spinner h-8 w-8 border-b-2"></div>
       <p class="mt-2">Loading campaigns...</p>
@@ -46,21 +63,19 @@ onMounted(async () => {
             class="w-full h-48 object-cover rounded"
           />
 
-          <!-- Description with read more/less -->
+          <!-- Description preview with read more/less (plain text: see
+               `descriptionPreviews` above) -->
           <div class="break-words">
             <p
               v-if="
-                campaignStore.getCampaignDescription(campaign.id).length <= 150 ||
-                expandedDescriptions[campaign.id]
+                descriptionPreviews[campaign.id].length <= 150 || expandedDescriptions[campaign.id]
               "
             >
-              {{ campaignStore.getCampaignDescription(campaign.id) }}
+              {{ descriptionPreviews[campaign.id] }}
             </p>
-            <p v-else>
-              {{ campaignStore.getCampaignDescription(campaign.id).substring(0, 150) }}...
-            </p>
+            <p v-else>{{ descriptionPreviews[campaign.id].substring(0, 150) }}...</p>
             <button
-              v-if="campaignStore.getCampaignDescription(campaign.id).length > 150"
+              v-if="descriptionPreviews[campaign.id].length > 150"
               @click.prevent="toggleDescription(campaign.id)"
               class="read-more-link text-sm mt-1"
             >

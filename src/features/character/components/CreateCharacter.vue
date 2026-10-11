@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
@@ -118,56 +119,42 @@ const submitCharacter = async () => {
             </select>
           </div>
 
-          <div class="mb-4">
-            <label for="notes" class="block text-sm font-medium text-default mb-1">Notes</label>
-            <textarea
-              id="notes"
-              v-model="character.notes"
-              rows="2"
-              class="input-field w-full px-3 py-2 border border-input rounded-md"
-              placeholder="Optional notes about this character"
-            ></textarea>
-          </div>
+          <BaseMarkdownField
+            id="notes"
+            v-model="character.notes"
+            class="mb-4"
+            label="Notes"
+            :rows="2"
+            placeholder="Optional notes about this character"
+          />
 
-          <div class="mb-4">
-            <label for="appearance" class="block text-sm font-medium text-default mb-1"
-              >Appearance</label
-            >
-            <textarea
-              id="appearance"
-              v-model="character.appearance"
-              rows="2"
-              class="input-field w-full px-3 py-2 border border-input rounded-md"
-              placeholder="Distinct visual details — clothing, features, possessions"
-            ></textarea>
-          </div>
+          <BaseMarkdownField
+            id="appearance"
+            v-model="character.appearance"
+            class="mb-4"
+            label="Appearance"
+            :rows="2"
+            placeholder="Distinct visual details — clothing, features, possessions"
+          />
 
-          <div class="mb-4">
-            <label for="backstory" class="block text-sm font-medium text-default mb-1">
-              Backstory — visible to everyone in the campaign
-            </label>
-            <textarea
-              id="backstory"
-              v-model="character.backstory"
-              rows="4"
-              class="input-field w-full px-3 py-2 border border-input rounded-md"
-              placeholder="Where does this character come from?"
-            ></textarea>
-          </div>
+          <BaseMarkdownField
+            id="backstory"
+            v-model="character.backstory"
+            class="mb-4"
+            label="Backstory — visible to everyone in the campaign"
+            :rows="4"
+            placeholder="Where does this character come from?"
+          />
 
-          <div class="mb-4">
-            <label for="privateBackstory" class="block text-sm font-medium text-default mb-1">
-              Private backstory
-            </label>
-            <p class="text-xs text-muted mb-1">Only you and the GM can see this.</p>
-            <textarea
-              id="privateBackstory"
-              v-model="character.privateBackstory"
-              rows="4"
-              class="input-field w-full px-3 py-2 border border-input rounded-md"
-              placeholder="Secrets only the GM should know"
-            ></textarea>
-          </div>
+          <BaseMarkdownField
+            id="privateBackstory"
+            v-model="character.privateBackstory"
+            class="mb-4"
+            label="Private backstory"
+            hint="Only you and the GM can see this."
+            :rows="4"
+            placeholder="Secrets only the GM should know"
+          />
         </div>
 
         <!-- System-specific fields -->

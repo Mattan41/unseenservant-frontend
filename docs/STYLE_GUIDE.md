@@ -205,12 +205,26 @@ all conditional styling in `*Utils.js` files.
 | `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-third-200 p-2 text-center` | implemented |
 | `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
 | `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
+| `.stat-strip` | Campaign summary panel: label/value rows | `flex flex-col gap-1` | implemented |
+| `.stat` | One `dt`/`dd` row in the summary panel | `flex items-baseline gap-2` | implemented |
+| `.stat-label` / `.stat-value` | Row label / figure | `shrink-0 text-xs uppercase tracking-wide text-third-500` / `min-w-0 font-semibold text-third-700` | implemented |
+| `.stat-entry` / `.stat-separator` | One participant in the summary roster (`nickname · ROLE · characters`) / the `|` between entries | `whitespace-nowrap` / `mx-1.5 text-third-300` | implemented |
 | `.info-popover` | Info popover body (`BaseTooltip.vue`) | `rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg` | implemented |
 | `.info-popover--fixed` | Info popover on desktop (md+); teleported + JS-positioned | `fixed z-[60]` | implemented |
 | `.info-popover--inline` | Info popover on mobile (<md); expands under the trigger | `mt-1 block` | implemented |
 | `.text-warning` | Warning text tone (e.g. attribute array mismatch) | `text-secondary-700` | implemented |
 | `.suggested-choice` | Highlight for a suggested skill option | `rounded bg-secondary-50 px-1` | implemented |
 | `.suggested-choice-group` | Highlight panel for a class's suggested abilities | `rounded-md bg-secondary-50` | implemented |
+| `.info-box` / `.info-box--{info,success,warning,danger}` | Inset callout with a semantic tone (`BaseInfoBox.vue`) | `flex items-start gap-2 rounded-md border px-3 py-2 text-sm`, plus a per-tone border/bg/text pair | implemented |
+| `.info-box-icon` | Tone glyph sizing inside a callout | `mt-0.5 h-4 w-4 flex-shrink-0` | implemented |
+| `.info-box-title` | Optional callout heading | `font-semibold` | implemented |
+| `.modal-title` | Dialog/panel title | Opts out of the page-sized `h1–h3` rules: `font-size: 1.25rem`, `text-transform: none` | implemented |
+| `.markdown-help` | Formatting-help disclosure wrapper (`MarkdownHelp.vue`) | `flex flex-col items-start gap-1` | implemented |
+| `.markdown-help-panel` | Cheat-sheet panel (a `BaseInfoBox`), filling the field it sits under | `w-full` | implemented |
+| `.markdown-help-list` | Cheat-sheet rows (capped, so a dialog cannot grow unbounded) | `flex max-h-64 flex-col gap-1 overflow-y-auto` | implemented |
+| `.markdown-help-row` | One source/render pair | `flex items-start gap-2` | implemented |
+| `.markdown-help-source` | The literal snippet a user types | `w-24 shrink-0 break-all rounded bg-third-100 px-1 font-mono text-xs` | implemented |
+| `.markdown-help-result` | What the snippet renders to | `min-w-0` | implemented |
 
 ### 2.5 Edit action bar → `src/assets/main.css`
 
@@ -222,6 +236,12 @@ as a floating tag. Position the wrapper with `sticky bottom-*`.
 Don't hand-roll the markup: use `<BaseStickyActions>` (see §2.6), which owns the
 sticky wrapper, the tag and the buttons.
 
+**Edit in place.** A long-text block that belongs to one section is edited in that
+section, not in a central settings form — `CampaignView`'s "World Lore &
+Background" renders the read view and swaps in `<BaseMarkdownField>`s (plus this
+bar) when the owner presses Edit. The settings form then owns only the record's
+identity (name, system, image).
+
 ### 2.6 Proposed new classes (not yet implemented)
 
 | Class | Purpose | Replaces | Status |
@@ -232,14 +252,48 @@ sticky wrapper, the tag and the buttons.
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
-| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close` on backdrop click). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. | implemented |
-| `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `plus`, `overview`, `lore`, `characters`, `participants`, `messages`, `settings`, `edit`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
+| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close` on backdrop click). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. `BaseModal` only centres its slot: a dialog whose content can grow must cap its own panel (`max-h-[90vh] overflow-y-auto`, as in `CreateCampaign.vue` / `SpellDetailModal.vue`), and any dialog opened from inside a heading must `<Teleport to="body">` — otherwise it inherits that heading's `text-transform: uppercase` and its page-sized type ramp. | implemented |
+| `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `info`, `help`, `alert`, `overview`, `lore`, `characters`, `participants`, `messages`, `settings`, `edit`, `plus`, `ship`, `spells`, `chevron-left`, `chevron-right`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
 | `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
 | `<BaseButton icon="…">` prop | Leading icon on a text button | `icon` prop on `src/components/base/BaseButton.vue` renders a `BaseIcon` before the label (`.base-btn-with-icon` / `.base-btn-icon`: `inline-flex items-center gap-1`, `h-4 w-4`). Use it instead of hand-rolled `<CampaignNavIcon …>` + `inline-flex items-center gap-1` wrappers. Edit affordances should be `variant="update" icon="edit"` (`.base-btn-update`) so they read as the prominent action. | implemented |
 | `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
-| `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue` and `EditCharacter.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
+| `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue`, `EditCharacter.vue` and `CampaignView.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
 | `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `CampaignSidebar` (campaign drawer). | implemented |
+| `<BaseMarkdownField>` component | Labelled markdown field with a Write/Preview toggle | `src/components/base/BaseMarkdownField.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `hint`, `error`, `id`, `rows`, `placeholder`, `maxlength`, `disabled`, `writeLabel`, `previewLabel`, `emptyPreview`; emits `update:modelValue`). Mirrors `<BaseInput>`'s API and adds the preview tab; the toggle never touches the value, so the form's dirty tracking is unaffected. Renders a collapsed `<MarkdownHelp>` under the field instead of printing the syntax inline. Use it for every long free-text field instead of a raw `<textarea>`. | implemented |
+| `<MarkdownText>` component | Rendered markdown — the only `v-html` site | `src/components/base/MarkdownText.vue` (props: `text`). Renders `renderMarkdown()` inside `.rich-text`. Read-only views use this instead of `{{ }}` for long-text fields. | implemented |
+| `<BaseInfoBox>` component | Inset callout with a semantic tone | `src/components/base/BaseInfoBox.vue` (props: `variant` (`info` / `success` / `warning` / `danger`), `title`, `icon` (`true` picks by tone, a `BaseIcon` name overrides it, `false` hides it); default slot). Colours come from the `.info-box--{tone}` modifiers, so the tone is a prop — never pass palette utilities from the call site. No outer spacing (pass `class="mb-4"`). | implemented |
+| `<MarkdownHelp>` component | Markdown formatting cheat sheet | `src/components/base/MarkdownHelp.vue` (props: `label`, default `Formatting help`). A `variant="link"` disclosure that expands an in-flow `<BaseInfoBox variant="info">` listing each supported construct as a source snippet plus a live rendering. Deliberately in-flow (not a popover or nested dialog) so it is never clipped inside a scrollable dialog. Rendered by `<BaseMarkdownField>`; use it directly wherever users need the reference. | implemented |
 ---
+
+### 2.7 Markdown & long-text fields → `src/assets/main.css`, `src/utils/markdown.js`
+
+Every long free-text field (character notes / appearance / backstory / private
+backstory, campaign short description / world lore / private description, ship
+notes, message bodies, spell descriptions) is **markdown**, stored as source text
+and rendered on the client:
+
+| Layer | File | Responsibility |
+|-------|------|----------------|
+| Parser | `src/utils/markdown.js` | The single `markdown-it` instance (`html: false`, `linkify: true`, `breaks: true`, typographer off, images disabled). Exports `renderMarkdown()` and `toPlainText()`. |
+| Rendering | `src/components/base/MarkdownText.vue` | **The only component allowed to bind `v-html`.** Wraps `renderMarkdown()` output in `.rich-text`. |
+| Editing | `src/components/base/BaseMarkdownField.vue` | Textarea + Write/Preview toggle; same props as `<BaseInput>`, plus `rows` / `maxlength`. A collapsed `<MarkdownHelp>` disclosure under the field carries the syntax reference. |
+| Help | `src/components/base/MarkdownHelp.vue` | Collapsed "Formatting help" disclosure: the source snippet for each supported construct next to a live rendering of it, produced by the same `MarkdownText` renderer the views use. |
+| Styling | `.rich-text`, `.markdown-preview`, `.field-tabs`, `.field-tab` in `main.css` | Structure only, palette tokens only. Headings are re-sized here because the global `h1–h5` rules are page-sized. |
+
+Rules:
+
+- Raw HTML typed by a user is escaped (`html: false`) and unsafe link targets
+  (`javascript:` etc.) are rejected by markdown-it, so **no sanitiser (e.g.
+  DOMPurify) is needed** — and `v-html` must not be used anywhere else (see §3.5).
+- Images are disabled on purpose: a remote image in someone else's notes would
+  leak the reader's IP address to a third party. Uploads go through the campaign
+  image pipeline instead.
+- Text that arrives pre-escaped from third-party data (Open5e spell `desc`,
+  `higher_level`, material text) is decoded once in `normalizeSpell` via
+  `src/utils/htmlEntities.js` — never in a template.
+- Where a preview cuts text (`CampaignList`, `<BaseClampedText>`), measure and
+  truncate the `toPlainText()` output, never the raw markdown, so a cut cannot
+  land inside `**bold**`.
 
 ## 3. Hard Constraints
 
@@ -313,6 +367,13 @@ Specifically banned examples (now including gray/white/black shades):
   reference
 
 ---
+
+### 3.5 `v-html` only inside `MarkdownText.vue`
+
+`v-html` is allowed **only** in `src/components/base/MarkdownText.vue`, and only
+with the output of `renderMarkdown()` (which escapes raw HTML and validates link
+targets). Any other `v-html` binding is a review blocker — it bypasses the
+escaping model, and ESLint is not configured to catch it.
 
 ## 4. Where to Add New Classes / Variables
 

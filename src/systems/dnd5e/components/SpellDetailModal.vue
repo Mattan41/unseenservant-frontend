@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { getSchoolBadgeClass } from '@/systems/dnd5e/spellUtils.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
 
 const props = defineProps({
   spell: {
@@ -71,12 +72,10 @@ function close() {
         <!-- Description -->
         <div class="mt-4">
           <h4 class="font-semibold mb-2" style="color: var(--color-third-800)">Description</h4>
-          <div
+          <MarkdownText
             v-if="spell.desc || spell.description"
-            class="text-secondary prose prose-sm max-w-none"
-          >
-            <p>{{ spell.desc || spell.description }}</p>
-          </div>
+            :text="spell.desc || spell.description"
+          />
           <div v-if="spell.higher_level" class="mt-2">
             <h5 class="font-semibold text-default">At Higher Levels:</h5>
             <p class="text-secondary">{{ spell.higher_level }}</p>

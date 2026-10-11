@@ -11,10 +11,17 @@ const CampaignService = {
     return response.data
   },
 
-  async createCampaign(name, description, primarySystem = null, privateDescription = null) {
+  async createCampaign({
+    name,
+    description,
+    worldLore = null,
+    privateDescription = null,
+    primarySystem = null,
+  }) {
     const response = await apiClient.post('api/campaigns', {
       name,
       description,
+      worldLore,
       privateDescription,
       primarySystem,
     })
@@ -32,15 +39,16 @@ const CampaignService = {
     return response.data
   },
 
-  // this method updates the campaign name, description, private (GM-only)
-  // description and primary system together
+  // this method updates the campaign name, short description, world lore,
+  // private (GM-only) description and primary system together
   async updateCampaignInfo(
     campaignId,
-    { name, description, privateDescription = null, primarySystem = null },
+    { name, description, worldLore = null, privateDescription = null, primarySystem = null },
   ) {
     const response = await apiClient.put(`api/campaigns/${campaignId}`, {
       name,
       description,
+      worldLore,
       privateDescription,
       primarySystem,
     })

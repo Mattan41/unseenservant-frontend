@@ -137,3 +137,25 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
 
 ## General Practices
 - Absolute imports are strictly enforced across the codebase using the `@/` path alias pointing to the `src/` root directory.
+
+## Long-text fields are markdown
+
+Every long free-text field (character notes / appearance / backstory / private
+backstory, campaign short description / world lore / private description, ship
+notes, message bodies, spell descriptions) is stored as markdown **source** and
+rendered on the client:
+
+- `src/utils/markdown.js` — the single `markdown-it` instance (`html: false`,
+  `linkify`, `breaks`, images disabled) plus `renderMarkdown()` / `toPlainText()`.
+- `src/components/base/MarkdownText.vue` — the only component that binds
+  `v-html`; safe because raw HTML is escaped and link targets are validated.
+- `src/components/base/BaseMarkdownField.vue` — textarea + Write/Preview toggle
+  (preview never mutates the value, so dirty tracking is unaffected).
+- `src/utils/htmlEntities.js` — decodes pre-escaped third-party text (Open5e
+  spells) during normalisation, not at render time.
+- `src/components/base/MarkdownHelp.vue` — the collapsed "Formatting help"
+  cheat sheet (source snippet + live rendering), rendered beneath every
+  `<BaseMarkdownField>` so the syntax reference exists in exactly one place.
+
+The API, DTOs and database columns are unchanged: markdown travels as plain text,
+so anything that does not render it still shows readable source.
