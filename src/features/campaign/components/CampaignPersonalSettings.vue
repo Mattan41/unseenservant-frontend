@@ -1,10 +1,10 @@
 <script setup>
 /**
- * Personal campaign settings (available to every participant).
+ * Personal campaign settings — available to every participant.
  *
- * Currently only holds the participant's own nickname for this campaign.
- * Campaign-level/destructive settings live in `CampaignSettingsSection.vue`
- * (owner only) and participant management lives in `CampaignParticipants.vue`.
+ * Holds the signed-in participant's own nickname for this campaign. Campaign
+ * details (GM) and participant management / ownership (owner) are separate
+ * blocks inside the same "Campaign Settings" section.
  */
 import { computed, ref, watch } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
@@ -33,7 +33,6 @@ const isSaving = ref(false)
 const loadCampaignData = async () => {
   try {
     campaign.value = await campaignStore.fetchCampaign(props.campaignId)
-    nickname.value = campaign.value.nickname
   } catch (error) {
     console.error('Failed to load campaign:', error)
   }
@@ -61,12 +60,13 @@ watch(
 )
 
 const startEditingNickname = () => {
+  nickname.value = currentUserNickname.value || ''
   isEditingNickname.value = true
 }
 
 const cancelEditingNickname = () => {
   isEditingNickname.value = false
-  nickname.value = campaign.value.nickname
+  nickname.value = currentUserNickname.value || ''
 }
 
 const saveNickname = async () => {
@@ -89,7 +89,11 @@ const saveNickname = async () => {
 </script>
 
 <template>
-  <div class="rounded-lg shadow-md p-4" style="background-color: var(--color-primary-200)">
+  <div
+    class="rounded-lg shadow-md p-4 space-y-6"
+    style="background-color: var(--color-primary-200)"
+  >
+    <!-- Your own nickname -->
     <div class="border border-section rounded-lg p-4 max-w-lg">
       <h5 class="font-medium mb-2">Your Nickname in Campaign</h5>
 

@@ -118,7 +118,7 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Status: 200, 400, 401, 403, 404
 
 **DELETE /api/characters/{id}/campaign**
-- Requires: ROLE_USER, must be owner
+- Requires: ROLE_USER; the character's owner, or the campaign's GM/owner
 - Sets campaignId = null without deleting the character
 - Response: `CharacterOutputDTO`
 - Status: 200, 401, 403, 404
@@ -193,6 +193,14 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Requires: owner
 - Status: 204, 401, 403, 404
 - Note: A campaign's ship (if any) is removed with the campaign.
+
+**Campaign permission model (frontend expectation)**
+- Two independent axes: **ownership** (administration) and **table role** (GM = world-building).
+- `PUT /api/campaigns/{id}` and `POST /api/campaigns/{id}/image` are content operations: expect the requester to be a campaign **GM** (not merely the owner).
+- `PATCH /api/campaigns/{id}/participants`, `/participants/{id}/role` and `/owner`, plus `DELETE /api/campaigns/{id}`, are administration: expect the campaign **owner**.
+- `PATCH /api/campaigns/{id}/participants/{id}/nickname`: any participant for their own nickname; the campaign **owner** for anyone else's.
+- `GET /api/campaigns/{id}`: `privateDescription` should be returned only to a campaign **GM** (the frontend hides it from a non-GM owner).
+- The frontend enforces these in the UI via `src/features/campaign/campaignPermissions.js` and mirrors them in guest mode (`src/api/lib/guest-axios.js`); verify the backend's `CampaignPermissionService` matches before release.
 
 ---
 

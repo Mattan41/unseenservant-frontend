@@ -7,6 +7,10 @@
  */
 
 import { useAuthStore } from '@/features/auth/authStore'
+import {
+  getCampaignPermissions,
+  isCampaignGm,
+} from '@/features/campaign/campaignPermissions.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -170,8 +174,29 @@ function isGuestGameMaster(campaignId, userId) {
   if (!campaignId) return false
   const campaigns = getData(KEYS.CAMPAIGNS, [])
   const campaign = campaigns.find((c) => String(c.id) === String(campaignId))
-  if (!campaign || !Array.isArray(campaign.participants)) return false
-  return campaign.participants.some((p) => String(p.id) === String(userId) && p.role === 'GM')
+  return isCampaignGm(campaign || null, userId)
+}
+
+/**
+ * Resolve the current guest user's campaign capabilities from localStorage,
+ * reusing the app-wide permission model so guest mode enforces the same rules
+ * the real backend would (ownership → administration, GM → world-building).
+ */
+function guestCampaignPermissions(campaignId) {
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const campaign = campaigns.find((c) => String(c.id) === String(campaignId)) || null
+  return getCampaignPermissions(campaign, currentGuestUserId())
+}
+
+/** Reject a guest request with the same 403 shape axios surfaces in full mode. */
+function forbidden(message) {
+  return Promise.reject({
+    response: {
+      data: { message },
+      status: 403,
+      handled: false,
+    },
+  })
 }
 
 /**
@@ -343,6 +368,10 @@ const guestAxios = {
     }
 
     if (url.includes('campaigns') && url.includes('/image')) {
+      const campaignId = extractId(url)
+      if (!guestCampaignPermissions(campaignId).canUploadCampaignImage) {
+        return forbidden('You do not have permission to change the campaign image.')
+      }
       return Promise.resolve({
         data: { imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe' },
       })
@@ -559,6 +588,18 @@ const guestAxios = {
         let participantId = urlParts[urlParts.indexOf('participants') + 1]
         if (participantId === 'null') participantId = 'guest_demo'
 
+        // GM edits other people's nicknames; the owner changes roles; any
+        // participant may edit their own nickname.
+        const permissions = guestCampaignPermissions(campaignId)
+        if (url.includes('/nickname')) {
+          const isSelfNickname = String(participantId) === String(currentGuestUserId())
+          if (!isSelfNickname && !permissions.canEditOthersNicknames) {
+            return forbidden('You do not have permission to change this nickname.')
+          }
+        } else if (!permissions.canChangeParticipantRoles) {
+          return forbidden('You do not have permission to change participant roles.')
+        }
+
         const cIdx = campaigns.findIndex((c) => String(c.id) === String(campaignId))
         if (cIdx !== -1 && campaigns[cIdx].participants) {
           const pIdx = campaigns[cIdx].participants.findIndex(
@@ -580,6 +621,10 @@ const guestAxios = {
       if (url.includes('/participants') && !url.includes('/nickname') && !url.includes('/role')) {
         const match = url.match(/campaigns\/([^/]+)/)
         const id = match ? match[1] : null
+
+        if (!guestCampaignPermissions(id).canManageParticipants) {
+          return forbidden('You do not have permission to manage participants.')
+        }
 
         const index = campaigns.findIndex((c) => String(c.id) === String(id))
         if (index !== -1) {
@@ -624,6 +669,9 @@ const guestAxios = {
 
       if (url.includes('/owner')) {
         const id = extractId(url)
+        if (!guestCampaignPermissions(id).canTransferOwnership) {
+          return forbidden('You do not have permission to transfer ownership.')
+        }
         const index = campaigns.findIndex((c) => String(c.id) === String(id))
         if (index !== -1 && data.newOwnerId) {
           campaigns[index].ownerId = data.newOwnerId
@@ -634,6 +682,9 @@ const guestAxios = {
 
       const id = extractId(url)
       if (id && !url.includes('/participants') && !url.includes('/owner')) {
+        if (!guestCampaignPermissions(id).canEditCampaignDetails) {
+          return forbidden('You do not have permission to edit this campaign.')
+        }
         const index = campaigns.findIndex((c) => String(c.id) === String(id))
         if (index !== -1) {
           campaigns[index] = { ...campaigns[index], ...data, updatedAt: new Date().toISOString() }
@@ -678,6 +729,18 @@ const guestAxios = {
       const characters = getData(KEYS.CHARACTERS, [])
       const index = characters.findIndex((c) => String(c.id) === String(id))
       if (index !== -1) {
+        // Mirrors the backend: the character's owner, the campaign GM, or the
+        // campaign owner may detach (this never deletes the character).
+        const character = characters[index]
+        const isCharacterOwner = String(character.ownerId) === String(currentGuestUserId())
+        const permissions = character.campaignId
+          ? guestCampaignPermissions(character.campaignId)
+          : null
+        const mayManageCampaign = !!permissions && (permissions.isGm || permissions.isOwner)
+        if (!isCharacterOwner && !mayManageCampaign) {
+          return forbidden('You may not remove this character from its campaign.')
+        }
+
         characters[index].campaignId = null
         setData(KEYS.CHARACTERS, characters)
       }
@@ -709,6 +772,10 @@ const guestAxios = {
     if (url.includes('campaigns')) {
       const id = extractId(url)
       if (id) {
+        if (!guestCampaignPermissions(id).canDeleteCampaign) {
+          return forbidden('You do not have permission to delete this campaign.')
+        }
+
         const campaigns = getData(KEYS.CAMPAIGNS, [])
         setData(
           KEYS.CAMPAIGNS,
