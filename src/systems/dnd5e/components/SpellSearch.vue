@@ -153,8 +153,9 @@ async function onSaveSpell(spell) {
       <div
         class="flex flex-col border border-section rounded-lg overflow-hidden bg-[var(--color-surface)] shadow-sm"
       >
+        <!-- Column headings only where there is room for real columns. -->
         <div
-          class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-2 border-b border-section font-semibold text-xs text-muted uppercase tracking-wider"
+          class="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] gap-2 px-4 py-2 border-b border-section font-semibold text-xs text-muted uppercase tracking-wider"
           style="background-color: var(--color-third-50)"
         >
           <div>Name</div>
@@ -169,12 +170,15 @@ async function onSaveSpell(spell) {
           :key="spell.key"
           class="border-b border-subtle last:border-b-0"
         >
+          <!-- Stacks (name, meta line, Add) on narrow screens and becomes the
+               table row at sm+, so the "+ Add" control always stays inside the
+               bordered row instead of being clipped by `overflow-hidden`. -->
           <div
-            class="grid grid-cols-[2fr_1fr_1fr_1.5fr_auto] gap-2 px-4 py-3 items-center cursor-pointer spell-row-hover"
+            class="flex flex-col gap-1 px-4 py-3 cursor-pointer spell-row-hover sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-2"
             @click="toggleExpand(spell.key)"
           >
             <div
-              class="font-medium flex items-center gap-1.5 flex-wrap"
+              class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap"
               style="color: var(--color-third-800)"
             >
               {{ spell.name }}
@@ -191,10 +195,29 @@ async function onSaveSpell(spell) {
                 >R</span
               >
             </div>
-            <div class="text-sm text-secondary">{{ spell.levelLabel }}</div>
-            <div class="text-sm text-muted capitalize">{{ spell.school }}</div>
-            <div class="text-xs text-subtle italic truncate">{{ spell.sourceLabel }}</div>
-            <div class="w-16 flex justify-end" @click.stop>
+
+            <!-- Compact meta line (narrow screens): level · school · source -->
+            <div class="text-xs text-muted sm:hidden">
+              {{ spell.levelLabel }}
+              <template v-if="spell.school">
+                · <span class="capitalize">{{ spell.school }}</span>
+              </template>
+              <template v-if="spell.sourceLabel">
+                · <span class="italic">{{ spell.sourceLabel }}</span>
+              </template>
+            </div>
+
+            <!-- Table cells (sm+) -->
+            <div class="hidden sm:block min-w-0 text-sm text-secondary">
+              {{ spell.levelLabel }}
+            </div>
+            <div class="hidden sm:block min-w-0 text-sm text-muted capitalize truncate">
+              {{ spell.school }}
+            </div>
+            <div class="hidden sm:block min-w-0 text-xs text-subtle italic truncate">
+              {{ spell.sourceLabel }}
+            </div>
+            <div class="flex justify-end sm:w-16" @click.stop>
               <BaseButton
                 v-if="props.characterId"
                 variant="add"

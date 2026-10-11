@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import CampaignService from './CampaignService.js'
+import { isCampaignGm } from './campaignPermissions.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { extractErrorMessage } from '@/utils/errorUtils.js'
 
@@ -23,11 +24,14 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   const isUserGM = computed(() => {
     return (campaignId, userId) => {
-      const campaign = campaigns.value.find((c) => c.id == campaignId)
-      if (!campaign) return false
+      // Prefer the fully-loaded current campaign (it always carries the
+      // participant list); fall back to the cached list entry.
+      const campaign =
+        currentCampaign.value && currentCampaign.value.id == campaignId
+          ? currentCampaign.value
+          : campaigns.value.find((c) => c.id == campaignId)
 
-      const participant = campaign.participants.find((p) => p.id == userId)
-      return participant?.role == 'GM'
+      return isCampaignGm(campaign || null, userId)
     }
   })
 

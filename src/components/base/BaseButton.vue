@@ -28,6 +28,14 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // Native button type. Defaults to `button` so a `BaseButton` rendered inside
+  // a `<form>` never submits it implicitly (e.g. the "Formatting help"
+  // disclosure under a markdown field). Pass `type="submit"` where the form's
+  // submit handler is genuinely intended.
+  type: {
+    type: String,
+    default: 'button',
+  },
 })
 
 const emit = defineEmits(['click'])
@@ -43,6 +51,7 @@ function handleClick() {
   <button
     class="base-btn"
     :class="[`base-btn-${variant}`, icon ? 'base-btn-with-icon' : '']"
+    :type="type"
     :disabled="disabled || loading"
     @click="handleClick"
   >

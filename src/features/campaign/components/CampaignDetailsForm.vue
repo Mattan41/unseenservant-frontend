@@ -6,8 +6,8 @@
  * in place in the "World Lore & Background" section instead, right next to the
  * read view they belong to (see `CampaignView`).
  *
- * Extracted from the former Edit Campaign modal so the owner-only
- * `CampaignSettingsSection` can render it inline (two-column on desktop)
+ * Extracted from the former Edit Campaign modal so the GM-only
+ * `CampaignDetailsSection` can render it inline (two-column on desktop)
  * without a modal wrapper. Emits `save` with the edited payload — the parent
  * owns all store interactions.
  */

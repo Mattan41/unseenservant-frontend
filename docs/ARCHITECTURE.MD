@@ -120,6 +120,25 @@ External (Open5e):    open5e-axios.js  → SpellService.js → Store
 ## Guest Mode
 Standalone preview mode populated entirely via mock data from `src/data/demoData.js`. When activated, state changes are written directly to `localStorage`. Image uploads are not supported in guest mode and are gracefully mocked out or bypassed via a disclaimer. Character spell operations (save, fetch, remove from character) are mocked in guest-axios.js, while spell search and single-spell fetch go directly to the Open5e API via `open5e-axios.js`.
 
+## Campaign permissions
+
+Campaign rights are modelled as **two independent axes**, not a single role:
+
+- **Ownership** (`isOwner`) — administration: transfer ownership, delete the
+  campaign, add/remove participants, change participant roles, and edit other
+  participants' nicknames.
+- **Table role** (`isGm`) — world-building: campaign details (name,
+  description, system, image), world lore, GM notes.
+
+`src/features/campaign/campaignPermissions.js` is the single source of truth
+(pure functions plus `getCampaignPermissions(campaign, userId)`); components
+read capability flags from it and never re-derive the rules inline. Guest mode
+(`src/api/lib/guest-axios.js`) reuses the same module so the localStorage demo
+enforces identical rules. The in-campaign "Campaign Settings" section renders
+role-dependent blocks — the personal nickname for everyone, campaign details
+for the GM, and participant management plus the owner-only "Danger Zone" for
+the campaign owner.
+
 ## Component conventions (target pattern)
 - **Smart components** (views, containers): handle store calls and logic
 - **Dumb/presentational components**: receive props, emit events, no store access

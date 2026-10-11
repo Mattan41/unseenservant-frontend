@@ -3,7 +3,10 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
-import CampaignSettingsSection from '@/features/campaign/components/CampaignSettingsSection.vue'
+import CampaignDetailsSection from '@/features/campaign/components/CampaignDetailsSection.vue'
+import CampaignParticipants from '@/features/campaign/components/CampaignParticipants.vue'
+import CampaignPersonalSettings from '@/features/campaign/components/CampaignPersonalSettings.vue'
+import CampaignOwnershipSection from '@/features/campaign/components/CampaignOwnershipSection.vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
@@ -25,6 +28,10 @@ import {
   getParticipantDisplayName,
   getRoleBadgeClass,
 } from '@/features/campaign/campaignUtils.js'
+import {
+  canRemoveCharacter as canRemoveCharacterPermission,
+  getCampaignPermissions,
+} from '@/features/campaign/campaignPermissions.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConstants.js'
@@ -63,6 +70,12 @@ const isSavingLore = ref(false)
 const loreDraft = ref('')
 const gmNotesDraft = ref('')
 
+// Rights live on two independent axes — ownership (administration) and table
+// role (world-building) — resolved in one place (see `campaignPermissions.js`).
+// Declared before `navItems`: the watcher below evaluates that computed eagerly
+// during setup, so this must already be initialized.
+const permissions = computed(() => getCampaignPermissions(campaign.value, userStore.userId))
+
 const SECTIONS = [
   { key: 'overview', label: 'Overview', icon: 'overview' },
   { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
@@ -75,13 +88,12 @@ const SECTIONS = [
 
 /**
  * Navigation items are computed by this smart view so the sidebar stays
- * presentational. Every participant sees Overview/Lore/Characters/Messages/
- * Participants/Settings; the owner-only "Campaign Settings" section is filtered
- * out for everyone else.
+ * presentational. Every participant sees the same sections; "Campaign
+ * Settings" itself renders different blocks depending on table role and
+ * ownership (see `campaignPermissions.js`).
  */
 const navItems = computed(() =>
   SECTIONS.filter((section) => {
-    if (section.ownerOnly && !isOwner.value) return false
     // System-specific sections only appear when the campaign's primary system
     // matches (e.g. the Offworlders Ship, the D&D 5e spell search).
     if (section.system && campaign.value?.primarySystem !== section.system) return false
@@ -117,27 +129,12 @@ function resetPresentationState() {
   isEditingLore.value = false
 }
 
-// Keep the active section valid when the campaign's primary system (and thus
-// the available system-specific sections) changes: fall back to Overview.
-watch(
-  () => campaign.value?.primarySystem,
-  () => {
-    if (!navItems.value.some((section) => section.key === activeSection.value)) {
-      activeSection.value = 'overview'
-    }
-  },
-)
-
-// Ownership is separate from table role: only the owner controls the campaign.
-const isOwner = computed(() => {
-  if (!campaign.value || !userStore.currentUser) return false
-  return String(campaign.value.ownerId) === String(userStore.userId)
-})
-
-// Table role (GM vs PLAYER) is looked up from the campaign's participant list.
-const isGm = computed(() => {
-  if (!campaign.value || !userStore.currentUser) return false
-  return campaignStore.isUserGM(campaign.value.id, userStore.userId)
+// Keep the active section valid when the available sections change (a primary
+// system switch, or a role/ownership change): fall back to Overview.
+watch(navItems, (items) => {
+  if (!items.some((section) => section.key === activeSection.value)) {
+    activeSection.value = 'overview'
+  }
 })
 
 const loadCampaignData = async (campaignId) => {
@@ -232,6 +229,7 @@ function cancelEditingLore() {
 }
 
 const saveLore = async () => {
+  if (!permissions.value.canEditWorldLore) return
   const notificationStore = useNotificationStore()
   isSavingLore.value = true
   try {
@@ -277,8 +275,7 @@ function openCharacter(character) {
 // Keep "Remove from campaign" available to the character owner, a GM, or the
 // campaign owner.
 function canRemoveCharacter(character) {
-  if (!character) return false
-  return isOwner.value || isGm.value || String(character.ownerId) === String(userStore.userId)
+  return canRemoveCharacterPermission(character, campaign.value, userStore.userId)
 }
 
 // Every campaign participant may open a character's details (they receive the
@@ -391,11 +388,15 @@ watch(
 
             <div class="stat">
               <dt class="stat-label">Participants</dt>
-              <dd class="stat-value">
-                <template v-for="(entry, index) in participantRoster" :key="entry.id">
-                  <span v-if="index" class="stat-separator" aria-hidden="true">|</span>
-                  <span class="stat-entry">{{ entry.label }}</span>
-                </template>
+              <dd class="stat-value stat-roster">
+                <span
+                  v-for="(entry, index) in participantRoster"
+                  :key="entry.id"
+                  class="stat-entry"
+                >
+                  <span v-if="index" class="stat-separator" aria-hidden="true">|</span
+                  >{{ entry.label }}
+                </span>
               </dd>
             </div>
           </dl>
@@ -524,11 +525,11 @@ watch(
       <template v-else-if="activeSection === 'lore'">
         <BaseSection title="World Lore &amp; Background">
           <template #actions>
-            <!-- Owner-only: the backend's updateCampaign requires ownership, so
-                 showing this to a non-owner GM would only 403 on save. Lore is
-                 readable by every participant; the API hides the GM notes. -->
+            <!-- GM-only: world lore is a world-building concern (see
+                 campaignPermissions.js). Lore is readable by every participant;
+                 the API hides the GM notes. -->
             <BaseButton
-              v-if="isOwner && !isEditingLore"
+              v-if="permissions.canEditWorldLore && !isEditingLore"
               variant="update"
               icon="edit"
               type="button"
@@ -580,7 +581,10 @@ watch(
 
         <!-- Only returned to the owner/GM by the API, so this block is hidden
              for players. While editing it collapses into the form above. -->
-        <BaseSection v-if="campaignGmNotes && !isEditingLore" title="GM Notes">
+        <BaseSection
+          v-if="permissions.canSeeGmNotes && campaignGmNotes && !isEditingLore"
+          title="GM Notes"
+        >
           <BaseCard>
             <MarkdownText :text="campaignGmNotes" class="text-sm" />
           </BaseCard>
@@ -713,12 +717,37 @@ watch(
         />
       </BaseSection>
 
-      <!-- Settings: personal nickname + participants + (owner) campaign details -->
+      <!-- Campaign Settings: personal nickname for everyone, campaign details
+           for the GM, and participant management + danger zone for the owner. -->
       <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
-        <CampaignSettingsSection
-          :campaign-id="String(campaign.id)"
-          @updated="handleParticipantsUpdated"
-        />
+        <div class="space-y-6">
+          <!-- Every participant: their own nickname -->
+          <CampaignPersonalSettings
+            :campaign-id="String(campaign.id)"
+            @updated="handleParticipantsUpdated"
+          />
+
+          <!-- GM: campaign details (name, description, system, image) -->
+          <CampaignDetailsSection
+            v-if="permissions.canEditCampaignDetails"
+            :campaign-id="String(campaign.id)"
+            @updated="handleParticipantsUpdated"
+          />
+
+          <!-- Owner: participant roster + management -->
+          <CampaignParticipants
+            v-if="permissions.canManageParticipants"
+            :campaign-id="String(campaign.id)"
+            @participants-updated="handleParticipantsUpdated"
+          />
+
+          <!-- Owner: danger zone (transfer ownership + delete) -->
+          <CampaignOwnershipSection
+            v-if="permissions.canTransferOwnership"
+            :campaign-id="String(campaign.id)"
+            @updated="handleParticipantsUpdated"
+          />
+        </div>
       </BaseSection>
     </div>
 

@@ -968,14 +968,21 @@ select {
 }
 
 /* One participant in the summary roster (`nickname · ROLE · characters`), kept
-   on a single line so a role never separates from the name it belongs to.
-   Entries are joined by `.stat-separator`. */
+   on a single line so a role never separates from the name it belongs to. Each
+   entry carries its own leading `.stat-separator`, so a `|` never dangles at
+   the end of a wrapped line. */
 .stat-entry {
   @apply whitespace-nowrap;
 }
 
+/* Participants roster: entries wrap *between* participants (never inside one),
+   so a long roster stays within the summary panel instead of bleeding out. */
+.stat-roster {
+  @apply flex flex-wrap gap-x-3 gap-y-1;
+}
+
 .stat-separator {
-  @apply mx-1.5 text-third-300;
+  @apply mr-1.5 text-third-300;
 }
 
 /* Info popover: hover tooltip on desktop, inline block on mobile */

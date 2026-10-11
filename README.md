@@ -16,6 +16,30 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 - Character builder and tracker for D&D 5e
 - Import characters into campaigns
 
+## Campaign roles & permissions
+
+Rights live on two **independent axes** so that owning a campaign and running
+the table stay separate:
+
+| Capability | Owner | GM | Player |
+|---|---|---|---|
+| Transfer ownership / delete campaign | ✅ | — | — |
+| Add/remove participants, change roles | ✅ | — | — |
+| Edit other participants' nicknames | ✅ | — | — |
+| Edit campaign details (name, description, system, image) | — | ✅ | — |
+| Edit world lore and GM notes | — | ✅ | — |
+| See GM notes / others' private backstories | — | ✅ | — |
+| Change your own nickname, import a character | ✅ | ✅ | ✅ |
+| View roster/characters/messages, view & edit the ship | ✅ | ✅ | ✅ |
+
+- **Ownership axis** — `isOwner`: administration (transfer, delete, roster, roles, nicknames).
+- **Table-role axis** — `isGm`: world-building (details, image, lore, GM notes).
+- A campaign owner who is only a *player* has the admin rights but not the
+  world-building rights; a non-owner *GM* has world-building but not admin.
+
+The rules are defined once in `src/features/campaign/campaignPermissions.js`
+and enforced in the UI and in guest mode (`src/api/lib/guest-axios.js`).
+
 ## Getting Started
 
 **Full Stack Mode:** Requires the [Unseen Servant backend](https://github.com/Mattan41/unseenservant-backend) to be running locally on port 8080 or whatever you have configured in `.env.development`.
