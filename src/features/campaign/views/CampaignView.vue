@@ -388,11 +388,15 @@ watch(
 
             <div class="stat">
               <dt class="stat-label">Participants</dt>
-              <dd class="stat-value">
-                <template v-for="(entry, index) in participantRoster" :key="entry.id">
-                  <span v-if="index" class="stat-separator" aria-hidden="true">|</span>
-                  <span class="stat-entry">{{ entry.label }}</span>
-                </template>
+              <dd class="stat-value stat-roster">
+                <span
+                  v-for="(entry, index) in participantRoster"
+                  :key="entry.id"
+                  class="stat-entry"
+                >
+                  <span v-if="index" class="stat-separator" aria-hidden="true">|</span
+                  >{{ entry.label }}
+                </span>
               </dd>
             </div>
           </dl>

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useCharacterStore } from '@/features/character/characterStore.js'
+import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
@@ -11,6 +12,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 
 const characterStore = useCharacterStore()
+const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const notificationStore = useNotificationStore()
 const route = useRoute()
@@ -24,9 +26,29 @@ const campaignId = route.query.campaignId || null
 const { userId } = storeToRefs(userStore)
 const { currentCharacter } = storeToRefs(characterStore)
 
+// The character's own campaign, independent of the `from=campaign` context that
+// drives the "Back to Campaign" link. Resolved from the campaign store; the
+// campaign is fetched on mount when it is not already cached.
+const characterCampaignId = computed(() => currentCharacter.value?.campaignId || null)
+const characterCampaign = computed(() =>
+  characterCampaignId.value ? campaignStore.getCampaignById(characterCampaignId.value) : null,
+)
+const characterCampaignName = computed(() => characterCampaign.value?.name || '')
+
+async function loadCharacterCampaign() {
+  const id = characterCampaignId.value
+  if (!id || characterCampaign.value) return
+  try {
+    await campaignStore.fetchCampaign(id)
+  } catch {
+    // Not a participant (or the fetch failed): fall back to a neutral label.
+  }
+}
+
 onMounted(async () => {
   try {
     await characterStore.fetchCharacter(characterId.value)
+    await loadCharacterCampaign()
   } finally {
     loading.value = false
   }
@@ -111,6 +133,16 @@ const deleteCharacter = async () => {
               {{ currentCharacter.name }}
             </h3>
             <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
+
+            <!-- Link to the character's own campaign (independent of the
+                 `from=campaign` context that drives "Back to Campaign"). -->
+            <router-link
+              v-if="characterCampaignId"
+              :to="{ name: 'CampaignView', params: { id: characterCampaignId } }"
+              class="element-link mt-2 text-sm"
+            >
+              Campaign: {{ characterCampaignName || 'View campaign' }}
+            </router-link>
           </div>
 
           <!-- Notes -->
