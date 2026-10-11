@@ -945,6 +945,39 @@ select {
   @apply text-xs uppercase tracking-wide text-secondary;
 }
 
+/* --------------------------------------------------------------------------
+   Campaign summary: a small label/value panel built from `.stat-strip` rows.
+   Deliberately chrome-free — these figures are secondary, so they read as one
+   quiet block rather than a card each. Rendered from `<dl>` / `<dt>` / `<dd>`
+   so the label/value pairing stays meaningful to assistive tech.
+   -------------------------------------------------------------------------- */
+.stat-strip {
+  @apply flex flex-col gap-1;
+}
+
+.stat {
+  @apply flex items-baseline gap-2;
+}
+
+.stat-label {
+  @apply shrink-0 text-xs uppercase tracking-wide text-third-500;
+}
+
+.stat-value {
+  @apply min-w-0 font-semibold text-third-700;
+}
+
+/* One participant in the summary roster (`nickname · ROLE · characters`), kept
+   on a single line so a role never separates from the name it belongs to.
+   Entries are joined by `.stat-separator`. */
+.stat-entry {
+  @apply whitespace-nowrap;
+}
+
+.stat-separator {
+  @apply mx-1.5 text-third-300;
+}
+
 /* Info popover: hover tooltip on desktop, inline block on mobile */
 .info-popover {
   @apply rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg;

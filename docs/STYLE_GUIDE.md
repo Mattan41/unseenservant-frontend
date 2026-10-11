@@ -205,6 +205,10 @@ all conditional styling in `*Utils.js` files.
 | `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-third-200 p-2 text-center` | implemented |
 | `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
 | `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
+| `.stat-strip` | Campaign summary panel: label/value rows | `flex flex-col gap-1` | implemented |
+| `.stat` | One `dt`/`dd` row in the summary panel | `flex items-baseline gap-2` | implemented |
+| `.stat-label` / `.stat-value` | Row label / figure | `shrink-0 text-xs uppercase tracking-wide text-third-500` / `min-w-0 font-semibold text-third-700` | implemented |
+| `.stat-entry` / `.stat-separator` | One participant in the summary roster (`nickname · ROLE · characters`) / the `|` between entries | `whitespace-nowrap` / `mx-1.5 text-third-300` | implemented |
 | `.info-popover` | Info popover body (`BaseTooltip.vue`) | `rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg` | implemented |
 | `.info-popover--fixed` | Info popover on desktop (md+); teleported + JS-positioned | `fixed z-[60]` | implemented |
 | `.info-popover--inline` | Info popover on mobile (<md); expands under the trigger | `mt-1 block` | implemented |

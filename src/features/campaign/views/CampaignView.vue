@@ -20,6 +20,7 @@ import MarkdownText from '@/components/base/MarkdownText.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import {
+  formatParticipantRoster,
   getCharacterOwnerName,
   getParticipantDisplayName,
   getRoleBadgeClass,
@@ -182,11 +183,11 @@ const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
 // Read-only participant roster (owner + players + GMs).
 const participants = computed(() => campaign.value?.participants || [])
 
-// Overview summary counts.
-const participantCount = computed(() => participants.value.length)
-const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM').length)
-const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
-const characterCount = computed(() => campaignCharacters.value.length)
+// Overview summary roster: one `nickname · ROLE · characters` line per
+// participant (see `formatParticipantRoster`).
+const participantRoster = computed(() =>
+  formatParticipantRoster(participants.value, campaignCharacters.value),
+)
 
 // Overview: the campaign's ruleset label, a capped party preview, and the
 // Offworlders-only ship card (data is loaded by `loadCampaignData`).
@@ -380,25 +381,24 @@ watch(
       <!-- Overview -->
       <section v-if="activeSection === 'overview'">
         <BaseSection title="Campaign Summary">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <BaseCard>
-              <p class="text-xs uppercase text-muted">Participants</p>
-              <p class="text-2xl font-bold text-default mt-1">{{ participantCount }}</p>
-              <p class="text-sm text-muted mt-1">{{ gmCount }} GM · {{ playerCount }} Player</p>
-            </BaseCard>
+          <!-- Two quiet rows instead of a card per figure: the system, then the
+               roster with each participant's role and their characters. -->
+          <dl class="stat-strip muted-surface px-3 py-2">
+            <div class="stat">
+              <dt class="stat-label">System</dt>
+              <dd class="stat-value">{{ primarySystemLabel }}</dd>
+            </div>
 
-            <BaseCard>
-              <p class="text-xs uppercase text-muted">Characters</p>
-              <p class="text-2xl font-bold text-default mt-1">{{ characterCount }}</p>
-              <p class="text-sm text-muted mt-1">in this campaign</p>
-            </BaseCard>
-
-            <BaseCard>
-              <p class="text-xs uppercase text-muted">System</p>
-              <p class="text-lg font-bold text-default mt-1">{{ primarySystemLabel }}</p>
-              <p class="text-sm text-muted mt-1">primary ruleset</p>
-            </BaseCard>
-          </div>
+            <div class="stat">
+              <dt class="stat-label">Participants</dt>
+              <dd class="stat-value">
+                <template v-for="(entry, index) in participantRoster" :key="entry.id">
+                  <span v-if="index" class="stat-separator" aria-hidden="true">|</span>
+                  <span class="stat-entry">{{ entry.label }}</span>
+                </template>
+              </dd>
+            </div>
+          </dl>
         </BaseSection>
 
         <!-- Short description: the campaign pitch (opening lines; expands in place) -->
