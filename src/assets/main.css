@@ -268,6 +268,37 @@ html[data-theme='silver'][data-mode='light'] {
   @apply bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded;
 }
 
+/* Callout / info box (`BaseInfoBox.vue`) — an inset notice with a semantic
+   tone. Unlike `.demo-notice` and `.env-banner` (fixed one-off banners), this
+   is a reusable component API, so each tone is a modifier of `.info-box`. */
+.info-box {
+  @apply flex items-start gap-2 rounded-md border px-3 py-2 text-sm;
+}
+
+.info-box--info {
+  @apply border-primary-300 bg-primary-100 text-primary-900;
+}
+
+.info-box--success {
+  @apply border-green-400 bg-green-100 text-green-700;
+}
+
+.info-box--warning {
+  @apply border-secondary-400 bg-secondary-100 text-secondary-900;
+}
+
+.info-box--danger {
+  @apply border-red-400 bg-red-100 text-red-700;
+}
+
+.info-box-icon {
+  @apply mt-0.5 h-4 w-4 flex-shrink-0;
+}
+
+.info-box-title {
+  @apply font-semibold;
+}
+
 /* Environment banner (EnvBanner.vue) — one line, ~32px, amber.
    A semantic role so it can be re-themed for dark mode later without touching
    templates. Shown for dev and demo environments only. */
@@ -713,6 +744,21 @@ h5 {
   line-height: 1.3em;
 }
 
+/* Dialog/panel title. The global `h1–h3` rules are page-sized (26px and
+   uppercase from sm up), which is far too loud inside a dialog, so dialogs opt
+   out through this class instead of fighting it with utilities — these
+   unlayered rules win over Tailwind's `@layer utilities`. */
+.modal-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.3em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Native form controls share one type ramp (`.input-field` owns the box, see
+   above). `select` is listed so a dropdown never falls back to the page font
+   size. */
 textarea {
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
@@ -720,7 +766,8 @@ textarea {
   color: var(--color-primary-900);
 }
 
-input {
+input,
+select {
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
   line-height: 1.3em;
@@ -907,4 +954,35 @@ input {
 }
 .info-popover--inline {
   @apply mt-1 block;
+}
+
+/* --------------------------------------------------------------------------
+   Markdown formatting help (MarkdownHelp.vue)
+   An in-flow disclosure rather than a popover or nested dialog: it renders
+   inside narrow, already-scrollable dialogs where an anchored overlay would be
+   clipped. The panel surface is a `<BaseInfoBox variant="info">`, so only the
+   cheat-sheet layout lives here.
+   -------------------------------------------------------------------------- */
+.markdown-help {
+  @apply flex flex-col items-start gap-1;
+}
+
+.markdown-help-panel {
+  @apply w-full;
+}
+
+.markdown-help-list {
+  @apply flex max-h-64 flex-col gap-1 overflow-y-auto;
+}
+
+.markdown-help-row {
+  @apply flex items-start gap-2;
+}
+
+.markdown-help-source {
+  @apply w-24 shrink-0 break-all rounded bg-third-100 px-1 font-mono text-xs;
+}
+
+.markdown-help-result {
+  @apply min-w-0;
 }

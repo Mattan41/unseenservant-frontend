@@ -34,10 +34,10 @@ onMounted(async () => {
 </script>
 <template>
   <div>
-    <h2 class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-      Campaigns
+    <div class="mb-4 flex flex-col gap-2 sm:flex-row justify-between items-start sm:items-center">
+      <h2>Campaigns</h2>
       <CreateCampaign />
-    </h2>
+    </div>
     <div v-if="campaignStore.isLoading" class="text-center p-8">
       <div class="spinner h-8 w-8 border-b-2"></div>
       <p class="mt-2">Loading campaigns...</p>

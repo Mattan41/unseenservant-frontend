@@ -153,6 +153,9 @@ client:
   (preview never mutates the value, so dirty tracking is unaffected).
 - `src/utils/htmlEntities.js` — decodes pre-escaped third-party text (Open5e
   spells) during normalisation, not at render time.
+- `src/components/base/MarkdownHelp.vue` — the collapsed "Formatting help"
+  cheat sheet (source snippet + live rendering), rendered beneath every
+  `<BaseMarkdownField>` so the syntax reference exists in exactly one place.
 
 The API, DTOs and database columns are unchanged: markdown travels as plain text,
 so anything that does not render it still shows readable source.

@@ -12,6 +12,9 @@
  * the surrounding form's dirty tracking (and its unsaved-changes guard) is
  * unaffected by switching tabs.
  *
+ * The syntax is not spelled out under every field; a collapsed `<MarkdownHelp>`
+ * disclosure carries the cheat sheet instead, so compact forms stay quiet.
+ *
  * The component has no outer spacing, so layout stays at the call site:
  * `<BaseMarkdownField class="mb-4" … />` composes with any grid or stack.
  *
@@ -20,6 +23,7 @@
  */
 import { computed, ref, useId } from 'vue'
 import BaseTooltip from '@/components/base/BaseTooltip.vue'
+import MarkdownHelp from '@/components/base/MarkdownHelp.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 
 const props = defineProps({
@@ -75,11 +79,6 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false,
-  },
-  /** Formatting reminder under the field while writing; '' hides it. */
-  syntaxHint: {
-    type: String,
-    default: '**bold** · *italic* · - list · [link](https://…)',
   },
   writeLabel: {
     type: String,
@@ -174,6 +173,7 @@ function onInput(event) {
       {{ message }}
     </p>
 
-    <p v-if="syntaxHint && !isPreview" class="text-xs mt-1 text-subtle">{{ syntaxHint }}</p>
+    <!-- Syntax cheat sheet, collapsed by default so compact forms stay quiet. -->
+    <MarkdownHelp class="mt-1" />
   </div>
 </template>

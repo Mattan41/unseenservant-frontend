@@ -4,7 +4,7 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 
 /** The Write and Preview toggle buttons, in DOM order. */
 function tabs(wrapper) {
-  return wrapper.findAll('button')
+  return wrapper.findAll('.field-tab')
 }
 
 describe('BaseMarkdownField', () => {
@@ -65,11 +65,20 @@ describe('BaseMarkdownField', () => {
     expect(wrapper.text()).toContain('Nothing to preview yet.')
   })
 
-  it('hides the syntax hint while previewing', async () => {
+  it('keeps the formatting cheat sheet collapsed until asked', async () => {
     const wrapper = mount(BaseMarkdownField, { props: { modelValue: 'text' } })
-    expect(wrapper.text()).toContain('**bold**')
-    await tabs(wrapper)[1].trigger('click')
-    expect(wrapper.text()).not.toContain('**bold**')
+    // The raw `**bold** · *italic* · - list …` hint line is gone: the syntax
+    // lives behind a disclosure instead, so compact forms stay quiet.
+    const trigger = wrapper.get('.markdown-help button')
+    expect(trigger.text()).toContain('Formatting help')
+    expect(wrapper.find('.markdown-help-panel').exists()).toBe(false)
+
+    await trigger.trigger('click')
+
+    expect(wrapper.get('.markdown-help-panel').exists()).toBe(true)
+    // Source snippet *and* a live rendering, both from the shared renderer.
+    expect(wrapper.get('.markdown-help-source').text()).toBe('**bold**')
+    expect(wrapper.get('.markdown-help-result strong').text()).toBe('bold')
   })
 
   it('disables the textarea when asked', () => {

@@ -49,6 +49,20 @@ defineProps({
       <line x1="12" y1="8" x2="12.01" y2="8" />
     </template>
 
+    <!-- Help: circled question mark -->
+    <template v-else-if="name === 'help'">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </template>
+
+    <!-- Alert: warning triangle -->
+    <template v-else-if="name === 'alert'">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </template>
+
     <!-- Overview: open book / scroll -->
     <template v-else-if="name === 'overview'">
       <path d="M12 7v14" />
