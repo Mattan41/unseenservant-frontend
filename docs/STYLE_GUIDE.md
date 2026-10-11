@@ -239,7 +239,38 @@ sticky wrapper, the tag and the buttons.
 | `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
 | `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue` and `EditCharacter.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
 | `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `CampaignSidebar` (campaign drawer). | implemented |
+| `<BaseMarkdownField>` component | Labelled markdown field with a Write/Preview toggle | `src/components/base/BaseMarkdownField.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `hint`, `error`, `id`, `rows`, `placeholder`, `maxlength`, `disabled`, `syntaxHint`, `writeLabel`, `previewLabel`, `emptyPreview`; emits `update:modelValue`). Mirrors `<BaseInput>`'s API and adds the preview tab; the toggle never touches the value, so the form's dirty tracking is unaffected. Use it for every long free-text field instead of a raw `<textarea>`. | implemented |
+| `<MarkdownText>` component | Rendered markdown — the only `v-html` site | `src/components/base/MarkdownText.vue` (props: `text`). Renders `renderMarkdown()` inside `.rich-text`. Read-only views use this instead of `{{ }}` for long-text fields. | implemented |
 ---
+
+### 2.7 Markdown & long-text fields → `src/assets/main.css`, `src/utils/markdown.js`
+
+Every long free-text field (character notes / appearance / backstory / private
+backstory, campaign description / private description, ship notes, message
+bodies, spell descriptions) is **markdown**, stored as source text and rendered
+on the client:
+
+| Layer | File | Responsibility |
+|-------|------|----------------|
+| Parser | `src/utils/markdown.js` | The single `markdown-it` instance (`html: false`, `linkify: true`, `breaks: true`, typographer off, images disabled). Exports `renderMarkdown()` and `toPlainText()`. |
+| Rendering | `src/components/base/MarkdownText.vue` | **The only component allowed to bind `v-html`.** Wraps `renderMarkdown()` output in `.rich-text`. |
+| Editing | `src/components/base/BaseMarkdownField.vue` | Textarea + Write/Preview toggle; same props as `<BaseInput>`, plus `rows` / `maxlength` / `syntaxHint`. |
+| Styling | `.rich-text`, `.markdown-preview`, `.field-tabs`, `.field-tab` in `main.css` | Structure only, palette tokens only. Headings are re-sized here because the global `h1–h5` rules are page-sized. |
+
+Rules:
+
+- Raw HTML typed by a user is escaped (`html: false`) and unsafe link targets
+  (`javascript:` etc.) are rejected by markdown-it, so **no sanitiser (e.g.
+  DOMPurify) is needed** — and `v-html` must not be used anywhere else (see §3.5).
+- Images are disabled on purpose: a remote image in someone else's notes would
+  leak the reader's IP address to a third party. Uploads go through the campaign
+  image pipeline instead.
+- Text that arrives pre-escaped from third-party data (Open5e spell `desc`,
+  `higher_level`, material text) is decoded once in `normalizeSpell` via
+  `src/utils/htmlEntities.js` — never in a template.
+- Where a preview cuts text (`CampaignList`, `<BaseClampedText>`), measure and
+  truncate the `toPlainText()` output, never the raw markdown, so a cut cannot
+  land inside `**bold**`.
 
 ## 3. Hard Constraints
 
@@ -313,6 +344,13 @@ Specifically banned examples (now including gray/white/black shades):
   reference
 
 ---
+
+### 3.5 `v-html` only inside `MarkdownText.vue`
+
+`v-html` is allowed **only** in `src/components/base/MarkdownText.vue`, and only
+with the output of `renderMarkdown()` (which escapes raw HTML and validates link
+targets). Any other `v-html` binding is a review blocker — it bypasses the
+escaping model, and ESLint is not configured to catch it.
 
 ## 4. Where to Add New Classes / Variables
 

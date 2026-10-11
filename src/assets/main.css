@@ -203,7 +203,6 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .badge-pink {
-  /* Lägg till i main.css */
   @apply text-pink-800 bg-pink-100;
 }
 
@@ -550,6 +549,127 @@ html[data-theme='silver'][data-mode='light'] {
 .border-input {
   @apply border-third-300;
 } /* input and button borders */
+
+/* --------------------------------------------------------------------------
+   Markdown field + rendered markdown (BaseMarkdownField.vue / MarkdownText.vue)
+   -------------------------------------------------------------------------- */
+
+/* Write/Preview toggle buttons. Two independent toggle buttons rather than an
+   ARIA tablist, so there is no arrow-key navigation contract to implement. */
+.field-tabs {
+  @apply inline-flex items-center gap-1 rounded-full border border-third-300 bg-third-100 p-0.5;
+}
+
+.field-tab {
+  @apply cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium text-third-500 transition-colors hover:text-third-700;
+}
+
+.field-tab--active,
+.field-tab--active:hover {
+  @apply bg-primary-700 text-primary-100;
+}
+
+/* Preview surface: reads like a read-only field, so switching tabs does not
+   change the perceived size of the form row. */
+.markdown-preview {
+  @apply min-h-24 w-full rounded-md border border-third-300 px-3 py-2;
+}
+
+/* Rendered markdown. Structure only — the surrounding colour is inherited, and
+   every value comes from the palette so a single rule serves all themes/modes.
+   Headings are re-sized here because the global `h1–h5` rules are page-sized. */
+.rich-text > :first-child {
+  margin-top: 0;
+}
+
+.rich-text > :last-child {
+  margin-bottom: 0;
+}
+
+.rich-text p {
+  @apply mb-2;
+}
+
+.rich-text ul {
+  @apply mb-2 list-disc pl-5;
+}
+
+.rich-text ol {
+  @apply mb-2 list-decimal pl-5;
+}
+
+.rich-text li {
+  @apply mb-0.5;
+}
+
+.rich-text a {
+  @apply text-primary-900 underline hover:text-primary-700;
+}
+
+.rich-text strong {
+  @apply font-semibold text-third-900;
+}
+
+.rich-text code {
+  @apply rounded bg-third-100 px-1 text-[0.85em];
+}
+
+.rich-text pre {
+  @apply mb-2 overflow-x-auto rounded bg-third-100 p-2 text-[0.85em];
+}
+
+.rich-text pre code {
+  @apply bg-transparent p-0;
+}
+
+.rich-text blockquote {
+  @apply mb-2 border-l-4 border-third-300 pl-3 text-third-600;
+}
+
+.rich-text hr {
+  @apply my-3 border-third-200;
+}
+
+.rich-text table {
+  @apply mb-2 w-full border-collapse text-sm;
+}
+
+.rich-text th,
+.rich-text td {
+  @apply border border-third-200 px-2 py-1 text-left align-top;
+}
+
+.rich-text th {
+  @apply bg-third-100 font-semibold;
+}
+
+.rich-text h1,
+.rich-text h2,
+.rich-text h3,
+.rich-text h4,
+.rich-text h5 {
+  @apply mb-2 font-semibold text-third-800;
+}
+
+.rich-text h1 {
+  font-size: 1.4rem;
+}
+
+.rich-text h2 {
+  font-size: 1.25rem;
+}
+
+.rich-text h3 {
+  font-size: 1.125rem;
+}
+
+.rich-text h4 {
+  font-size: 1rem;
+}
+
+.rich-text h5 {
+  font-size: 0.95rem;
+}
 
 h1,
 h2,

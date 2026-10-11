@@ -10,7 +10,9 @@
  */
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
@@ -435,23 +437,25 @@ useUnsavedChanges(
       </ul>
     </div>
 
-    <!-- Notes: free text for passengers, cargo, condition, anything else -->
+    <!-- Notes: free text for passengers, cargo, condition, anything else.
+         Markdown, like every other long-text field: written with a preview,
+         rendered when reading. -->
     <div class="border-t border-section pt-4">
-      <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
-        <h4 class="font-semibold text-default">Notes</h4>
-        <span class="text-xs text-muted">
-          Extra passengers, cargo, ship condition — anything else worth tracking
-        </span>
-      </div>
-      <textarea
+      <BaseMarkdownField
+        v-if="editing"
         id="ship-notes"
         v-model="draft.notes"
-        rows="4"
-        class="input-field p-2 rounded w-full resize-none"
-        :disabled="!editing"
-        aria-label="Ship notes"
+        label="Notes"
+        hint="Extra passengers, cargo, ship condition — anything else worth tracking"
+        :rows="4"
         placeholder="Extra passengers, cargo, ship condition, damage — or whatever else you want to note about the ship..."
-      ></textarea>
+      />
+
+      <template v-else>
+        <h4 class="mb-2 font-semibold text-default">Notes</h4>
+        <MarkdownText v-if="draft.notes" :text="draft.notes" />
+        <p v-else class="text-sm text-muted italic">No notes recorded for this ship yet.</p>
+      </template>
     </div>
 
     <!-- Images: drawings, maps, handouts -->

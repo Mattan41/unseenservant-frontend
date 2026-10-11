@@ -10,6 +10,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
@@ -115,32 +116,22 @@ useUnsavedChanges(
         />
       </div>
 
-      <div>
-        <label for="campaign-description" class="block text-sm font-medium text-default mb-1">
-          Description
-        </label>
-        <textarea
-          id="campaign-description"
-          v-model="editedDescription"
-          class="input-field p-3 rounded w-full"
-          rows="8"
-          placeholder="Enter campaign description"
-        ></textarea>
-      </div>
+      <BaseMarkdownField
+        id="campaign-description"
+        v-model="editedDescription"
+        label="Description"
+        :rows="8"
+        placeholder="Enter campaign description"
+      />
 
-      <div>
-        <label for="campaign-private-description" class="block text-sm font-medium text-default mb-1">
-          Private description
-        </label>
-        <p class="text-xs text-muted mb-1">Only the GM can see this.</p>
-        <textarea
-          id="campaign-private-description"
-          v-model="editedPrivateDescription"
-          class="input-field p-3 rounded w-full"
-          rows="6"
-          placeholder="Secrets only the GM should know"
-        ></textarea>
-      </div>
+      <BaseMarkdownField
+        id="campaign-private-description"
+        v-model="editedPrivateDescription"
+        label="Private description"
+        hint="Only the GM can see this."
+        :rows="6"
+        placeholder="Secrets only the GM should know"
+      />
 
       <div>
         <label for="campaign-system" class="block text-sm font-medium text-default mb-1">

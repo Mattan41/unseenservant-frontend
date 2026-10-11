@@ -3,6 +3,7 @@ import { ref, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
 
 const props = defineProps({
   characterId: {
@@ -217,9 +218,7 @@ async function onSaveSpell(spell) {
               <div><strong>Range:</strong> {{ spell.range }}</div>
               <div><strong>Duration:</strong> {{ spell.duration }}</div>
             </div>
-            <div class="prose prose-sm max-w-none text-secondary whitespace-pre-line mb-2">
-              {{ spell.desc }}
-            </div>
+            <MarkdownText :text="spell.desc" class="mb-2" />
             <BaseButton variant="link" @click="emit('spell-click', spell)">
               Open Full Details
             </BaseButton>

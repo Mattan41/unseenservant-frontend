@@ -16,6 +16,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import {
@@ -457,18 +458,14 @@ watch(
             <p v-if="!campaignDescription" class="italic text-muted text-sm">
               No background has been recorded for this campaign yet.
             </p>
-            <p v-else class="text-default text-sm whitespace-pre-line break-words">
-              {{ campaignDescription }}
-            </p>
+            <MarkdownText v-else :text="campaignDescription" class="text-sm" />
           </BaseCard>
         </BaseSection>
 
         <!-- Only returned to the owner/GM by the API, so this block is hidden for players. -->
         <BaseSection v-if="campaign.privateDescription" title="Only the GM Can See This">
           <BaseCard>
-            <p class="text-default text-sm whitespace-pre-line break-words">
-              {{ campaign.privateDescription }}
-            </p>
+            <MarkdownText :text="campaign.privateDescription" class="text-sm" />
           </BaseCard>
         </BaseSection>
       </template>

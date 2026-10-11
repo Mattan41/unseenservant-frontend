@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
+import MarkdownText from '@/components/base/MarkdownText.vue'
 
 const props = defineProps({
   campaignId: {
@@ -115,9 +117,7 @@ onUnmounted(() => {
                 {{ formatTimestamp(message.createdAt) }}
               </span>
             </div>
-            <p class="text-default whitespace-pre-wrap break-words">
-              {{ message.messageBody }}
-            </p>
+            <MarkdownText :text="message.messageBody" />
           </div>
 
           <BaseButton
@@ -140,14 +140,13 @@ onUnmounted(() => {
 
     <!-- New message form -->
     <div class="border-t border-subtle pt-3">
-      <textarea
+      <BaseMarkdownField
         v-model="newMessageBody"
-        class="w-full border border-section rounded-lg p-2 text-sm resize-none input-field"
-        rows="3"
-        maxlength="10000"
+        :rows="3"
         placeholder="Write a message..."
+        :maxlength="10000"
         :disabled="isSending"
-      ></textarea>
+      />
       <div class="flex justify-end mt-2">
         <BaseButton
           variant="add"

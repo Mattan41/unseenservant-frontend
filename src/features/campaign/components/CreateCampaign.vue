@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
 import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
@@ -82,32 +83,23 @@ useUnsavedChanges(
               class="mt-1 block w-full rounded-md shadow-sm"
             />
           </div>
-          <div class="mb-4">
-            <label for="description" class="block text-sm font-medium text-default"
-              >Description</label
-            >
-            <textarea
-              id="description"
-              v-model="newCampaignDescription"
-              class="mt-1 block w-full rounded-md shadow-sm"
-              rows="5"
-            >
-            </textarea>
-          </div>
-          <div class="mb-4">
-            <label for="privateDescription" class="block text-sm font-medium text-default mb-1">
-              Private description
-            </label>
-            <p class="text-xs text-muted mb-1">Only the GM can see this.</p>
-            <textarea
-              id="privateDescription"
-              v-model="newCampaignPrivateDescription"
-              class="mt-1 block w-full rounded-md shadow-sm"
-              rows="3"
-              placeholder="Secrets only the GM should know"
-            >
-            </textarea>
-          </div>
+          <BaseMarkdownField
+            id="description"
+            v-model="newCampaignDescription"
+            class="mb-4"
+            label="Description"
+            :rows="5"
+          />
+
+          <BaseMarkdownField
+            id="privateDescription"
+            v-model="newCampaignPrivateDescription"
+            class="mb-4"
+            label="Private description"
+            hint="Only the GM can see this."
+            :rows="3"
+            placeholder="Secrets only the GM should know"
+          />
           <div class="mb-4">
             <label for="primary-system" class="block text-sm font-medium text-default">
               Game system (optional)
@@ -124,11 +116,7 @@ useUnsavedChanges(
             </select>
           </div>
           <BaseButton variant="add" type="submit" :loading="isCreating"> create </BaseButton>
-          <BaseButton
-            variant="ghost"
-            :disabled="isCreating"
-            @click="closeCreateCampaignModal"
-          >
+          <BaseButton variant="ghost" :disabled="isCreating" @click="closeCreateCampaignModal">
             Cancel
           </BaseButton>
         </form>

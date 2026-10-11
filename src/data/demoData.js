@@ -28,7 +28,7 @@ export const guestCharacters = [
     name: 'Gandalf',
     systemType: 'DND5E',
     notes: '',
-    backstory: 'A wandering wizard who arrives exactly when he means to.',
+    backstory: 'A wandering wizard who arrives *exactly* when he means to.',
     privateBackstory: 'Secretly searching for the missing pages of a forbidden tome.',
     avatarUrl: '/defaultCharacter.svg',
     dnd5e: {
@@ -260,14 +260,18 @@ export const guestCharacters = [
       },
     ],
   },
-{
+  {
     id: 'guest_char_7',
     ownerId: 'guest_demo',
     campaignId: 'guest_campaign_1',
     name: 'Vex',
     systemType: 'OFFWORLDERS',
-    notes: 'Smuggler with a stolen courier ship and a habit of talking her way out of trouble.',
-    appearance: 'Sharp-eyed, patched flight jacket.',
+    notes: `**The *Last Word*** — a stolen courier ship.
+
+- Cargo: whatever pays, no questions asked
+- Debt: the Syndicate still wants her
+- Rule: never file a flight plan`,
+    appearance: 'Sharp-eyed, patched flight jacket. *Always* carries a spare power cell.',
     backstory:
       'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
     privateBackstory:
@@ -304,9 +308,7 @@ export const guestCharacters = [
         { type: 'Light', description: 'Snubnosed revolver' },
         { type: 'Light', description: 'Butterfly knife' },
       ],
-      items: [
-        { name: 'Band t-shirts', description: 'Rotating collection of band t-shirts.' },
-      ],
+      items: [{ name: 'Band t-shirts', description: 'Rotating collection of band t-shirts.' }],
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -333,12 +335,12 @@ Respect & Inclusivity: This campaign is a safe space for everyone. Discriminatio
 Session Pacing: We aim for a balance between action, exploration, and roleplay. Voice any preferences to ensure everyone has fun.
 Communication: If you’re ever uncomfortable with a scene, mechanic, or topic, please let the DM know—either in-game or privately. We use the X-card system for safety.
 Punctuality: Please arrive on time and notify the group if you’ll be late or absent.
-Game Etiquette: Pay attention when it’s not your turn, avoid distracting side conversations, and minimize phone use during sessions.
-Have Fun: Remember, the goal is collective storytelling and enjoyment. Support your fellow players and embrace the horror-adventure together!`,
+- **Game Etiquette:** Pay attention when it’s not your turn, avoid distracting side conversations, and minimize phone use during sessions.
+- **Have Fun:** Remember, the goal is collective storytelling and enjoyment. Support your fellow players and embrace the horror-adventure together!`,
     imageUrl: 'https://www.dndbeyond.com/attachments/8/220/cos-cover-4k.jpg',
     primarySystem: 'DND5E',
     privateDescription:
-      'Strahd is not merely toying with the party: he believes one of them carries the reincarnated soul of Tatyana. The amber sarcophagi in the catacombs each hold a dark vestige that will bargain for freedom.',
+      'Strahd is not merely toying with the party: he believes one of them carries the reincarnated soul of **Tatyana**.\n\nThe amber sarcophagi in the catacombs each hold a dark vestige that will bargain for freedom.',
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_demo', nickname: 'You - Guest', role: 'GM' },
@@ -410,7 +412,10 @@ export const guestShips = [
     driveFuel: 4,
     maxDriveFuel: 6,
     upgrades: ['Additional Armor', 'Fuel Tanks'],
-    notes: 'Cargo: a sealed crate for the Lundenwic job. Passengers: none yet.',
+    notes: `Cargo: a sealed crate for the Lundenwic job. Passengers: none yet.
+
+- the port airlock seal is *temporary* — get it welded
+- fuel gauge reads low after every jump`,
     imageUrl: '',
     imageUrls: [],
     createdAt: new Date().toISOString(),
@@ -433,7 +438,7 @@ export const guestMessages = [
     campaignId: 'guest_campaign_1',
     userId: 'guest_player_2',
     messageBody:
-      'Agreed. My rogue can scout ahead and check for pressure plates and tripwires. Give me a moment to don my goggles of minute seeing.',
+      'Agreed. My rogue can scout ahead and check for pressure plates and tripwires. Give me a moment to don my **goggles of minute seeing**.',
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
   },

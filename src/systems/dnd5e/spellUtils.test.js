@@ -46,6 +46,17 @@ describe('normalizeSpell', () => {
   it('falls back to a safe name when the raw spell has none', () => {
     expect(normalizeSpell({}).name).toBe('Unknown Spell')
   })
+
+  it('decodes the HTML entities Open5e delivers pre-escaped', () => {
+    const spell = normalizeSpell({
+      key: 'k',
+      name: 'Aura',
+      desc: 'Creatures that aren&#x27;t undead must save.',
+      higher_level: 'Deals 1d6 &amp; more damage.',
+    })
+    expect(spell.desc).toBe("Creatures that aren't undead must save.")
+    expect(spell.higher_level).toBe('Deals 1d6 & more damage.')
+  })
 })
 
 describe('formatSpellLevel', () => {
