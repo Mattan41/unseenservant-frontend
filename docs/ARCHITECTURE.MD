@@ -141,9 +141,9 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
 ## Long-text fields are markdown
 
 Every long free-text field (character notes / appearance / backstory / private
-backstory, campaign description / private description, ship notes, message
-bodies, spell descriptions) is stored as markdown **source** and rendered on the
-client:
+backstory, campaign short description / world lore / private description, ship
+notes, message bodies, spell descriptions) is stored as markdown **source** and
+rendered on the client:
 
 - `src/utils/markdown.js` — the single `markdown-it` instance (`html: false`,
   `linkify`, `breaks`, images disabled) plus `renderMarkdown()` / `toPlainText()`.

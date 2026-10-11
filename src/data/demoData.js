@@ -319,7 +319,8 @@ export const guestCampaigns = [
   {
     id: 'guest_campaign_1',
     name: 'Curse of Strahd',
-    description: `Under the light of the full moon, the small town of Barovia is plagued by the evil forces of Count Strahd von Zarovich. Shadows twist through cobblestone streets and forgotten forests, as villagers lock their doors and whisper prayers against the night. Ancient secrets stir beneath the mist, hungry for the return of past glories. The cries of the oppressed echo through the valleys, while Strahd’s undead minions roam freely, enforcing the will of their lord. Hope is a rare commodity in Barovia, and the line between friend and foe is often blurred. Only the bravest souls dare to stand against the darkness and confront the mysteries it conceals.
+    description: `Barovia is a gothic-horror sandbox: a cursed valley ruled by Count Strahd von Zarovich, where every village keeps a secret and every road leads deeper into the mist.`,
+    worldLore: `Under the light of the full moon, the small town of Barovia is plagued by the evil forces of Count Strahd von Zarovich. Shadows twist through cobblestone streets and forgotten forests, as villagers lock their doors and whisper prayers against the night. Ancient secrets stir beneath the mist, hungry for the return of past glories. The cries of the oppressed echo through the valleys, while Strahd’s undead minions roam freely, enforcing the will of their lord. Hope is a rare commodity in Barovia, and the line between friend and foe is often blurred. Only the bravest souls dare to stand against the darkness and confront the mysteries it conceals.
 
 What Players Can Expect:
 
@@ -354,7 +355,8 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
   {
     id: 'guest_campaign_2',
     name: 'Neptunus',
-    description: `The University of Lundenwic has been robbed of its prized artifact, the Amulet of Taharka. The players are hired to track down the thief and retrieve the amulet.
+    description: `A city mystery: recover the stolen Amulet of Taharka from a university town of scholars, thieves, and shifting alliances.`,
+    worldLore: `The University of Lundenwic has been robbed of its prized artifact, the Amulet of Taharka. The players are hired to track down the thief and retrieve the amulet.
 
                  Mystery & Investigation: Dive deep into a campaign filled with deception, riddles, and puzzles. Finding the thief will require sharp minds and keen eyes for detail.
                  Urban Adventure: Explore a vibrant city teeming with intrigue, hidden societies, eccentric professors, and shifting alliances.
@@ -375,7 +377,8 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
   {
     id: 'guest_campaign_3',
     name: 'Gears of War',
-    description: `In the age of steam and gears, the Iron Colossus cuts through rugged mountain passes and
+    description: `A heist aboard the Iron Colossus: seize a mysterious cargo before rivals, lawmen, or deadly automata claim it first.`,
+    worldLore: `In the age of steam and gears, the Iron Colossus cuts through rugged mountain passes and
                         sprawling industrial cities—an unstoppable marvel of clockwork engineering. Tonight, its
                         armored compartments carry not just passengers and freight, but a mysterious cargo rumored
                         to change the fate of the Empire. As the city’s skyline vanishes in a cloud of smoke,

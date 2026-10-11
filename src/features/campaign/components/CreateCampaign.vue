@@ -13,6 +13,7 @@ const campaignStore = useCampaignStore()
 const showCreateCampaignModal = ref(false)
 const newCampaignName = ref('')
 const newCampaignDescription = ref('')
+const newCampaignWorldLore = ref('')
 const newCampaignPrivateDescription = ref('')
 const newCampaignSystem = ref('')
 const isCreating = ref(false)
@@ -22,6 +23,7 @@ function hasUnsavedInput() {
   return (
     !!newCampaignName.value ||
     !!newCampaignDescription.value ||
+    !!newCampaignWorldLore.value ||
     !!newCampaignPrivateDescription.value ||
     !!newCampaignSystem.value
   )
@@ -37,15 +39,17 @@ function closeCreateCampaignModal() {
 const createCampaign = async () => {
   isCreating.value = true
   try {
-    await campaignStore.createCampaign(
-      newCampaignName.value,
-      newCampaignDescription.value,
-      newCampaignSystem.value || null,
-      newCampaignPrivateDescription.value || null,
-    )
+    await campaignStore.createCampaign({
+      name: newCampaignName.value,
+      description: newCampaignDescription.value,
+      worldLore: newCampaignWorldLore.value,
+      privateDescription: newCampaignPrivateDescription.value,
+      primarySystem: newCampaignSystem.value || null,
+    })
     showCreateCampaignModal.value = false
     newCampaignName.value = ''
     newCampaignDescription.value = ''
+    newCampaignWorldLore.value = ''
     newCampaignPrivateDescription.value = ''
     newCampaignSystem.value = ''
     errorMessage.value = ''
@@ -94,21 +98,36 @@ useUnsavedChanges(
               label="Name of your campaign"
             />
 
+            <!-- Short overview: surfaced on the campaign's Overview page. -->
             <BaseMarkdownField
               id="description"
               v-model="newCampaignDescription"
               class="mb-4"
-              label="Description"
-              :rows="5"
+              label="Short description"
+              hint="A short overview, shown on the Overview page."
+              :rows="3"
+              placeholder="A one-paragraph pitch for the campaign"
             />
 
+            <!-- Setting material: surfaced in World Lore & Background. -->
+            <BaseMarkdownField
+              id="worldLore"
+              v-model="newCampaignWorldLore"
+              class="mb-4"
+              label="World Lore &amp; Background"
+              hint="Shown in the World Lore &amp; Background section."
+              :rows="6"
+              placeholder="History, factions, places, and the state of the world"
+            />
+
+            <!-- GM-only: surfaced in World Lore & Background, for owner/GM. -->
             <BaseMarkdownField
               id="privateDescription"
               v-model="newCampaignPrivateDescription"
               class="mb-4"
-              label="Private description"
+              label="GM notes"
               hint="Only the GM can see this."
-              :rows="3"
+              :rows="4"
               placeholder="Secrets only the GM should know"
             />
 

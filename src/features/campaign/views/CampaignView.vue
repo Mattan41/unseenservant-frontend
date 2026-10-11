@@ -27,7 +27,9 @@ import {
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConstants.js'
-import { confirmDiscardUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
+import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
+import { confirmDiscardUnsavedChanges, useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   CAMPAIGN_SYSTEM_LABELS,
   DND5E_SYSTEM_TYPE,
@@ -53,6 +55,12 @@ const activeSection = ref('overview')
 const showImportModal = ref(false)
 // Mobile campaign navigation drawer (triggered from the campaign top bar).
 const campaignNavOpen = ref(false)
+
+// Inline "World Lore & Background" editing (see `startEditingLore` below).
+const isEditingLore = ref(false)
+const isSavingLore = ref(false)
+const loreDraft = ref('')
+const gmNotesDraft = ref('')
 
 const SECTIONS = [
   { key: 'overview', label: 'Overview', icon: 'overview' },
@@ -105,6 +113,7 @@ function resetPresentationState() {
   activeSection.value = 'overview'
   showImportModal.value = false
   campaignNavOpen.value = false
+  isEditingLore.value = false
 }
 
 // Keep the active section valid when the campaign's primary system (and thus
@@ -189,11 +198,71 @@ const partyPreview = computed(() => campaignCharacters.value.slice(0, 6))
 const shipSummary = computed(() => shipStore.ship)
 const isShipLoading = computed(() => shipStore.isLoading)
 
-// Description is framed as the campaign's world lore/background block.
+// The short description is the campaign pitch shown on the Overview page.
 const campaignDescription = computed(() => {
   if (!campaign.value) return ''
   return campaignStore.getCampaignDescription(campaign.value.id) || ''
 })
+
+// Setting material for the "World Lore & Background" section.
+const campaignWorldLore = computed(() => campaign.value?.worldLore || '')
+
+// GM-only notes. The API returns these to the owner/GM only, so this is empty
+// for everyone else and the block below simply does not render.
+const campaignGmNotes = computed(() => campaign.value?.privateDescription || '')
+
+// Editing the lore lives in this section instead of Campaign Settings, which
+// keeps the settings form to the campaign's identity (name/system/image).
+const isLoreDirty = computed(
+  () => loreDraft.value !== campaignWorldLore.value || gmNotesDraft.value !== campaignGmNotes.value,
+)
+
+function startEditingLore() {
+  loreDraft.value = campaignWorldLore.value
+  gmNotesDraft.value = campaignGmNotes.value
+  isEditingLore.value = true
+}
+
+function cancelEditingLore() {
+  if (isLoreDirty.value && !window.confirm('Discard your unsaved changes to the campaign lore?')) {
+    return
+  }
+  isEditingLore.value = false
+}
+
+const saveLore = async () => {
+  const notificationStore = useNotificationStore()
+  isSavingLore.value = true
+  try {
+    // The PUT replaces every campaign detail, so the fields this form does not
+    // own are sent back verbatim — they would otherwise be cleared. Campaign
+    // Settings does the mirror image of this for the two lore fields.
+    await campaignStore.updateCampaignInfo(campaign.value.id, {
+      name: campaign.value.name,
+      description: campaign.value.description,
+      worldLore: loreDraft.value,
+      privateDescription: gmNotesDraft.value,
+      primarySystem: campaign.value.primarySystem,
+    })
+    // The store replaces its own copy of the campaign, so mirror the saved
+    // values onto the object this view renders from.
+    campaign.value.worldLore = loreDraft.value
+    campaign.value.privateDescription = gmNotesDraft.value
+    isEditingLore.value = false
+    notificationStore.addNotification('World lore updated successfully!', 'success', 3000)
+  } catch (error) {
+    console.error('Failed to save world lore:', error)
+  } finally {
+    isSavingLore.value = false
+  }
+}
+
+// Switching section is local state, so `selectSection` asks this guard to
+// confirm; route navigation and tab close are covered by the hook itself.
+useUnsavedChanges(
+  () => isEditingLore.value && isLoreDirty.value,
+  'You have unsaved changes to the campaign lore. Leave without saving?',
+)
 
 function openCharacter(character) {
   if (!canOpenCharacter(character)) return
@@ -332,11 +401,11 @@ watch(
           </div>
         </BaseSection>
 
-        <!-- Campaign background (opening lines; expands in place) -->
+        <!-- Short description: the campaign pitch (opening lines; expands in place) -->
         <BaseSection title="About This Campaign">
           <BaseCard>
             <p v-if="!campaignDescription" class="italic text-muted text-sm">
-              No background has been recorded for this campaign yet.
+              No short description has been recorded for this campaign yet.
             </p>
             <BaseClampedText v-else :text="campaignDescription" :lines="4" />
           </BaseCard>
@@ -454,18 +523,66 @@ watch(
       <!-- World Lore & Background (public block + GM-only block for owner/GM) -->
       <template v-else-if="activeSection === 'lore'">
         <BaseSection title="World Lore &amp; Background">
-          <BaseCard>
-            <p v-if="!campaignDescription" class="italic text-muted text-sm">
-              No background has been recorded for this campaign yet.
+          <template #actions>
+            <!-- Owner-only: the backend's updateCampaign requires ownership, so
+                 showing this to a non-owner GM would only 403 on save. Lore is
+                 readable by every participant; the API hides the GM notes. -->
+            <BaseButton
+              v-if="isOwner && !isEditingLore"
+              variant="update"
+              icon="edit"
+              type="button"
+              @click="startEditingLore"
+            >
+              Edit
+            </BaseButton>
+          </template>
+
+          <!-- Edit in place: the same blocks as the read view, but through
+               BaseMarkdownField so each one gets Write/Preview tabs and the
+               formatting-help cheat sheet. -->
+          <template v-if="isEditingLore">
+            <BaseMarkdownField
+              id="campaign-world-lore"
+              v-model="loreDraft"
+              label="World Lore &amp; Background"
+              :rows="10"
+              placeholder="History, factions, places, and the state of the world"
+            />
+
+            <BaseMarkdownField
+              id="campaign-gm-notes"
+              v-model="gmNotesDraft"
+              class="mt-4"
+              label="GM notes"
+              hint="Only the GM can see this."
+              :rows="5"
+              placeholder="Secrets only the GM should know"
+            />
+
+            <BaseStickyActions
+              class="mt-4"
+              :dirty="isLoreDirty"
+              :saving="isSavingLore"
+              save-label="Save lore"
+              @cancel="cancelEditingLore"
+              @save="saveLore"
+            />
+          </template>
+
+          <BaseCard v-else>
+            <p v-if="!campaignWorldLore" class="italic text-muted text-sm">
+              No world lore has been recorded for this campaign yet.
             </p>
-            <MarkdownText v-else :text="campaignDescription" class="text-sm" />
+            <MarkdownText v-else :text="campaignWorldLore" class="text-sm" />
           </BaseCard>
         </BaseSection>
 
-        <!-- Only returned to the owner/GM by the API, so this block is hidden for players. -->
-        <BaseSection v-if="campaign.privateDescription" title="Only the GM Can See This">
+        <!-- Only returned to the owner/GM by the API, so this block is hidden
+             for players. While editing it collapses into the form above. -->
+        <BaseSection v-if="campaignGmNotes && !isEditingLore" title="GM Notes">
           <BaseCard>
-            <MarkdownText :text="campaign.privateDescription" class="text-sm" />
+            <MarkdownText :text="campaignGmNotes" class="text-sm" />
           </BaseCard>
         </BaseSection>
       </template>

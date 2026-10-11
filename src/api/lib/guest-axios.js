@@ -415,6 +415,7 @@ const guestAxios = {
         ownerId: 'guest_demo',
         name: data.name || 'New Campaign',
         description: data.description || '',
+        worldLore: data.worldLore || null,
         privateDescription: data.privateDescription || null,
         imageUrl: '/default-campaign.svg',
         primarySystem: data.primarySystem || null,

@@ -232,6 +232,12 @@ as a floating tag. Position the wrapper with `sticky bottom-*`.
 Don't hand-roll the markup: use `<BaseStickyActions>` (see §2.6), which owns the
 sticky wrapper, the tag and the buttons.
 
+**Edit in place.** A long-text block that belongs to one section is edited in that
+section, not in a central settings form — `CampaignView`'s "World Lore &
+Background" renders the read view and swaps in `<BaseMarkdownField>`s (plus this
+bar) when the owner presses Edit. The settings form then owns only the record's
+identity (name, system, image).
+
 ### 2.6 Proposed new classes (not yet implemented)
 
 | Class | Purpose | Replaces | Status |
@@ -247,7 +253,7 @@ sticky wrapper, the tag and the buttons.
 | `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
 | `<BaseButton icon="…">` prop | Leading icon on a text button | `icon` prop on `src/components/base/BaseButton.vue` renders a `BaseIcon` before the label (`.base-btn-with-icon` / `.base-btn-icon`: `inline-flex items-center gap-1`, `h-4 w-4`). Use it instead of hand-rolled `<CampaignNavIcon …>` + `inline-flex items-center gap-1` wrappers. Edit affordances should be `variant="update" icon="edit"` (`.base-btn-update`) so they read as the prominent action. | implemented |
 | `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
-| `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue` and `EditCharacter.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
+| `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue`, `EditCharacter.vue` and `CampaignView.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
 | `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `CampaignSidebar` (campaign drawer). | implemented |
 | `<BaseMarkdownField>` component | Labelled markdown field with a Write/Preview toggle | `src/components/base/BaseMarkdownField.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `hint`, `error`, `id`, `rows`, `placeholder`, `maxlength`, `disabled`, `writeLabel`, `previewLabel`, `emptyPreview`; emits `update:modelValue`). Mirrors `<BaseInput>`'s API and adds the preview tab; the toggle never touches the value, so the form's dirty tracking is unaffected. Renders a collapsed `<MarkdownHelp>` under the field instead of printing the syntax inline. Use it for every long free-text field instead of a raw `<textarea>`. | implemented |
 | `<MarkdownText>` component | Rendered markdown — the only `v-html` site | `src/components/base/MarkdownText.vue` (props: `text`). Renders `renderMarkdown()` inside `.rich-text`. Read-only views use this instead of `{{ }}` for long-text fields. | implemented |
@@ -258,9 +264,9 @@ sticky wrapper, the tag and the buttons.
 ### 2.7 Markdown & long-text fields → `src/assets/main.css`, `src/utils/markdown.js`
 
 Every long free-text field (character notes / appearance / backstory / private
-backstory, campaign description / private description, ship notes, message
-bodies, spell descriptions) is **markdown**, stored as source text and rendered
-on the client:
+backstory, campaign short description / world lore / private description, ship
+notes, message bodies, spell descriptions) is **markdown**, stored as source text
+and rendered on the client:
 
 | Layer | File | Responsibility |
 |-------|------|----------------|

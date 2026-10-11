@@ -67,12 +67,12 @@ const transferCandidates = computed(() =>
   ),
 )
 
-// Shape handed to the presentational form.
+// Shape handed to the presentational form. World lore and the GM notes are not
+// part of it: they are edited in place in the "World Lore & Background" section.
 const details = computed(() => ({
   id: campaign.value?.id,
   title: campaign.value?.name || '',
   description: campaign.value?.description || '',
-  privateDescription: campaign.value?.privateDescription || '',
   primarySystem: campaign.value?.primarySystem || null,
   imageUrl: campaign.value?.imageUrl || '/default-campaign.svg',
 }))
@@ -81,10 +81,14 @@ const saveDetails = async (updated) => {
   if (!isOwner.value) return
   isSaving.value = true
   try {
+    // The PUT replaces every campaign detail, so the two lore blocks (which this
+    // form does not own — they are edited in the "World Lore & Background"
+    // section) are sent back verbatim, or saving here would clear them.
     await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updated.title,
       description: updated.description,
-      privateDescription: updated.privateDescription,
+      worldLore: campaign.value.worldLore,
+      privateDescription: campaign.value.privateDescription,
       primarySystem: updated.primarySystem,
     })
 
@@ -95,7 +99,6 @@ const saveDetails = async (updated) => {
 
     campaign.value.name = updated.title
     campaign.value.description = updated.description
-    campaign.value.privateDescription = updated.privateDescription
     campaign.value.primarySystem = updated.primarySystem
     emit('updated')
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
