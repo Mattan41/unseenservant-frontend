@@ -114,7 +114,7 @@ External (Open5e):    open5e-axios.js  → SpellService.js → Store
 
 ## Authentication
 - JWT-based authentication with state persisted and managed in `authStore` (Pinia).
-- OAuth2 integration via Google and GitHub, with incoming tokens and redirects handled by `OAuthRedirect.vue`.
+- OAuth2 integration via Google and GitHub, with incoming tokens and redirects handled by `OAuthRedirect.vue`. The backend links logins to an existing account by email (case-insensitive) and requires a verified Google email; a rejected login lands on `/under-construction`.
 - Auth state persisted in `authStore` (Pinia)
 
 ## Guest Mode

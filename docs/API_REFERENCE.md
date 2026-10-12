@@ -90,6 +90,8 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Guest Mode**: Not applicable (authentication endpoint)
 - **Query Params**: provider (google or github), origin
 - **Behavior**: Redirects browser to OAuth provider. Backend sets oauth_redirect_origin cookie.
+- **Account Linking**: A login is matched by provider identity, then by email (case-insensitive) — an existing account with the same email is reused, no duplicate user is created.
+- **Verified Email**: Google requires a verified email (email_verified = true); a rejected login (unverified or non-whitelisted email) redirects to /under-construction instead of /oauth-redirect.
 - **Status Codes**: 302, 400
 - **Notes**: OAuth redirect handling via /oauth-redirect route which extracts token from URL and calls authStore.handleOAuthRedirect(token).
 
@@ -380,6 +382,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: characterStore.uploadCharacterImage(characterId, imageFile)
 - **Guest Mode**: Mocked — returns a default SVG path
 - **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with updated imageUrl)
 - **Status Codes**: 200, 400, 401, 403
 - **Notes**: Extracts error message from response for user notification.
@@ -502,6 +505,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: campaignStore.uploadCampaignImage(campaignId, imageFile)
 - **Guest Mode**: Mocked — returns a fallback stock image URL
 - **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CampaignResponseDTO (with updated imageUrl)
 - **Status Codes**: 200, 400, 401, 403
 - **Notes**: Extracts error message from string response for UI notification layer.
@@ -623,6 +627,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: shipStore.uploadShipImage(campaignId, imageFile)
 - **Guest Mode**: Mocked — returns a stock placeholder image URL
 - **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: ShipDTO (with the updated `imageUrl`)
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset.
@@ -635,6 +640,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Store Action**: shipStore.addGalleryImage(campaignId, imageFile)
 - **Guest Mode**: Mocked — appends a stock placeholder image URL
 - **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: ShipDTO (with the image appended to `imageUrls`)
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Gallery images (drawings, maps, handouts). The UI shows them in a grid with a lightbox overlay.
