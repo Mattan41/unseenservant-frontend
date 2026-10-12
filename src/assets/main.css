@@ -1026,3 +1026,16 @@ select {
 .markdown-help-result {
   @apply min-w-0;
 }
+
+/* --------------------------------------------------------------------------
+   Export menu (ExportMenu.vue): a small dropdown, teleported to <body> and
+   positioned `fixed` from the trigger so no ancestor `overflow-hidden` clips it.
+   -------------------------------------------------------------------------- */
+.export-menu {
+  @apply fixed z-50 flex min-w-[12rem] flex-col overflow-hidden rounded-md border border-third-200 py-1 text-left shadow-lg;
+  background-color: var(--color-surface);
+}
+
+.export-menu-item {
+  @apply block w-full px-3 py-2 text-left text-sm text-third-700 transition-colors hover:bg-third-100;
+}

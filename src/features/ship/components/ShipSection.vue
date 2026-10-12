@@ -8,8 +8,13 @@
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
+import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import ExportMenu from '@/components/base/ExportMenu.vue'
+import { buildShipExport } from '@/features/ship/shipExport.js'
+import { downloadTextFile, dateStamp, slugifyFileName } from '@/utils/download.js'
 
 const props = defineProps({
   campaignId: {
@@ -19,7 +24,32 @@ const props = defineProps({
 })
 
 const shipStore = useShipStore()
+const campaignStore = useCampaignStore()
+const notificationStore = useNotificationStore()
 const { ship, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+
+// The ship is Offworlders-only, and its images are exempt from export.
+const SHIP_EXPORT_FORMATS = [
+  { id: 'md', label: 'Markdown (.md)' },
+  { id: 'txt', label: 'Plain text (.txt)' },
+]
+
+/**
+ * Build and download the ship as markdown or plain text.
+ * @param {'md'|'txt'} format
+ */
+function exportShip(format) {
+  if (!ship.value) return
+  const campaignName = campaignStore.getCampaignById(props.campaignId)?.name || ''
+  const content = buildShipExport(ship.value, { format, campaignName })
+  const base = `${slugifyFileName(ship.value.name, 'ship')}-${dateStamp()}`
+  downloadTextFile({
+    filename: `${base}.${format}`,
+    content,
+    mime: format === 'md' ? 'text/markdown' : 'text/plain',
+  })
+  notificationStore.addNotification(`Exported ship as .${format}`, 'success')
+}
 
 async function loadShip() {
   await shipStore.fetchShip(props.campaignId)
@@ -74,16 +104,21 @@ onMounted(loadShip)
       <BaseButton variant="retry" @click="loadShip">Retry</BaseButton>
     </div>
 
-    <ShipSheet
-      v-else-if="ship"
-      :ship="ship"
-      :saving="isSaving"
-      :conflict="hasConflict"
-      @save="handleSave"
-      @reload="loadShip"
-      @upload-profile="handleUploadProfile"
-      @add-gallery="handleAddGallery"
-      @remove-gallery="handleRemoveGallery"
-    />
+    <div v-else-if="ship">
+      <div class="flex justify-end mb-3">
+        <ExportMenu :formats="SHIP_EXPORT_FORMATS" @export="exportShip" />
+      </div>
+
+      <ShipSheet
+        :ship="ship"
+        :saving="isSaving"
+        :conflict="hasConflict"
+        @save="handleSave"
+        @reload="loadShip"
+        @upload-profile="handleUploadProfile"
+        @add-gallery="handleAddGallery"
+        @remove-gallery="handleRemoveGallery"
+      />
+    </div>
   </div>
 </template>
