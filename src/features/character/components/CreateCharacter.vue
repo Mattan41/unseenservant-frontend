@@ -1,11 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import { parseCharacterBackup, characterFromBackup } from '@/features/character/characterExport.js'
 import {
   DEFAULT_SYSTEM_TYPE,
   SYSTEM_OPTIONS,
@@ -16,6 +18,7 @@ import {
 } from '@/features/character/dispatchers/systemRegistry.js'
 
 const characterStore = useCharacterStore()
+const notificationStore = useNotificationStore()
 const router = useRouter()
 const cancel = () => router.push({ name: 'CharactersView' })
 
@@ -41,6 +44,41 @@ useUnsavedChanges(
 
 const isSubmitting = ref(false)
 const formError = ref('')
+
+const fileInput = ref(null)
+
+/**
+ * Load a JSON backup into the create form (review-before-create).
+ *
+ * The user may edit any field, then creates the character through the normal
+ * save path; they attach it to a campaign afterwards via the campaign import
+ * flow. Relational fields are never restored (see `characterExport.js`).
+ */
+function importBackup(event) {
+  const file = event.target.files && event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    try {
+      character.value = characterFromBackup(parseCharacterBackup(String(reader.result)))
+      formError.value = ''
+      notificationStore.addNotification('Backup loaded — review the fields, then create.', 'success')
+    } catch (error) {
+      notificationStore.addNotification(
+        error.message || 'Could not read that backup file.',
+        'error',
+      )
+    } finally {
+      event.target.value = ''
+    }
+  }
+  reader.onerror = () => {
+    notificationStore.addNotification('Could not read that backup file.', 'error')
+    event.target.value = ''
+  }
+  reader.readAsText(file)
+}
 
 const submitCharacter = async () => {
   if (!character.value.name) {
@@ -76,10 +114,22 @@ const submitCharacter = async () => {
 <template>
   <div class="container mx-auto p-4 max-w-2xl">
     <div class="bg-[var(--color-surface)] rounded-lg shadow-lg overflow-hidden">
-      <div class="p-6 border-b border-section">
+      <div class="p-6 border-b border-section flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-2xl font-bold" style="color: var(--color-primary-700)">
           Create New Character
         </h1>
+        <div>
+          <BaseButton variant="default" icon="upload" @click="fileInput?.click()">
+            Import from backup (.json)
+          </BaseButton>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".json,application/json"
+            class="hidden"
+            @change="importBackup"
+          />
+        </div>
       </div>
 
       <form @submit.prevent="submitCharacter" class="p-6">

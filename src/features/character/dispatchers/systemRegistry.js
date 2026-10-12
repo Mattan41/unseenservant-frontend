@@ -10,12 +10,14 @@ import {
   normalizeDnd5eData,
   DND5E_SYSTEM_TYPE,
 } from '@/systems/dnd5e/constants.js'
+import { dnd5eExportSections } from '@/systems/dnd5e/dnd5eExport.js'
 import {
   createEmptyOffworldersData,
   normalizeOffworldersData,
   offworldersHealthLabel,
   OFFWORLDERS_SYSTEM_TYPE,
 } from '@/systems/offworlders/constants.js'
+import { offworldersExportSections } from '@/systems/offworlders/offworldersExport.js'
 
 /** System id used when a character has none. */
 export const DEFAULT_SYSTEM_TYPE = DND5E_SYSTEM_TYPE
@@ -33,6 +35,11 @@ export const SYSTEM_LABELS = Object.fromEntries(SYSTEM_OPTIONS.map((o) => [o.id,
 const SYSTEM_DATA_KEYS = {
   [DND5E_SYSTEM_TYPE]: 'dnd5e',
   [OFFWORLDERS_SYSTEM_TYPE]: 'offworlders',
+}
+
+/** The property key that holds a system's data block on a character, or null. */
+export function systemDataKey(systemType) {
+  return SYSTEM_DATA_KEYS[systemType] || null
 }
 
 /** Empty data block for a single system. */
@@ -95,6 +102,22 @@ export function validate(systemType, character) {
     return null
   }
   return null
+}
+
+/**
+ * Game-specific export sections for a character's active system (see
+ * `src/utils/textExport.js` for the section model). Unknown systems yield an
+ * empty list so the generic shell still exports the core character fields.
+ *
+ * @param {string} systemType
+ * @param {object} character
+ * @param {{spells?: Array<object>}} [context] system-specific extras
+ * @returns {Array<object>}
+ */
+export function exportSectionsFor(systemType, character, context = {}) {
+  if (systemType === DND5E_SYSTEM_TYPE) return dnd5eExportSections(character, context.spells)
+  if (systemType === OFFWORLDERS_SYSTEM_TYPE) return offworldersExportSections(character)
+  return []
 }
 
 /**

@@ -10,6 +10,10 @@ import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import SystemSheetRouter from '@/features/character/dispatchers/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
+import ExportMenu from '@/components/base/ExportMenu.vue'
+import { buildCharacterExport, buildCharacterBackup } from '@/features/character/characterExport.js'
+import { fetchExportExtras } from '@/features/character/dispatchers/systemExport.js'
+import { downloadTextFile, dateStamp, slugifyFileName } from '@/utils/download.js'
 
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
@@ -68,6 +72,59 @@ const deleteCharacter = async () => {
     await router.push({ name: 'CharactersView' })
   }
 }
+
+// Formats offered by the export menu. JSON is a portable, lossless backup; md
+// and txt are human-readable. Images are never included.
+const CHARACTER_EXPORT_FORMATS = [
+  { id: 'md', label: 'Markdown (.md)' },
+  { id: 'txt', label: 'Plain text (.txt)' },
+  { id: 'json', label: 'JSON backup (.json)' },
+]
+
+const exporting = ref(false)
+
+/**
+ * Build and download the character in the chosen format. Spells (D&D 5e) are
+ * fetched best-effort beforehand; every other system has no extras.
+ * @param {'md'|'txt'|'json'} format
+ */
+const exportCharacter = async (format) => {
+  const character = currentCharacter.value
+  if (!character || exporting.value) return
+
+  exporting.value = true
+  try {
+    const { spells } = await fetchExportExtras(character.systemType, character.id)
+    const base = `${slugifyFileName(character.name, 'character')}-${String(
+      character.systemType || 'character',
+    ).toLowerCase()}-${dateStamp()}`
+
+    if (format === 'json') {
+      const backup = buildCharacterBackup(character)
+      downloadTextFile({
+        filename: `${base}.json`,
+        content: `${JSON.stringify(backup, null, 2)}\n`,
+        mime: 'application/json',
+      })
+    } else {
+      const content = buildCharacterExport(character, { format, spells })
+      downloadTextFile({
+        filename: `${base}.${format}`,
+        content,
+        mime: format === 'md' ? 'text/markdown' : 'text/plain',
+      })
+    }
+
+    notificationStore.addNotification(
+      `Exported ${character.name || 'character'} as .${format}`,
+      'success',
+    )
+  } catch {
+    notificationStore.addNotification('Failed to export the character.', 'error')
+  } finally {
+    exporting.value = false
+  }
+}
 </script>
 
 <template>
@@ -98,27 +155,34 @@ const deleteCharacter = async () => {
         <aside
           class="flex flex-col gap-4 p-6 border-b border-section lg:border-b-0 lg:border-r lg:w-72 xl:w-80 lg:flex-shrink-0"
         >
-          <!-- Action bar -->
-          <div v-if="isOwner" class="flex justify-end gap-2">
-            <BaseButton
-              variant="update"
-              icon="edit"
-              @click="
-                router.push({
-                  name: 'EditCharacter',
-                  params: { id: currentCharacter.id },
-                  query: from === 'campaign' && campaignId ? { from, campaignId } : {},
-                })
-              "
-            >
-              Edit
-            </BaseButton>
-            <BaseButton
-              variant="remove"
-              :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
-              @click="deleteCharacter"
-              >Delete</BaseButton
-            >
+          <!-- Action bar: any viewer may export; only the owner may edit/delete. -->
+          <div class="flex flex-wrap justify-end gap-2">
+            <ExportMenu
+              :formats="CHARACTER_EXPORT_FORMATS"
+              :disabled="exporting"
+              @export="exportCharacter"
+            />
+            <template v-if="isOwner">
+              <BaseButton
+                variant="update"
+                icon="edit"
+                @click="
+                  router.push({
+                    name: 'EditCharacter',
+                    params: { id: currentCharacter.id },
+                    query: from === 'campaign' && campaignId ? { from, campaignId } : {},
+                  })
+                "
+              >
+                Edit
+              </BaseButton>
+              <BaseButton
+                variant="remove"
+                :confirm-message="`Are you sure you want to delete ${currentCharacter.name || 'this participant'}? This action cannot be undone.`"
+                @click="deleteCharacter"
+                >Delete</BaseButton
+              >
+            </template>
           </div>
 
           <!-- Identity: portrait + name + system -->
