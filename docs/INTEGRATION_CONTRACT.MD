@@ -24,6 +24,8 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Query params: `provider` (google|github), `origin`
 - Redirects to OAuth2 provider; sets HttpOnly `oauth_redirect_origin` cookie
 - Disabled in `demo` profile
+- Account linking: a login is matched by provider identity (`providerType` + `providerId`), then by email (case-insensitive) — an existing account with the same email is reused, no duplicate user is created
+- Google requires a verified email (`email_verified = true`); a rejected login (unverified or non-whitelisted email) redirects to `{FRONTEND_URL}/under-construction`, not `/oauth-redirect`
 - Status: 302, 400
 
 **GET /api/auth/me**
@@ -108,6 +110,7 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 **POST /api/characters/{id}/image**
 - Requires: ROLE_USER, must be owner
 - Request: `multipart/form-data`, field: `file`
+- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
 - Response: `CharacterOutputDTO` (with updated avatarUrl)
 - Status: 200, 400, 401, 403
 
@@ -154,31 +157,37 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 **GET /api/campaigns/{id}**
 - Requires: authorized participant
 - Response: `CampaignResponseDTO { id, name, description, worldLore, privateDescription, imageUrl, primarySystem, ownerId, participants: [ { id, nickname, role } ] }`
-  - `privateDescription` is `null` unless the requester is the campaign owner or a campaign GM; `worldLore` is always included
+  - `privateDescription` is `null` unless the requester is a campaign GM (a non-GM owner does not receive it); `worldLore` is always included
 - Status: 200, 401, 403, 404
 
 **PUT /api/campaigns/{id}**
+- Requires: campaign GM
 - Request: `CampaignUpdateDTO { name, description, worldLore, privateDescription, primarySystem }` (`primarySystem`: `DND5E` | `OFFWORLDERS` | null)
 - Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent). Changing away from `OFFWORLDERS` keeps the ship.
 - Response: `CampaignResponseDTO`
 - Status: 200, 400, 401, 403, 404
 
 **POST /api/campaigns/{id}/image**
+- Requires: campaign GM
 - Request: `multipart/form-data`, field: `file`
+- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
 - Response: `CampaignResponseDTO` (with updated imageUrl)
 - Status: 200, 400, 401, 403
 
 **PATCH /api/campaigns/{id}/participants**
+- Requires: campaign owner
 - Request: `UpdateParticipantsDTO { participantsToAdd: [ ParticipantResponseDTO ], participantIdsToRemove: [ Long ] }` (`nickname` optional, defaults server-side)
 - Response: `CampaignResponseDTO`
 - Status: 200, 400, 401, 403, 404
 
 **PATCH /api/campaigns/{id}/participants/{participantId}/nickname**
+- Requires: the participant themselves, or the campaign owner to rename someone else
 - Request body: plain string
 - Response: `CampaignResponseDTO`
 - Status: 200, 401, 403, 404
 
 **PATCH /api/campaigns/{id}/participants/{participantId}/role**
+- Requires: campaign owner
 - Request body: plain string — `"GM"` or `"PLAYER"`
 - Response: `CampaignResponseDTO`
 - Status: 200, 400, 401, 403, 404
@@ -194,13 +203,12 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Status: 204, 401, 403, 404
 - Note: A campaign's ship (if any) is removed with the campaign.
 
-**Campaign permission model (frontend expectation)**
+**Campaign permission model**
 - Two independent axes: **ownership** (administration) and **table role** (GM = world-building).
-- `PUT /api/campaigns/{id}` and `POST /api/campaigns/{id}/image` are content operations: expect the requester to be a campaign **GM** (not merely the owner).
-- `PATCH /api/campaigns/{id}/participants`, `/participants/{id}/role` and `/owner`, plus `DELETE /api/campaigns/{id}`, are administration: expect the campaign **owner**.
-- `PATCH /api/campaigns/{id}/participants/{id}/nickname`: any participant for their own nickname; the campaign **owner** for anyone else's.
-- `GET /api/campaigns/{id}`: `privateDescription` should be returned only to a campaign **GM** (the frontend hides it from a non-GM owner).
-- The frontend enforces these in the UI via `src/features/campaign/campaignPermissions.js` and mirrors them in guest mode (`src/api/lib/guest-axios.js`); verify the backend's `CampaignPermissionService` matches before release.
+- Content operations — `PUT /api/campaigns/{id}`, `POST /api/campaigns/{id}/image`, world lore and GM notes — require a campaign **GM**.
+- Administration — `PATCH /participants`, `/participants/{id}/nickname` (for another participant), `/participants/{id}/role`, `/owner`, and `DELETE /api/campaigns/{id}` — requires the campaign **owner**.
+- The campaign creator is seeded as a **GM** participant, so owner-as-GM works out of the box; a non-GM owner is not treated as a GM.
+- Enforced in `CampaignService` via `CampaignPermissionService.isGameMaster` / `isCampaignOwner`; the frontend mirrors the same rules (`src/features/campaign/campaignPermissions.js`).
 
 ---
 
@@ -227,6 +235,7 @@ participant may view and edit; there is **no delete**.
 **POST /api/campaigns/{id}/ship/image**
 - Requires: campaign participant
 - Request: multipart/form-data with field `file`
+- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
 - Replaces the ship's profile image (`imageUrl`); the UI falls back to `/defaultShip.svg`
 - Response: `ShipDTO`
 - Status: 200, 400, 401, 403, 404
@@ -234,6 +243,7 @@ participant may view and edit; there is **no delete**.
 **POST /api/campaigns/{id}/ship/images**
 - Requires: campaign participant
 - Request: multipart/form-data with field `file`
+- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
 - Appends an image to the ship's gallery (`imageUrls`)
 - Response: `ShipDTO`
 - Status: 200, 400, 401, 403, 404

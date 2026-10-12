@@ -15,6 +15,7 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 - Campaign management with participants and roles (GM/Player)
 - Character builder and tracker for D&D 5e
 - Import characters into campaigns
+- Image uploads (campaign, character and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`)
 
 ## Campaign roles & permissions
 
