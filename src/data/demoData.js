@@ -263,7 +263,7 @@ export const guestCharacters = [
   {
     id: 'guest_char_7',
     ownerId: 'guest_demo',
-    campaignId: 'guest_campaign_1',
+    campaignId: 'guest_campaign_4',
     name: 'Vex',
     systemType: 'OFFWORLDERS',
     notes: `**The *Last Word*** — a stolen courier ship.
@@ -309,6 +309,88 @@ export const guestCharacters = [
         { type: 'Light', description: 'Butterfly knife' },
       ],
       items: [{ name: 'Band t-shirts', description: 'Rotating collection of band t-shirts.' }],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'guest_char_8',
+    ownerId: 'guest_player_1',
+    campaignId: 'guest_campaign_4',
+    name: 'Kestrel',
+    systemType: 'OFFWORLDERS',
+    notes: 'Ex-military. Talks little, shoots straight.',
+    appearance: 'Shaved head, faded unit tattoos.',
+    backstory: 'Walked away from the war with a rifle and no plan.',
+    avatarUrl: '/defaultCharacter.svg',
+    offworlders: {
+      characterClass: 'Warrior',
+      species: 'Human',
+      xp: 2,
+      health: 16,
+      currentHealth: 12,
+      healthModifier: 0,
+      armor: 2,
+      supply: 3,
+      supplyMax: 3,
+      credits: 4,
+      stats: {
+        strength: 3,
+        agility: 1,
+        intelligence: 0,
+        willpower: 1,
+      },
+      skills: [
+        { name: 'Athletics', description: '' },
+        { name: 'Survival', description: '' },
+      ],
+      abilities: [
+        { name: 'Dead Eye', description: '' },
+        { name: 'Heavy Lifting', description: '' },
+      ],
+      weapons: [{ type: 'Heavy', description: 'Battle rifle' }],
+      items: [{ name: 'Combat knife', description: '' }],
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'guest_char_9',
+    ownerId: 'guest_player_2',
+    campaignId: 'guest_campaign_4',
+    name: 'Doc',
+    systemType: 'OFFWORLDERS',
+    notes: 'Patch-you-up medic with a sideline in forged manifests.',
+    appearance: 'Wire-rimmed glasses, an ever-present medkit.',
+    backstory: 'Bought a medical licence that does not actually exist.',
+    avatarUrl: '/defaultCharacter.svg',
+    offworlders: {
+      characterClass: 'Geek',
+      species: 'Human',
+      xp: 1,
+      health: 13,
+      currentHealth: 13,
+      healthModifier: 0,
+      armor: 0,
+      supply: 3,
+      supplyMax: 3,
+      credits: 6,
+      stats: {
+        strength: 0,
+        agility: 1,
+        intelligence: 3,
+        willpower: 0,
+      },
+      skills: [
+        { name: 'Science', description: '' },
+        { name: 'Tech', description: '' },
+      ],
+      abilities: [
+        { name: 'Medic', description: '' },
+        { name: 'Chemist', description: '' },
+      ],
+      weapons: [{ type: 'Light', description: 'Holdout pistol' }],
+      items: [{ name: 'Medkit', description: 'Field surgery kit.' }],
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -365,7 +447,7 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
                  Dynamic Consequences: Choices matter—a trusting word or a misstep could change the course of your investigation, and the fate of Lundenwic itself.`,
     imageUrl:
       'https://c4.wallpaperflare.com/wallpaper/925/634/481/league-of-legends-bilgewater-fantasy-art-pirates-wallpaper-preview.jpg',
-    primarySystem: 'OFFWORLDERS',
+    primarySystem: 'DND5E',
     ownerId: 'guest_demo',
     participants: [
       { id: 'guest_player_1', nickname: 'User1', role: 'PLAYER' },
@@ -400,12 +482,35 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
+  {
+    id: 'guest_campaign_4',
+    name: 'The Fringe',
+    description: `A ragtag crew, a stolen courier ship, and the jobs no one else will take on the lawless edge of known space.`,
+    worldLore: `Beyond the core worlds, the Fringe is a scatter of half-charted systems where the law is whoever is holding the gun. You fly the *Null Gravitas* — a courier ship whose papers remember three previous owners it would rather forget — and take the jobs that pay: a sealed crate here, a passenger who will not give a name there.
+
+What Players Can Expect:
+
+Free Traders: No grand destiny — just a crew, a ship, and a debt or two. Every jump is a gamble on fuel, favours, and whether the port authority has been paid off.
+Sandbox Sci-Fi: Stations to dock at, systems to chart, factions to cross or court. The crew picks its own trouble.
+Leverage Over Firepower: A fast talk, a forged manifest, or a well-placed bribe usually beats a firefight. When it does not, you have guns too.
+Crew First: The ship is home. Keeping it flying, fuelled, and out of the impound lot is a game in itself.`,
+    imageUrl: '/default-campaign.svg',
+    primarySystem: 'OFFWORLDERS',
+    ownerId: 'guest_demo',
+    participants: [
+      { id: 'guest_demo', nickname: 'You - Guest', role: 'GM' },
+      { id: 'guest_player_1', nickname: 'User1', role: 'PLAYER' },
+      { id: 'guest_player_2', nickname: 'User2', role: 'PLAYER' },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ]
 
 export const guestShips = [
   {
     id: 'guest_ship_1',
-    campaignId: 'guest_campaign_2',
+    campaignId: 'guest_campaign_4',
     version: 0,
     name: 'The Null Gravitas',
     hull: 15,
@@ -415,10 +520,11 @@ export const guestShips = [
     driveFuel: 4,
     maxDriveFuel: 6,
     upgrades: ['Additional Armor', 'Fuel Tanks'],
-    notes: `Cargo: a sealed crate for the Lundenwic job. Passengers: none yet.
+    notes: `The crew's stolen courier ship.
 
-- the port airlock seal is *temporary* — get it welded
-- fuel gauge reads low after every jump`,
+- port airlock seal is *temporary* — get it welded
+- fuel gauge reads low after every jump
+- transponder has "three previous owners" it would rather forget`,
     imageUrl: '',
     imageUrls: [],
     createdAt: new Date().toISOString(),
@@ -463,19 +569,65 @@ export const guestMessages = [
     createdAt: new Date(Date.now() - 43200000).toISOString(),
     updatedAt: new Date(Date.now() - 43200000).toISOString(),
   },
+  {
+    id: 'guest_msg_5',
+    campaignId: 'guest_campaign_4',
+    userId: 'guest_player_1',
+    messageBody:
+      "Docked at Waystation Nine. I've got the hand-off at the docks tonight. Doc — fix the transponder so it reads as a mining survey ship before the customs drones sweep the berth.",
+    createdAt: new Date(Date.now() - 21600000).toISOString(),
+    updatedAt: new Date(Date.now() - 21600000).toISOString(),
+  },
+  {
+    id: 'guest_msg_6',
+    campaignId: 'guest_campaign_4',
+    userId: 'guest_demo',
+    messageBody:
+      'Vex here. Fuel is down to two bars and the Syndicate flagged our last port of call. Whatever this job is, it had better pay for a full tank and a fresh set of papers.',
+    createdAt: new Date(Date.now() - 10800000).toISOString(),
+    updatedAt: new Date(Date.now() - 10800000).toISOString(),
+  },
 ]
 
 /**
- * Helper function to inject data into localStorage
+ * Every localStorage key the guest/demo mode owns. Kept in one place so the
+ * seed and clear helpers can never drift (e.g. silently forget `guest_ships`).
+ */
+const GUEST_STORAGE_KEYS = [
+  'guest_user',
+  'guest_users',
+  'guest_characters',
+  'guest_campaigns',
+  'guest_ships',
+  'guest_messages',
+]
+
+/**
+ * Write the full demo data set to localStorage (overwrites existing values).
+ * Called when entering guest mode so re-entering always yields a fresh, complete
+ * dataset — including the ship.
+ */
+export function seedGuestStorage() {
+  localStorage.setItem('guest_user', JSON.stringify(guestUser))
+  localStorage.setItem('guest_users', JSON.stringify(guestUsers))
+  localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
+  localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
+  localStorage.setItem('guest_ships', JSON.stringify(guestShips))
+  localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
+}
+
+/** Remove every guest/demo key (used when leaving guest mode). */
+export function clearGuestStorage() {
+  GUEST_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key))
+}
+
+/**
+ * Seed the demo data once, if no guest session exists yet. Safe to call on app
+ * boot; it never overwrites an in-progress guest session.
  */
 export function seedLocalStorage() {
   if (!localStorage.getItem('guest_user')) {
-    localStorage.setItem('guest_user', JSON.stringify(guestUser))
-    localStorage.setItem('guest_users', JSON.stringify(guestUsers))
-    localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
-    localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
-    localStorage.setItem('guest_ships', JSON.stringify(guestShips))
-    localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
+    seedGuestStorage()
     console.log('[Seed] Guest data successfully initialized in localStorage!')
   }
 }
