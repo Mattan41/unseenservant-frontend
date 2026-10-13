@@ -16,7 +16,7 @@ describe('formatParticipantRoster', () => {
     ])
   })
 
-  it('does not append the participants\' characters', () => {
+  it("does not append the participants' characters", () => {
     // Regression: the Campaign Summary roster used to list character names too.
     const participants = [{ id: 1, nickname: 'Mats', role: 'GM' }]
 
@@ -32,9 +32,7 @@ describe('formatParticipantRoster', () => {
   it('falls back to placeholders for a missing name/role', () => {
     const participants = [{ id: 1 }]
 
-    expect(formatParticipantRoster(participants)).toEqual([
-      { id: 1, label: 'Unknown · PLAYER' },
-    ])
+    expect(formatParticipantRoster(participants)).toEqual([{ id: 1, label: 'Unknown · PLAYER' }])
   })
 
   it('returns an empty roster when the campaign has no participants', () => {

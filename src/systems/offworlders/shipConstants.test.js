@@ -5,8 +5,11 @@ import {
   OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
   OFFWORLDERS_SHIP_UPGRADES,
   addShipUpgrade,
+  buildCrewPayload,
   canAddShipUpgrade,
   createEmptyShipData,
+  normalizeCrew,
+  normalizeCrewMember,
   normalizeShipData,
   removeShipUpgrade,
   shipUpgradeCount,
@@ -109,5 +112,57 @@ describe('normalizeShipData', () => {
     const ship = normalizeShipData({ imageUrl: '/b.png', imageUrls: ['/a.png', 5, null] })
     expect(ship.imageUrl).toBe('/b.png')
     expect(ship.imageUrls).toEqual(['/a.png'])
+  })
+})
+
+describe('ship crew helpers', () => {
+  it('normalizes a crew entry, dropping junk', () => {
+    const member = normalizeCrewMember({
+      userId: 3,
+      nickname: 'Vex',
+      role: 'PLAYER',
+      notes: 'Hi',
+      imageUrls: ['/a.png', 5],
+      characters: [{ name: 'Vex', roleOnShip: 'Pilot' }, null, { name: 'Doc' }],
+    })
+
+    expect(member).toEqual({
+      userId: 3,
+      nickname: 'Vex',
+      role: 'PLAYER',
+      notes: 'Hi',
+      imageUrls: ['/a.png'],
+      characters: [
+        { name: 'Vex', roleOnShip: 'Pilot' },
+        { name: 'Doc', roleOnShip: '' },
+      ],
+    })
+  })
+
+  it('normalizes a missing entry to empty defaults', () => {
+    expect(normalizeCrewMember(null)).toEqual({
+      userId: null,
+      nickname: '',
+      role: 'PLAYER',
+      notes: '',
+      imageUrls: [],
+      characters: [],
+    })
+  })
+
+  it('normalizeCrew tolerates a non-array', () => {
+    expect(normalizeCrew(null)).toEqual([])
+  })
+
+  it('buildCrewPayload trims rows and drops blank ones', () => {
+    expect(
+      buildCrewPayload({
+        notes: 'x',
+        characters: [
+          { name: ' Vex ', roleOnShip: ' Pilot ' },
+          { name: '', roleOnShip: '' },
+        ],
+      }),
+    ).toEqual({ notes: 'x', characters: [{ name: 'Vex', roleOnShip: 'Pilot' }] })
   })
 })

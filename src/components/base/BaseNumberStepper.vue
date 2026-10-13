@@ -50,10 +50,7 @@ const value = computed(() => Number(props.modelValue) || 0)
 
 const canDecrease = computed(() => props.editable && !props.disabled && value.value > props.min)
 const canIncrease = computed(
-  () =>
-    props.editable &&
-    !props.disabled &&
-    (props.max === null || value.value < props.max),
+  () => props.editable && !props.disabled && (props.max === null || value.value < props.max),
 )
 
 function decrease() {

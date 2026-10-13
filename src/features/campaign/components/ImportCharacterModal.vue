@@ -126,7 +126,10 @@ watch(
                   <template v-if="character.dnd5e">
                     <span>{{ character.dnd5e.race }}</span>
                     <span class="mx-1">•</span>
-                    <span>{{ character.dnd5e.characterClass }} (Level {{ character.dnd5e.level }})</span>
+                    <span
+                      >{{ character.dnd5e.characterClass }} (Level
+                      {{ character.dnd5e.level }})</span
+                    >
                   </template>
                   <span v-else>{{ character.systemType }}</span>
                 </div>

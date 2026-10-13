@@ -658,6 +658,53 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ---
 
+### GET /api/campaigns/{id}/ship/crew
+
+- **Service**: ShipService.fetchCrew(campaignId)
+- **Store Action**: shipStore.fetchCrew(campaignId)
+- **Guest Mode**: Mocked — builds one entry per current participant from `guest_ship_crew`
+- **Response**: `[ ShipCrewMemberDTO ]` — `{ userId, nickname, role, notes, imageUrls, characters: [{ name, roleOnShip }] }`, one per **current** participant in roster order
+- **Status Codes**: 200, 401, 403, 404
+- **Notes**: Entries are keyed on the user, so a participant who leaves keeps their entry (it is simply not returned) and rejoining re-activates it.
+
+---
+
+### PUT /api/campaigns/{id}/ship/crew/me
+
+- **Service**: ShipService.saveMyCrewEntry(campaignId, entry)
+- **Store Action**: shipStore.saveMyCrewEntry(campaignId, entry)
+- **Guest Mode**: Mocked — upserts the signed-in guest's row in `guest_ship_crew`
+- **Request**: `{ notes?, characters? }` (`characters` is `[ { name, roleOnShip } ]`, role optional)
+- **Response**: ShipCrewMemberDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Each participant edits only their own entry.
+
+---
+
+### POST /api/campaigns/{id}/ship/crew/me/images
+
+- **Service**: ShipService.addCrewImage(campaignId, imageFile)
+- **Store Action**: shipStore.addCrewImage(campaignId, imageFile)
+- **Guest Mode**: Mocked — appends a stock placeholder image URL
+- **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
+- **Response**: ShipCrewMemberDTO (with the image appended to `imageUrls`)
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Crew images are shown in the ship's single gallery; the lightbox steps through all of them.
+
+---
+
+### DELETE /api/campaigns/{id}/ship/crew/me/images?url={url}
+
+- **Service**: ShipService.removeCrewImage(campaignId, url)
+- **Store Action**: shipStore.removeCrewImage(campaignId, url)
+- **Guest Mode**: Mocked — removes the matching URL
+- **Query Params**: url (the stored image URL)
+- **Response**: ShipCrewMemberDTO (with the image removed)
+- **Status Codes**: 200, 401, 403, 404
+
+---
+
 ## Protected Routes
 
 | Route                | Requires Auth | Requires session | Notes                                 |

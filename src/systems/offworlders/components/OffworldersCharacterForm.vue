@@ -250,7 +250,9 @@ function removeAbility(name) {
     <!-- Attributes -->
     <div class="flex items-center gap-2 mb-1">
       <h3 class="section-heading">
-        <BaseTooltip text="A starting character uses the standard array. You are free to deviate — this is guidance, not a rule.">
+        <BaseTooltip
+          text="A starting character uses the standard array. You are free to deviate — this is guidance, not a rule."
+        >
           Attributes
         </BaseTooltip>
       </h3>
@@ -283,17 +285,24 @@ function removeAbility(name) {
     <!-- Skills -->
     <div class="flex items-center gap-2 mb-1">
       <h3 class="section-heading">
-        <BaseTooltip text="Skills you are trained in. The list is a starting point — add as many custom skills as you like.">
+        <BaseTooltip
+          text="Skills you are trained in. The list is a starting point — add as many custom skills as you like."
+        >
           Skills
         </BaseTooltip>
       </h3>
       <span class="text-sm text-muted">({{ offworlders.skills.length }} chosen)</span>
       <span class="md:hidden">
-        <IconButton icon="info" label="Skill and ability descriptions" @click="showDescriptions = true" />
+        <IconButton
+          icon="info"
+          label="Skill and ability descriptions"
+          @click="showDescriptions = true"
+        />
       </span>
     </div>
     <p v-if="suggestedSkills.length" class="text-xs mb-3 text-muted">
-      Highlighted skills are the usual picks for a {{ offworlders.characterClass }} — suggestions only.
+      Highlighted skills are the usual picks for a {{ offworlders.characterClass }} — suggestions
+      only.
     </p>
     <div class="flex flex-wrap gap-3 mb-3">
       <label
@@ -303,11 +312,7 @@ function removeAbility(name) {
         :class="isSuggestedSkill(skill) ? 'suggested-choice' : ''"
       >
         <input type="checkbox" :checked="!!skillEntry(skill)" @change="toggleSkill(skill)" />
-        <BaseTooltip
-          v-if="skillDescription(skill)"
-          :text="skillDescription(skill)"
-          desktop-only
-        >
+        <BaseTooltip v-if="skillDescription(skill)" :text="skillDescription(skill)" desktop-only>
           {{ skill }}
         </BaseTooltip>
         <template v-else>{{ skill }}</template>
@@ -349,13 +354,19 @@ function removeAbility(name) {
     <!-- Abilities -->
     <div class="flex items-center gap-2 mb-1">
       <h3 class="section-heading">
-        <BaseTooltip text="Abilities from your class (or any others). The highlighted group matches your class; add custom abilities too.">
+        <BaseTooltip
+          text="Abilities from your class (or any others). The highlighted group matches your class; add custom abilities too."
+        >
           Abilities
         </BaseTooltip>
       </h3>
       <span class="text-sm text-muted">({{ offworlders.abilities.length }} chosen)</span>
       <span class="md:hidden">
-        <IconButton icon="info" label="Skill and ability descriptions" @click="showDescriptions = true" />
+        <IconButton
+          icon="info"
+          label="Skill and ability descriptions"
+          @click="showDescriptions = true"
+        />
       </span>
     </div>
     <p v-if="offworlders.characterClass" class="text-xs mb-3 text-muted">
@@ -375,7 +386,11 @@ function removeAbility(name) {
             :key="ability"
             class="inline-flex items-center gap-1 text-sm text-default"
           >
-            <input type="checkbox" :checked="!!abilityEntry(ability)" @change="toggleAbility(ability)" />
+            <input
+              type="checkbox"
+              :checked="!!abilityEntry(ability)"
+              @change="toggleAbility(ability)"
+            />
             <BaseTooltip
               v-if="abilityDescription(ability)"
               :text="abilityDescription(ability)"
@@ -447,7 +462,9 @@ function removeAbility(name) {
         <ul class="flex flex-col gap-2 mb-4">
           <li v-for="skill in OFFWORLDERS_SKILLS" :key="skill">
             <span class="font-medium text-default">{{ skill }}</span>
-            <span class="block text-sm text-secondary">{{ OFFWORLDERS_SKILL_DESCRIPTIONS[skill] }}</span>
+            <span class="block text-sm text-secondary">{{
+              OFFWORLDERS_SKILL_DESCRIPTIONS[skill]
+            }}</span>
           </li>
         </ul>
 
@@ -474,12 +491,15 @@ function removeAbility(name) {
         </div>
         <p class="text-sm mb-3 text-muted">
           Assign each of <strong>{{ OFFWORLDERS_STANDARD_ARRAY.join(', ') }}</strong> once, in any
-          order (each attribute ranges {{ OFFWORLDERS_ATTRIBUTE_MIN }} to {{ OFFWORLDERS_ATTRIBUTE_MAX }}).
+          order (each attribute ranges {{ OFFWORLDERS_ATTRIBUTE_MIN }} to
+          {{ OFFWORLDERS_ATTRIBUTE_MAX }}).
         </p>
         <ul class="flex flex-col gap-2">
           <li v-for="attr in OFFWORLDERS_ATTRIBUTES" :key="attr">
             <span class="font-medium capitalize text-default">{{ attr }}</span>
-            <span class="block text-sm text-secondary">{{ OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS[attr] }}</span>
+            <span class="block text-sm text-secondary">{{
+              OFFWORLDERS_ATTRIBUTE_DESCRIPTIONS[attr]
+            }}</span>
           </li>
         </ul>
       </div>

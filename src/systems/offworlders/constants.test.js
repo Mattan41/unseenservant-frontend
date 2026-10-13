@@ -201,9 +201,9 @@ describe('offworlders gear + attribute helpers', () => {
   })
 
   it('standardArrayUsage counts how many array entries are matched', () => {
-    expect(
-      standardArrayUsage({ strength: 2, agility: 1, intelligence: 0, willpower: -1 }),
-    ).toEqual({ used: 4, total: 4 })
+    expect(standardArrayUsage({ strength: 2, agility: 1, intelligence: 0, willpower: -1 })).toEqual(
+      { used: 4, total: 4 },
+    )
     // -1 is duplicated, so only three of the four entries are matched.
     expect(
       standardArrayUsage({ strength: 2, agility: 1, intelligence: -1, willpower: -1 }),
@@ -404,7 +404,9 @@ describe('skill/ability entries', () => {
     expect(resolveEntryDescription({ name: 'X', description: 'custom' }, { X: 'catalog' })).toBe(
       'custom',
     )
-    expect(resolveEntryDescription({ name: 'X', description: '' }, { X: 'catalog' })).toBe('catalog')
+    expect(resolveEntryDescription({ name: 'X', description: '' }, { X: 'catalog' })).toBe(
+      'catalog',
+    )
     expect(resolveEntryDescription({ name: 'X' }, {})).toBe('')
     expect(resolveEntryDescription(null, {})).toBe('')
   })

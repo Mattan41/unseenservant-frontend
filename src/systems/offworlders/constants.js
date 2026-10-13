@@ -88,8 +88,10 @@ export const OFFWORLDERS_ABILITY_DESCRIPTIONS = {
     'Spend 1 Supply to produce a single dose of a medicine, chemical, poison, or biological agent (agree its effects with the GM).',
   'Drone Controller':
     'You have a small flying drone you control remotely and perceive through; rebuild it in a few days of downtime if lost.',
-  Hijack: 'Remotely take over any electronic machine or computer you can see (roll with Intelligence).',
-  Medic: 'First aid heals +2 extra Health; allies who rest in your presence roll 1D6 and heal that much extra.',
+  Hijack:
+    'Remotely take over any electronic machine or computer you can see (roll with Intelligence).',
+  Medic:
+    'First aid heals +2 extra Health; allies who rest in your presence roll 1D6 and heal that much extra.',
   Polymath: 'Get a third skill.',
 
   'Cheap Shot':
@@ -101,13 +103,17 @@ export const OFFWORLDERS_ABILITY_DESCRIPTIONS = {
   'Shoot First': 'You cannot be surprised, and you always act first in a fight.',
   Smuggle: 'Anything you hide somewhere plausible cannot be found.',
 
-  Blast: 'Use your psychic powers as a ranged weapon: 1D6+1 damage to a nearby target (roll with Willpower).',
+  Blast:
+    'Use your psychic powers as a ranged weapon: 1D6+1 damage to a nearby target (roll with Willpower).',
   'Force Wall':
     'While concentrating on nothing else, create a solid psychic barrier up to 10x10 feet; roll Willpower to hold it under sustained stress.',
   Jump: 'Once per scene, teleport instantly to a nearby location you can see.',
-  Premonition: 'Once per day, ask the GM the likely outcome of an immediate action; they answer honestly.',
-  Scanner: 'Read surface emotions; roll Intelligence to reach deeper thoughts or specific information.',
-  Telekinesis: 'Easily move small objects with your mind; larger or very precise movement is difficult (the GM decides).',
+  Premonition:
+    'Once per day, ask the GM the likely outcome of an immediate action; they answer honestly.',
+  Scanner:
+    'Read surface emotions; roll Intelligence to reach deeper thoughts or specific information.',
+  Telekinesis:
+    'Easily move small objects with your mind; larger or very precise movement is difficult (the GM decides).',
 
   Brute: 'Deal +2 damage with melee weapons.',
   'Dead Eye': 'Deal +2 damage with ranged weapons.',
@@ -158,7 +164,12 @@ export const OFFWORLDERS_WEAPON_TYPES = [
   { name: 'Unarmed', damage: 'Lower of 2D6', cost: 0, notes: 'Kicks, punches.' },
   { name: 'Light', damage: '1D6', cost: 1, notes: 'Pistols, knives. Easily hidden.' },
   { name: 'Medium', damage: '1D6+1', cost: 2, notes: 'Rifles, shotguns, swords.' },
-  { name: 'Heavy', damage: '1D6+2', cost: 5, notes: 'Plasma cannons, sniper rifles, huge swords. Heavy.' },
+  {
+    name: 'Heavy',
+    damage: '1D6+2',
+    cost: 5,
+    notes: 'Plasma cannons, sniper rifles, huge swords. Heavy.',
+  },
 ]
 
 /** Selectable weapon categories (p.12). Unarmed is not a carried weapon. */

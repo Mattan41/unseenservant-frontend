@@ -16,6 +16,7 @@ import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import BaseNumberStepper from '@/components/base/BaseNumberStepper.vue'
+import ShipCrewSection from '@/features/ship/components/ShipCrewSection.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { buildShipPayload } from '@/features/ship/shipPayload.js'
@@ -47,9 +48,29 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Crew manifest: one entry per current participant. */
+  crew: {
+    type: Array,
+    default: () => [],
+  },
+  /** Id of the signed-in user; their crew entry is the editable one. */
+  currentUserId: {
+    type: [String, Number],
+    default: null,
+  },
 })
 
-const emit = defineEmits(['save', 'reload', 'upload-profile', 'add-gallery', 'remove-gallery', 'adjust-vital'])
+const emit = defineEmits([
+  'save',
+  'reload',
+  'upload-profile',
+  'add-gallery',
+  'remove-gallery',
+  'adjust-vital',
+  'save-crew',
+  'add-crew-image',
+  'remove-crew-image',
+])
 
 const editing = ref(false)
 const draft = reactive(createEmptyShipData())
@@ -153,12 +174,38 @@ const galleryInput = ref(null)
 const repositionFile = ref(null)
 const lightboxUrl = ref(null)
 
-// The profile image is shown as the first thumbnail of the gallery grid so it
-// appears alongside the other ship images.
+// The gallery shows the ship's own images plus every crew entry's images, so the
+// lightbox arrows step through all of them. The profile image comes first.
 const galleryImages = computed(() => {
-  const urls = [...(props.ship.imageUrls || [])]
-  return props.ship.imageUrl ? [props.ship.imageUrl, ...urls] : urls
+  const shipUrls = [...(props.ship.imageUrls || [])]
+  const own = props.ship.imageUrl ? [props.ship.imageUrl, ...shipUrls] : shipUrls
+  const crewUrls = props.crew.flatMap((member) => member.imageUrls || [])
+  return [...own, ...crewUrls]
 })
+
+/** URLs that belong to a crew entry rather than the ship itself. */
+const crewImageUrls = computed(
+  () => new Set(props.crew.flatMap((member) => member.imageUrls || [])),
+)
+
+/** True when `url` is one of a crew entry's images. */
+function isCrewImage(url) {
+  return crewImageUrls.value.has(url)
+}
+
+/** Lightbox caption: the ship's name, or the nickname of the crew entry's owner. */
+function imageOwnerLabel(url) {
+  if (isCrewImage(url)) {
+    const member = props.crew.find((entry) => (entry.imageUrls || []).includes(url))
+    return member?.nickname || 'Crew'
+  }
+  return props.ship.name || 'Ship'
+}
+
+/** Open a crew image in the shared lightbox. */
+function openLightbox(url) {
+  lightboxUrl.value = url
+}
 
 /** True when `url` is the ship's profile image (not a gallery image). */
 function isProfileImage(url) {
@@ -534,6 +581,17 @@ useUnsavedChanges(
       />
     </div>
 
+    <!-- Crew manifest: one card per participant; crew images feed the gallery above. -->
+    <ShipCrewSection
+      :crew="crew"
+      :current-user-id="currentUserId"
+      :saving="saving"
+      @save="(entry) => emit('save-crew', entry)"
+      @add-image="(file) => emit('add-crew-image', file)"
+      @remove-image="(url) => emit('remove-crew-image', url)"
+      @open-image="openLightbox"
+    />
+
     <!-- Sticky edit actions: a compact floating tag keeps Cancel / Save
          reachable while scrolling a long sheet, on mobile and desktop. -->
     <BaseStickyActions
@@ -574,9 +632,10 @@ useUnsavedChanges(
             </button>
           </template>
         </div>
-        <div class="flex justify-end gap-2 mt-3">
+        <p class="mt-3 text-center text-sm text-muted">{{ imageOwnerLabel(lightboxUrl) }}</p>
+        <div class="flex justify-end gap-2 mt-2">
           <BaseButton
-            v-if="editing && !isProfileImage(lightboxUrl)"
+            v-if="editing && !isProfileImage(lightboxUrl) && !isCrewImage(lightboxUrl)"
             variant="remove"
             confirm-message="Remove this image?"
             @click="removeGalleryImage(lightboxUrl)"

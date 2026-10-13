@@ -46,7 +46,9 @@ function hasContent(section) {
 function renderSectionBody(section, format) {
   const lines = []
   for (const field of section.fields || []) {
-    lines.push(format === 'md' ? `- **${field.label}:** ${field.value}` : `${field.label}: ${field.value}`)
+    lines.push(
+      format === 'md' ? `- **${field.label}:** ${field.value}` : `${field.label}: ${field.value}`,
+    )
   }
   for (const item of section.items || []) {
     lines.push(`- ${item}`)
@@ -84,7 +86,11 @@ export function renderDocument(doc, format = 'txt') {
   for (const section of doc.sections || []) {
     if (!hasContent(section)) continue
     const joiner = md ? '\n\n' : '\n'
-    const heading = section.heading ? (md ? `## ${section.heading}` : section.heading.toUpperCase()) : ''
+    const heading = section.heading
+      ? md
+        ? `## ${section.heading}`
+        : section.heading.toUpperCase()
+      : ''
     const hasText = section.text !== undefined && section.text !== ''
     const body = hasText
       ? md

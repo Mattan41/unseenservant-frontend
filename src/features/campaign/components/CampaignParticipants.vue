@@ -69,8 +69,7 @@ const gmCount = computed(() => participants.value.filter((p) => p.role === 'GM')
 const playerCount = computed(() => participants.value.filter((p) => p.role !== 'GM').length)
 
 const isSelf = (participant) => String(participant.id) === String(userStore.userId)
-const isCampaignOwner = (participant) =>
-  String(participant.id) === String(campaign.value?.ownerId)
+const isCampaignOwner = (participant) => String(participant.id) === String(campaign.value?.ownerId)
 
 // The owner manages membership and other people's nicknames. Neither applies to
 // your own row (your nickname lives in "My Settings", and the owner cannot
@@ -243,9 +242,7 @@ const saveParticipantNickname = async (participant) => {
               </span>
             </div>
 
-            <div v-if="isCampaignOwner(participant)" class="text-sm text-muted">
-              Campaign owner
-            </div>
+            <div v-if="isCampaignOwner(participant)" class="text-sm text-muted">Campaign owner</div>
             <div v-else-if="isSelf(participant)" class="text-sm text-muted">This is you</div>
 
             <div class="flex flex-wrap gap-2">
@@ -307,5 +304,3 @@ const saveParticipantNickname = async (participant) => {
 </template>
 
 <style scoped></style>
-
-

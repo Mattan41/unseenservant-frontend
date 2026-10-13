@@ -22,11 +22,7 @@ defineEmits(['adjust-vital'])
 </script>
 
 <template>
-  <Dnd5eSheet
-    v-if="character.systemType === 'DND5E'"
-    :character="character"
-    :is-owner="isOwner"
-  />
+  <Dnd5eSheet v-if="character.systemType === 'DND5E'" :character="character" :is-owner="isOwner" />
   <OffworldersSheet
     v-else-if="character.systemType === 'OFFWORLDERS'"
     :character="character"

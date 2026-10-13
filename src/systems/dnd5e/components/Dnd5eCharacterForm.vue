@@ -49,7 +49,9 @@ const dnd5e = defineModel({ type: Object, required: true })
         />
       </div>
       <div class="mb-4">
-        <label for="hitPoints" class="block text-sm font-medium text-default mb-1">Hit Points</label>
+        <label for="hitPoints" class="block text-sm font-medium text-default mb-1"
+          >Hit Points</label
+        >
         <input
           id="hitPoints"
           v-model.number="dnd5e.hitPoints"
@@ -59,7 +61,9 @@ const dnd5e = defineModel({ type: Object, required: true })
         />
       </div>
       <div class="mb-4">
-        <label for="armorClass" class="block text-sm font-medium text-default mb-1">Armor Class</label>
+        <label for="armorClass" class="block text-sm font-medium text-default mb-1"
+          >Armor Class</label
+        >
         <input
           id="armorClass"
           v-model.number="dnd5e.armorClass"

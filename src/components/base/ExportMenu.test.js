@@ -49,4 +49,3 @@ describe('ExportMenu', () => {
     expect(menuIn()).toBeNull()
   })
 })
-

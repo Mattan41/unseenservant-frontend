@@ -63,7 +63,10 @@ function importBackup(event) {
     try {
       character.value = characterFromBackup(parseCharacterBackup(String(reader.result)))
       formError.value = ''
-      notificationStore.addNotification('Backup loaded — review the fields, then create.', 'success')
+      notificationStore.addNotification(
+        'Backup loaded — review the fields, then create.',
+        'success',
+      )
     } catch (error) {
       notificationStore.addNotification(
         error.message || 'Could not read that backup file.',

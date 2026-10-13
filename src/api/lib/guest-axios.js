@@ -7,10 +7,7 @@
  */
 
 import { useAuthStore } from '@/features/auth/authStore'
-import {
-  getCampaignPermissions,
-  isCampaignGm,
-} from '@/features/campaign/campaignPermissions.js'
+import { getCampaignPermissions, isCampaignGm } from '@/features/campaign/campaignPermissions.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -19,6 +16,7 @@ const KEYS = {
   CAMPAIGNS: 'guest_campaigns',
   MESSAGES: 'guest_messages',
   SHIPS: 'guest_ships',
+  CREW: 'guest_ship_crew',
 }
 
 // ============================================================================
@@ -144,6 +142,82 @@ function removeShipGalleryImage(campaignId, imageUrl) {
   ships[index] = ship
   setData(KEYS.SHIPS, ships)
   return ship
+}
+
+/**
+ * Ship crew manifest helpers. One entry per participant, keyed by campaign +
+ * user (stored as `guest_ship_crew`); entries persist when a participant leaves
+ * and re-activate on rejoin, mirroring the backend.
+ */
+function shipCrewRows(campaignId) {
+  return getData(KEYS.CREW, []).filter((row) => String(row.campaignId) === String(campaignId))
+}
+
+function saveShipCrewRow(campaignId, userId, patch) {
+  const rows = getData(KEYS.CREW, [])
+  const index = rows.findIndex(
+    (row) => String(row.campaignId) === String(campaignId) && String(row.userId) === String(userId),
+  )
+  const base =
+    index === -1
+      ? {
+          campaignId: String(campaignId),
+          userId: String(userId),
+          notes: '',
+          imageUrls: [],
+          characters: [],
+        }
+      : rows[index]
+  const next = { ...base, ...patch }
+  if (index === -1) rows.push(next)
+  else rows[index] = next
+  setData(KEYS.CREW, rows)
+  return next
+}
+
+/** Crew DTOs for the campaign's current participants, in roster order. */
+function crewDTOs(campaignId) {
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const campaign = campaigns.find((c) => String(c.id) === String(campaignId))
+  const rows = shipCrewRows(campaignId)
+  return (campaign?.participants || []).map((participant) => {
+    const row = rows.find((entry) => String(entry.userId) === String(participant.id))
+    return {
+      userId: participant.id,
+      nickname: participant.nickname,
+      role: participant.role || 'PLAYER',
+      notes: row?.notes || '',
+      imageUrls: row?.imageUrls || [],
+      characters: row?.characters || [],
+    }
+  })
+}
+
+/** True when the signed-in guest is a participant of the campaign. */
+function isGuestParticipant(campaignId) {
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const campaign = campaigns.find((c) => String(c.id) === String(campaignId))
+  return (
+    !!campaign &&
+    (campaign.participants || []).some(
+      (participant) => String(participant.id) === String(currentGuestUserId()),
+    )
+  )
+}
+
+/** The signed-in guest's crew DTO after a change. */
+function myCrewDTO(campaignId) {
+  const userId = currentGuestUserId()
+  return (
+    crewDTOs(campaignId).find((member) => String(member.userId) === String(userId)) || {
+      userId,
+      nickname: '',
+      role: 'PLAYER',
+      notes: '',
+      imageUrls: [],
+      characters: [],
+    }
+  )
 }
 
 function extractId(url) {
@@ -279,7 +353,9 @@ const guestAxios = {
       }
 
       if (url.includes('without-campaign')) {
-        return Promise.resolve({ data: withVisibleBackstories(characters.filter((c) => !c.campaignId)) })
+        return Promise.resolve({
+          data: withVisibleBackstories(characters.filter((c) => !c.campaignId)),
+        })
       }
 
       const id = extractId(url)
@@ -295,6 +371,16 @@ const guestAxios = {
         })
       }
       return Promise.resolve({ data: withVisibleBackstories(characters) })
+    }
+
+    // Ship crew manifest (must precede the ship block)
+    if (url.includes('campaigns') && url.includes('/ship/crew')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/crew/)
+      const campaignId = match ? match[1] : null
+      if (!campaignId || !isGuestParticipant(campaignId)) {
+        return forbidden('You are not a participant in this campaign.')
+      }
+      return Promise.resolve({ data: crewDTOs(campaignId) })
     }
 
     // Campaign Ship Routing Logic (must precede the campaigns block)
@@ -357,6 +443,21 @@ const guestAxios = {
   post(url, data = {}) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] POST -> ${url}`)
+
+    // Ship crew image upload (must precede the ship image branches)
+    if (url.includes('campaigns') && url.includes('/ship/crew/me/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me\/images/)
+      const campaignId = match ? match[1] : null
+      if (!campaignId || !isGuestParticipant(campaignId)) {
+        return forbidden('You are not a participant in this campaign.')
+      }
+      const userId = currentGuestUserId()
+      const existing = shipCrewRows(campaignId).find((row) => String(row.userId) === String(userId))
+      saveShipCrewRow(campaignId, userId, {
+        imageUrls: [...(existing?.imageUrls || []), SHIP_IMAGE_FALLBACK],
+      })
+      return Promise.resolve({ data: myCrewDTO(campaignId) })
+    }
 
     // Ship images (must precede the campaign image branch)
     if (url.includes('campaigns') && url.includes('/ship/image')) {
@@ -487,6 +588,20 @@ const guestAxios = {
   put(url, data = {}) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] PUT -> ${url}`)
+
+    // Ship crew: save my own entry (must precede the ship upsert)
+    if (url.includes('campaigns') && url.includes('/ship/crew/me')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me/)
+      const campaignId = match ? match[1] : null
+      if (!campaignId || !isGuestParticipant(campaignId)) {
+        return forbidden('You are not a participant in this campaign.')
+      }
+      saveShipCrewRow(campaignId, currentGuestUserId(), {
+        notes: data.notes ?? '',
+        characters: Array.isArray(data.characters) ? data.characters : [],
+      })
+      return Promise.resolve({ data: myCrewDTO(campaignId) })
+    }
 
     // Campaign Ship (upsert with optimistic concurrency)
     if (url.includes('campaigns') && url.includes('/ship')) {
@@ -759,6 +874,23 @@ const guestAxios = {
         )
         return Promise.resolve({ data: { deleted: true } })
       }
+    }
+
+    // 3a. Remove a crew image from my own entry (must precede the ship images block)
+    if (url.includes('campaigns') && url.includes('/ship/crew/me/images')) {
+      const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me\/images/)
+      const campaignId = match ? match[1] : null
+      if (!campaignId || !isGuestParticipant(campaignId)) {
+        return forbidden('You are not a participant in this campaign.')
+      }
+      const userId = currentGuestUserId()
+      const params = new URLSearchParams(url.split('?')[1] || '')
+      const imageUrl = params.get('url')
+      const existing = shipCrewRows(campaignId).find((row) => String(row.userId) === String(userId))
+      saveShipCrewRow(campaignId, userId, {
+        imageUrls: (existing?.imageUrls || []).filter((entry) => entry !== imageUrl),
+      })
+      return Promise.resolve({ data: myCrewDTO(campaignId) })
     }
 
     // 3b. Remove a ship gallery image (must precede the campaign delete block)

@@ -103,11 +103,7 @@ async function removeSpellFromCharacter(spell) {
     <div class="p-6 border-t border-section">
       <div class="flex items-center justify-between mb-4">
         <h2 class="section-heading">Spells</h2>
-        <BaseButton
-          v-if="isOwner"
-          variant="default"
-          @click="showSpellSearch = !showSpellSearch"
-        >
+        <BaseButton v-if="isOwner" variant="default" @click="showSpellSearch = !showSpellSearch">
           {{ showSpellSearch ? 'Hide Search' : 'Search Spells to add' }}
         </BaseButton>
       </div>

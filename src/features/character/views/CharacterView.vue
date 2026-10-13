@@ -224,9 +224,7 @@ const exportCharacter = async (format) => {
                  `from=campaign` context). A full button, so the association is
                  obvious rather than a quiet text link. -->
             <div v-if="characterCampaignId" class="mt-3">
-              <BaseLinkButton
-                :to="{ name: 'CampaignView', params: { id: characterCampaignId } }"
-              >
+              <BaseLinkButton :to="{ name: 'CampaignView', params: { id: characterCampaignId } }">
                 Campaign: {{ characterCampaignName || 'View campaign' }}
               </BaseLinkButton>
             </div>
@@ -262,10 +260,7 @@ const exportCharacter = async (format) => {
             <p v-else class="text-sm text-muted italic">No backstory recorded.</p>
 
             <!-- Only rendered when the API returned it (owner or campaign GM). -->
-            <div
-              v-if="currentCharacter.privateBackstory"
-              class="mt-4 pt-3 border-t border-section"
-            >
+            <div v-if="currentCharacter.privateBackstory" class="mt-4 pt-3 border-t border-section">
               <p class="text-xs italic mb-1 text-muted">
                 Private — only you and the GM can see this
               </p>

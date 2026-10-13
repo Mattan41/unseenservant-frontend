@@ -76,7 +76,9 @@ function abilityDescription(entry) {
           />
           <span>/ {{ vitals.maxHealth }}</span>
         </p>
-        <p><strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}</p>
+        <p>
+          <strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}
+        </p>
         <p class="flex items-center gap-2">
           <strong>Supply:</strong>
           <BaseNumberStepper

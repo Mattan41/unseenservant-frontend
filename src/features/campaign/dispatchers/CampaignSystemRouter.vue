@@ -9,10 +9,7 @@
  * The Offworlders Ship lives in the campaign-scoped `features/ship/` feature;
  * the D&D 5e spell search is owned by the `systems/dnd5e/` module.
  */
-import {
-  DND5E_SYSTEM_TYPE,
-  OFFWORLDERS_SYSTEM_TYPE,
-} from '@/features/campaign/campaignSystems.js'
+import { DND5E_SYSTEM_TYPE, OFFWORLDERS_SYSTEM_TYPE } from '@/features/campaign/campaignSystems.js'
 import ShipSection from '@/features/ship/components/ShipSection.vue'
 import Dnd5eSpellSearchPanel from '@/systems/dnd5e/components/Dnd5eSpellSearchPanel.vue'
 
@@ -39,8 +36,6 @@ defineProps({
     v-if="section === 'ship' && systemType === OFFWORLDERS_SYSTEM_TYPE"
     :campaign-id="campaignId"
   />
-  <Dnd5eSpellSearchPanel
-    v-else-if="section === 'spells' && systemType === DND5E_SYSTEM_TYPE"
-  />
+  <Dnd5eSpellSearchPanel v-else-if="section === 'spells' && systemType === DND5E_SYSTEM_TYPE" />
   <p v-else class="text-muted">This section is not available for this campaign's system.</p>
 </template>
