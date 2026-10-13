@@ -21,6 +21,13 @@
   @apply focus:outline-none focus:ring-2;
 }
 
+/* Router-link button (BaseLinkButton.vue). Same look as .base-btn, but without
+   the action-bar layout margins so the surrounding element owns the spacing.
+   Must stay after .base-btn so it wins the equal-specificity cascade. */
+.base-link-btn {
+  @apply m-0;
+}
+
 /* default button */
 .base-btn-default {
   @apply bg-primary-700 text-primary-100 hover:bg-primary-800 focus:ring-primary-700;

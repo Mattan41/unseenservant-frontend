@@ -9,6 +9,7 @@ import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import SystemSheetRouter from '@/features/character/dispatchers/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import ExportMenu from '@/components/base/ExportMenu.vue'
 import { buildCharacterExport, buildCharacterBackup } from '@/features/character/characterExport.js'
@@ -30,9 +31,9 @@ const campaignId = route.query.campaignId || null
 const { userId } = storeToRefs(userStore)
 const { currentCharacter } = storeToRefs(characterStore)
 
-// The character's own campaign, independent of the `from=campaign` context that
-// drives the "Back to Campaign" link. Resolved from the campaign store; the
-// campaign is fetched on mount when it is not already cached.
+// The character's own campaign, independent of the `from=campaign` context.
+// Resolved from the campaign store; the campaign is fetched on mount when it is
+// not already cached.
 const characterCampaignId = computed(() => currentCharacter.value?.campaignId || null)
 const characterCampaign = computed(() =>
   characterCampaignId.value ? campaignStore.getCampaignById(characterCampaignId.value) : null,
@@ -199,14 +200,15 @@ const exportCharacter = async (format) => {
             <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
 
             <!-- Link to the character's own campaign (independent of the
-                 `from=campaign` context that drives "Back to Campaign"). -->
-            <router-link
-              v-if="characterCampaignId"
-              :to="{ name: 'CampaignView', params: { id: characterCampaignId } }"
-              class="element-link mt-2 text-sm"
-            >
-              Campaign: {{ characterCampaignName || 'View campaign' }}
-            </router-link>
+                 `from=campaign` context). A full button, so the association is
+                 obvious rather than a quiet text link. -->
+            <div v-if="characterCampaignId" class="mt-3">
+              <BaseLinkButton
+                :to="{ name: 'CampaignView', params: { id: characterCampaignId } }"
+              >
+                Campaign: {{ characterCampaignName || 'View campaign' }}
+              </BaseLinkButton>
+            </div>
           </div>
 
           <!-- Notes -->
@@ -279,16 +281,10 @@ const exportCharacter = async (format) => {
         </div>
       </div>
 
-      <!-- Back navigation -->
+      <!-- Back navigation. The character's campaign is linked from the identity
+           rail above, so this always returns to the character list. -->
       <div class="mt-6">
-        <router-link
-          v-if="from === 'campaign' && campaignId"
-          :to="{ name: 'CampaignView', params: { id: campaignId } }"
-          class="element-link"
-        >
-          ← Back to Campaign
-        </router-link>
-        <router-link v-else :to="{ name: 'CharactersView' }" class="element-link">
+        <router-link :to="{ name: 'CharactersView' }" class="element-link">
           ← Back to Character List
         </router-link>
       </div>
