@@ -449,6 +449,7 @@ Intended as per-campaign message boards. Messages are visible only to campaign p
   "damage": "1D6",
   "driveFuel": 4,
   "maxDriveFuel": 6,
+  "credits": 0,
   "upgrades": ["Additional Armor", "Fuel Tanks"],
   "notes": "Cargo: a sealed crate.",
   "imageUrl": null,

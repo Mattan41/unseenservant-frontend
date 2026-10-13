@@ -87,6 +87,15 @@ async function handleRemoveGallery(url) {
   }
 }
 
+// Inline Hull / Drive fuel / Credits steppers save immediately (no edit mode).
+async function handleAdjustVital({ field, value }) {
+  try {
+    await shipStore.adjustShipField(props.campaignId, field, value)
+  } catch {
+    // Error is surfaced by the store (notification + conflict banner).
+  }
+}
+
 // The ship is loaded (and cleared) by the parent CampaignView so the Overview
 // summary and this section share one store; mount just refreshes it.
 onMounted(loadShip)
@@ -118,6 +127,7 @@ onMounted(loadShip)
         @upload-profile="handleUploadProfile"
         @add-gallery="handleAddGallery"
         @remove-gallery="handleRemoveGallery"
+        @adjust-vital="handleAdjustVital"
       />
     </div>
   </div>

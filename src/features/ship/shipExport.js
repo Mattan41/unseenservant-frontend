@@ -26,6 +26,7 @@ export function buildShipExport(ship, { format = 'txt', campaignName = '' } = {}
         { label: 'Armor', value: `${data.armor ?? 0}` },
         { label: 'Damage', value: data.damage || '1D6' },
         { label: 'Drive Fuel', value: `${data.driveFuel ?? 0} / ${data.maxDriveFuel ?? 0}` },
+        { label: 'Credits', value: `${data.credits ?? 0}` },
       ],
     },
     {

@@ -11,7 +11,14 @@ defineProps({
     type: Boolean,
     default: false,
   },
+  /** True while the parent is persisting a quick-edit (passed to the sheet). */
+  saving: {
+    type: Boolean,
+    default: false,
+  },
 })
+
+defineEmits(['adjust-vital'])
 </script>
 
 <template>
@@ -24,6 +31,8 @@ defineProps({
     v-else-if="character.systemType === 'OFFWORLDERS'"
     :character="character"
     :is-owner="isOwner"
+    :saving="saving"
+    @adjust-vital="$emit('adjust-vital', $event)"
   />
   <div v-else class="p-6 text-center" style="color: var(--color-third-500)">
     <p>No character sheet is available for the "{{ character.systemType }}" system yet.</p>

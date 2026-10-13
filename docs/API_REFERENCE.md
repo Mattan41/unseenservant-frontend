@@ -372,7 +372,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Request**: Full CharacterInputDTO (validated)
 - **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Also supports updateCharacterField for single-field updates.
+- **Notes**: Also supports updateCharacterField for single-field updates. The Offworlders sheet's owner-only inline +/- steppers (Health → `currentHealth`, Supply, Credits, XP) use it, sending the full `offworlders` block so guest mode's shallow merge cannot drop the other fields.
 
 ---
 
@@ -603,7 +603,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, upgrades, notes, imageUrl, imageUrls, version }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version }`
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
 
@@ -617,7 +617,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Request**: ShipDTO fields (including the `version` read from the previous fetch)
 - **Response**: ShipDTO
 - **Status Codes**: 200, 400, 401, 403, 409
-- **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload.
+- **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload. The sheet's inline +/- steppers (Hull, Drive fuel, Credits) save through `shipStore.adjustShipField`, which sends the same payload but suppresses the success toast.
 
 ---
 

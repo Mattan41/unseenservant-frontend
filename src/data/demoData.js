@@ -519,6 +519,7 @@ export const guestShips = [
     damage: '1D6',
     driveFuel: 4,
     maxDriveFuel: 6,
+    credits: 0,
     upgrades: ['Additional Armor', 'Fuel Tanks'],
     notes: `The crew's stolen courier ship.
 

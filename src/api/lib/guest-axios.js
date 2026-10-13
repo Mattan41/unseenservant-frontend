@@ -81,6 +81,7 @@ function defaultShip(campaignId) {
     damage: '1D6',
     driveFuel: 4,
     maxDriveFuel: 4,
+    credits: 0,
     upgrades: [],
     notes: '',
     createdAt: new Date().toISOString(),

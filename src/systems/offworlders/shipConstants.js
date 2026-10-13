@@ -104,6 +104,7 @@ export function createEmptyShipData() {
     damage: OFFWORLDERS_SHIP_DAMAGE_DEFAULT,
     driveFuel: OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
     maxDriveFuel: OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
+    credits: 0,
     upgrades: [],
     notes: '',
     imageUrl: '',
@@ -175,6 +176,7 @@ export function normalizeShipData(data) {
     damage: typeof data.damage === 'string' && data.damage ? data.damage : empty.damage,
     driveFuel: toNonNegativeInt(data.driveFuel, empty.driveFuel),
     maxDriveFuel: toNonNegativeInt(data.maxDriveFuel, empty.maxDriveFuel),
+    credits: toNonNegativeInt(data.credits, empty.credits),
     upgrades: Array.isArray(data.upgrades)
       ? data.upgrades.filter((entry) => typeof entry === 'string')
       : [],

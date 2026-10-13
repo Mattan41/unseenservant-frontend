@@ -74,6 +74,27 @@ const deleteCharacter = async () => {
   }
 }
 
+// Quick-edit of an Offworlders vital straight from the sheet (character owner
+// only). Guest mode replaces the whole nested block on PATCH, so send it back
+// complete; the steppers are disabled while the request is in flight.
+const pendingVital = ref(false)
+
+async function adjustOffworldersVital({ field, value }) {
+  const character = currentCharacter.value
+  if (!isOwner.value || !character?.offworlders) return
+  pendingVital.value = true
+  try {
+    await characterStore.updateCharacterField(character.id, 'offworlders', {
+      ...character.offworlders,
+      [field]: value,
+    })
+  } catch {
+    // Error is surfaced by the store.
+  } finally {
+    pendingVital.value = false
+  }
+}
+
 // Formats offered by the export menu. JSON is a portable, lossless backup; md
 // and txt are human-readable. Images are never included.
 const CHARACTER_EXPORT_FORMATS = [
@@ -260,7 +281,12 @@ const exportCharacter = async (format) => {
         <!-- Main column: a clean slot for whatever the active system renders -->
         <div class="flex-1 min-w-0">
           <!-- System-specific character sheet -->
-          <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
+          <SystemSheetRouter
+            :character="currentCharacter"
+            :is-owner="isOwner"
+            :saving="pendingVital"
+            @adjust-vital="adjustOffworldersVital"
+          />
 
           <!-- Additional info -->
           <div class="p-6 border-t border-section">
@@ -279,14 +305,6 @@ const exportCharacter = async (format) => {
             </p>
           </div>
         </div>
-      </div>
-
-      <!-- Back navigation. The character's campaign is linked from the identity
-           rail above, so this always returns to the character list. -->
-      <div class="mt-6">
-        <router-link :to="{ name: 'CharactersView' }" class="element-link">
-          ← Back to Character List
-        </router-link>
       </div>
     </div>
   </div>

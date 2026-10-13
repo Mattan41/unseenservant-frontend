@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import ShipService from './ShipService.js'
+import { buildShipPayload } from './shipPayload.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { extractErrorMessage } from '@/utils/errorUtils.js'
 import { createEmptyShipData, normalizeShipData } from '@/systems/offworlders/shipConstants.js'
@@ -94,6 +95,49 @@ export const useShipStore = defineStore('ship', () => {
   }
 
   /**
+   * Quick-edit a single numeric ship field (Hull, Drive Fuel, Credits) and save
+   * immediately. Same optimistic-concurrency flow as `saveShip`, but quiet: no
+   * success toast, since these steppers are clicked repeatedly during play.
+   * @param {number|string} campaignId
+   * @param {string} field
+   * @param {number} value
+   * @returns {Promise<object|null>}
+   */
+  async function adjustShipField(campaignId, field, value) {
+    const notificationStore = useNotificationStore()
+    if (!ship.value) return null
+    isSaving.value = true
+    hasConflict.value = false
+
+    try {
+      const payload = { ...buildShipPayload(ship.value), [field]: value }
+      const saved = await ShipService.saveShip(campaignId, payload)
+      ship.value = normalizeShipData(saved)
+      return ship.value
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        hasConflict.value = true
+        notificationStore.addNotification(
+          'This ship was changed by someone else. Reload to see the latest.',
+          'error',
+          5000,
+        )
+      } else {
+        console.error('Failed to adjust the ship:', err)
+        if (!err.handled) {
+          notificationStore.addNotification(
+            extractErrorMessage(err, 'Failed to update the ship.'),
+            'error',
+          )
+        }
+      }
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /**
    * Shared handler for the image endpoints: they all return the updated ship.
    * @param {Promise<object>} request
    * @param {string} successMessage
@@ -167,6 +211,7 @@ export const useShipStore = defineStore('ship', () => {
     // Actions
     fetchShip,
     saveShip,
+    adjustShipField,
     uploadShipImage,
     addGalleryImage,
     removeGalleryImage,

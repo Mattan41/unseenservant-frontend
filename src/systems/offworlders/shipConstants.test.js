@@ -23,6 +23,7 @@ describe('createEmptyShipData', () => {
     expect(ship.damage).toBe(OFFWORLDERS_SHIP_DAMAGE_DEFAULT)
     expect(ship.driveFuel).toBe(OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT)
     expect(ship.maxDriveFuel).toBe(OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT)
+    expect(ship.credits).toBe(0)
     expect(ship.upgrades).toEqual([])
     expect(ship.notes).toBe('')
   })
@@ -96,6 +97,12 @@ describe('normalizeShipData', () => {
     const ship = normalizeShipData({ damage: '2D6', hull: -5 })
     expect(ship.damage).toBe('2D6')
     expect(ship.hull).toBe(0)
+  })
+
+  it('coerces ship credits and caps them at zero', () => {
+    expect(normalizeShipData({ credits: '7' }).credits).toBe(7)
+    expect(normalizeShipData({ credits: -3 }).credits).toBe(0)
+    expect(normalizeShipData({}).credits).toBe(0)
   })
 
   it('keeps only string image URLs', () => {

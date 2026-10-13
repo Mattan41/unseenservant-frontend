@@ -226,6 +226,20 @@ html[data-theme='silver'][data-mode='light'] {
   @apply text-blue-600 bg-blue-50;
 }
 
+/* Number stepper (BaseNumberStepper.vue): compact -/+ control for nudging a
+   numeric value in place (HP, Supply, Credits, ship Hull / Drive Fuel). */
+.number-stepper {
+  @apply inline-flex items-center gap-1;
+}
+
+.number-stepper-btn {
+  @apply inline-flex h-6 w-6 items-center justify-center rounded border border-third-300 bg-third-100 text-sm leading-none text-third-700 cursor-pointer transition-colors hover:bg-third-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+.number-stepper-value {
+  @apply min-w-6 text-center font-semibold text-third-700;
+}
+
 /* Links and list styles */
 .element-link {
   @apply text-primary-900 hover:text-primary-700;

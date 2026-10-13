@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import OffworldersStatsPanel from '@/systems/offworlders/components/OffworldersStatsPanel.vue'
+import BaseNumberStepper from '@/components/base/BaseNumberStepper.vue'
 import {
   OFFWORLDERS_ABILITY_DESCRIPTIONS,
   OFFWORLDERS_SKILL_DESCRIPTIONS,
@@ -21,7 +22,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** True while the parent is persisting a quick-edit (disables the steppers). */
+  saving: {
+    type: Boolean,
+    default: false,
+  },
 })
+
+const emit = defineEmits(['adjust-vital'])
 
 const offworlders = computed(() => props.character?.offworlders || {})
 const skills = computed(() => offworlders.value.skills || [])
@@ -33,6 +41,13 @@ const items = computed(() => offworlders.value.items || [])
 // sheet stays correct even for characters saved before automatic derivation.
 const vitals = computed(() => offworldersVitals(offworlders.value))
 const effectiveArmorValue = computed(() => vitals.value.effectiveArmor)
+
+// Quick-edit: the character owner may nudge the running vitals without opening
+// the edit form. The parent persists each change (owner-only on the API); Max
+// Health and Armor stay derived/read-only here.
+function adjustVital(field, value) {
+  emit('adjust-vital', { field, value })
+}
 
 function skillDescription(entry) {
   return resolveEntryDescription(entry, OFFWORLDERS_SKILL_DESCRIPTIONS)
@@ -47,14 +62,53 @@ function abilityDescription(entry) {
     <!-- Vitals -->
     <div class="p-6 border-t border-section">
       <h2 class="section-heading mb-4">Vitals</h2>
-      <div class="flex flex-wrap gap-6 text-default">
+      <div class="flex flex-wrap items-center gap-6 text-default">
         <p><strong>Class:</strong> {{ offworlders.characterClass || '—' }}</p>
         <p><strong>Species:</strong> {{ offworlders.species || '—' }}</p>
-        <p><strong>HP:</strong> {{ vitals.currentHealth }} / {{ vitals.maxHealth }}</p>
+        <p class="flex items-center gap-2">
+          <strong>HP:</strong>
+          <BaseNumberStepper
+            :model-value="vitals.currentHealth"
+            :editable="isOwner"
+            :disabled="saving"
+            aria-label="Health"
+            @update:model-value="(value) => adjustVital('currentHealth', value)"
+          />
+          <span>/ {{ vitals.maxHealth }}</span>
+        </p>
         <p><strong>Armor:</strong> {{ effectiveArmorValue }} — {{ armorLabel(offworlders.armor) }}</p>
-        <p><strong>Supply:</strong> {{ offworlders.supply ?? 0 }} / {{ OFFWORLDERS_SUPPLY_MAX }}</p>
-        <p><strong>Credits:</strong> {{ offworlders.credits ?? 0 }}</p>
-        <p><strong>XP:</strong> {{ offworlders.xp ?? 0 }}</p>
+        <p class="flex items-center gap-2">
+          <strong>Supply:</strong>
+          <BaseNumberStepper
+            :model-value="offworlders.supply ?? 0"
+            :max="OFFWORLDERS_SUPPLY_MAX"
+            :editable="isOwner"
+            :disabled="saving"
+            aria-label="Supply"
+            @update:model-value="(value) => adjustVital('supply', value)"
+          />
+          <span>/ {{ OFFWORLDERS_SUPPLY_MAX }}</span>
+        </p>
+        <p class="flex items-center gap-2">
+          <strong>Credits:</strong>
+          <BaseNumberStepper
+            :model-value="offworlders.credits ?? 0"
+            :editable="isOwner"
+            :disabled="saving"
+            aria-label="Credits"
+            @update:model-value="(value) => adjustVital('credits', value)"
+          />
+        </p>
+        <p class="flex items-center gap-2">
+          <strong>XP:</strong>
+          <BaseNumberStepper
+            :model-value="offworlders.xp ?? 0"
+            :editable="isOwner"
+            :disabled="saving"
+            aria-label="XP"
+            @update:model-value="(value) => adjustVital('xp', value)"
+          />
+        </p>
       </div>
     </div>
 

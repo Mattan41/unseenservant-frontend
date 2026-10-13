@@ -15,8 +15,10 @@ import BaseModal from '@/components/base/BaseModal.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
+import BaseNumberStepper from '@/components/base/BaseNumberStepper.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
+import { buildShipPayload } from '@/features/ship/shipPayload.js'
 import {
   OFFWORLDERS_SHIP_DEFAULT_IMAGE,
   OFFWORLDERS_SHIP_STARTING_UPGRADES,
@@ -47,7 +49,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['save', 'reload', 'upload-profile', 'add-gallery', 'remove-gallery'])
+const emit = defineEmits(['save', 'reload', 'upload-profile', 'add-gallery', 'remove-gallery', 'adjust-vital'])
 
 const editing = ref(false)
 const draft = reactive(createEmptyShipData())
@@ -65,6 +67,7 @@ function draftSignature() {
     damage: draft.damage,
     driveFuel: draft.driveFuel,
     maxDriveFuel: draft.maxDriveFuel,
+    credits: draft.credits,
     upgrades: draft.upgrades,
     notes: draft.notes,
   })
@@ -123,19 +126,16 @@ function removeUpgrade(name) {
 
 function submit() {
   pendingImageOp = false
-  // Images are managed by their own endpoints, so they are not part of this payload.
-  emit('save', {
-    name: draft.name,
-    hull: draft.hull,
-    hullMax: draft.hullMax,
-    armor: draft.armor,
-    damage: draft.damage,
-    driveFuel: draft.driveFuel,
-    maxDriveFuel: draft.maxDriveFuel,
-    upgrades: draft.upgrades,
-    notes: draft.notes,
-    version: props.ship.version,
-  })
+  // Images are managed by their own endpoints, so they are not part of this
+  // payload (see `buildShipPayload`, shared with the store's quick-edit action).
+  emit('save', buildShipPayload({ ...draft, version: props.ship.version }))
+}
+
+// Quick-edit: Hull / Drive fuel / Credits are nudged in place and saved
+// immediately by the parent (no edit mode needed). Hidden while editing so the
+// draft inputs own those fields.
+function adjustVital(field, value) {
+  emit('adjust-vital', { field, value })
 }
 
 // In view mode only show the upgrades the ship actually has; the full catalog
@@ -310,17 +310,27 @@ useUnsavedChanges(
       </div>
     </div>
 
-    <!-- Vitals: Hull / Max, Armor, Damage, Fuel / Max -->
+    <!-- Vitals: Hull / Max, Armor, Damage, Fuel / Max, Credits.
+         Hull, Drive fuel and Credits can be nudged in place (view mode); while
+         editing they are plain inputs that save with the form. -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
       <div>
         <label for="ship-hull" class="block text-xs uppercase text-muted mb-1">Hull</label>
         <input
+          v-if="editing"
           id="ship-hull"
           v-model.number="draft.hull"
           type="number"
           min="0"
           class="input-field p-2 rounded w-full"
-          :disabled="!editing"
+        />
+        <BaseNumberStepper
+          v-else
+          :model-value="ship.hull"
+          :max="ship.hullMax"
+          :disabled="saving"
+          aria-label="Hull"
+          @update:model-value="(value) => adjustVital('hull', value)"
         />
       </div>
       <div>
@@ -359,12 +369,20 @@ useUnsavedChanges(
       <div>
         <label for="ship-fuel" class="block text-xs uppercase text-muted mb-1">Drive fuel</label>
         <input
+          v-if="editing"
           id="ship-fuel"
           v-model.number="draft.driveFuel"
           type="number"
           min="0"
           class="input-field p-2 rounded w-full"
-          :disabled="!editing"
+        />
+        <BaseNumberStepper
+          v-else
+          :model-value="ship.driveFuel"
+          :max="ship.maxDriveFuel"
+          :disabled="saving"
+          aria-label="Drive fuel"
+          @update:model-value="(value) => adjustVital('driveFuel', value)"
         />
       </div>
       <div>
@@ -378,6 +396,24 @@ useUnsavedChanges(
           min="0"
           class="input-field p-2 rounded w-full"
           :disabled="!editing"
+        />
+      </div>
+      <div>
+        <label for="ship-credits" class="block text-xs uppercase text-muted mb-1">Credits</label>
+        <input
+          v-if="editing"
+          id="ship-credits"
+          v-model.number="draft.credits"
+          type="number"
+          min="0"
+          class="input-field p-2 rounded w-full"
+        />
+        <BaseNumberStepper
+          v-else
+          :model-value="ship.credits ?? 0"
+          :disabled="saving"
+          aria-label="Credits"
+          @update:model-value="(value) => adjustVital('credits', value)"
         />
       </div>
     </div>
