@@ -519,6 +519,7 @@ export const guestShips = [
     damage: '1D6',
     driveFuel: 4,
     maxDriveFuel: 6,
+    credits: 0,
     upgrades: ['Additional Armor', 'Fuel Tanks'],
     notes: `The crew's stolen courier ship.
 
@@ -529,6 +530,19 @@ export const guestShips = [
     imageUrls: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+  },
+]
+
+export const guestShipCrew = [
+  {
+    campaignId: 'guest_campaign_4',
+    userId: 'guest_player_1',
+    notes: 'Handles the dockside hand-offs and keeps the manifest clean.',
+    imageUrls: [],
+    characters: [
+      { name: 'Vex', roleOnShip: 'Pilot' },
+      { name: 'Doc', roleOnShip: 'Medic' },
+    ],
   },
 ]
 
@@ -599,6 +613,7 @@ const GUEST_STORAGE_KEYS = [
   'guest_characters',
   'guest_campaigns',
   'guest_ships',
+  'guest_ship_crew',
   'guest_messages',
 ]
 
@@ -613,6 +628,7 @@ export function seedGuestStorage() {
   localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
   localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
   localStorage.setItem('guest_ships', JSON.stringify(guestShips))
+  localStorage.setItem('guest_ship_crew', JSON.stringify(guestShipCrew))
   localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
 }
 

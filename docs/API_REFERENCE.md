@@ -372,7 +372,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Request**: Full CharacterInputDTO (validated)
 - **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Also supports updateCharacterField for single-field updates.
+- **Notes**: Also supports updateCharacterField for single-field updates. The Offworlders sheet's owner-only inline +/- steppers (Health → `currentHealth`, Supply, Credits, XP) use it, sending the full `offworlders` block so guest mode's shallow merge cannot drop the other fields.
 
 ---
 
@@ -603,7 +603,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, upgrades, notes, imageUrl, imageUrls, version }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version }`
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
 
@@ -617,7 +617,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Request**: ShipDTO fields (including the `version` read from the previous fetch)
 - **Response**: ShipDTO
 - **Status Codes**: 200, 400, 401, 403, 409
-- **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload.
+- **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload. The sheet's inline +/- steppers (Hull, Drive fuel, Credits) save through `shipStore.adjustShipField`, which sends the same payload but suppresses the success toast.
 
 ---
 
@@ -654,6 +654,53 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Guest Mode**: Mocked — removes the matching URL from `imageUrls`
 - **Query Params**: url (the stored image URL)
 - **Response**: ShipDTO (with the image removed)
+- **Status Codes**: 200, 401, 403, 404
+
+---
+
+### GET /api/campaigns/{id}/ship/crew
+
+- **Service**: ShipService.fetchCrew(campaignId)
+- **Store Action**: shipStore.fetchCrew(campaignId)
+- **Guest Mode**: Mocked — builds one entry per current participant from `guest_ship_crew`
+- **Response**: `[ ShipCrewMemberDTO ]` — `{ userId, nickname, role, notes, imageUrls, characters: [{ name, roleOnShip }] }`, one per **current** participant in roster order
+- **Status Codes**: 200, 401, 403, 404
+- **Notes**: Entries are keyed on the user, so a participant who leaves keeps their entry (it is simply not returned) and rejoining re-activates it.
+
+---
+
+### PUT /api/campaigns/{id}/ship/crew/me
+
+- **Service**: ShipService.saveMyCrewEntry(campaignId, entry)
+- **Store Action**: shipStore.saveMyCrewEntry(campaignId, entry)
+- **Guest Mode**: Mocked — upserts the signed-in guest's row in `guest_ship_crew`
+- **Request**: `{ notes?, characters? }` (`characters` is `[ { name, roleOnShip } ]`, role optional)
+- **Response**: ShipCrewMemberDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Each participant edits only their own entry.
+
+---
+
+### POST /api/campaigns/{id}/ship/crew/me/images
+
+- **Service**: ShipService.addCrewImage(campaignId, imageFile)
+- **Store Action**: shipStore.addCrewImage(campaignId, imageFile)
+- **Guest Mode**: Mocked — appends a stock placeholder image URL
+- **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
+- **Response**: ShipCrewMemberDTO (with the image appended to `imageUrls`)
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Crew images are shown in the ship's single gallery; the lightbox steps through all of them.
+
+---
+
+### DELETE /api/campaigns/{id}/ship/crew/me/images?url={url}
+
+- **Service**: ShipService.removeCrewImage(campaignId, url)
+- **Store Action**: shipStore.removeCrewImage(campaignId, url)
+- **Guest Mode**: Mocked — removes the matching URL
+- **Query Params**: url (the stored image URL)
+- **Response**: ShipCrewMemberDTO (with the image removed)
 - **Status Codes**: 200, 401, 403, 404
 
 ---

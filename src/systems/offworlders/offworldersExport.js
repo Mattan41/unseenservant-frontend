@@ -51,7 +51,9 @@ export function offworldersExportSections(character) {
   })
 
   const items = (data.items || []).map((item) =>
-    item.description ? `${item.name || 'Unnamed item'} — ${item.description}` : item.name || 'Unnamed item',
+    item.description
+      ? `${item.name || 'Unnamed item'} — ${item.description}`
+      : item.name || 'Unnamed item',
   )
 
   return [
@@ -68,6 +70,9 @@ export function offworldersExportSections(character) {
       ],
     },
     { heading: 'Skills', items: (data.skills || []).map((entry) => entry.name).filter(Boolean) },
-    { heading: 'Abilities', items: (data.abilities || []).map((entry) => entry.name).filter(Boolean) },
+    {
+      heading: 'Abilities',
+      items: (data.abilities || []).map((entry) => entry.name).filter(Boolean),
+    },
   ]
 }

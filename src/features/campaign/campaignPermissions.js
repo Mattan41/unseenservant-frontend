@@ -41,7 +41,12 @@ export function sameId(a, b) {
  * @returns {{ id: number|string, nickname?: string, role?: string }|null}
  */
 export function findParticipant(campaign, userId) {
-  if (!campaign || !Array.isArray(campaign.participants) || userId === null || userId === undefined) {
+  if (
+    !campaign ||
+    !Array.isArray(campaign.participants) ||
+    userId === null ||
+    userId === undefined
+  ) {
     return null
   }
   return campaign.participants.find((participant) => sameId(participant.id, userId)) || null

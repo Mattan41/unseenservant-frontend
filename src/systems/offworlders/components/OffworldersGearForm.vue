@@ -110,7 +110,9 @@ function takeArmorAlternative() {
               placeholder="e.g. Snubnosed revolver"
             />
           </div>
-          <BaseButton variant="remove" type="button" @click="removeWeapon(index)">Remove</BaseButton>
+          <BaseButton variant="remove" type="button" @click="removeWeapon(index)"
+            >Remove</BaseButton
+          >
         </div>
         <p class="mt-1 text-xs text-muted">
           Damage {{ damageForWeaponType(weapon.type) }}
@@ -212,7 +214,5 @@ function takeArmorAlternative() {
         </ul>
       </div>
     </BaseModal>
-
   </div>
-
 </template>

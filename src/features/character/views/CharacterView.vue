@@ -9,6 +9,7 @@ import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import SystemSheetRouter from '@/features/character/dispatchers/SystemSheetRouter.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import ExportMenu from '@/components/base/ExportMenu.vue'
 import { buildCharacterExport, buildCharacterBackup } from '@/features/character/characterExport.js'
@@ -30,9 +31,9 @@ const campaignId = route.query.campaignId || null
 const { userId } = storeToRefs(userStore)
 const { currentCharacter } = storeToRefs(characterStore)
 
-// The character's own campaign, independent of the `from=campaign` context that
-// drives the "Back to Campaign" link. Resolved from the campaign store; the
-// campaign is fetched on mount when it is not already cached.
+// The character's own campaign, independent of the `from=campaign` context.
+// Resolved from the campaign store; the campaign is fetched on mount when it is
+// not already cached.
 const characterCampaignId = computed(() => currentCharacter.value?.campaignId || null)
 const characterCampaign = computed(() =>
   characterCampaignId.value ? campaignStore.getCampaignById(characterCampaignId.value) : null,
@@ -70,6 +71,27 @@ const deleteCharacter = async () => {
   if (success) {
     notificationStore.addNotification('Character deleted successfully!', 'success')
     await router.push({ name: 'CharactersView' })
+  }
+}
+
+// Quick-edit of an Offworlders vital straight from the sheet (character owner
+// only). Guest mode replaces the whole nested block on PATCH, so send it back
+// complete; the steppers are disabled while the request is in flight.
+const pendingVital = ref(false)
+
+async function adjustOffworldersVital({ field, value }) {
+  const character = currentCharacter.value
+  if (!isOwner.value || !character?.offworlders) return
+  pendingVital.value = true
+  try {
+    await characterStore.updateCharacterField(character.id, 'offworlders', {
+      ...character.offworlders,
+      [field]: value,
+    })
+  } catch {
+    // Error is surfaced by the store.
+  } finally {
+    pendingVital.value = false
   }
 }
 
@@ -199,14 +221,13 @@ const exportCharacter = async (format) => {
             <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
 
             <!-- Link to the character's own campaign (independent of the
-                 `from=campaign` context that drives "Back to Campaign"). -->
-            <router-link
-              v-if="characterCampaignId"
-              :to="{ name: 'CampaignView', params: { id: characterCampaignId } }"
-              class="element-link mt-2 text-sm"
-            >
-              Campaign: {{ characterCampaignName || 'View campaign' }}
-            </router-link>
+                 `from=campaign` context). A full button, so the association is
+                 obvious rather than a quiet text link. -->
+            <div v-if="characterCampaignId" class="mt-3">
+              <BaseLinkButton :to="{ name: 'CampaignView', params: { id: characterCampaignId } }">
+                Campaign: {{ characterCampaignName || 'View campaign' }}
+              </BaseLinkButton>
+            </div>
           </div>
 
           <!-- Notes -->
@@ -239,10 +260,7 @@ const exportCharacter = async (format) => {
             <p v-else class="text-sm text-muted italic">No backstory recorded.</p>
 
             <!-- Only rendered when the API returned it (owner or campaign GM). -->
-            <div
-              v-if="currentCharacter.privateBackstory"
-              class="mt-4 pt-3 border-t border-section"
-            >
+            <div v-if="currentCharacter.privateBackstory" class="mt-4 pt-3 border-t border-section">
               <p class="text-xs italic mb-1 text-muted">
                 Private — only you and the GM can see this
               </p>
@@ -258,7 +276,12 @@ const exportCharacter = async (format) => {
         <!-- Main column: a clean slot for whatever the active system renders -->
         <div class="flex-1 min-w-0">
           <!-- System-specific character sheet -->
-          <SystemSheetRouter :character="currentCharacter" :is-owner="isOwner" />
+          <SystemSheetRouter
+            :character="currentCharacter"
+            :is-owner="isOwner"
+            :saving="pendingVital"
+            @adjust-vital="adjustOffworldersVital"
+          />
 
           <!-- Additional info -->
           <div class="p-6 border-t border-section">
@@ -277,20 +300,6 @@ const exportCharacter = async (format) => {
             </p>
           </div>
         </div>
-      </div>
-
-      <!-- Back navigation -->
-      <div class="mt-6">
-        <router-link
-          v-if="from === 'campaign' && campaignId"
-          :to="{ name: 'CampaignView', params: { id: campaignId } }"
-          class="element-link"
-        >
-          ← Back to Campaign
-        </router-link>
-        <router-link v-else :to="{ name: 'CharactersView' }" class="element-link">
-          ← Back to Character List
-        </router-link>
       </div>
     </div>
   </div>

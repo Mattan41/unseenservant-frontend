@@ -32,7 +32,14 @@ const offworlders = {
 const dnd5e = {
   name: 'Gandalf',
   systemType: 'DND5E',
-  dnd5e: { race: 'Human', characterClass: 'Wizard', level: 10, hitPoints: 42, armorClass: 13, stats: {} },
+  dnd5e: {
+    race: 'Human',
+    characterClass: 'Wizard',
+    level: 10,
+    hitPoints: 42,
+    armorClass: 13,
+    stats: {},
+  },
 }
 
 describe('buildCharacterExport', () => {
@@ -66,7 +73,12 @@ describe('buildCharacterExport', () => {
   })
 
   it('flattens long-text markdown in txt but keeps it in md', () => {
-    const character = { name: 'X', systemType: 'OFFWORLDERS', backstory: '**bold**', offworlders: { stats: {} } }
+    const character = {
+      name: 'X',
+      systemType: 'OFFWORLDERS',
+      backstory: '**bold**',
+      offworlders: { stats: {} },
+    }
     expect(buildCharacterExport(character, { format: 'txt' })).not.toContain('**')
     expect(buildCharacterExport(character, { format: 'md' })).toContain('**bold**')
   })
@@ -84,7 +96,15 @@ describe('buildCharacterBackup', () => {
 
   it('keeps only portable fields (drops id/owner/campaign/avatar/timestamps)', () => {
     expect(Object.keys(backup.character).sort()).toEqual(
-      ['appearance', 'backstory', 'name', 'notes', 'offworlders', 'privateBackstory', 'systemType'].sort(),
+      [
+        'appearance',
+        'backstory',
+        'name',
+        'notes',
+        'offworlders',
+        'privateBackstory',
+        'systemType',
+      ].sort(),
     )
   })
 })
@@ -106,7 +126,10 @@ describe('parseCharacterBackup', () => {
   })
 
   it('rejects a newer schema version', () => {
-    const text = JSON.stringify({ schemaVersion: 99, character: { name: 'x', systemType: 'OFFWORLDERS' } })
+    const text = JSON.stringify({
+      schemaVersion: 99,
+      character: { name: 'x', systemType: 'OFFWORLDERS' },
+    })
     expect(() => parseCharacterBackup(text)).toThrow(/newer version/)
   })
 

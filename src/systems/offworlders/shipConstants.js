@@ -104,6 +104,7 @@ export function createEmptyShipData() {
     damage: OFFWORLDERS_SHIP_DAMAGE_DEFAULT,
     driveFuel: OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
     maxDriveFuel: OFFWORLDERS_SHIP_MAX_DRIVE_FUEL_DEFAULT,
+    credits: 0,
     upgrades: [],
     notes: '',
     imageUrl: '',
@@ -175,6 +176,7 @@ export function normalizeShipData(data) {
     damage: typeof data.damage === 'string' && data.damage ? data.damage : empty.damage,
     driveFuel: toNonNegativeInt(data.driveFuel, empty.driveFuel),
     maxDriveFuel: toNonNegativeInt(data.maxDriveFuel, empty.maxDriveFuel),
+    credits: toNonNegativeInt(data.credits, empty.credits),
     upgrades: Array.isArray(data.upgrades)
       ? data.upgrades.filter((entry) => typeof entry === 'string')
       : [],
@@ -186,3 +188,57 @@ export function normalizeShipData(data) {
   }
 }
 
+/**
+ * Normalize a single crew entry from the API into the shape the UI uses.
+ *
+ * `characters` is a free-form list of `{ name, roleOnShip }` rows (both text,
+ * the role optional); the role on the ship is deliberately not a fixed enum.
+ *
+ * @param {object|null|undefined} raw
+ * @returns {object}
+ */
+export function normalizeCrewMember(raw) {
+  const data = raw || {}
+  return {
+    userId: data.userId ?? null,
+    nickname: typeof data.nickname === 'string' ? data.nickname : '',
+    role: typeof data.role === 'string' ? data.role : 'PLAYER',
+    notes: typeof data.notes === 'string' ? data.notes : '',
+    imageUrls: Array.isArray(data.imageUrls)
+      ? data.imageUrls.filter((url) => typeof url === 'string')
+      : [],
+    characters: Array.isArray(data.characters)
+      ? data.characters
+          .filter((entry) => entry && typeof entry === 'object')
+          .map((entry) => ({
+            name: typeof entry.name === 'string' ? entry.name : '',
+            roleOnShip: typeof entry.roleOnShip === 'string' ? entry.roleOnShip : '',
+          }))
+      : [],
+  }
+}
+
+/**
+ * Normalize the crew manifest list.
+ * @param {Array<object>|null|undefined} rawList
+ * @returns {Array<object>}
+ */
+export function normalizeCrew(rawList) {
+  return Array.isArray(rawList) ? rawList.map(normalizeCrewMember) : []
+}
+
+/**
+ * Request payload for saving the caller's own crew entry. Blank character rows
+ * (no name and no role) are dropped so the stored list stays clean.
+ * @param {{notes?: string, characters?: Array<object>}} entry
+ * @returns {{notes: string, characters: Array<{name: string, roleOnShip: string}>}}
+ */
+export function buildCrewPayload(entry) {
+  const rows = (entry?.characters || [])
+    .map((row) => ({
+      name: (row?.name || '').trim(),
+      roleOnShip: (row?.roleOnShip || '').trim(),
+    }))
+    .filter((row) => row.name || row.roleOnShip)
+  return { notes: entry?.notes ?? '', characters: rows }
+}

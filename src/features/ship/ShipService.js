@@ -71,6 +71,57 @@ const ShipService = {
     })
     return response.data
   },
+
+  /**
+   * Fetch the ship's crew manifest (one entry per current participant).
+   * @param {number|string} campaignId
+   * @returns {Promise<Array<object>>} ShipCrewMemberDTO[]
+   */
+  async fetchCrew(campaignId) {
+    const response = await apiClient.get(`api/campaigns/${campaignId}/ship/crew`)
+    return response.data
+  },
+
+  /**
+   * Create/update the caller's own crew entry.
+   * @param {number|string} campaignId
+   * @param {{notes: string, characters: Array<object>}} entry
+   * @returns {Promise<object>} ShipCrewMemberDTO
+   */
+  async saveMyCrewEntry(campaignId, entry) {
+    const response = await apiClient.put(`api/campaigns/${campaignId}/ship/crew/me`, entry)
+    return response.data
+  },
+
+  /**
+   * Add an image to the caller's own crew entry (shown in the ship's gallery).
+   * @param {number|string} campaignId
+   * @param {File} imageFile
+   * @returns {Promise<object>} ShipCrewMemberDTO
+   */
+  async addCrewImage(campaignId, imageFile) {
+    const formData = new FormData()
+    formData.append('file', imageFile)
+    const response = await apiClient.post(
+      `api/campaigns/${campaignId}/ship/crew/me/images`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    return response.data
+  },
+
+  /**
+   * Remove an image from the caller's own crew entry by its stored URL.
+   * @param {number|string} campaignId
+   * @param {string} url
+   * @returns {Promise<object>} ShipCrewMemberDTO
+   */
+  async removeCrewImage(campaignId, url) {
+    const response = await apiClient.delete(`api/campaigns/${campaignId}/ship/crew/me/images`, {
+      params: { url },
+    })
+    return response.data
+  },
 }
 
 export default ShipService

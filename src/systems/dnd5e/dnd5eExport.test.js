@@ -8,7 +8,14 @@ const character = {
     level: 10,
     hitPoints: 42,
     armorClass: 13,
-    stats: { strength: 11, dexterity: 11, constitution: 11, intelligence: 19, wisdom: 15, charisma: 13 },
+    stats: {
+      strength: 11,
+      dexterity: 11,
+      constitution: 11,
+      intelligence: 19,
+      wisdom: 15,
+      charisma: 13,
+    },
   },
 }
 

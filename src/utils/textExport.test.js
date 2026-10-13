@@ -34,7 +34,10 @@ describe('renderDocument', () => {
   })
 
   it('flattens markdown source in long-text fields for txt', () => {
-    const txt = renderDocument({ sections: [{ heading: 'Notes', text: '**bold** and *italic*' }] }, 'txt')
+    const txt = renderDocument(
+      { sections: [{ heading: 'Notes', text: '**bold** and *italic*' }] },
+      'txt',
+    )
     expect(txt).toContain('bold and italic')
     expect(txt).not.toContain('*')
   })

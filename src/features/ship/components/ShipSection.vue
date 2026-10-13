@@ -9,6 +9,7 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -25,8 +26,9 @@ const props = defineProps({
 
 const shipStore = useShipStore()
 const campaignStore = useCampaignStore()
+const userStore = useUserStore()
 const notificationStore = useNotificationStore()
-const { ship, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+const { ship, crew, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
 
 // The ship is Offworlders-only, and its images are exempt from export.
 const SHIP_EXPORT_FORMATS = [
@@ -52,7 +54,7 @@ function exportShip(format) {
 }
 
 async function loadShip() {
-  await shipStore.fetchShip(props.campaignId)
+  await Promise.all([shipStore.fetchShip(props.campaignId), shipStore.fetchCrew(props.campaignId)])
 }
 
 async function handleSave(shipData) {
@@ -87,6 +89,40 @@ async function handleRemoveGallery(url) {
   }
 }
 
+// Inline Hull / Drive fuel / Credits steppers save immediately (no edit mode).
+async function handleAdjustVital({ field, value }) {
+  try {
+    await shipStore.adjustShipField(props.campaignId, field, value)
+  } catch {
+    // Error is surfaced by the store (notification + conflict banner).
+  }
+}
+
+// Crew manifest: the signed-in user's entry (notes, characters, images).
+async function handleSaveCrew(entry) {
+  try {
+    await shipStore.saveMyCrewEntry(props.campaignId, entry)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
+async function handleAddCrewImage(file) {
+  try {
+    await shipStore.addCrewImage(props.campaignId, file)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
+async function handleRemoveCrewImage(url) {
+  try {
+    await shipStore.removeCrewImage(props.campaignId, url)
+  } catch {
+    // Error is surfaced by the store.
+  }
+}
+
 // The ship is loaded (and cleared) by the parent CampaignView so the Overview
 // summary and this section share one store; mount just refreshes it.
 onMounted(loadShip)
@@ -113,11 +149,17 @@ onMounted(loadShip)
         :ship="ship"
         :saving="isSaving"
         :conflict="hasConflict"
+        :crew="crew"
+        :current-user-id="userStore.userId"
         @save="handleSave"
         @reload="loadShip"
         @upload-profile="handleUploadProfile"
         @add-gallery="handleAddGallery"
         @remove-gallery="handleRemoveGallery"
+        @adjust-vital="handleAdjustVital"
+        @save-crew="handleSaveCrew"
+        @add-crew-image="handleAddCrewImage"
+        @remove-crew-image="handleRemoveCrewImage"
       />
     </div>
   </div>

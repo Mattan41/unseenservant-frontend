@@ -15,6 +15,7 @@ const GUEST_KEYS = [
   'guest_characters',
   'guest_campaigns',
   'guest_ships',
+  'guest_ship_crew',
   'guest_messages',
 ]
 
@@ -34,7 +35,9 @@ describe('demo data integrity', () => {
     for (const campaign of guestCampaigns) {
       const roster = guestCharacters.filter((c) => c.campaignId === campaign.id)
       if (campaign.primarySystem === 'OFFWORLDERS') {
-        roster.forEach((c) => expect(c.systemType, `${c.name} in ${campaign.name}`).toBe('OFFWORLDERS'))
+        roster.forEach((c) =>
+          expect(c.systemType, `${c.name} in ${campaign.name}`).toBe('OFFWORLDERS'),
+        )
       } else if (campaign.primarySystem === 'DND5E') {
         roster.forEach((c) => expect(c.systemType, `${c.name} in ${campaign.name}`).toBe('DND5E'))
       }

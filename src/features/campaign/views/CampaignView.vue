@@ -56,9 +56,6 @@ const campaign = ref(null)
 const isLoading = ref(false)
 const isInitialLoad = ref(true)
 
-// Contextual navigation section currently rendered in the main content area.
-const activeSection = ref('overview')
-
 // Local UI-state
 const showImportModal = ref(false)
 // Mobile campaign navigation drawer (triggered from the campaign top bar).
@@ -101,6 +98,18 @@ const navItems = computed(() =>
   }),
 )
 
+// Contextual navigation section currently rendered in the main content area.
+// The section lives in the URL (`?section=…`) so a refresh — or a shared link —
+// reopens the same subview instead of falling back to Overview.
+const DEFAULT_SECTION = 'overview'
+
+function readSectionFromRoute() {
+  const requested = String(route.query.section || '')
+  return SECTIONS.some((section) => section.key === requested) ? requested : DEFAULT_SECTION
+}
+
+const activeSection = ref(readSectionFromRoute())
+
 /**
  * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
  * so the name is not repeated inside the sheet itself. Falls back to plain
@@ -119,23 +128,44 @@ function selectSection(key) {
   if (!confirmDiscardUnsavedChanges()) return
   if (navItems.value.some((section) => section.key === key)) {
     activeSection.value = key
+    // Mirror the choice into the URL (replace, so Back still leaves the
+    // campaign) — a refresh then reopens this same subview.
+    router.replace({ query: { ...route.query, section: key } })
   }
 }
 
 function resetPresentationState() {
-  activeSection.value = 'overview'
+  activeSection.value = readSectionFromRoute()
   showImportModal.value = false
   campaignNavOpen.value = false
   isEditingLore.value = false
 }
 
 // Keep the active section valid when the available sections change (a primary
-// system switch, or a role/ownership change): fall back to Overview.
+// system switch, or a role/ownership change): fall back to Overview and drop
+// the now-invalid section from the URL.
 watch(navItems, (items) => {
   if (!items.some((section) => section.key === activeSection.value)) {
-    activeSection.value = 'overview'
+    activeSection.value = DEFAULT_SECTION
+    if (route.query.section) {
+      const query = { ...route.query }
+      delete query.section
+      router.replace({ query })
+    }
   }
 })
+
+// Keep the rendered section in sync with the URL (back/forward, manual edits,
+// deep links). Only accept a section that is currently available.
+watch(
+  () => route.query.section,
+  () => {
+    const next = readSectionFromRoute()
+    if (navItems.value.some((section) => section.key === next)) {
+      activeSection.value = next
+    }
+  },
+)
 
 const loadCampaignData = async (campaignId) => {
   const notificationStore = useNotificationStore()
@@ -180,11 +210,10 @@ const isLoadingCharacters = computed(() => campaignStore.loadingCharacters)
 // Read-only participant roster (owner + players + GMs).
 const participants = computed(() => campaign.value?.participants || [])
 
-// Overview summary roster: one `nickname · ROLE · characters` line per
-// participant (see `formatParticipantRoster`).
-const participantRoster = computed(() =>
-  formatParticipantRoster(participants.value, campaignCharacters.value),
-)
+// Overview summary roster: one `nickname · ROLE` line per participant
+// (see `formatParticipantRoster`). Characters are listed in the party preview
+// below instead.
+const participantRoster = computed(() => formatParticipantRoster(participants.value))
 
 // Overview: the campaign's ruleset label, a capped party preview, and the
 // Offworlders-only ship card (data is loaded by `loadCampaignData`).

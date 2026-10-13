@@ -32,7 +32,15 @@ describe('buildPayload', () => {
     const payload = buildPayload(DND5E_SYSTEM_TYPE, CHARACTER)
 
     expect(Object.keys(payload).sort()).toEqual(
-      ['appearance', 'backstory', 'dnd5e', 'name', 'notes', 'privateBackstory', 'systemType'].sort(),
+      [
+        'appearance',
+        'backstory',
+        'dnd5e',
+        'name',
+        'notes',
+        'privateBackstory',
+        'systemType',
+      ].sort(),
     )
   })
 
