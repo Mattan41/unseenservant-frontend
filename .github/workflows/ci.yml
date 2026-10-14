@@ -1,0 +1,45 @@
+name: CI
+
+# Pull requests only: the release workflow builds and pushes the Docker image,
+# so this validates a change before it merges. Dependabot pull requests run
+# here too, which is why no step uses a repository secret — every VITE_*
+# variable consumed by the build has a safe fallback.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Lint without --fix so a violation fails the job instead of being
+      # silently rewritten on the runner.
+      - name: Lint
+        run: npm run lint:ci
+
+      # --run: never enter vitest's watch mode, regardless of the CI env var.
+      - name: Test
+        run: npm run test:unit -- --run
+
+      - name: Build
+        run: npm run build
