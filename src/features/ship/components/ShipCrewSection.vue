@@ -140,13 +140,17 @@ function onFileChange(event) {
               :key="index"
               class="flex flex-wrap items-center gap-2"
             >
+              <label :for="`crew-character-name-${index}`" class="sr-only">Character name</label>
               <input
+                :id="`crew-character-name-${index}`"
                 v-model="row.name"
                 type="text"
                 class="input-field p-2 rounded flex-1 min-w-40"
                 placeholder="Character name"
               />
+              <label :for="`crew-character-role-${index}`" class="sr-only">Role on ship</label>
               <input
+                :id="`crew-character-role-${index}`"
                 v-model="row.roleOnShip"
                 type="text"
                 class="input-field p-2 rounded flex-1 min-w-40"
@@ -178,7 +182,9 @@ function onFileChange(event) {
             </div>
           </div>
           <p v-else class="text-sm text-muted italic mb-2">No images yet.</p>
+          <label for="crew-image-upload" class="sr-only">Upload crew image</label>
           <input
+            id="crew-image-upload"
             ref="fileInput"
             type="file"
             accept=".jpg,.jpeg,.png,.gif,.webp"
