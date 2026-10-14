@@ -70,3 +70,18 @@ App runs at `http://localhost:5173`
 
 | `VITE_API_BASE_URL` | Backend API base URL |
 | `VITE_OAUTH_BASE_URL` | OAuth redirect base URL (production only) |
+
+## Docker image
+
+On every release, GitHub Actions publishes `mattan41/unseenservant-frontend` to
+Docker Hub tagged `latest` and with the release tag. The image is built for
+`linux/amd64` and `linux/arm64` on native runners (`ubuntu-latest` /
+`ubuntu-24.04-arm`) and the two architectures are combined into one multi-arch
+manifest with `docker buildx imagetools create`, so `docker pull` selects the
+right architecture automatically. The merged index also lists the per-arch
+provenance attestation manifests as extra `unknown/unknown` platform entries —
+expected, and it does not affect `docker pull` or `docker run`.
+
+Build cache and per-architecture staging images live in the GitHub Container
+Registry (`ghcr.io/mattan41/unseenservant-frontend:buildcache-<arch>`), not on
+Docker Hub.

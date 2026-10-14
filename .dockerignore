@@ -1,0 +1,25 @@
+# Dependencies (npm ci installs these inside the image)
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Version control and editor metadata
+.git/
+.gitignore
+.github/
+.idea/
+.vscode/
+*.code-workspace
+
+# Local-only documentation
+docs/
+
+# Local environment files (.env.production is intentionally kept: vite build needs it)
+.env
+.env.local
+
+# OS cruft
+.DS_Store
+Thumbs.db
