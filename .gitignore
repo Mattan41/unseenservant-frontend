@@ -29,3 +29,9 @@ Thumbs.db
 
 ### Local files ###
 docs/local/
+
+### Cloudflare Workers ###
+# Local build/deploy state and dev-only variables (the deployed Worker's own
+# values live in .env.test, which is committed).
+.wrangler/
+.dev.vars

@@ -1,0 +1,30 @@
+{
+  // Cloudflare Worker that serves test.unseenservant.se.
+  //
+  // Deploy: `npm run build:test && npx wrangler deploy` — the assets come from
+  // the Vite build in ./dist. See docs/DEPLOYMENT.md for the full picture.
+  "name": "unseenservant-test",
+
+  // Bump deliberately, after reading the compatibility notes. Workers Assets
+  // and the array form of run_worker_first both need a recent enough date; if
+  // `wrangler deploy` wants a newer one it names the value it needs.
+  "compatibility_date": "2025-04-01",
+
+  "main": "./worker/index.ts",
+
+  "assets": {
+    "directory": "./dist/",
+
+    // Vue Router uses history mode, so a path that matches no asset has to
+    // return index.html rather than a 404.
+    "not_found_handling": "single-page-application",
+
+    // Bound as env.ASSETS in worker/index.ts.
+    "binding": "ASSETS",
+
+    // Asset-first by default; only these reach the Worker script. The two
+    // lists — here and PROXY_PREFIXES in worker/index.ts — describe the same
+    // set of paths, so change both or neither.
+    "run_worker_first": ["/api/*", "/images/*"]
+  }
+}

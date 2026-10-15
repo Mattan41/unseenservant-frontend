@@ -71,8 +71,14 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
+          # Vite inlines VITE_* into the bundle at build time, so this is the
+          # only place the environment marker can be set: a container env var
+          # would be ignored by an already-built bundle. `dev` is the value that
+          # draws the "Development environment" banner, which is how a staging
+          # build identifies itself. `:main` is only ever pulled by the
+          # Raspberry Pi, so production's image is unaffected.
           build-args: |
-            VITE_USER_NODE_ENV=prod
+            VITE_USER_NODE_ENV=${{ github.event_name == 'push' && 'dev' || 'prod' }}
           cache-from: type=registry,ref=${{ env.CACHE_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.arch }}
           cache-to: type=registry,ref=${{ env.CACHE_REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache-${{ matrix.arch }},mode=max,image-manifest=true,oci-mediatypes=true
           outputs: type=image,name=${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true

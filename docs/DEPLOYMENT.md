@@ -85,7 +85,86 @@ the release routine. Measured locally on the shape above: the variable form
 recovered without an nginx restart, the literal form stayed broken indefinitely
 while the backend was demonstrably alive at its new address.
 
+## test.unseenservant.se — a Cloudflare Worker in front of staging
+
+A third origin, deliberately light: Workers Assets serves the SPA from the edge,
+and the Worker script relays only the paths that need a backend to the staging
+box on the Raspberry Pi.
+
+| | Served by | Backend |
+|---|---|---|
+| `unseenservant.se` | nginx in this image (OptiPlex) | `backend:8080` in the same compose |
+| `staging.unseenservant.se` | the same image (Pi), host-mounted `nginx.conf` | `backend:8080` in the same compose |
+| `test.unseenservant.se` | `wrangler` + Workers Assets | proxied to `https://staging.unseenservant.se` |
+
+The test origin has its own `localStorage` and can carry its own Cloudflare
+Access policy, so it never shares a session with staging.
+
+### Routing
+
+`wrangler.jsonc` hands `assets.run_worker_first` the two prefixes that must reach
+the Worker (`/api/*`, `/images/*`); every other request is asset-first, and a
+path matching no asset returns `index.html` (`not_found_handling:
+"single-page-application"`), which is what Vue Router's history mode needs.
+
+`/oauth2/*`, `/login/oauth2/*` and `/logout` are **not** on that list, and that is
+deliberate. The handshake runs on staging: the SPA sends `oauth-init` to
+`VITE_OAUTH_BASE_URL`, staging sets its redirect-origin cookie there and sends the
+browser back to this origin, which staging permits because
+`https://test.unseenservant.se` is in its `ALLOWED_ORIGINS`. Relaying the
+handshake through the Worker instead would need a `test.unseenservant.se` redirect
+URI registered at Google **and** GitHub, manual handling of the 3xx responses in
+the Worker instead of letting `fetch` follow them, and staging's nginx to stop
+overwriting `X-Forwarded-Host` on those two locations. `/logout` is a client-side
+route (the store only clears `localStorage`), so serving `index.html` for it is
+correct — better than the nginx hosts, where a hard reload of `/logout` reaches
+the backend.
+
+### Configuration is build-time here too
+
+`.env.test` holds this origin's values and `npm run build:test` bakes them in:
+`VITE_OAUTH_BASE_URL` points at staging, `VITE_API_BASE_URL` stays empty
+(same-origin through the Worker), and `VITE_USER_NODE_ENV=dev` renders the
+"Development environment" banner so this origin can never be mistaken for
+production. Setting these in the Worker's dashboard has no effect on an
+already-built bundle.
+
+### Deploy
+
+```sh
+npm ci
+npm run build:test
+npx wrangler deploy
+```
+
+The same two commands work as a Cloudflare Workers Build (build command
+`npm run build:test`, deploy command `npx wrangler deploy`). Either way the values
+come from `.env.test` in the repository. `wrangler` is not a dependency of this
+project — `npx` fetches it; pin it in `devDependencies` if you would rather lock
+the version.
+
+Then add `test.unseenservant.se` as a custom domain or route for the
+`unseenservant-test` Worker, and give it an Access policy if it should not be
+open.
+
+### Verifying it
+
+```sh
+curl -sI https://test.unseenservant.se/ | head -1              # 200, from the assets
+curl -sI https://test.unseenservant.se/api/auth/me | head -1   # 401, from staging's backend
+curl -sI https://test.unseenservant.se/campaigns | head -1     # 200, index.html for an SPA route
+```
+
+The 401 is the interesting one: it is the backend answering, through the Worker.
+A 502 means staging is unreachable; a 200 with HTML means the Worker did not match
+the path and the SPA answered instead.
+
+Then log in with Google: the browser must leave for staging (visible in the
+address bar), come back to
+`test.unseenservant.se/oauth-redirect?token=...`, and `/api/auth/me` must answer
+200 afterwards.
+
 ## Keeping this file honest
 
-Changing the workflow, the tag contract or the nginx ownership rules means
-updating this document in the same change.
+Changing the workflow, the tag contract, the nginx ownership rules or the test
+Worker's routing means updating this document in the same change.
