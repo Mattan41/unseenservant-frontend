@@ -147,6 +147,27 @@ Runtime variables are worse than useless here: an already-built bundle cannot be
 reconfigured, which is why the deploy is `npm run build:test && npx wrangler
 deploy` and never `wrangler deploy` on its own.
 
+### Why the test build deletes `_redirects`
+
+`public/_redirects` belongs to the Cloudflare **Pages** deployment on
+`dev.unseenservant.se`. Pages accepts absolute 200-proxy rules, and that is how
+that deployment reaches production's backend without CORS.
+
+Workers Assets rejects exactly that. Deploying with the file in `dist/` fails with
+
+```
+Invalid _redirects configuration:
+Line 2: Proxy (200) redirects can only point to relative paths. Got https://unseenservant.se/api/:splat
+```
+
+so `npm run build:test` ends with `rm -f dist/_redirects`. The Worker needs no
+redirect rules at all: `run_worker_first` handles `/api/*` and `/images/*`, and
+`not_found_handling: single-page-application` covers the SPA routes. The Pages
+deployment is untouched — it runs `npm run build`, which keeps the file.
+
+If the Pages deployment is ever retired, `public/_redirects` and that `rm -f` can
+both go.
+
 ### Deploy
 
 ```sh
@@ -158,6 +179,33 @@ npx wrangler deploy
 The same two commands work as a Cloudflare Workers Build (build command
 `npm run build:test`, deploy command `npx wrangler deploy`). Either way the values
 come from `.env.test` in the repository.
+
+Both of Cloudflare's defaults need no extra configuration: `wrangler deploy`
+publishes the version so the custom domain serves it, while
+`wrangler versions upload` only uploads a version and prints a preview URL.
+
+Do **not** reach for `npx wrangler preview` to get a preview. It is an open beta
+command from the newer Previews feature, it fails with "Your Wrangler
+configuration is missing a `previews` block" unless `wrangler.jsonc` carries one,
+and a Preview is a separate environment — so it does not update what
+`test.unseenservant.se` serves. Pick deliberately:
+
+| Goal | Setting |
+|---|---|
+| `test.unseenservant.se` always serves the latest build of this branch | Deploy command `npx wrangler deploy` |
+| Branch builds only produce a throwaway preview URL | Preview command `npx wrangler versions upload` |
+| Per-build Previews with their own configuration (beta) | add `"previews": {}` to `wrangler.jsonc`, use `npx wrangler preview`, and route `test.unseenservant.se` at whatever should track it |
+
+This project deliberately uses **no** Previews: the preview command stays at its
+default and `wrangler.jsonc` carries no `previews` block, so nothing in the build
+depends on a beta feature. `test.unseenservant.se` is served by whatever the
+deploy command publishes.
+
+The Cloudflare project's **production branch is `main`**, so only merges there run
+`npx wrangler deploy` and publish `test.unseenservant.se`. Every other branch runs
+the *preview* command instead — which is why a feature-branch push can show a
+successful build and a failed deploy: that command has to stay at its GA default
+(`npx wrangler versions upload`), not `npx wrangler preview`.
 
 `wrangler` is deliberately **not** a dependency: `npx` fetches it at deploy time.
 Pinning it is a change of its own, and the cheaper form is to pin it in the deploy
