@@ -74,7 +74,13 @@ App runs at `http://localhost:5173`
 ## Docker image
 
 On every release, GitHub Actions publishes `mattan41/unseenservant-frontend` to
-Docker Hub tagged `latest` and with the release tag. The image is built for
+Docker Hub tagged `latest` and with the release tag; every merge to `main`
+publishes `main` for the staging host. [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+documents the tag contract — production's watchtower follows `latest`, staging's
+follows `main`, and a merge must never be able to move `latest` — and which copy
+of the nginx config is authoritative where.
+
+The image is built for
 `linux/amd64` and `linux/arm64` on native runners (`ubuntu-latest` /
 `ubuntu-24.04-arm`) and the two architectures are combined into one multi-arch
 manifest with `docker buildx imagetools create`, so `docker pull` selects the
