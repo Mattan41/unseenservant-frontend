@@ -3,7 +3,11 @@
   //
   // Deploy: `npm run build:test && npx wrangler deploy` — the assets come from
   // the Vite build in ./dist. See docs/DEPLOYMENT.md for the full picture.
-  "name": "unseenservant-test",
+  //
+  // Must match the Cloudflare project that owns the domain and the build
+  // settings (Workers & Pages > unseenservant-frontend-staging): a mismatch
+  // deploys a second Worker and leaves the configured one empty.
+  "name": "unseenservant-frontend-staging",
 
   // Bump deliberately, after reading the compatibility notes. Workers Assets
   // and the array form of run_worker_first both need a recent enough date; if

@@ -126,8 +126,24 @@ the backend.
 `VITE_OAUTH_BASE_URL` points at staging, `VITE_API_BASE_URL` stays empty
 (same-origin through the Worker), and `VITE_USER_NODE_ENV=dev` renders the
 "Development environment" banner so this origin can never be mistaken for
-production. Setting these in the Worker's dashboard has no effect on an
-already-built bundle.
+production.
+
+The Worker's **Variables and secrets are deliberately empty**, including in a
+Git-connected build. Cloudflare injects those into the build environment as well,
+and a variable that already exists when Vite runs beats every `.env` file — so a
+leftover there is an invisible override rather than a visible error. A
+`VITE_USER_NODE_ENV=env` silently drops the banner, and a stale
+`VITE_API_BASE_URL` quietly bypasses the Worker's proxy. `.env.test` is the
+single source; to see which one won, read the attribute the app sets on the
+document in the browser console:
+
+```js
+document.documentElement.dataset.env // 'dev' from .env.test · 'prod' if neither ran
+```
+
+Runtime variables are worse than useless here: an already-built bundle cannot be
+reconfigured, which is why the deploy is `npm run build:test && npx wrangler
+deploy` and never `wrangler deploy` on its own.
 
 ### Deploy
 
@@ -144,8 +160,9 @@ project — `npx` fetches it; pin it in `devDependencies` if you would rather lo
 the version.
 
 Then add `test.unseenservant.se` as a custom domain or route for the
-`unseenservant-test` Worker, and give it an Access policy if it should not be
-open.
+`unseenservant-frontend-staging` Worker — the `name` in `wrangler.jsonc` has to
+match it, or a deploy lands on a second Worker and leaves the configured one
+empty — and give the origin an Access policy if it should not be open.
 
 ### Verifying it
 
