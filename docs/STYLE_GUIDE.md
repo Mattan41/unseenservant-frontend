@@ -38,7 +38,8 @@ active theme's `--primary-500` value via the `@theme` block.
 forest is retained but **not reachable** from the running app until a theme
 switcher lands.
 
-> **Three-axis model.** `<html>` carries `data-env` (dev|prod — banner only),
+> **Three-axis model.** `<html>` carries `data-env` (dev|staging|prod|demo —
+> banner only),
 > `data-theme` (silver|forest — identity palette) and `data-mode`
 > (light|dark — surface/neutral palette). The canonical explanation and the
 > "where to add things" guide live in the header comment of the palette

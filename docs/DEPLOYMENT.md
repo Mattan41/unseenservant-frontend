@@ -16,8 +16,10 @@ repository (`Mattan41/projects-notes`,
 | release published | `:latest` and `:<release tag>` |
 | push to `main` | `:main` |
 
-`VITE_USER_NODE_ENV=prod` is used as a build argument for both, so the published
-bundle behaves as production in either environment.
+`VITE_USER_NODE_ENV` is the one build-time difference between the two: a release
+builds with `prod`, which hides the environment banner; a merge to `main` builds
+with `staging`, which draws it. Both otherwise use the same `.env.production`
+values, so the published bundle behaves as production in either environment.
 
 * **`:latest` is production.** Production's watchtower follows it and rolls the
   new image out on its own within its polling interval, so a merge-to-main
@@ -124,8 +126,8 @@ the backend.
 
 `.env.test` holds this origin's values and `npm run build:test` bakes them in:
 `VITE_OAUTH_BASE_URL` points at staging, `VITE_API_BASE_URL` stays empty
-(same-origin through the Worker), and `VITE_USER_NODE_ENV=dev` renders the
-"Development environment" banner so this origin can never be mistaken for
+(same-origin through the Worker), and `VITE_USER_NODE_ENV=staging` renders the
+"Staging environment" banner so this origin can never be mistaken for
 production.
 
 The Worker's **Variables and secrets are deliberately empty**, including in a
@@ -155,9 +157,16 @@ npx wrangler deploy
 
 The same two commands work as a Cloudflare Workers Build (build command
 `npm run build:test`, deploy command `npx wrangler deploy`). Either way the values
-come from `.env.test` in the repository. `wrangler` is not a dependency of this
-project — `npx` fetches it; pin it in `devDependencies` if you would rather lock
-the version.
+come from `.env.test` in the repository.
+
+`wrangler` is deliberately **not** a dependency: `npx` fetches it at deploy time.
+Pinning it is a change of its own, and the cheaper form is to pin it in the deploy
+command (`npx wrangler@4.151.0 deploy`). Adding it to `devDependencies` makes
+`npm install` re-resolve and rewrite the entire lockfile — 4100 insertions and
+2600 deletions when that was tried — which silently moves transitive versions
+under CI and the Docker build. Either way it never reaches the published image:
+the Dockerfile is a multi-stage build whose final stage is `nginx:alpine` plus
+the built `dist/`.
 
 Then add `test.unseenservant.se` as a custom domain or route for the
 `unseenservant-frontend-staging` Worker — the `name` in `wrangler.jsonc` has to

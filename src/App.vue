@@ -7,14 +7,21 @@ import NotificationComponent from '@/components/NotificationComponent.vue'
 import EnvBanner from '@/components/EnvBanner.vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
-import { IS_DEV_ENVIRONMENT, IS_DEMO_ENVIRONMENT } from '@/utils/environment.js'
+import {
+  IS_DEV_ENVIRONMENT,
+  IS_STAGING_ENVIRONMENT,
+  IS_DEMO_ENVIRONMENT,
+} from '@/utils/environment.js'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
 
-// Environment banner message (dev + demo only; empty string hides it).
+// Environment banner message (dev + staging + demo; empty string hides it).
 function getEnvBannerText() {
   if (IS_DEV_ENVIRONMENT) return 'Development environment — data may be reset.'
+  if (IS_STAGING_ENVIRONMENT) {
+    return 'Staging environment — test data only, and it may be reset.'
+  }
   if (IS_DEMO_ENVIRONMENT) {
     return 'Demo mode — running locally with sample data. Changes are not saved to a server.'
   }

@@ -5,7 +5,8 @@ import { ref } from 'vue'
  *
  * Three independent axes (the canonical model is documented in
  * src/assets/main.css):
- *   data-env   — 'dev' | 'prod'  : environment signal (drives the banner only)
+ *   data-env   — 'dev' | 'staging' | 'prod' | 'demo' : environment signal
+ *                (drives the banner only)
  *   data-theme — 'silver'        : identity / brand palette (forest alternative)
  *   data-mode  — 'light'         : surface / neutral palette (dark later)
  */
@@ -15,6 +16,13 @@ export const ENVIRONMENT = import.meta.env.VITE_USER_NODE_ENV || 'dev'
 
 /** True only for the development environment. */
 export const IS_DEV_ENVIRONMENT = ENVIRONMENT === 'dev'
+
+/**
+ * True only for the staging environment: the Raspberry Pi (the `:main` image)
+ * and the Cloudflare Worker behind test.unseenservant.se. Its own value so the
+ * banner can say "staging" rather than borrowing the development wording.
+ */
+export const IS_STAGING_ENVIRONMENT = ENVIRONMENT === 'staging'
 
 /** True only for the local demo environment. */
 export const IS_DEMO_ENVIRONMENT = ENVIRONMENT === 'demo'
