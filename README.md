@@ -68,8 +68,13 @@ App runs at `http://localhost:5173`
 
 ## Environment Variables
 
-| `VITE_API_BASE_URL` | Backend API base URL |
-| `VITE_OAUTH_BASE_URL` | OAuth redirect base URL (production only) |
+| `VITE_API_BASE_URL` | Backend API base URL. Empty in the Docker builds, so the SPA uses relative URLs and the nginx in front decides where the backend is |
+| `VITE_OAUTH_BASE_URL` | Where the OAuth handshake starts. Set for `test.unseenservant.se` in `.env.test`, empty everywhere else |
+
+`npm run build:test` builds the bundle for `test.unseenservant.se`, the origin
+served by a Cloudflare Worker that proxies its API calls to staging. Tags, build
+config and that Worker are documented in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Docker image
 

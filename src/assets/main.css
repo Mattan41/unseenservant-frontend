@@ -47,8 +47,8 @@
    --------------------------------------------------------------------------
    The <html> element carries three INDEPENDENT axes:
 
-     data-env   — dev | prod        → environment signal ONLY. Drives the
-                                      environment banner; NO effect on colour.
+     data-env   — dev | staging |   → environment signal ONLY. Drives the
+                  prod | demo         environment banner; NO effect on colour.
      data-theme — forest | silver   → identity / brand palette (--primary-*).
      data-mode  — light | dark      → surface / neutral palette
                                       (--color-surface and, later, neutrals).
