@@ -52,6 +52,20 @@ axios.interceptors.response.use(
       error.handled = true
     }
 
+    // A throttle is neither a logout nor a server fault, so this sits before the
+    // >= 500 branch and must not touch auth. The body is deliberately not read:
+    // nginx answers a rate-limited request with an HTML error page, which
+    // extractErrorMessage would render verbatim. Sources are nginx's limit_req
+    // (see docs/DEPLOYMENT.md#rate-limiting) and the backend's login limiter.
+    if (error.response?.status === 429) {
+      const notificationStore = useNotificationStore()
+      notificationStore.addNotification(
+        'Too many requests. Please wait a moment and try again.',
+        'warning',
+      )
+      error.handled = true
+    }
+
     if (error.response?.status >= 500) {
       const notificationStore = useNotificationStore()
       notificationStore.addNotification(

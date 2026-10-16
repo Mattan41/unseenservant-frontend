@@ -137,6 +137,9 @@ before it redirects the token.
 (`app.upload.max-file-size`) and its 8 MB multipart limit, with room for the
 multipart envelope.
 
+Each location also carries the rate or concurrency limit described in
+*Rate limiting*; that section explains why the login endpoint has one of its own.
+
 ### Verifying a conf change
 
 Read back the URI Spring derives, before and after, on each host:
@@ -157,6 +160,102 @@ at `<host>/oauth-redirect?token=...` and `/api/auth/me` answers 200 afterwards.
 Applying it: on the Pi, `docker exec my-nginx nginx -t` first and then
 `docker compose up -d nginx` (or `nginx -s reload` inside the container) is
 enough; production follows the release.
+
+## Rate limiting
+
+Three layers, each where it is for a reason.
+
+| Layer | What it can see | What it does |
+|---|---|---|
+| Cloudflare, one rule on the `unseenservant.se` zone | the address, before the tunnel | blocks a coarse login flood before it costs the tunnel or the JVM anything. The free plan has **one** rule and a 10s counting period, so this is a throttle and not a strategy. |
+| nginx `limit_req` in `nginx/default.conf` | the address, before the JVM | the per-address brake: rejects before a request thread or a database connection exists. |
+| Backend `LoginAttemptLimiter` | the address **and the username** | the per-account brake, and the only layer that can see an account at all. |
+
+### Why the limiter is not keyed on `$remote_addr`
+
+Both hosts sit behind the tunnel: Cloudflare terminates TLS at the edge and
+`cloudflared` speaks plain HTTP to nginx from inside the compose network. So
+`$remote_addr` is the *tunnel*, identical for every visitor — a limiter keyed on
+it would read as one client and let a single abuser spend everyone's budget.
+
+The key is `CF-Connecting-IP`, which Cloudflare sets on the traffic it forwards
+to the origin. For the backend the equivalent is the **last** entry of
+`X-Forwarded-For`: nginx appends the address it saw with
+`$proxy_add_x_forwarded_for`, so everything before that comma is whatever the
+client sent.
+
+One path needs care: `test.unseenservant.se` and `dev.unseenservant.se` reach
+their backend through a Worker's same-zone subrequest, and Cloudflare documents
+that branch as "the value of `CF-Connecting-IP` reflects the value of
+`x-real-ip`". `worker/index.ts` forwards headers unchanged and never sets
+`x-real-ip`, so the visitor should survive it — verify per origin rather than
+assume (*Verifying the rate limits* below).
+
+### Keeping the key trustworthy
+
+`CF-Connecting-IP` only means something while the origin cannot be reached
+directly. Two things keep it that way:
+
+* the backend's published port stays bound to loopback (`"8090:8080"` →
+  `"127.0.0.1:8090:8080"`, or dropped — nginx reaches it over the compose
+  network). A direct hit on that port bypasses nginx *and* Cloudflare, which is
+  what would make every limit in this document optional for an attacker;
+* if the host's port 80 must stay reachable on the LAN, uncomment the two lines
+  in `nginx/default.conf`, with the subnet from
+  `docker network inspect <compose network>`:
+
+```nginx
+set_real_ip_from <cloudflared subnet>;
+real_ip_header CF-Connecting-IP;
+```
+
+That makes nginx ignore the header from any peer outside the tunnel's network, so
+a direct LAN client is counted by its own address instead of the one it claims.
+An unmatched subnet is not unsafe, just wrong in a specific way: real-IP
+resolution never fires, every visitor is counted as the tunnel, and the site is
+capped as a whole instead of per client.
+
+### The budgets
+
+| Location | Rule | Why |
+|---|---|---|
+| `= /api/auth/login` | `auth_zone`, 10r/m, burst 5 | the one endpoint where a request costs a BCrypt comparison. Sized off real use: a login, sometimes a typo or two. |
+| `/api/auth/`, `/api/` | `api_zone`, 30r/s, burst 60 | a flood ceiling, deliberately far above normal. The SPA fires several requests on boot and any of them may be a 5MB upload. |
+| `/oauth2/`, `/login/oauth2/` | `api_zone`, burst 20 | each handshake start mints an authorization request. |
+| `/images/` | `img_zone`, 50r/s, burst 100 | unauthenticated and read from disk, and a gallery is legitimately many requests at once. A rate rather than a `limit_conn`: connection limits count the *tunnel's* connections, and cloudflared carries every visitor over a few of them, so a per-visitor concurrency cap would measure nothing. |
+
+`limit_req_status 429` is not cosmetic: nginx answers 503 by default, and the SPA
+renders `>= 500` as "Something went wrong on the server", which would be untrue.
+`src/api/lib/axios.js` has a 429 branch with its own message and deliberately does
+not read the body, because nginx's 429 body is an HTML error page.
+
+The zones are active as committed. To observe before enforcing, add
+`limit_req_dry_run on;` beside `limit_req_status`, log `$limit_req_status` for a
+day, then remove it. Each layer is independent — disabling one leaves the others
+in place.
+
+### Verifying the rate limits
+
+```sh
+# The address each layer would key on. Log $http_cf_connecting_ip, $remote_addr
+# and $http_x_forwarded_for temporarily, hit each of the four origins from a
+# phone on mobile data, and read the origin's log. The Worker-fronted origins
+# must show the visitor, not cloudflared and not a Worker address.
+docker logs my-nginx --tail 20
+
+# The login budget from one address: answers, then 429 with Retry-After.
+for i in $(seq 1 12); do
+  curl -s -o /dev/null -w '%{http_code} ' -X POST https://unseenservant.se/api/auth/login \
+    -H 'Content-Type: application/json' -d '{"username":"nobody","password":"password123"}'
+done
+
+# Then confirm normal use is untouched: a page load on each origin, an image in
+# a campaign, and one image upload. If any of those is refused, raise api_zone
+# rather than removing it.
+```
+
+A conf change lands in this repository first and the host copies are then set to
+the same bytes, exactly as everywhere else in this document.
 
 ## Upstream re-resolution
 

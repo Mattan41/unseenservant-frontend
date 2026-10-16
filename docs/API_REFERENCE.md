@@ -10,6 +10,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Timeout**: 60 seconds.
 - **JWT Attachment**: Request interceptor reads auth_token from localStorage and attaches the Authorization Bearer token header.
 - **401 Handling**: Response interceptor detects 401 errors, shows a session expiration notification, and calls authStore.clearAuth to log out the user.
+- **429 Handling**: Response interceptor detects 429 — nginx's `limit_req` or the backend's login throttle — and shows a "Too many requests" warning. It deliberately leaves the session alone (a throttle is not a logout) and does not read the response body, because nginx answers 429 with an HTML error page. See docs/DEPLOYMENT.md#rate-limiting.
 
 ### src/api/apiClient.js — Dynamic API Wrapper
 

@@ -29,10 +29,16 @@ const handleSubmit = async () => {
     router.push({ name: 'home' })
   } catch (err) {
     console.error('Demo login failed:', err)
-    error.value =
-      err.response?.status === 401
-        ? 'Invalid username or password'
-        : 'Login failed. Please try again.'
+
+    if (err.response?.status === 401) {
+      error.value = 'Invalid username or password'
+    } else if (err.response?.status === 429) {
+      // Throttled, not rejected: retrying at once only spends another attempt.
+      // See docs/DEPLOYMENT.md#rate-limiting
+      error.value = 'Too many attempts. Please wait a moment and try again.'
+    } else {
+      error.value = 'Login failed. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }
