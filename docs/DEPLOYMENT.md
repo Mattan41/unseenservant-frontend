@@ -260,13 +260,20 @@ One committed env file per origin, and one build mode per file:
 
 | Origin | Env file | Build | `VITE_API_BASE_URL` | `VITE_OAUTH_BASE_URL` | `VITE_USER_NODE_ENV` |
 |---|---|---|---|---|---|
-| `test.unseenservant.se` | `.env.test` | `npm run build:test` | empty — same-origin through the Worker | `https://staging.unseenservant.se` | `staging` |
+| `test.unseenservant.se` | `.env.test` | `npm run build:test` | empty — same-origin through the Worker | `https://staging.unseenservant.se` | `test` |
 | `dev.unseenservant.se` | `.env.dev` | `npm run build:dev` | empty — same-origin through the Worker | `https://unseenservant.se` | `dev` |
 
 The empty API base is what keeps the SPA's requests relative, so the Worker decides
 where the backend lives; the OAuth base is where the handshake starts, because the
 Worker does not proxy it. `npm run dev` keeps reading `.env.development`: `--mode
 dev` loads `.env.dev`, which is a different file.
+
+`VITE_USER_NODE_ENV` names **where the bundle is served**, and it is what selects
+the environment banner's text (App.vue) and tone (main.css): `local` blue, `dev`
+green, `test` yellow, `staging` orange, `demo` violet, and `prod`, which draws no
+banner. No two origins may share a value — that is why the Pi is `staging` while
+the Worker in front of it is `test`, and why `.env.dev` is `dev` while
+`.env.development` is `local`.
 
 The origins' **Variables and secrets in Cloudflare are deliberately empty**,
 including in a Git-connected build. Cloudflare injects those into the build
@@ -278,7 +285,7 @@ the single source; to see which one won, read the attribute the app sets on the
 document in the browser console:
 
 ```js
-// 'staging' or 'dev' from the env file · 'prod' if neither ran
+// the env file's value: local | dev | test | staging | demo | prod
 document.documentElement.dataset.env
 ```
 

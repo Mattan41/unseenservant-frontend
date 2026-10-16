@@ -2,7 +2,7 @@
 /**
  * Inset callout with a semantic tone.
  *
- * The inline counterpart to the fixed banners (`.demo-notice`, `.env-banner`):
+ * The inline counterpart to the fixed banners (`.guest-notice`, `.env-banner`):
  * an optional short `title`, an optional leading tone icon and slot content.
  * Colours come from the `.info-box--{tone}` modifiers in `main.css`, so the tone
  * is a prop instead of per-call-site palette utilities.
