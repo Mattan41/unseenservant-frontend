@@ -197,7 +197,7 @@ const submitCharacter = async () => {
             Character Image
           </h5>
 
-          <div v-if="isGuestMode" class="demo-notice mb-3">
+          <div v-if="isGuestMode" class="guest-notice mb-3">
             ⚠️ Image upload is not supported in guest mode. A default image will be used.
           </div>
 

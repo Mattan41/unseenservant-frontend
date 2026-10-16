@@ -10,46 +10,49 @@ async function loadEnvironment(value) {
   return import('@/utils/environment.js')
 }
 
+/** One flag per environment value — the banner tone keys off exactly one. */
+const ENVIRONMENT_FLAGS = {
+  local: 'IS_LOCAL_ENVIRONMENT',
+  dev: 'IS_DEV_ENVIRONMENT',
+  test: 'IS_TEST_ENVIRONMENT',
+  staging: 'IS_STAGING_ENVIRONMENT',
+  demo: 'IS_DEMO_ENVIRONMENT',
+}
+
 afterEach(() => {
   vi.unstubAllEnvs()
 })
 
 describe('environment', () => {
-  it('treats staging as an environment of its own', async () => {
-    const environment = await loadEnvironment('staging')
-    expect(environment.ENVIRONMENT).toBe('staging')
-    expect(environment.IS_STAGING_ENVIRONMENT).toBe(true)
-    expect(environment.IS_DEV_ENVIRONMENT).toBe(false)
-    expect(environment.IS_DEMO_ENVIRONMENT).toBe(false)
+  it('gives every origin its own value, so no two share a banner tone', async () => {
+    for (const [value, flag] of Object.entries(ENVIRONMENT_FLAGS)) {
+      const environment = await loadEnvironment(value)
+      expect(environment.ENVIRONMENT).toBe(value)
+      expect(environment[flag]).toBe(true)
+
+      for (const other of Object.values(ENVIRONMENT_FLAGS)) {
+        if (other !== flag) expect(environment[other]).toBe(false)
+      }
+    }
   })
 
-  it('keeps dev and demo from being read as staging', async () => {
-    const dev = await loadEnvironment('dev')
-    expect(dev.IS_DEV_ENVIRONMENT).toBe(true)
-    expect(dev.IS_STAGING_ENVIRONMENT).toBe(false)
-
-    const demo = await loadEnvironment('demo')
-    expect(demo.IS_DEMO_ENVIRONMENT).toBe(true)
-    expect(demo.IS_STAGING_ENVIRONMENT).toBe(false)
-  })
-
-  it('falls back to dev when the value is missing', async () => {
+  it('falls back to local when the value is missing', async () => {
     const environment = await loadEnvironment('')
-    expect(environment.ENVIRONMENT).toBe('dev')
-    expect(environment.IS_DEV_ENVIRONMENT).toBe(true)
-    expect(environment.IS_STAGING_ENVIRONMENT).toBe(false)
+    expect(environment.ENVIRONMENT).toBe('local')
+    expect(environment.IS_LOCAL_ENVIRONMENT).toBe(true)
+    expect(environment.IS_DEV_ENVIRONMENT).toBe(false)
   })
 
   it('reports production as none of the non-production environments', async () => {
     const environment = await loadEnvironment('prod')
-    expect(environment.IS_DEV_ENVIRONMENT).toBe(false)
-    expect(environment.IS_STAGING_ENVIRONMENT).toBe(false)
-    expect(environment.IS_DEMO_ENVIRONMENT).toBe(false)
+    for (const flag of Object.values(ENVIRONMENT_FLAGS)) {
+      expect(environment[flag]).toBe(false)
+    }
   })
 
   it('writes the environment to <html data-env>', async () => {
-    const environment = await loadEnvironment('staging')
+    const environment = await loadEnvironment('test')
     environment.applyEnvironmentAttributes()
-    expect(document.documentElement.getAttribute('data-env')).toBe('staging')
+    expect(document.documentElement.getAttribute('data-env')).toBe('test')
   })
 })

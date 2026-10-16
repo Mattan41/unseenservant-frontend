@@ -5,22 +5,34 @@ import { ref } from 'vue'
  *
  * Three independent axes (the canonical model is documented in
  * src/assets/main.css):
- *   data-env   — 'dev' | 'staging' | 'prod' | 'demo' : environment signal
- *                (drives the banner only)
+ *   data-env   — 'local' | 'dev' | 'test' | 'staging' | 'prod' | 'demo'
+ *                : where this bundle is served. It selects the environment
+ *                  banner's text here and its colours in main.css
+ *                  (`html[data-env='X']` → --env-banner-*).
  *   data-theme — 'silver'        : identity / brand palette (forest alternative)
  *   data-mode  — 'light'         : surface / neutral palette (dark later)
  */
 
-/** Build environment, sourced from the Vite env (falls back to 'dev'). */
-export const ENVIRONMENT = import.meta.env.VITE_USER_NODE_ENV || 'dev'
+/** Build environment, sourced from the Vite env (falls back to 'local'). */
+export const ENVIRONMENT = import.meta.env.VITE_USER_NODE_ENV || 'local'
 
-/** True only for the development environment. */
-export const IS_DEV_ENVIRONMENT = ENVIRONMENT === 'dev'
+/** True only for a local dev server (`npm run dev`). */
+export const IS_LOCAL_ENVIRONMENT = ENVIRONMENT === 'local'
 
 /**
- * True only for the staging environment: the Raspberry Pi (the `:main` image)
- * and the Cloudflare Worker behind test.unseenservant.se. Its own value so the
- * banner can say "staging" rather than borrowing the development wording.
+ * True only for dev.unseenservant.se, the Cloudflare Worker that previews this
+ * frontend against production's backend. Its own value because that origin
+ * looks at real data, so the banner must not borrow the local wording.
+ */
+export const IS_DEV_ENVIRONMENT = ENVIRONMENT === 'dev'
+
+/** True only for test.unseenservant.se, the Worker that previews staging. */
+export const IS_TEST_ENVIRONMENT = ENVIRONMENT === 'test'
+
+/**
+ * True only for staging.unseenservant.se: the Raspberry Pi (the `:main` image).
+ * Its own value so the banner can say "staging" rather than borrowing another
+ * environment's wording.
  */
 export const IS_STAGING_ENVIRONMENT = ENVIRONMENT === 'staging'
 

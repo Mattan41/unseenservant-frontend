@@ -28,7 +28,7 @@ const exitGuestMode = () => {
 <template>
   <header class="header-footer-bg p-4 text-center">
     <!-- Guest Mode Banner -->
-    <div v-if="authStore.isGuest" class="demo-notice mb-4 flex items-center justify-center gap-2">
+    <div v-if="authStore.isGuest" class="guest-notice mb-4 flex items-center justify-center gap-2">
       <span>You are in demo mode — changes will not be saved</span>
       <button @click="exitGuestMode" class="header-nav-link py-2">
         <span class="font-medium">Exit demo mode</span>

@@ -1,5 +1,7 @@
 {
-  // Cloudflare Worker that serves test.unseenservant.se.
+  // Cloudflare Worker that serves test.unseenservant.se, and - through
+  // wrangler.dev.jsonc, which carries this same script with different vars -
+  // dev.unseenservant.se. Both front one environment's nginx from the edge.
   //
   // Deploy: `npm run build:test && npx wrangler deploy` — the assets come from
   // the Vite build in ./dist. See docs/DEPLOYMENT.md for the full picture.
@@ -12,9 +14,19 @@
   // Bump deliberately, after reading the compatibility notes. Workers Assets
   // and the array form of run_worker_first both need a recent enough date; if
   // `wrangler deploy` wants a newer one it names the value it needs.
+  // Keep in step with wrangler.dev.jsonc.
   "compatibility_date": "2025-04-01",
 
   "main": "./worker/index.ts",
+
+  // Runtime bindings, not build-time values: Cloudflare does not inject these
+  // into the Vite build, and they deliberately avoid the VITE_ prefix so they
+  // cannot be picked up as one. See "Variables and secrets" in
+  // docs/DEPLOYMENT.md.
+  "vars": {
+    "UPSTREAM_HOST": "staging.unseenservant.se",
+    "PUBLIC_HOST": "test.unseenservant.se"
+  },
 
   "assets": {
     "directory": "./dist/",

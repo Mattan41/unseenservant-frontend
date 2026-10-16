@@ -47,14 +47,21 @@
    --------------------------------------------------------------------------
    The <html> element carries three INDEPENDENT axes:
 
-     data-env   — dev | staging |   → environment signal ONLY. Drives the
-                  prod | demo         environment banner; NO effect on colour.
+     data-env   — local | dev |    → environment signal. Drives the environment
+                   test | staging |   banner's text (App.vue) and its colours
+                   prod | demo        (the --env-banner-* roles below). No other
+                                      effect on colour.
      data-theme — forest | silver   → identity / brand palette (--primary-*).
      data-mode  — light | dark      → surface / neutral palette
                                       (--color-surface and, later, neutrals).
 
+   data-env names WHERE the bundle is being served: `local` for `npm run dev`,
+   `dev` for dev.unseenservant.se, `test` for test.unseenservant.se, `staging`
+   for staging.unseenservant.se (the Raspberry Pi, the `:main` image), `demo`
+   for `npm run demo`, and `prod` for production — which draws no banner.
+
    Rendered together, e.g.:
-     <html data-env="dev" data-theme="forest" data-mode="light">
+     <html data-env="local" data-theme="forest" data-mode="light">
 
    WHERE TO ADD THINGS
      • A new semantic role variable → the `:root` role layer below.
@@ -66,6 +73,9 @@
        later) and point the runtime (src/utils/environment.js) at it.
      • A new mode (e.g. dark)       → add `[data-mode='dark']` variants and
        wire data-mode to prefers-color-scheme in environment.js (future pass).
+     • A new environment            → add its `html[data-env='X']` tone in the
+       ENVIRONMENT BANNER section below, a message in App.vue, and the value
+       to src/utils/environment.js.
 
    Active default: silver · light. forest · light is retained as an
    alternative (add a switcher later to make it reachable). Dark mode is a
@@ -78,7 +88,13 @@
    layer below so each theme can set its own value.
    -------------------------------------------------------------------------- */
 :root {
-  /* no theme-agnostic role variables yet */
+  /* Environment banner fallback — neutral, so a banner on an environment
+     without a tone of its own is visible rather than transparent. Each
+     `html[data-env='X']` block near the ENVIRONMENT BANNER section overrides
+     these three. */
+  --env-banner-surface: var(--color-third-100);
+  --env-banner-border: var(--color-third-400);
+  --env-banner-text: var(--color-third-900);
 }
 
 /* --------------------------------------------------------------------------
@@ -277,13 +293,16 @@ html[data-theme='silver'][data-mode='light'] {
   @apply border-secondary-400;
 }
 
-/* Guest/demo mode notice banner */
-.demo-notice {
-  @apply bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded;
+/* Guest-session notice — the strip in `HeaderComponent.vue` plus the inline
+   "image upload is not supported in guest mode" warnings. One fixed colour,
+   independent of `data-env`: it marks the guest session, not the origin, so it
+   can sit under any environment banner. Cyan is used by nothing else. */
+.guest-notice {
+  @apply bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs px-3 py-2 rounded;
 }
 
 /* Callout / info box (`BaseInfoBox.vue`) — an inset notice with a semantic
-   tone. Unlike `.demo-notice` and `.env-banner` (fixed one-off banners), this
+   tone. Unlike `.guest-notice` and `.env-banner` (fixed one-off banners), this
    is a reusable component API, so each tone is a modifier of `.info-box`. */
 .info-box {
   @apply flex items-start gap-2 rounded-md border px-3 py-2 text-sm;
@@ -313,11 +332,49 @@ html[data-theme='silver'][data-mode='light'] {
   @apply font-semibold;
 }
 
-/* Environment banner (EnvBanner.vue) — one line, ~32px, amber.
-   A semantic role so it can be re-themed for dark mode later without touching
-   templates. Shown for dev and demo environments only. */
+/* Environment banner (EnvBanner.vue) — one line, ~32px.
+   Colour is a role, not a palette shade: each environment sets its tone in the
+   `html[data-env='X']` blocks that follow, so this stays a single rule. The
+   text comes from App.vue, and production draws no banner at all. */
 .env-banner {
-  @apply bg-secondary-100 border-b border-secondary-400 text-secondary-900 text-xs font-medium text-center px-3 py-2;
+  background-color: var(--env-banner-surface);
+  border-bottom: 1px solid var(--env-banner-border);
+  color: var(--env-banner-text);
+  @apply text-xs font-medium text-center px-3 py-2;
+}
+
+/* One tone per environment (see THEME / MODE / ENVIRONMENT MODEL at the top).
+   The four non-production origins are deliberately four different hues, because
+   two of them look at real data: local = blue, dev = green (production data!),
+   test = yellow (staging data), staging = orange (the Pi), demo = violet. */
+html[data-env='local'] {
+  --env-banner-surface: var(--color-blue-100);
+  --env-banner-border: var(--color-blue-400);
+  --env-banner-text: var(--color-blue-900);
+}
+
+html[data-env='dev'] {
+  --env-banner-surface: var(--color-green-100);
+  --env-banner-border: var(--color-green-400);
+  --env-banner-text: var(--color-green-900);
+}
+
+html[data-env='test'] {
+  --env-banner-surface: var(--color-yellow-100);
+  --env-banner-border: var(--color-yellow-400);
+  --env-banner-text: var(--color-yellow-900);
+}
+
+html[data-env='staging'] {
+  --env-banner-surface: var(--color-orange-100);
+  --env-banner-border: var(--color-orange-400);
+  --env-banner-text: var(--color-orange-900);
+}
+
+html[data-env='demo'] {
+  --env-banner-surface: var(--color-violet-100);
+  --env-banner-border: var(--color-violet-400);
+  --env-banner-text: var(--color-violet-900);
 }
 
 /* Primary section wrapper */

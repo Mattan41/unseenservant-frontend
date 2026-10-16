@@ -15,8 +15,9 @@
 Set on `<html data-theme="silver" data-mode="light">`. Source:
 `src/assets/main.css`. Values live in the **palette layer**
 (`html[data-theme='silver'][data-mode='light']`); the active theme/mode is
-applied at runtime by `src/utils/environment.js`. `data-env` **no longer
-affects colour** — it only drives the environment banner.
+applied at runtime by `src/utils/environment.js`. `data-env` does **not** touch
+these palettes: the only colours it drives are the environment banner's own
+`--env-banner-*` roles (§1.4 and §2).
 
 | Token | silver · light (active default) | forest · light (alternative) | Status |
 |-------|---------------------------------|------------------------------|--------|
@@ -38,8 +39,8 @@ active theme's `--primary-500` value via the `@theme` block.
 forest is retained but **not reachable** from the running app until a theme
 switcher lands.
 
-> **Three-axis model.** `<html>` carries `data-env` (dev|staging|prod|demo —
-> banner only),
+> **Three-axis model.** `<html>` carries `data-env`
+> (local|dev|test|staging|prod|demo — banner text and tone only),
 > `data-theme` (silver|forest — identity palette) and `data-mode`
 > (light|dark — surface/neutral palette). The canonical explanation and the
 > "where to add things" guide live in the header comment of the palette
@@ -70,6 +71,9 @@ per theme/mode in the `html[data-theme][data-mode]` palette blocks.
 | `--color-surface` | `#ffffff` / `#d8e7dd` | Card/modals/form backgrounds — used in 10+ components. **Per-theme role** (set in each `html[data-theme][data-mode]` block, not `:root`): `#ffffff` (silver), `#d8e7dd` (forest). A dark-mode value is TBD in the dark-mode pass. | implemented |
 | `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
 | `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
+| `--env-banner-surface` | `var(--color-third-100)` | Environment banner background. The neutral fallback sits in `:root`; each `html[data-env='X']` block next to `.env-banner` overrides it — `local` blue, `dev` green, `test` yellow, `staging` orange, `demo` violet. Production draws no banner, so it has no tone. | implemented |
+| `--env-banner-border` | `var(--color-third-400)` | Environment banner bottom border — same per-environment overrides. | implemented |
+| `--env-banner-text` | `var(--color-third-900)` | Environment banner text colour — same per-environment overrides. | implemented |
 ---
 
 ## 2. Semantic Classes
@@ -108,7 +112,7 @@ Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
 | `"demo"` | `base-btn base-btn-demo` | implemented |
 | `"form"` | `base-btn base-btn-form` | implemented |
 
-- `"demo"` — guest/demo mode button. Yellow palette (`bg-yellow-100 border-yellow-400 text-yellow-800 hover:bg-yellow-200 focus:ring-yellow-300`). Distinct from `.demo-notice`, which is a banner, not a button.
+- `"demo"` — guest-session button ("Guest Demo mode" on the login card). Cyan palette (`bg-cyan-100 border-cyan-400 text-cyan-800 hover:bg-cyan-200 focus:ring-cyan-300`) — the same tone as `.guest-notice`, so starting guest mode and being in it read as one thing, and the tone no longer doubles as the `test` environment banner's colour. Distinct from `.guest-notice` itself, which is a banner, not a button.
 - `"form"` — larger primary call-to-action button for form submissions. Lighter shade (`bg-primary-500`) than `.base-btn-default` (`primary-700`) — a distinct variant, not an inconsistency. `w-64 h-10` sizing stays as layout utilities in the template.
 
 Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
@@ -254,8 +258,8 @@ identity (name, system, image).
 | Class | Purpose | Replaces | Status |
 |-------|---------|----------|--------|
 | `.spinner` | Loading spinner | `inline-block animate-spin rounded-full h-8 w-8 border-2 border-primary-500 border-t-transparent` (11 sites) | implemented |
-| `.demo-notice` | Guest mode warning banner | `bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-3 py-2 rounded` (4 sites) | proposed |
-| `.env-banner` | Environment banner (dev/demo) shown above the header | `bg-secondary-100 border-b border-secondary-400 text-secondary-900 text-xs font-medium text-center px-3 py-2` (`EnvBanner.vue`) | implemented |
+| `.guest-notice` | Guest-session notice — the header strip plus the two inline "image upload is not supported in guest mode" warnings | `bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs px-3 py-2 rounded` (3 sites). Fixed tone, independent of `data-env`, so it can sit under any environment banner | implemented |
+| `.env-banner` | Environment banner shown above the header — one tone per `data-env` value | `background-color` / `border-bottom` / `color` from the `--env-banner-*` roles plus `text-xs font-medium text-center px-3 py-2` (`EnvBanner.vue`) | implemented |
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |

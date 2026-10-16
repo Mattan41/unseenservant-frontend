@@ -152,7 +152,7 @@ useUnsavedChanges(
     <div class="space-y-3">
       <label class="block text-sm font-medium text-default mb-1">Campaign Image</label>
 
-      <div v-if="isGuestMode" class="demo-notice">
+      <div v-if="isGuestMode" class="guest-notice">
         ⚠️ Image upload is not supported in guest mode. A default image will be used.
       </div>
 

@@ -8,7 +8,9 @@ import EnvBanner from '@/components/EnvBanner.vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import {
+  IS_LOCAL_ENVIRONMENT,
   IS_DEV_ENVIRONMENT,
+  IS_TEST_ENVIRONMENT,
   IS_STAGING_ENVIRONMENT,
   IS_DEMO_ENVIRONMENT,
 } from '@/utils/environment.js'
@@ -16,9 +18,17 @@ import {
 const authStore = useAuthStore()
 const userStore = useUserStore()
 
-// Environment banner message (dev + staging + demo; empty string hides it).
+/**
+ * Environment banner message: one line per environment, empty string in
+ * production, which draws no banner. The colours are not decided here — they
+ * come from the `html[data-env='X']` tones + `.env-banner` in main.css.
+ */
 function getEnvBannerText() {
-  if (IS_DEV_ENVIRONMENT) return 'Development environment — data may be reset.'
+  if (IS_LOCAL_ENVIRONMENT) return 'Local development environment — data may be reset.'
+  if (IS_DEV_ENVIRONMENT) {
+    return 'Development preview — runs against production, changes are real.'
+  }
+  if (IS_TEST_ENVIRONMENT) return 'Test environment — runs against staging data.'
   if (IS_STAGING_ENVIRONMENT) {
     return 'Staging environment — test data only, and it may be reset.'
   }

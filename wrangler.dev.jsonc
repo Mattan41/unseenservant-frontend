@@ -1,0 +1,47 @@
+{
+  // Cloudflare Worker that serves dev.unseenservant.se: this frontend against
+  // production's backend.
+  //
+  // Deploy: `npm run build:dev && npx wrangler deploy --config wrangler.dev.jsonc`
+  // — the assets come from the Vite build in ./dist. See docs/DEPLOYMENT.md.
+  //
+  // Two config files, one script: worker/index.ts reads the upstream from the
+  // vars below, so this file and wrangler.jsonc differ only in Worker name,
+  // vars, and which build mode produced ./dist.
+  //
+  // Must match the Cloudflare project that owns the domain (Workers & Pages >
+  // unseenservant-frontend-dev): a mismatch deploys a second Worker and leaves
+  // the configured one empty.
+  "name": "unseenservant-frontend-dev",
+
+  // Keep in step with wrangler.jsonc. Bump both after reading the compatibility
+  // notes; if `wrangler deploy` wants a newer date it names the value it needs.
+  "compatibility_date": "2025-04-01",
+
+  "main": "./worker/index.ts",
+
+  // Runtime bindings, not build-time values: Cloudflare does not inject these
+  // into the Vite build, and they deliberately avoid the VITE_ prefix so they
+  // cannot be picked up as one. See "Variables and secrets" in
+  // docs/DEPLOYMENT.md.
+  "vars": {
+    "UPSTREAM_HOST": "unseenservant.se",
+    "PUBLIC_HOST": "dev.unseenservant.se"
+  },
+
+  "assets": {
+    "directory": "./dist/",
+
+    // Vue Router uses history mode, so a path that matches no asset has to
+    // return index.html rather than a 404.
+    "not_found_handling": "single-page-application",
+
+    // Bound as env.ASSETS in worker/index.ts.
+    "binding": "ASSETS",
+
+    // Asset-first by default; only these reach the Worker script. The two
+    // lists — here and PROXY_PREFIXES in worker/index.ts — describe the same
+    // set of paths, so change both or neither.
+    "run_worker_first": ["/api/*", "/images/*"]
+  }
+}
