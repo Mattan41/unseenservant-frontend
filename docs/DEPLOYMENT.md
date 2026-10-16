@@ -1,9 +1,12 @@
 # Deployment - unseenservant-frontend
 
-Two environments run this image, and a third mode runs with no backend at all.
-The host-side runbook lives in the infrastructure repository
-(`Mattan41/projects-notes`: `unseen-servant/README.md` for the runbook and
-`unseen-servant/infra/` for the compose files and the host-side nginx copies).
+Two environments run this image (production on the OptiPlex, staging on the
+Raspberry Pi 5), two origins are served from Cloudflare's edge by a Worker
+(`test.unseenservant.se` in front of staging, `dev.unseenservant.se` in front of
+production), and a third mode runs with no backend at all. The host-side runbook
+lives in the infrastructure repository (`Mattan41/projects-notes`:
+`unseen-servant/README.md` for the runbook and `unseen-servant/infra/` for the
+compose files and the host-side nginx copies).
 
 ## Images and tags
 
@@ -155,60 +158,96 @@ Applying it: on the Pi, `docker exec my-nginx nginx -t` first and then
 `docker compose up -d nginx` (or `nginx -s reload` inside the container) is
 enough; production follows the release.
 
-## Known gap: a recreated backend needs an nginx restart
+## Upstream re-resolution
 
-nginx resolves a `proxy_pass` hostname once, at startup, and keeps that address for
-the worker's lifetime. When watchtower recreates the backend container (new IP)
-without recreating nginx, the site answers 502 until nginx is restarted. Neither
-host has a `resolver` directive, so the workaround is `docker restart my-nginx`
-after a release on production, and the same restart after a manual `:main` pull on
-the Pi.
+nginx resolves a literal `proxy_pass` hostname once, at startup, and keeps that
+address for the worker's lifetime. So when watchtower (production) or a manual
+pull on the Pi recreates the backend container on a new IP, the site answers 502
+until nginx is restarted — and if the backend does not exist yet when nginx
+starts, nginx refuses to start at all:
 
-The fix is a `resolver 127.0.0.11 valid=5s ipv6=off;` directive plus a variable
-upstream — `set $upstream backend:8080;` and `proxy_pass http://$upstream;` — in
-each proxying location. The variable form is required: nginx caches a literal
-hostname regardless. Two traps: a request can still fail for one `valid` window
-after the upstream moves, and no URI may sit next to the variable, because nginx
-then sends that URI verbatim for every request (`proxy_pass http://$upstream/api/`
-would collapse every path to `/api/`).
+```
+[emerg] host not found in upstream "backend" in /etc/nginx/conf.d/default.conf:31
+```
 
-This is deliberately not applied here yet. It is a task of its own, to be tried on
-the staging host before production, and until it lands the restart stays part of
-the release routine. Measured locally on the shape above: the variable form
-recovered without an nginx restart, the literal form stayed broken indefinitely
-while the backend was demonstrably alive at its new address.
+`nginx/default.conf` therefore uses the variable form, which asks Docker's
+embedded DNS for the address again every `valid` window:
 
-## test.unseenservant.se — a Cloudflare Worker in front of staging
+```nginx
+resolver 127.0.0.11 valid=5s ipv6=off;
+set $upstream backend:8080;
 
-A third origin, deliberately light: Workers Assets serves the SPA from the edge,
-and the Worker script relays only the paths that need a backend to the staging
-box on the Raspberry Pi.
+location /api/ {
+    proxy_pass http://$upstream;
+}
+```
+
+* `resolver 127.0.0.11` is Docker's embedded DNS: correct inside these compose
+  networks, meaningless outside them.
+* The variable is what makes re-resolution happen — a literal hostname is cached
+  regardless of any `resolver` directive.
+* **No URI may sit next to the variable.** With `proxy_pass http://$upstream/api/`
+  nginx would send that URI verbatim for *every* request, collapsing every path to
+  `/api/`. `proxy_pass http://$upstream;` (no URI part) passes the original request
+  URI through unchanged, which is what these four locations want, since their
+  prefixes are identical on both sides.
+* A request can still fail for one `valid` window right after the upstream moves.
+
+Measured locally against this exact file — two nginx containers on one network,
+the upstream recreated on a different IP:
+
+| | path and query | upstream recreated on a new IP | started while the backend was missing |
+|---|---|---|---|
+| literal `proxy_pass` | passed through | stopped answering and never recovered | `[emerg]`, container exited |
+| `resolver` + variable | identical | recovered, no nginx restart | started, answered 502, served once the backend appeared |
+
+The `Host` and `X-Forwarded-*` headers are unaffected: they are still set
+explicitly at server level, and the upstream sees the same URI it saw before.
+
+What this does not fix: the upstream being down (that is a 502 by definition) and
+Docker's DNS being unavailable. On a host, verify after recreating the backend —
+`curl -sI https://<host>/api/auth/me` must answer 401 within a few seconds, with
+no `docker restart my-nginx`.
+
+`depends_on: backend` in both compose files is still worth keeping: it orders
+startup, it is not what makes re-resolution work.
+
+## The Cloudflare Workers: test and dev
+
+Two origins, deliberately light: Workers Assets serves the SPA from the edge, and
+one shared Worker script relays only the paths that need a backend to that
+environment's nginx.
 
 | | Served by | Backend |
 |---|---|---|
 | `unseenservant.se` | nginx in this image (OptiPlex) | `backend:8080` in the same compose |
 | `staging.unseenservant.se` | the same image (Pi), host-mounted `nginx.conf` | `backend:8080` in the same compose |
-| `test.unseenservant.se` | `wrangler` + Workers Assets | proxied to `https://staging.unseenservant.se` |
+| `test.unseenservant.se` | `wrangler` + Workers Assets, `unseenservant-frontend-staging` | proxied to `https://staging.unseenservant.se` |
+| `dev.unseenservant.se` | `wrangler` + Workers Assets, `unseenservant-frontend-dev` | proxied to `https://unseenservant.se` |
 
-The test origin has its own `localStorage` and can carry its own Cloudflare
-Access policy, so it never shares a session with staging.
+One script, two Workers: `worker/index.ts` is shared, and `wrangler.jsonc` /
+`wrangler.dev.jsonc` differ only in `name`, `vars` (`UPSTREAM_HOST`,
+`PUBLIC_HOST`) and which build mode produced `./dist`. Each origin has its own
+`localStorage` and can carry its own Cloudflare Access policy, so no two origins
+share a session.
 
 ### Routing
 
-`wrangler.jsonc` hands `assets.run_worker_first` the two prefixes that must reach
-the Worker (`/api/*`, `/images/*`); every other request is asset-first, and a
-path matching no asset returns `index.html` (`not_found_handling:
-"single-page-application"`), which is what Vue Router's history mode needs.
+`assets.run_worker_first` in each wrangler config hands the Worker the two prefixes
+that must reach a backend (`/api/*`, `/images/*`); every other request is
+asset-first, and a path matching no asset returns `index.html`
+(`not_found_handling: "single-page-application"`), which is what Vue Router's
+history mode needs.
 
 `/oauth2/*`, `/login/oauth2/*` and `/logout` are **not** on that list, and that is
-deliberate. The handshake runs on staging: the SPA sends `oauth-init` to
-`VITE_OAUTH_BASE_URL`, staging sets its redirect-origin cookie there and sends the
-browser back to this origin, which staging permits because
-`https://test.unseenservant.se` is in its `ALLOWED_ORIGINS`. Relaying the
-handshake through the Worker instead would need a `test.unseenservant.se` redirect
-URI registered at Google **and** GitHub, and manual handling of the 3xx responses
-in the Worker instead of letting `fetch` follow them. (A third obstacle used to be
-staging's nginx overwriting `X-Forwarded-Host` with `$http_host` on those two
+deliberate. Each Worker leaves the handshake to the environment it fronts: the SPA
+sends `oauth-init` to `VITE_OAUTH_BASE_URL` (staging for test, production for dev),
+that backend sets its redirect-origin cookie there and sends the browser back to
+this origin, which it permits because the origin is in its `ALLOWED_ORIGINS`.
+Relaying the handshake through the Worker instead would need this origin's
+redirect URI registered at Google **and** GitHub, and manual handling of the 3xx
+responses in the Worker instead of letting `fetch` follow them. (A third obstacle
+used to be nginx overwriting `X-Forwarded-Host` with `$http_host` on those two
 locations; the reconciled config passes a Worker's value through, so only the
 registration and the 3xx handling remain.) `/logout` is a client-side route (the
 store only clears `localStorage`), so serving `index.html` for it is correct — and
@@ -217,74 +256,88 @@ removed.
 
 ### Configuration is build-time here too
 
-`.env.test` holds this origin's values and `npm run build:test` bakes them in:
-`VITE_OAUTH_BASE_URL` points at staging, `VITE_API_BASE_URL` stays empty
-(same-origin through the Worker), and `VITE_USER_NODE_ENV=staging` renders the
-"Staging environment" banner so this origin can never be mistaken for
-production.
+One committed env file per origin, and one build mode per file:
 
-The Worker's **Variables and secrets are deliberately empty**, including in a
-Git-connected build. Cloudflare injects those into the build environment as well,
-and a variable that already exists when Vite runs beats every `.env` file — so a
-leftover there is an invisible override rather than a visible error. A
-`VITE_USER_NODE_ENV=env` silently drops the banner, and a stale
-`VITE_API_BASE_URL` quietly bypasses the Worker's proxy. `.env.test` is the
-single source; to see which one won, read the attribute the app sets on the
+| Origin | Env file | Build | `VITE_API_BASE_URL` | `VITE_OAUTH_BASE_URL` | `VITE_USER_NODE_ENV` |
+|---|---|---|---|---|---|
+| `test.unseenservant.se` | `.env.test` | `npm run build:test` | empty — same-origin through the Worker | `https://staging.unseenservant.se` | `staging` |
+| `dev.unseenservant.se` | `.env.dev` | `npm run build:dev` | empty — same-origin through the Worker | `https://unseenservant.se` | `dev` |
+
+The empty API base is what keeps the SPA's requests relative, so the Worker decides
+where the backend lives; the OAuth base is where the handshake starts, because the
+Worker does not proxy it. `npm run dev` keeps reading `.env.development`: `--mode
+dev` loads `.env.dev`, which is a different file.
+
+The origins' **Variables and secrets in Cloudflare are deliberately empty**,
+including in a Git-connected build. Cloudflare injects those into the build
+environment as well, and a variable that already exists when Vite runs beats every
+`.env` file — so a leftover there is an invisible override rather than a visible
+error. A `VITE_USER_NODE_ENV=env` silently drops the banner, and a stale
+`VITE_API_BASE_URL` quietly bypasses the Worker's proxy. The committed env file is
+the single source; to see which one won, read the attribute the app sets on the
 document in the browser console:
 
 ```js
-document.documentElement.dataset.env // 'dev' from .env.test · 'prod' if neither ran
+// 'staging' or 'dev' from the env file · 'prod' if neither ran
+document.documentElement.dataset.env
 ```
 
-Runtime variables are worse than useless here: an already-built bundle cannot be
-reconfigured, which is why the deploy is `npm run build:test && npx wrangler
-deploy` and never `wrangler deploy` on its own.
+Each Worker's own runtime values are a different thing and *do* live in the
+repository: `UPSTREAM_HOST` and `PUBLIC_HOST` are `vars` in `wrangler.jsonc` /
+`wrangler.dev.jsonc`. They are deployment settings of the Worker, not build
+inputs, and they deliberately avoid the `VITE_` prefix so they cannot be mistaken
+for one.
 
-### Why the test build deletes `_redirects`
+Runtime *build* variables are worse than useless here: an already-built bundle
+cannot be reconfigured, which is why the deploy is always
+`npm run build:<mode> && npx wrangler deploy …` and never `wrangler deploy` on its
+own.
 
-`public/_redirects` belongs to the Cloudflare **Pages** deployment on
-`dev.unseenservant.se`. Pages accepts absolute 200-proxy rules, which is exactly
-what Workers Assets rejects.
+### `public/_redirects` is gone
 
-Workers Assets rejects exactly that. Deploying with the file in `dist/` fails with
+The file belonged to the Cloudflare **Pages** deployment on
+`dev.unseenservant.se`, which this repository no longer uses — that origin is now
+the `unseenservant-frontend-dev` Worker, configured by `.env.dev` instead of
+variables in the Cloudflare project. Two reasons it had to go:
 
-```
-Invalid _redirects configuration:
-Line 2: Proxy (200) redirects can only point to relative paths. Got https://unseenservant.se/api/:splat
-```
+* Workers Assets rejects absolute 200-proxy rules, which is what the file was for:
+  deploying with it in `dist/` fails with `Proxy (200) redirects can only point to
+  relative paths`;
+* the Worker needs no redirect rules at all — `run_worker_first` covers `/api/*`
+  and `/images/*`, and `not_found_handling: single-page-application` covers the SPA
+  routes.
 
-so `npm run build:test` ends with `rm -f dist/_redirects`. The Worker needs no
-redirect rules at all: `run_worker_first` handles `/api/*` and `/images/*`, and
-`not_found_handling: single-page-application` covers the SPA routes.
+So `build:test` and `build:dev` are plain `vite build --mode …`, with no
+`rm -f dist/_redirects` afterwards.
 
-The Pages deployment does **not** use this file either. Measured on 2026-10-16,
-the bundle `dev.unseenservant.se` serves has absolute production URLs baked in
-(`https://unseenservant.se` as both the axios base and the OAuth base) plus the
-`dev` banner, so that build was configured by variables on the Cloudflare project
-— not by this repository's `npm run build`, which would have left both values
-empty — and `/api/*`, `/images/*` and `/oauth2/*` on that origin answer
-`index.html`, i.e. the rules are not in effect there. So dev's configuration lives
-outside the repository (the hazard the Worker's *Variables and secrets* paragraph
-warns about), and no `/api/*` or `/images/*` rule is doing anything for anyone.
-
-Consolidating that origin onto the `test` shape (a Worker, a committed `.env.dev`,
-an empty API base) would retire `public/_redirects` and that `rm -f` together.
-Until then both stay: a Pages deployment that *did* apply the file needs the
-`/api/*` rule for the SPA's own calls and the `/oauth2/*` and `/login/oauth2/*`
-rules for the handshake, which an empty `VITE_OAUTH_BASE_URL` sends to its own
-origin.
+The measured history is worth keeping in mind before adding such a file back: the
+Pages deployment never applied those rules, and its bundle carried absolute
+production URLs taken from the Cloudflare project — the configuration lived
+outside the repository, which is exactly what a committed env file prevents.
 
 ### Deploy
 
 ```sh
+# test.unseenservant.se -> staging
 npm ci
 npm run build:test
 npx wrangler deploy
+
+# dev.unseenservant.se -> production
+npm ci
+npm run build:dev
+npx wrangler deploy --config wrangler.dev.jsonc
 ```
 
-The same two commands work as a Cloudflare Workers Build (build command
-`npm run build:test`, deploy command `npx wrangler deploy`). Either way the values
-come from `.env.test` in the repository.
+Both work as Cloudflare Workers Builds, one Cloudflare project per Worker:
+
+| Cloudflare project | Build command | Deploy command | Preview command |
+|---|---|---|---|
+| `unseenservant-frontend-staging` | `npm run build:test` | `npx wrangler deploy` | default (`npx wrangler versions upload`) |
+| `unseenservant-frontend-dev` | `npm run build:dev` | `npx wrangler deploy --config wrangler.dev.jsonc` | `npx wrangler versions upload --config wrangler.dev.jsonc` |
+
+The dev project's preview command has to name its config: the default would read
+`wrangler.jsonc` and upload a *staging* version.
 
 Both of Cloudflare's defaults need no extra configuration: `wrangler deploy`
 publishes the version so the custom domain serves it, while
@@ -292,26 +345,26 @@ publishes the version so the custom domain serves it, while
 
 Do **not** reach for `npx wrangler preview` to get a preview. It is an open beta
 command from the newer Previews feature, it fails with "Your Wrangler
-configuration is missing a `previews` block" unless `wrangler.jsonc` carries one,
-and a Preview is a separate environment — so it does not update what
-`test.unseenservant.se` serves. Pick deliberately:
+configuration is missing a `previews` block" unless the config carries one, and a
+Preview is a separate environment — so it does not update what the origin serves.
+Pick deliberately:
 
 | Goal | Setting |
 |---|---|
-| `test.unseenservant.se` always serves the latest build of this branch | Deploy command `npx wrangler deploy` |
-| Branch builds only produce a throwaway preview URL | Preview command `npx wrangler versions upload` |
-| Per-build Previews with their own configuration (beta) | add `"previews": {}` to `wrangler.jsonc`, use `npx wrangler preview`, and route `test.unseenservant.se` at whatever should track it |
+| the origin always serves the latest build of `main` | Deploy command `npx wrangler deploy` (`--config wrangler.dev.jsonc` for dev) |
+| branch builds only produce a throwaway preview URL | Preview command `npx wrangler versions upload` (same `--config` rule) |
+| Per-build Previews with their own configuration (beta) | add `"previews": {}` to the config, use `npx wrangler preview`, and route the origin at whatever should track it |
 
-This project deliberately uses **no** Previews: the preview command stays at its
-default and `wrangler.jsonc` carries no `previews` block, so nothing in the build
-depends on a beta feature. `test.unseenservant.se` is served by whatever the
-deploy command publishes.
+Neither Worker uses Previews: the preview commands stay at their GA defaults and
+neither config carries a `previews` block, so nothing in the build depends on a
+beta feature. Each origin is served by whatever its deploy command publishes.
 
-The Cloudflare project's **production branch is `main`**, so only merges there run
-`npx wrangler deploy` and publish `test.unseenservant.se`. Every other branch runs
-the *preview* command instead — which is why a feature-branch push can show a
-successful build and a failed deploy: that command has to stay at its GA default
-(`npx wrangler versions upload`), not `npx wrangler preview`.
+Both Cloudflare projects' **production branch is `main`**, so only merges there run
+their deploy command and publish the origin. Every other branch runs the *preview*
+command instead — which is why a feature-branch push can show a successful build
+and a failed deploy: those commands have to stay at their GA defaults
+(`npx wrangler versions upload`, plus `--config wrangler.dev.jsonc` for dev), not
+`npx wrangler preview`.
 
 `wrangler` is deliberately **not** a dependency: `npx` fetches it at deploy time.
 Pinning it is a change of its own, and the cheaper form is to pin it in the deploy
@@ -322,29 +375,42 @@ under CI and the Docker build. Either way it never reaches the published image:
 the Dockerfile is a multi-stage build whose final stage is `nginx:alpine` plus
 the built `dist/`.
 
-Then add `test.unseenservant.se` as a custom domain or route for the
-`unseenservant-frontend-staging` Worker — the `name` in `wrangler.jsonc` has to
-match it, or a deploy lands on a second Worker and leaves the configured one
-empty — and give the origin an Access policy if it should not be open.
+Then point the domains at the Workers: `test.unseenservant.se` as a custom domain
+or route for `unseenservant-frontend-staging`, and `dev.unseenservant.se` for
+`unseenservant-frontend-dev` — each `name` in the wrangler config has to match its
+project, or a deploy lands on a second Worker and leaves the configured one empty
+— and give each origin an Access policy if it should not be open. The dev hostname
+has to be detached from the old Pages project first: Cloudflare will not attach a
+hostname to a Worker while a Pages project still claims it.
 
 ### Verifying it
+
+The same three probes per origin — here for test, with the upstream each one
+should reach:
 
 ```sh
 curl -sI https://test.unseenservant.se/ | head -1              # 200, from the assets
 curl -sI https://test.unseenservant.se/api/auth/me | head -1   # 401, from staging's backend
 curl -sI https://test.unseenservant.se/campaigns | head -1     # 200, index.html for an SPA route
+
+curl -sI https://dev.unseenservant.se/ | head -1               # 200, from the assets
+curl -sI https://dev.unseenservant.se/api/auth/me | head -1    # 401, from production's backend
+curl -sI https://dev.unseenservant.se/campaigns | head -1      # 200, index.html for an SPA route
 ```
 
 The 401 is the interesting one: it is the backend answering, through the Worker.
-A 502 means staging is unreachable; a 200 with HTML means the Worker did not match
-the path and the SPA answered instead.
+A 502 means the upstream is unreachable; a 200 with HTML means the Worker did not
+match the path and the SPA answered instead. To see *which* backend answered, ask
+for a campaign id that exists in only one of the two environments.
 
-Then log in with Google: the browser must leave for staging (visible in the
-address bar), come back to
-`test.unseenservant.se/oauth-redirect?token=...`, and `/api/auth/me` must answer
-200 afterwards.
+Then log in with Google and GitHub on each origin: the browser must leave for that
+origin's `VITE_OAUTH_BASE_URL` (visible in the address bar — staging for test,
+production for dev), come back to `<origin>/oauth-redirect?token=...`, and
+`/api/auth/me` must answer 200 afterwards. A login that ends on the other origin
+means this origin is missing from that backend's `ALLOWED_ORIGINS`.
 
 ## Keeping this file honest
 
-Changing the workflow, the tag contract, the nginx ownership rules or the test
-Worker's routing means updating this document in the same change.
+Changing the workflow, the tag contract, the nginx ownership rules, or either
+Worker's routing, `vars` and build mode, means updating this document in the same
+change.
