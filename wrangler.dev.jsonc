@@ -29,6 +29,13 @@
     "PUBLIC_HOST": "dev.unseenservant.se"
   },
 
+  // The hostname this Worker answers on. Wrangler reconciles this on deploy, so a
+  // re-created Worker re-attaches it without a dashboard visit; a deploy against
+  // an already-attached hostname is a no-op. The domain was first attached in the
+  // dashboard during the Pages migration (2026-10-16) — leave that attachment
+  // alone, and delete this line only if you want a deploy to detach the hostname.
+  "routes": [{ "pattern": "dev.unseenservant.se", "custom_domain": true }],
+
   "assets": {
     "directory": "./dist/",
 
