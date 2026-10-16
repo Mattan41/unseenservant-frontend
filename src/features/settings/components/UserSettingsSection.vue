@@ -44,7 +44,7 @@ async function saveDisplayName() {
   }
 
   editForm.value.isSaving = true
-  const success = await userStore.updateUserField('displayName', value)
+  const success = await userStore.updateDisplayName(value)
   if (success) {
     editForm.value.isEditing = false
     editForm.value.displayName = ''

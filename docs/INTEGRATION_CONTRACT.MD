@@ -52,9 +52,13 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 **PATCH /api/users/{id}**
 - Requires: ROLE_USER, must be self or ADMIN
-- Request: partial JSON object, e.g. `{ "displayName": "..." }`
+- Request: `UserProfileUpdateDTO { displayName }` — the display name only; trimmed, max 50 chars
+- Refused with 400: `userName` and `email`. The email is the OAuth account-linking
+  key (`findOrCreateOAuthUser` matches by it) and the whitelist key, so it is not
+  self-service; the username is the form-login identity. A request carrying either
+  changes nothing.
 - Response: `UserDTO`
-- Status: 200, 400, 401, 403, 404
+- Status: 200, 400, 401, 403, 404, 409 (display name already in use)
 
 ---
 

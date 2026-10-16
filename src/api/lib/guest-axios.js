@@ -824,13 +824,16 @@ const guestAxios = {
     }
 
     // The guest's own profile (display name) — mirrors PATCH /api/users/{id},
-    // which is self-service only in this mock.
+    // which is self-service and display-name only in the live backend too.
     if (url.includes('users') && !url.includes('admin/users')) {
       const userId = extractId(url)
       const current = getData(KEYS.USER, null)
       if (!current) return badRequest('No profile to update.')
       if (String(userId) !== String(current.id)) {
         return forbidden('You may only update your own profile.')
+      }
+      if (data?.userName !== undefined || data?.email !== undefined) {
+        return badRequest('Only the display name can be changed here.')
       }
 
       const updated = { ...current }

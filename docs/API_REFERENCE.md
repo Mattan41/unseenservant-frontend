@@ -178,12 +178,12 @@ re-deriving a role check.
 ### PATCH /api/users/{id}
 
 - **Service**: UserService.updateProfileField(userId, field, value)
-- **Store Action**: userStore.updateUserField(field, value)
-- **Guest Mode**: Mocked — updates `guest_user`'s display name; a change to another account is rejected with 403 (the mock is self-service only, unlike the backend, which also lets an administrator patch other accounts)
-- **Request**: `{ [field]: value }` (for example, `{ displayName: "New Name" }`)
+- **Store Action**: userStore.updateDisplayName(value)
+- **Guest Mode**: Mocked — updates `guest_user`'s display name; a change to another account is rejected with 403, and `email`/`userName` with 400 (the mock mirrors the live contract)
+- **Request**: `UserProfileUpdateDTO { displayName }` — the display name only (trimmed, max 50 chars)
 - **Response**: UserDTO
-- **Status Codes**: 200, 400, 401, 403, 404, 409 (conflict on unique constraint)
-- **Notes**: Handles 409 conflict errors with user-friendly messages. Reached from Settings → User Settings.
+- **Status Codes**: 200, 400, 401, 403, 404, 409 (display name already in use)
+- **Notes**: The email is the OAuth account-linking and whitelist key and the username is the login identity, so neither is self-service — a request carrying either is refused with 400 and changes nothing. Reached from Settings → User Settings.
 
 ---
 

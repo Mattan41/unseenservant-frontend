@@ -68,7 +68,17 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function updateUserField(field, value) {
+  /**
+   * Change the signed-in account's display name.
+   *
+   * The only profile field this app may change for itself — the backend's
+   * `PATCH /api/users/{id}` accepts a display name and refuses the email (the
+   * OAuth-linking and whitelist key) and the username (the login identity).
+   *
+   * @returns {Promise<boolean>} whether the update succeeded
+   */
+  async function updateDisplayName(value) {
+    const field = 'displayName'
     if (!currentUser.value?.id) {
       throw new Error('No user loaded')
     }
@@ -82,13 +92,13 @@ export const useUserStore = defineStore('user', () => {
 
       currentUser.value = { ...currentUser.value, ...updatedUser }
 
-      notificationStore.addNotification(`Successfully updated ${field}.`, 'success')
+      notificationStore.addNotification('Display name updated.', 'success')
       return true
     } catch (err) {
-      let errorMessage = `Failed to update ${field}. Please try again.`
+      let errorMessage = 'Failed to update the display name. Please try again.'
 
       if (err.response?.status === 409) {
-        errorMessage = extractErrorMessage(err, `This ${field} is already taken`)
+        errorMessage = extractErrorMessage(err, 'That display name is already taken.')
       }
 
       error.value = errorMessage
@@ -119,7 +129,7 @@ export const useUserStore = defineStore('user', () => {
     isUserLoaded,
     // Actions
     fetchCurrentUser,
-    updateUserField,
+    updateDisplayName,
     clearUser,
   }
 })
