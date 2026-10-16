@@ -14,6 +14,12 @@ const notificationStore = useNotificationStore()
 onMounted(async () => {
   const routeToken = route.query.token
   if (routeToken) {
+    // Read the token, then take it out of the address bar before doing anything
+    // that can fail: the error path below pushes to /login, which would leave
+    // /oauth-redirect?token=... in the browser's history. See
+    // docs/DEPLOYMENT.md#the-access-log for the server-side half of this.
+    await router.replace({ name: 'oauth-redirect' })
+
     try {
       // Clear guest mode if user was previously a guest
       if (authStore.isGuest) {
