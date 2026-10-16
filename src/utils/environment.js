@@ -40,8 +40,26 @@ export const IS_STAGING_ENVIRONMENT = ENVIRONMENT === 'staging'
 export const IS_DEMO_ENVIRONMENT = ENVIRONMENT === 'demo'
 
 /**
+ * Short human-readable label per environment, for read-only display (e.g. the
+ * general settings section). Distinct from the banner messages in `App.vue`,
+ * which warn about an environment rather than name it.
+ */
+export const ENVIRONMENT_LABELS = {
+  local: 'Local development',
+  dev: 'Development preview',
+  test: 'Test',
+  staging: 'Staging',
+  prod: 'Production',
+  demo: 'Demo mode',
+}
+
+/** Label for the environment this bundle is served from. */
+export const ENVIRONMENT_LABEL = ENVIRONMENT_LABELS[ENVIRONMENT] || ENVIRONMENT
+
+/**
  * Fallback theme used when no user preference is stored (see `setTheme`).
- * The theme switcher in UserProfileView persists the choice in localStorage.
+ * The theme switcher in the settings view (General) persists the choice in
+ * localStorage.
  */
 export const DEFAULT_THEME = 'silver'
 

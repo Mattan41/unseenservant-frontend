@@ -62,8 +62,8 @@ const exitGuestMode = () => {
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated">
-          <RouterLink to="/user-profile" class="header-nav-link">
-            <h5 class="p-2 uppercase">User Profile</h5>
+          <RouterLink to="/settings" class="header-nav-link">
+            <h5 class="p-2 uppercase">Settings</h5>
           </RouterLink>
           <RouterLink to="/characters" class="header-nav-link">
             <h5 class="p-2 uppercase">Characters</h5>
@@ -83,14 +83,22 @@ const exitGuestMode = () => {
           <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
             <h5 class="p-2 uppercase">Campaigns</h5>
           </RouterLink>
+          <RouterLink to="/settings" class="header-nav-link">
+            <h5 class="p-2 uppercase">Settings</h5>
+          </RouterLink>
           <RouterLink to="/login" class="header-nav-link-secondary">
             <h5 class="p-2 uppercase">Login</h5>
           </RouterLink>
         </template>
 
-        <RouterLink v-else to="/login" class="header-nav-link-secondary">
-          <h5 class="p-2 uppercase">Login</h5>
-        </RouterLink>
+        <template v-else>
+          <RouterLink to="/settings" class="header-nav-link">
+            <h5 class="p-2 uppercase">Settings</h5>
+          </RouterLink>
+          <RouterLink to="/login" class="header-nav-link-secondary">
+            <h5 class="p-2 uppercase">Login</h5>
+          </RouterLink>
+        </template>
       </div>
     </nav>
 
@@ -121,8 +129,8 @@ const exitGuestMode = () => {
           </RouterLink>
 
           <template v-if="authStore.isAuthenticated">
-            <RouterLink @click="closeMenu" to="/user-profile" class="header-nav-link">
-              <h5 class="p-2 uppercase">User Profile</h5>
+            <RouterLink @click="closeMenu" to="/settings" class="header-nav-link">
+              <h5 class="p-2 uppercase">Settings</h5>
             </RouterLink>
             <RouterLink @click="closeMenu" to="/characters" class="header-nav-link">
               <h5 class="p-2 uppercase">Characters</h5>
@@ -142,14 +150,22 @@ const exitGuestMode = () => {
             <RouterLink @click="closeMenu" to="/campaigns" class="header-nav-link">
               <h5 class="p-2 uppercase">Campaigns</h5>
             </RouterLink>
+            <RouterLink @click="closeMenu" to="/settings" class="header-nav-link">
+              <h5 class="p-2 uppercase">Settings</h5>
+            </RouterLink>
             <RouterLink @click="closeMenu" to="/login" class="header-nav-link-secondary">
               <h5 class="p-2 uppercase">Login</h5>
             </RouterLink>
           </template>
 
-          <RouterLink v-else @click="closeMenu" to="/login" class="header-nav-link-secondary">
-            <h5 class="p-2 uppercase">Login</h5>
-          </RouterLink>
+          <template v-else>
+            <RouterLink @click="closeMenu" to="/settings" class="header-nav-link">
+              <h5 class="p-2 uppercase">Settings</h5>
+            </RouterLink>
+            <RouterLink @click="closeMenu" to="/login" class="header-nav-link-secondary">
+              <h5 class="p-2 uppercase">Login</h5>
+            </RouterLink>
+          </template>
         </nav>
       </div>
     </SlideOverDrawer>

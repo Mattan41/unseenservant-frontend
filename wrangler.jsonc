@@ -28,6 +28,12 @@
     "PUBLIC_HOST": "test.unseenservant.se"
   },
 
+  // The hostname this Worker answers on. Wrangler reconciles this on deploy, so a
+  // re-created Worker re-attaches it without a dashboard visit; a deploy against
+  // an already-attached hostname is a no-op. The domain was first attached in the
+  // dashboard when this origin was set up — leave that attachment alone.
+  "routes": [{ "pattern": "test.unseenservant.se", "custom_domain": true }],
+
   "assets": {
     "directory": "./dist/",
 

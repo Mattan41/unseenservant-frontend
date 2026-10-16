@@ -1,14 +1,13 @@
 <script setup>
 /**
- * Campaign navigation — desktop rail + mobile slide-over drawer.
+ * Campaign navigation — thin wrapper over the shared `ContextSidebar`.
  *
- * Desktop (md+) renders a static labelled rail; below md the same list is
- * exposed through the shared `SlideOverDrawer`, controlled by the `open` prop so
- * the trigger can live in the smart parent (near the campaign title).
- * Presentational: props in, events out.
+ * The shell itself (desktop rail + mobile slide-over drawer) is shared with the
+ * settings view; this component only names it for the campaign context, so
+ * `CampaignView` keeps a semantic entry point and the campaign id is exposed as
+ * the shared `data-context-id` test hook.
  */
-import CampaignNavList from '@/features/campaign/components/CampaignNavList.vue'
-import SlideOverDrawer from '@/components/base/SlideOverDrawer.vue'
+import ContextSidebar from '@/components/base/ContextSidebar.vue'
 
 defineProps({
   /** Contextual navigation items: `{ key, label, icon }`. */
@@ -33,34 +32,19 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['select', 'update:open'])
-
-function selectFromDrawer(key) {
-  emit('select', key)
-  emit('update:open', false)
-}
+defineEmits(['select', 'update:open'])
 </script>
 
 <template>
-  <!-- Desktop rail (md+) -->
-  <aside class="campaign-sidebar campaign-gradient" :data-campaign-id="campaignId">
-    <CampaignNavList
-      :items="items"
-      :active-section="activeSection"
-      @select="$emit('select', $event)"
-    />
-  </aside>
-
-  <!-- Mobile slide-over drawer (below md) -->
-  <SlideOverDrawer
-    :model-value="open"
-    side="left"
+  <ContextSidebar
+    :items="items"
+    :active-section="activeSection"
+    :context-id="campaignId"
     label="Campaign navigation"
-    panel-class="campaign-gradient"
-    @update:model-value="$emit('update:open', $event)"
-  >
-    <CampaignNavList :items="items" :active-section="activeSection" @select="selectFromDrawer" />
-  </SlideOverDrawer>
+    :open="open"
+    @select="$emit('select', $event)"
+    @update:open="$emit('update:open', $event)"
+  />
 </template>
 
 <style scoped></style>

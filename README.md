@@ -15,6 +15,9 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 - Campaign management with participants and roles (GM/Player)
 - Character builder and tracker for D&D 5e
 - Import characters into campaigns
+- Settings for everyone — colour theme and profile — plus an administrator
+  surface for accounts and the email whitelist. The theme (Settings → General) is
+  reachable without an account, so it can be set before logging in.
 - Image uploads (campaign, character and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`)
 
 ## Campaign roles & permissions
@@ -40,6 +43,22 @@ the table stay separate:
 
 The rules are defined once in `src/features/campaign/campaignPermissions.js`
 and enforced in the UI and in guest mode (`src/api/lib/guest-axios.js`).
+
+## Accounts & administration
+
+Platform accounts carry one of two roles: **USER** and **ADMIN**. Administrators
+additionally see **Settings → Admin**:
+
+- **Users** — every account, with the role control. A role change takes effect
+  immediately (authorities are read from the database on every request), and the
+  last administrator cannot be demoted.
+- **Email whitelist** — which addresses may log in at all. OAuth logins are gated
+  by this list, and a row's role decides what a *first* login is granted; an
+  account that already exists keeps its own role, which is changed under Users.
+
+Both are enforced by the backend (`/api/admin/**`, ROLE_ADMIN) and gated in the
+UI. Guest Demo mocks them, including the two guards — the demo account is an
+administrator so the section can be explored without a backend (`demoData.js`).
 
 ## Getting Started
 

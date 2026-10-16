@@ -382,49 +382,50 @@ html[data-env='demo'] {
   @apply bg-primary-500 p-4 rounded-lg;
 }
 
-/* Campaign sidebar — desktop-only contextual rail (md+).
-   The mobile equivalent is rendered through `SlideOverDrawer`. */
-.campaign-sidebar {
+/* Contextual sidebar — desktop-only rail (md+), shared by the campaign and
+   settings shells. The mobile equivalent is rendered through `SlideOverDrawer`. */
+.context-sidebar {
   @apply hidden md:flex md:h-full md:w-56 md:flex-shrink-0 md:self-stretch md:flex-col md:items-stretch md:justify-start md:gap-4 md:p-4;
 }
 
-/* Vertical theme gradient shared by the campaign rail and the mobile drawer */
-.campaign-gradient {
+/* Vertical theme gradient shared by context rails and their mobile drawers */
+.context-gradient {
   @apply bg-linear-to-b from-primary-100 via-primary-300 to-primary-100;
 }
 
-/* Mobile campaign top bar: title + local navigation trigger */
-.campaign-mobile-bar {
+/* Mobile contextual top bar: title + local navigation trigger */
+.context-mobile-bar {
   @apply flex items-center justify-between gap-2 p-2 md:hidden;
 }
 
-.campaign-mobile-title {
+.context-mobile-title {
   @apply min-w-0 truncate text-lg font-bold text-third-700;
 }
 
-/* "Campaign Views" trigger (a BaseButton with the base margins/padding reset) */
-.campaign-nav-trigger {
+/* Section-drawer trigger in the mobile top bar (a BaseButton with the base
+   margins/padding reset) */
+.context-nav-trigger {
   @apply ml-0 mt-0 inline-flex items-center gap-2 bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700;
 }
 
-.campaign-sidebar-nav {
+.context-nav-list {
   @apply flex flex-col items-stretch justify-start gap-2 flex-1;
 }
 
-.campaign-sidebar-item {
+.context-nav-item {
   @apply relative inline-flex items-center justify-start gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 text-left;
 }
 
-.campaign-sidebar-item--active {
+.context-nav-item--active {
   @apply bg-primary-700 text-primary-100 hover:bg-primary-700;
 }
 
 /* Labels are always visible (drawer on mobile, rail on desktop) */
-.campaign-sidebar-item-label {
+.context-nav-item-label {
   @apply inline;
 }
 
-.campaign-sidebar-icon {
+.context-nav-icon {
   @apply w-5 h-5 flex-shrink-0;
 }
 

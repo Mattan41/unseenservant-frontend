@@ -19,6 +19,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
+import ContextMobileBar from '@/components/base/ContextMobileBar.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
@@ -377,13 +378,11 @@ watch(
 
   <div v-else-if="campaign" class="flex flex-col md:flex-row md:items-stretch md:h-full">
     <!-- Mobile campaign bar: title + local navigation trigger -->
-    <div class="campaign-mobile-bar">
-      <BaseButton variant="default" class="campaign-nav-trigger" @click="campaignNavOpen = true">
-        <CampaignNavIcon name="menu" class="w-5 h-5 flex-shrink-0" />
-        <span>Campaign Views</span>
-      </BaseButton>
-      <h2 class="campaign-mobile-title">{{ campaignStore.getCampaignTitle(campaign.id) }}</h2>
-    </div>
+    <ContextMobileBar
+      :title="campaignStore.getCampaignTitle(campaign.id)"
+      trigger-label="Campaign Views"
+      @open="campaignNavOpen = true"
+    />
 
     <!-- Contextual in-campaign navigation (rail on desktop, drawer on mobile) -->
     <CampaignSidebar

@@ -172,6 +172,12 @@ defineProps({
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" y1="3" x2="12" y2="15" />
     </template>
+
+    <!-- Shield: administration (settings → Admin) -->
+    <template v-else-if="name === 'shield'">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <polyline points="9 12 11 14 15 10" />
+    </template>
   </svg>
 </template>
 

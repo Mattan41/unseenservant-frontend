@@ -21,7 +21,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### src/api/lib/guest-axios.js — LocalStorage Mock Adapter
 
 - Provides an axios-like interface that reads and writes to localStorage.
-- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns.
+- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages, guest_whitelist.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
@@ -99,6 +99,12 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ## Feature: User
 
+The user-facing side of this feature is the **Settings** view (`/settings`), a
+public route whose sections are filtered by identity: **General** for everyone
+(the colour theme is a browser preference, so it is settable before logging in
+and in Guest Demo), **User Settings** for any visitor with a profile, and
+**Admin** for administrators.
+
 ### userStore — State Shape
 
 ```js
@@ -106,13 +112,20 @@ The frontend uses a three-layer API architecture that transparently switches bet
   currentUser: UserDTO | null,
   isLoading: boolean,
   error: string | null,
-  displayName: computed,   // currentUser.displayName || username || 'Traveler'
-  userRole: computed,       // currentUser.role || 'Standard user'
+  displayName: computed,    // currentUser.displayName || username || 'Traveler'
+  userRole: computed,       // currentUser.role ('USER' | 'ADMIN') || null — the raw backend role
+  userRoleLabel: computed,  // 'Administrator' | 'Standard user' (see features/user/userUtils.js)
+  isAdmin: computed,        // true for ADMIN; gates the Settings → Admin section
   userId: computed,         // currentUser.id || null
   isUserLoaded: computed    // currentUser !== null
 }
 
 ```
+
+This store is the single owner of the signed-in profile: `GET /api/auth/me` is only
+used as a session probe (its body is discarded), and the profile itself comes from
+`GET /api/users/me`. Admin surfaces read `isAdmin` from here rather than
+re-deriving a role check.
 
 ---
 
@@ -142,11 +155,11 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### GET /api/users/{id}
 
 - **Service**: UserService.fetchUser(userId)
-- **Store Action**: userStore.fetchUserById(userId)
+- **Store Action**: none — deliberately not exposed as a store action, since it would overwrite the signed-in profile (`userStore.currentUser`) with somebody else's data
 - **Guest Mode**: Not mocked (admin-only endpoint)
 - **Response**: UserDTO `{ id, username, email, displayName, role }`
 - **Status Codes**: 200, 401, 403, 404
-- **Notes**: Requires ROLE_ADMIN per contract.
+- **Notes**: Requires ROLE_ADMIN per contract. The admin user list uses `/api/admin/users` instead; this single-user endpoint is currently unused by the UI.
 
 ---
 
@@ -165,12 +178,12 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### PATCH /api/users/{id}
 
 - **Service**: UserService.updateProfileField(userId, field, value)
-- **Store Action**: userStore.updateUserField(field, value)
-- **Guest Mode**: Not mocked
-- **Request**: `{ [field]: value }` (for example, `{ displayName: "New Name" }`)
+- **Store Action**: userStore.updateDisplayName(value)
+- **Guest Mode**: Mocked — updates `guest_user`'s display name; a change to another account is rejected with 403, and `email`/`userName` with 400 (the mock mirrors the live contract)
+- **Request**: `UserProfileUpdateDTO { displayName }` — the display name only (trimmed, max 50 chars)
 - **Response**: UserDTO
-- **Status Codes**: 200, 400, 401, 403, 404, 409 (conflict on unique constraint)
-- **Notes**: Handles 409 conflict errors with user-friendly messages.
+- **Status Codes**: 200, 400, 401, 403, 404, 409 (display name already in use)
+- **Notes**: The email is the OAuth account-linking and whitelist key and the username is the login identity, so neither is self-service — a request carrying either is refused with 400 and changes nothing. Reached from Settings → User Settings.
 
 ---
 
@@ -799,6 +812,133 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ---
 
+## Feature: Admin
+
+The administrator surface lives under `/api/admin/**` and is reached through
+**Settings → Admin**. The Settings sidebar only lists that section when
+`userStore.isAdmin` is true, but the UI gate is convenience, not the boundary:
+the backend protects the prefix twice over (the `/api/admin/**` request matcher
+and a class-level `@PreAuthorize("hasRole('ROLE_ADMIN')")`).
+
+### adminStore — State Shape
+
+```js
+{
+  users: UserDTO[],                // every account, with its role
+  whitelist: WhitelistEntryDTO[],  // every row, active and revoked
+  isLoadingUsers: boolean,
+  isLoadingWhitelist: boolean,
+  savingId: number | string | null, // the row whose controls are busy
+  adminCount: computed,             // accounts holding ADMIN
+  currentUserId: computed,          // from userStore — that row cannot be edited
+  isSelf(user), canChangeRole(user) // the backend's two guards, mirrored for the UI
+}
+
+```
+
+Loaded on demand when the section is opened (`adminStore.fetchAll()`), never at
+app start. `canChangeRole` mirrors the backend: you cannot change your own role,
+and the last administrator cannot be demoted.
+
+---
+
+### GET /api/admin/users
+
+- **Service**: AdminService.fetchUsers()
+- **Store Action**: adminStore.fetchUsers() (also via adminStore.fetchAll())
+- **Guest Mode**: Mocked — the demo user plus `guest_users`, with the same guards
+- **Response**: Array of UserDTO
+- **Status Codes**: 200, 401, 403
+- **Notes**: The guest demo user is an administrator (`demoData.js`), so the section is explorable without a backend; change `guestUser.role` to `USER` to hide it.
+
+---
+
+### PATCH /api/admin/users/{id}/role
+
+- **Service**: AdminService.updateUserRole(userId, role)
+- **Store Action**: adminStore.changeUserRole(userId, role)
+- **Guest Mode**: Mocked — writes to `guest_user`/`guest_users`
+- **Request**: `{ role: 'USER' | 'ADMIN' }`
+- **Response**: UserDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Authorities are rebuilt from the database on every request, so a role change takes effect immediately — the account does not have to log in again. Refused with 400 when the caller targets themselves or when demoting the last administrator. The change also mirrors an *active* whitelist row for the same address, so a rebuilt database does not silently demote the account at its next login.
+
+---
+
+### GET /api/admin/whitelist
+
+- **Service**: AdminService.fetchWhitelist()
+- **Store Action**: adminStore.fetchWhitelist()
+- **Guest Mode**: Mocked — `guest_whitelist` in localStorage
+- **Response**: Array of WhitelistEntryDTO
+- **Status Codes**: 200, 401, 403
+- **Notes**: Includes revoked rows (`active: false`), so a decision can be revisited.
+
+---
+
+### POST /api/admin/whitelist
+
+- **Service**: AdminService.addWhitelistEntry(email, role)
+- **Store Action**: adminStore.addWhitelistEntry(email, role)
+- **Guest Mode**: Mocked — adds, or re-activates an existing row
+- **Request**: `{ email, role }` — the address is stored lower-cased
+- **Response**: WhitelistEntryDTO (201)
+- **Status Codes**: 201, 400, 401, 403
+- **Notes**: `email` is unique and removal is a soft delete, so re-adding a revoked address re-activates that row instead of inserting a second one.
+
+---
+
+### PATCH /api/admin/whitelist/{id}
+
+- **Service**: AdminService.updateWhitelistEntry(id, patch)
+- **Store Action**: adminStore.updateWhitelistEntry(id, patch)
+- **Guest Mode**: Mocked
+- **Request**: `{ role?, active? }` — a null field is left unchanged
+- **Response**: WhitelistEntryDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: `active: true` re-admits a revoked address. A body that changes nothing is refused with 400.
+
+---
+
+### DELETE /api/admin/whitelist/{id}
+
+- **Service**: AdminService.removeWhitelistEntry(id)
+- **Store Action**: adminStore.revokeWhitelistEntry(id)
+- **Guest Mode**: Mocked — sets `active: false`
+- **Status Codes**: 204, 401, 403, 404
+- **Notes**: Soft delete. The row stays in the table (and in the response of GET) with `active: false`; the frontend therefore keeps rendering it, marked "Revoked".
+
+---
+
+### WhitelistEntryDTO
+
+```json
+{
+  "id": 1,
+  "email": "someone@example.com",
+  "role": "USER",
+  "active": true
+}
+```
+
+---
+
+### How the whitelist and an account's role differ
+
+They are **not** the same switch, and the Admin section says so in its copy:
+
+- The whitelist is the **login gate**. `CustomOAuth2SuccessHandler` refuses an
+  OAuth login whose email has no active row, and reads the row's `role` to decide
+  what a *newly created* account is granted.
+- An account that already exists keeps its own role — `UserService.findOrCreateOAuthUser`
+  returns an email match untouched, so editing a whitelist role changes nothing for
+  a user that has already logged in. Changing an existing account is done under
+  **Users** (`PATCH /api/admin/users/{id}/role`).
+- Addresses are matched case-insensitively on the login path, and stored
+  lower-cased on write.
+
+---
+
 ## Known Gaps and Todo Items
 
 ### Not Yet Implemented (Backend Ready)
@@ -819,3 +959,4 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - User search functionality within Guest Mode references a static guest_users list loaded from demo datasets.
 - Campaign participant management inside Guest Mode simulates execution without mutating shared global user records.
 - Image upload steps within Guest Mode default to returning structural fallback placeholder graphics.
+- The admin surface is mocked against `guest_user`/`guest_users`/`guest_whitelist`, including the self-demotion and last-administrator guards; an unknown row or account answers 400 there, where the live backend answers 404.

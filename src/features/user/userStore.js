@@ -1,10 +1,19 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import UserService from '@/features/user/UserService.js'
+import { getRoleLabel, isAdminRole } from '@/features/user/userUtils.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { extractErrorMessage } from '@/utils/errorUtils.js'
 
+/**
+ * The signed-in profile (`GET /api/users/me`, or `guest_user` in guest mode).
+ *
+ * This store is the app's single owner of the current user: the header, the
+ * settings view and the admin gate all read from here. `UserService.fetchUser`
+ * (`GET /api/users/{id}`, admin-only) is deliberately not exposed as an action —
+ * it would overwrite this store's user with somebody else's data.
+ */
 export const useUserStore = defineStore('user', () => {
   // State
   const currentUser = ref(null)
@@ -16,7 +25,14 @@ export const useUserStore = defineStore('user', () => {
     () => currentUser.value?.displayName || currentUser.value?.username || 'Traveler',
   )
 
-  const userRole = computed(() => currentUser.value?.role || 'Standard user')
+  /** Raw backend role (`USER` | `ADMIN`), or `null` while the profile loads. */
+  const userRole = computed(() => currentUser.value?.role || null)
+
+  /** Presentation label for the role (see `userUtils.js`). */
+  const userRoleLabel = computed(() => getRoleLabel(userRole.value))
+
+  /** Whether the account may use the admin endpoints (Settings → Admin). */
+  const isAdmin = computed(() => isAdminRole(userRole.value))
 
   const userId = computed(() => currentUser.value?.id || null)
 
@@ -52,28 +68,17 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function fetchUserById(userId) {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const userData = await UserService.fetchUser(userId)
-      // TODO: This method currently overwrites currentUser with any fetched user's data.
-      // Needs refactoring — either rename to fetchAndSetCurrentUser() if that's the intent,
-      // or split into a pure fetch (returns data only) vs. a setter that updates currentUser.
-      currentUser.value = userData
-      currentUser.value = userData
-      return userData
-    } catch (err) {
-      console.error('Failed to fetch user:', err)
-      error.value = 'Failed to fetch user.'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function updateUserField(field, value) {
+  /**
+   * Change the signed-in account's display name.
+   *
+   * The only profile field this app may change for itself — the backend's
+   * `PATCH /api/users/{id}` accepts a display name and refuses the email (the
+   * OAuth-linking and whitelist key) and the username (the login identity).
+   *
+   * @returns {Promise<boolean>} whether the update succeeded
+   */
+  async function updateDisplayName(value) {
+    const field = 'displayName'
     if (!currentUser.value?.id) {
       throw new Error('No user loaded')
     }
@@ -87,13 +92,13 @@ export const useUserStore = defineStore('user', () => {
 
       currentUser.value = { ...currentUser.value, ...updatedUser }
 
-      notificationStore.addNotification(`Successfully updated ${field}.`, 'success')
+      notificationStore.addNotification('Display name updated.', 'success')
       return true
     } catch (err) {
-      let errorMessage = `Failed to update ${field}. Please try again.`
+      let errorMessage = 'Failed to update the display name. Please try again.'
 
       if (err.response?.status === 409) {
-        errorMessage = extractErrorMessage(err, `This ${field} is already taken`)
+        errorMessage = extractErrorMessage(err, 'That display name is already taken.')
       }
 
       error.value = errorMessage
@@ -118,12 +123,13 @@ export const useUserStore = defineStore('user', () => {
     // Computed
     displayName,
     userRole,
+    userRoleLabel,
+    isAdmin,
     userId,
     isUserLoaded,
     // Actions
     fetchCurrentUser,
-    fetchUserById,
-    updateUserField,
+    updateDisplayName,
     clearUser,
   }
 })

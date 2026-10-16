@@ -1,7 +1,12 @@
 /**
  * demoData.js
  * Static seed data for Guest Mode with dynamic timestamps.
- * guest_demo is the current user in Guest Mode, guest_player_1-4 are demo users
+ * guest_demo is the current user in Guest Mode, guest_player_1-5 are demo users.
+ *
+ * The demo user is an administrator so the settings view's Admin section
+ * (accounts + email whitelist) is explorable without a backend. Change `role`
+ * here to 'USER' to see the demo as an ordinary player with no Admin section —
+ * no other change is needed.
  */
 
 export const guestUser = {
@@ -9,15 +14,57 @@ export const guestUser = {
   username: 'guest@demo.local',
   displayName: 'Guest Demo',
   email: 'guest@demo.local',
-  role: 'USER',
+  role: 'ADMIN',
 }
 
 export const guestUsers = [
-  { id: 'guest_player_1', displayName: 'User1', username: 'User1', email: 'user1@demo.local' },
-  { id: 'guest_player_2', displayName: 'User2', username: 'User2', email: 'user2@demo.local' },
-  { id: 'guest_player_3', displayName: 'User3', username: 'User3', email: 'user3@demo.local' },
-  { id: 'guest_player_4', displayName: 'User4', username: 'User4', email: 'user4@demo.local' },
-  { id: 'guest_player_5', displayName: 'User5', username: 'User5', email: 'user5@demo.local' },
+  {
+    id: 'guest_player_1',
+    displayName: 'User1',
+    username: 'User1',
+    email: 'user1@demo.local',
+    role: 'USER',
+  },
+  {
+    id: 'guest_player_2',
+    displayName: 'User2',
+    username: 'User2',
+    email: 'user2@demo.local',
+    role: 'USER',
+  },
+  {
+    id: 'guest_player_3',
+    displayName: 'User3',
+    username: 'User3',
+    email: 'user3@demo.local',
+    role: 'USER',
+  },
+  {
+    id: 'guest_player_4',
+    displayName: 'User4',
+    username: 'User4',
+    email: 'user4@demo.local',
+    role: 'USER',
+  },
+  {
+    id: 'guest_player_5',
+    displayName: 'User5',
+    username: 'User5',
+    email: 'user5@demo.local',
+    role: 'USER',
+  },
+]
+
+/**
+ * The local stand-in for the email whitelist that gates OAuth logins in the real
+ * backend. `role` is what a *first* login with that address would be granted;
+ * `active: false` models a revoked address (the backend soft-deletes too).
+ */
+export const guestWhitelist = [
+  { id: 'guest_whitelist_1', email: 'guest@demo.local', role: 'ADMIN', active: true },
+  { id: 'guest_whitelist_2', email: 'user1@demo.local', role: 'USER', active: true },
+  { id: 'guest_whitelist_3', email: 'user2@demo.local', role: 'USER', active: true },
+  { id: 'guest_whitelist_4', email: 'former@demo.local', role: 'USER', active: false },
 ]
 
 export const guestCharacters = [
@@ -615,12 +662,13 @@ const GUEST_STORAGE_KEYS = [
   'guest_ships',
   'guest_ship_crew',
   'guest_messages',
+  'guest_whitelist',
 ]
 
 /**
  * Write the full demo data set to localStorage (overwrites existing values).
  * Called when entering guest mode so re-entering always yields a fresh, complete
- * dataset — including the ship.
+ * dataset — including the ship and the admin whitelist.
  */
 export function seedGuestStorage() {
   localStorage.setItem('guest_user', JSON.stringify(guestUser))
@@ -630,6 +678,7 @@ export function seedGuestStorage() {
   localStorage.setItem('guest_ships', JSON.stringify(guestShips))
   localStorage.setItem('guest_ship_crew', JSON.stringify(guestShipCrew))
   localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
+  localStorage.setItem('guest_whitelist', JSON.stringify(guestWhitelist))
 }
 
 /** Remove every guest/demo key (used when leaving guest mode). */

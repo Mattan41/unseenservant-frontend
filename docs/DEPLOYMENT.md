@@ -322,6 +322,23 @@ Pages deployment never applied those rules, and its bundle carried absolute
 production URLs taken from the Cloudflare project — the configuration lived
 outside the repository, which is exactly what a committed env file prevents.
 
+The Pages project itself (`unseenservant-frontend`) was detached from this hostname
+on 2026-10-16, when `unseenservant-frontend-dev` took it over, leaving a Pages
+project with no domain and a long list of deployments — retired once that list is
+cleared. A Pages project with that many deployments cannot be deleted from the
+dashboard; its deployments have to go first with `wrangler pages deployment
+delete`, then the project itself (dashboard → Settings → Delete project). Three
+details that cost time when the loop was written:
+
+* `wrangler pages deployment list` pages at 25, so clearing a project takes
+  several passes — delete what the list returns, then list again;
+* its `--json` output keys the id as **`Id`**, not `id`;
+* use `--force` (a preview deployment can still carry an active branch alias) and
+  keep the active production deployment, which the project delete consumes.
+
+Cloudflare documents the same remedy under Pages → *Known issues* → "Delete a
+project with a high number of deployments".
+
 ### Deploy
 
 ```sh
@@ -346,32 +363,36 @@ Both work as Cloudflare Workers Builds, one Cloudflare project per Worker:
 The dev project's preview command has to name its config: the default would read
 `wrangler.jsonc` and upload a *staging* version.
 
-Both of Cloudflare's defaults need no extra configuration: `wrangler deploy`
-publishes the version so the custom domain serves it, while
-`wrangler versions upload` only uploads a version and prints a preview URL.
+`wrangler deploy` publishes the version so the custom domain serves it. A preview
+command only *uploads* a version and prints a separate URL, so it never changes
+what the origin serves — and Cloudflare's default for it has moved: when these
+projects were set up the default was `npx wrangler versions upload`, while the
+current Builds documentation names **`npx wrangler preview`** (which expects a
+`previews` block in the config and creates a Preview, a separate environment with
+its own URL). Check **Settings → Build** in each project rather than trusting
+either value.
 
-Do **not** reach for `npx wrangler preview` to get a preview. It is an open beta
-command from the newer Previews feature, it fails with "Your Wrangler
-configuration is missing a `previews` block" unless the config carries one, and a
-Preview is a separate environment — so it does not update what the origin serves.
-Pick deliberately:
+One rule survives whichever default a project has: **the dev project's preview
+command must name its config** — `--config wrangler.dev.jsonc` — because the
+default reads `wrangler.jsonc` and would upload a *staging* version. Pick
+deliberately:
 
 | Goal | Setting |
 |---|---|
 | the origin always serves the latest build of `main` | Deploy command `npx wrangler deploy` (`--config wrangler.dev.jsonc` for dev) |
-| branch builds only produce a throwaway preview URL | Preview command `npx wrangler versions upload` (same `--config` rule) |
-| Per-build Previews with their own configuration (beta) | add `"previews": {}` to the config, use `npx wrangler preview`, and route the origin at whatever should track it |
+| branch builds only produce a throwaway URL | Preview command `npx wrangler versions upload` (same `--config` rule) |
+| Previews with their own configuration | add `"previews": {}` to the config and set the preview command to `npx wrangler preview`; the origin keeps serving whatever the deploy command publishes |
 
-Neither Worker uses Previews: the preview commands stay at their GA defaults and
-neither config carries a `previews` block, so nothing in the build depends on a
-beta feature. Each origin is served by whatever its deploy command publishes.
+Neither config declares `previews`, so no build depends on that feature. Each
+origin is served by whatever its deploy command publishes.
 
 Both Cloudflare projects' **production branch is `main`**, so only merges there run
 their deploy command and publish the origin. Every other branch runs the *preview*
 command instead — which is why a feature-branch push can show a successful build
-and a failed deploy: those commands have to stay at their GA defaults
-(`npx wrangler versions upload`, plus `--config wrangler.dev.jsonc` for dev), not
-`npx wrangler preview`.
+and a failed deploy: the configured preview command has to be one this repository
+can run (`npx wrangler versions upload`, or `npx wrangler preview` only when the
+config declares `previews`), and for dev both commands have to name
+`--config wrangler.dev.jsonc`.
 
 `wrangler` is deliberately **not** a dependency: `npx` fetches it at deploy time.
 Pinning it is a change of its own, and the cheaper form is to pin it in the deploy
@@ -382,13 +403,17 @@ under CI and the Docker build. Either way it never reaches the published image:
 the Dockerfile is a multi-stage build whose final stage is `nginx:alpine` plus
 the built `dist/`.
 
-Then point the domains at the Workers: `test.unseenservant.se` as a custom domain
-or route for `unseenservant-frontend-staging`, and `dev.unseenservant.se` for
-`unseenservant-frontend-dev` — each `name` in the wrangler config has to match its
-project, or a deploy lands on a second Worker and leaves the configured one empty
-— and give each origin an Access policy if it should not be open. The dev hostname
-has to be detached from the old Pages project first: Cloudflare will not attach a
-hostname to a Worker while a Pages project still claims it.
+Each Worker's hostname is declared in its own config as a custom domain —
+`test.unseenservant.se` in `wrangler.jsonc`, `dev.unseenservant.se` in
+`wrangler.dev.jsonc` — so `npx wrangler deploy` reconciles it, and a re-created
+Worker re-attaches it without a dashboard visit. Both were first attached in the
+dashboard, which remains the source of the live attachment; a deploy against an
+already-attached hostname is a no-op. Two things to remember: each `name` in the
+wrangler config has to match its Cloudflare project, or a deploy lands on a second
+Worker and leaves the configured one empty; and a hostname can belong to only one
+service, so `dev.unseenservant.se` had to be detached from the old Pages project
+before the Worker could claim it. Give each origin an Access policy if it should
+not be open.
 
 ### Verifying it
 
@@ -409,6 +434,23 @@ The 401 is the interesting one: it is the backend answering, through the Worker.
 A 502 means the upstream is unreachable; a 200 with HTML means the Worker did not
 match the path and the SPA answered instead. To see *which* backend answered, ask
 for a campaign id that exists in only one of the two environments.
+
+Measured on `dev.unseenservant.se` on 2026-10-16, the day it moved from Pages to
+its Worker — the full shape of a correctly attached Worker, including the paths it
+must *not* proxy:
+
+```sh
+curl -sI https://dev.unseenservant.se/ | head -1                              # 200 text/html, from the assets
+curl -sI https://dev.unseenservant.se/api/auth/me | head -1                   # 401, production's backend through the Worker
+curl -sI https://dev.unseenservant.se/campaigns | head -1                     # 200 text/html, SPA route
+curl -sI https://dev.unseenservant.se/logout | head -1                        # 200 text/html, SPA route
+curl -sI https://dev.unseenservant.se/oauth2/authorization/google | head -1   # 200 text/html, NOT proxied: the handshake runs on production
+curl -sI https://dev.unseenservant.se/images/does-not-exist.png | head -1     # 401, proxied to the backend
+```
+
+Before the move every one of those API, image and `/oauth2/` requests answered
+`200 text/html` — the SPA — because the Pages deployment had no working proxy.
+That contrast is the fastest way to tell which product is serving a hostname.
 
 Then log in with Google and GitHub on each origin: the browser must leave for that
 origin's `VITE_OAUTH_BASE_URL` (visible in the address bar — staging for test,
