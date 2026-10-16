@@ -21,24 +21,26 @@
  *    back to this origin — which staging allows because
  *    https://test.unseenservant.se is in its ALLOWED_ORIGINS. Relaying the
  *    handshake through this Worker instead would require (a) a
- *    test.unseenservant.se redirect URI registered at Google and GitHub,
+ *    test.unseenservant.se redirect URI registered at Google and GitHub, and
  *    (b) manual handling of the 3xx responses here instead of letting fetch
- *    follow them server-side, and (c) staging's nginx to stop overwriting
- *    X-Forwarded-Host with $http_host on those locations. That is a later task,
- *    not a Worker change. `/logout` is a client-side route (the store only
- *    clears localStorage), so serving index.html for it is correct.
+ *    follow them server-side. (A third obstacle used to be staging's nginx
+ *    overwriting X-Forwarded-Host with $http_host on those locations; the
+ *    reconciled nginx config passes a Worker's X-Forwarded-Host through, so only
+ *    the registration and the 3xx handling remain.) That is a later task, not a
+ *    Worker change. `/logout` is a client-side route (the store only clears
+ *    localStorage), so serving index.html for it is correct.
  *
  * 2. `Host` is never set by hand: it is a forbidden header in the Workers
  *    runtime and would be ignored. The host comes from the URL the request is
  *    sent to.
  *
  * 3. Only X-Forwarded-Host is set. X-Forwarded-Proto/Port would be pointless
- *    here: staging's nginx overwrites X-Forwarded-Proto with $scheme (the
- *    tunnel→nginx hop is plain http) on both /api/ and /images/, and nothing on
- *    those paths builds a URL from it. X-Forwarded-Host is preserved for /api/
- *    by the map in that config, and it is what
- *    CustomOAuth2SuccessHandler falls back to when its origin cookie is
- *    missing — so it should say test.unseenservant.se, not the proxy target.
+ *    here: the app never reads the scheme on /api/ or /images/ (image URLs in
+ *    the DTOs are relative paths), so whatever staging's nginx reports for it
+ *    changes nothing. X-Forwarded-Host is preserved for /api/ by the map in that
+ *    config, and it is what CustomOAuth2SuccessHandler falls back to when its
+ *    origin cookie is missing — so it should say test.unseenservant.se, not the
+ *    proxy target.
  *
  * No imports and no Cloudflare types on purpose: wrangler bundles this with
  * esbuild, which strips types without checking them, so the Worker adds no
