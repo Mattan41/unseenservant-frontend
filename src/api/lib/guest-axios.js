@@ -12,11 +12,13 @@ import { getCampaignPermissions, isCampaignGm } from '@/features/campaign/campai
 // Core local storage keys used by the adapter
 const KEYS = {
   USER: 'guest_user',
+  USERS: 'guest_users',
   CHARACTERS: 'guest_characters',
   CAMPAIGNS: 'guest_campaigns',
   MESSAGES: 'guest_messages',
   SHIPS: 'guest_ships',
   CREW: 'guest_ship_crew',
+  WHITELIST: 'guest_whitelist',
 }
 
 // ============================================================================
@@ -274,6 +276,71 @@ function forbidden(message) {
   })
 }
 
+/** Reject a guest request with the same 400 shape the backend's validation uses. */
+function badRequest(message) {
+  return Promise.reject({
+    response: {
+      data: { message },
+      status: 400,
+      handled: false,
+    },
+  })
+}
+
+// ============================================================================
+// Admin surface (guest demo)
+// ============================================================================
+
+/**
+ * The Admin settings section exists in guest mode too, so the demo does not have
+ * a hole where the real app has a tab. These mocks mirror the backend rules:
+ * administrators only, a caller cannot change their own role, and the last
+ * administrator cannot be demoted.
+ */
+function guestIsAdmin() {
+  return String(getData(KEYS.USER, null)?.role || '').toUpperCase() === 'ADMIN'
+}
+
+function getGuestWhitelist() {
+  return getData(KEYS.WHITELIST, [])
+}
+
+function saveGuestWhitelist(entries) {
+  setData(KEYS.WHITELIST, entries)
+}
+
+function findGuestWhitelistEntry(id) {
+  return getGuestWhitelist().find((entry) => String(entry.id) === String(id)) || null
+}
+
+/** Every demo account, led by the guest user (the real endpoint lists the caller too). */
+function guestAccounts() {
+  const current = getData(KEYS.USER, null)
+  const others = getData(KEYS.USERS, []).map((user) => ({ role: 'USER', ...user }))
+  return current ? [{ role: 'USER', ...current }, ...others] : others
+}
+
+function guestAdminCount(accounts = guestAccounts()) {
+  return accounts.filter((user) => String(user.role).toUpperCase() === 'ADMIN').length
+}
+
+/** Writes a role change back to whichever store owns that account. */
+function setGuestUserRole(userId, role) {
+  const current = getData(KEYS.USER, null)
+  if (current && String(current.id) === String(userId)) {
+    const updated = { ...current, role }
+    setData(KEYS.USER, updated)
+    return updated
+  }
+
+  const others = getData(KEYS.USERS, [])
+  const index = others.findIndex((user) => String(user.id) === String(userId))
+  if (index === -1) return null
+  others[index] = { ...others[index], role }
+  setData(KEYS.USERS, others)
+  return others[index]
+}
+
 /**
  * Mirrors the backend rule: the private backstory is returned only to the
  * character's owner or the campaign GM. Everyone else gets it stripped out.
@@ -304,6 +371,17 @@ const guestAxios = {
   get(url) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] GET -> ${url}`)
+
+    // Admin surface — the account list and the whitelist (administrators only)
+    if (url.includes('admin/users')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+      return Promise.resolve({ data: guestAccounts() })
+    }
+
+    if (url.includes('admin/whitelist')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+      return Promise.resolve({ data: getGuestWhitelist() })
+    }
 
     // User Profile Hooks
     if (
@@ -443,6 +521,32 @@ const guestAxios = {
   post(url, data = {}) {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] POST -> ${url}`)
+
+    // Admin surface — admit an address, or re-activate a revoked one
+    if (url.includes('admin/whitelist')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+
+      const email = String(data?.email || '')
+        .trim()
+        .toLowerCase()
+      if (!email || !email.includes('@')) return badRequest('A valid email address is required.')
+
+      const role = data?.role === 'ADMIN' ? 'ADMIN' : 'USER'
+      const entries = getGuestWhitelist()
+      const existing = entries.find((entry) => entry.email === email)
+
+      if (existing) {
+        existing.role = role
+        existing.active = true
+        saveGuestWhitelist(entries)
+        return Promise.resolve({ data: existing })
+      }
+
+      const created = { id: generateId(), email, role, active: true }
+      entries.push(created)
+      saveGuestWhitelist(entries)
+      return Promise.resolve({ data: created })
+    }
 
     // Ship crew image upload (must precede the ship image branches)
     if (url.includes('campaigns') && url.includes('/ship/crew/me/images')) {
@@ -674,6 +778,67 @@ const guestAxios = {
     if (!isGuestMode()) return Promise.resolve({ data: null })
     console.debug(`[guest-axios] PATCH -> ${url}`)
 
+    // Admin surface — change an account's role
+    if (url.includes('admin/users')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+
+      const routeMatch = url.match(/admin\/users\/([^/]+)\/role/)
+      const targetId = routeMatch ? routeMatch[1] : null
+      const requestedRole = String(data?.role || '').toUpperCase()
+      const role = ['USER', 'ADMIN'].includes(requestedRole) ? requestedRole : null
+      if (!targetId) return badRequest('No user with that id.')
+      if (!role) return badRequest('A role is required (USER, ADMIN).')
+
+      const accounts = guestAccounts()
+      const target = accounts.find((user) => String(user.id) === String(targetId))
+      if (!target) return badRequest('No user with that id.')
+      if (String(targetId) === String(currentGuestUserId())) {
+        return badRequest('You cannot change your own role.')
+      }
+
+      const keysNow = guestAdminCount(accounts)
+      if (target.role === 'ADMIN' && role !== 'ADMIN' && keysNow <= 1) {
+        return badRequest('The last administrator cannot be demoted.')
+      }
+
+      const updated = setGuestUserRole(targetId, role)
+      return Promise.resolve({ data: updated })
+    }
+
+    // Admin surface — re-role, revoke or re-admit a whitelist address
+    if (url.includes('admin/whitelist')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+
+      const entry = findGuestWhitelistEntry(extractId(url))
+      if (!entry) return badRequest('No whitelist entry with that id.')
+      if (data?.role === undefined && data?.active === undefined) {
+        return badRequest('Nothing to update: provide a role, an active flag, or both.')
+      }
+
+      const entries = getGuestWhitelist()
+      const stored = entries.find((row) => String(row.id) === String(entry.id))
+      if (data?.role !== undefined) stored.role = data.role === 'ADMIN' ? 'ADMIN' : 'USER'
+      if (data?.active !== undefined) stored.active = !!data.active
+      saveGuestWhitelist(entries)
+      return Promise.resolve({ data: stored })
+    }
+
+    // The guest's own profile (display name) — mirrors PATCH /api/users/{id},
+    // which is self-service only in this mock.
+    if (url.includes('users') && !url.includes('admin/users')) {
+      const userId = extractId(url)
+      const current = getData(KEYS.USER, null)
+      if (!current) return badRequest('No profile to update.')
+      if (String(userId) !== String(current.id)) {
+        return forbidden('You may only update your own profile.')
+      }
+
+      const updated = { ...current }
+      if (data?.displayName !== undefined) updated.displayName = data.displayName
+      setData(KEYS.USER, updated)
+      return Promise.resolve({ data: updated })
+    }
+
     if (url.includes('characters')) {
       const id = extractId(url)
       if (id) {
@@ -816,6 +981,20 @@ const guestAxios = {
   delete(url) {
     if (!isGuestMode()) return Promise.resolve({ data: { deleted: false } })
     console.debug(`[guest-axios] DELETE -> ${url}`)
+
+    // Admin surface — revoke a whitelist address (a soft delete: the row stays)
+    if (url.includes('admin/whitelist')) {
+      if (!guestIsAdmin()) return forbidden('Administrators only.')
+
+      const entry = findGuestWhitelistEntry(extractId(url))
+      if (!entry) return badRequest('No whitelist entry with that id.')
+
+      const entries = getGuestWhitelist()
+      const stored = entries.find((row) => String(row.id) === String(entry.id))
+      stored.active = false
+      saveGuestWhitelist(entries)
+      return Promise.resolve({ data: { deleted: true } })
+    }
 
     // 1. CHOSEN ROUTE: Remove a spell from a character
     if (url.includes('characters') && url.includes('/spells/')) {

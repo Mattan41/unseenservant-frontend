@@ -65,8 +65,16 @@ src/
 │   │   └── views/
 │   └── user/
 │       ├── UserService.js
-│       ├── userStore.js
-│       └── UserProfileView.vue
+│       ├── userStore.js          # The single owner of the signed-in profile
+│       └── userUtils.js          # Role labels + badge classes (isAdminRole, getRoleLabel)
+│   ├── settings/
+│   │   ├── components/          # GeneralSettingsSection.vue (theme, environment), UserSettingsSection.vue
+│   │   └── views/
+│   │       └── SettingsView.vue # /settings — the contextual shell (general | user | admin)
+│   └── admin/
+│       ├── AdminService.js
+│       ├── adminStore.js
+│       └── components/          # AdminUsersSection.vue, AdminWhitelistSection.vue
 ├── utils/
 │   └──errorUtils.js          # Extracts a human-readable error message from an Axios error.
 ├── systems/                  # System-specific (tabletop RPG ruleset) code
@@ -144,6 +152,15 @@ the campaign owner.
 - **Dumb/presentational components**: receive props, emit events, no store access
 - **Base components**: generic UI building blocks in `src/components/base/`
 - Always Composition API with `<script setup>` — no Options API components
+
+### Contextual shells (campaign, settings)
+`ContextSidebar.vue` + `ContextNavList.vue` + `ContextMobileBar.vue` are the
+shared layout for any view that presents sub-views through a rail: a mobile top
+bar opening a `SlideOverDrawer`, a desktop rail at md+, and a content column.
+`CampaignSidebar.vue` and `SettingsView.vue` both build on it, and the active
+section is mirrored into the URL (`?section=…`) so a refresh or a shared link
+reopens the same subview. Adding a third contextual area means composing these
+three components, not copying their markup.
 
 ### State management
 - Pinia stores are the single source of truth

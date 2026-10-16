@@ -52,12 +52,20 @@ Use the `beforeEach` hook to protect routes that require authentication by addin
 
 ```javascript
 {
-  path: '/user-profile',
-  name: 'user-profile',
-  component: () => import('../features/user/UserProfileView.vue'),
-  meta: { requiresAuth: true } // This route requires authentication
+  path: '/settings',
+  name: 'settings',
+  component: () => import('../features/settings/views/SettingsView.vue')
 }
 ```
+
+`/settings` is deliberately **public**: its General section only holds the colour
+theme, which is a browser preference and therefore useful before anyone logs in.
+The view filters the sections itself — General for everyone, User Settings for any
+visitor with a profile (account or Guest Demo), Admin for administrators — and a
+deep link to a section the visitor may not open falls back to General.
+
+`/user-profile` is kept as a redirect to `/settings?section=user` so existing
+links keep working.
 
 The router guard will automatically check authentication:
 

@@ -37,10 +37,18 @@ const router = createRouter({
       component: () => import('@/features/auth/OAuthRedirect.vue'),
     },
     {
+      // Public: the General section (colour theme) is a browser preference, so a
+      // visitor without an account can set it too. The view itself filters the
+      // account and administrator sections.
+      path: '/settings',
+      name: 'settings',
+      component: () => import('@/features/settings/views/SettingsView.vue'),
+    },
+    {
+      // The old profile page; kept as a redirect so existing links and
+      // bookmarks land on the user settings section.
       path: '/user-profile',
-      name: 'user-profile',
-      component: () => import('../features/user/UserProfileView.vue'),
-      meta: { requiresAuth: true },
+      redirect: { name: 'settings', query: { section: 'user' } },
     },
     {
       path: '/campaign/:id',
