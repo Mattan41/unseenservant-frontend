@@ -161,6 +161,31 @@ Applying it: on the Pi, `docker exec my-nginx nginx -t` first and then
 `docker compose up -d nginx` (or `nginx -s reload` inside the container) is
 enough; production follows the release.
 
+## The access log
+
+`nginx/default.conf` defines its own `log_format` (`access`) and sets it at
+**server** level, so it replaces the image's http-level log rather than adding a
+second line to the same file. Two deliberate choices in it, both worth keeping:
+
+* **The visitor is `$http_cf_connecting_ip`, not the peer.** `$remote_addr` is the
+  tunnel container for every request that arrives through Cloudflare, so it says
+  nothing about who asked. Logging both (`peer -> header`) is what makes a client
+  IP question answerable from `docker logs my-nginx` without mounting anything —
+  which is also how the Worker hop was verified.
+* **`$uri`, never `$request`.** The OAuth handshake ends at
+  `<host>/oauth-redirect?token=<JWT>`, so `$request` writes a **usable admin token
+  into the access log** — and the image's default `main` format does exactly that.
+  `$uri` drops the query string, so the path is still logged but the token is not.
+  The SPA does the other half: `OAuthRedirect.vue` reads the token and immediately
+  replaces the URL, so it is not left in the address bar either — which matters
+  because the error path pushes to `/login` and would otherwise keep
+  `/oauth-redirect?token=...` in the browser's history.
+
+What this does **not** cover: Cloudflare sees the full URL at the edge, so the
+token is still visible in the dashboard's analytics/logs for however long you keep
+them. Nothing in this repository can change that; a token delivered in a fragment
+(`#token=`) would, and that is a frontend/backend change rather than a conf one.
+
 ## Rate limiting
 
 Three layers, each where it is for a reason.

@@ -94,7 +94,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Account Linking**: A login is matched by provider identity, then by email (case-insensitive) — an existing account with the same email is reused, no duplicate user is created.
 - **Verified Email**: Google requires a verified email (email_verified = true); a rejected login (unverified or non-whitelisted email) redirects to /under-construction instead of /oauth-redirect.
 - **Status Codes**: 302, 400
-- **Notes**: OAuth redirect handling via /oauth-redirect route which extracts token from URL and calls authStore.handleOAuthRedirect(token).
+- **Notes**: OAuth redirect handling via /oauth-redirect route which extracts token from URL and calls authStore.handleOAuthRedirect(token). The URL is replaced immediately afterwards, so the token is not left in the address bar or in the browser's history (see docs/DEPLOYMENT.md#the-access-log for the server-side half: nginx logs `$uri`, not `$request`).
 
 ---
 
