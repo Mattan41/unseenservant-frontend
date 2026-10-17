@@ -206,6 +206,27 @@ html[data-mode='dark'] {
   --tone-notice-text: #8fdceb;
 }
 
+/* Default palette (silver · light) on :root, as a pre-JS fallback. `main.js`
+   writes data-theme/data-mode before mount; until then no palette block matches
+   and --primary-* would be undefined, leaving the canvas transparent. These
+   defaults keep the first paint a valid theme; the palette blocks below win by
+   specificity once the attributes exist. */
+:root {
+  --color-surface: #ffffff;
+  --surface-section: #c0c0c0;
+  --primary: #c0c0c0;
+  --primary-50: #f9f9f9;
+  --primary-100: #f2f2f2;
+  --primary-200: #e5e5e5;
+  --primary-300: #d8d8d8;
+  --primary-400: #c5c5c5;
+  --primary-500: #c0c0c0;
+  --primary-600: #a0a0a0;
+  --primary-700: #5c5c5c;
+  --primary-800: #3d3d3d;
+  --primary-900: #2b2b2b;
+}
+
 /* --------------------------------------------------------------------------
    PALETTE LAYER — raw values per theme + mode.
    -------------------------------------------------------------------------- */
@@ -214,6 +235,7 @@ html[data-mode='dark'] {
    former html[data-env='dev'] green palette. */
 html[data-theme='forest'][data-mode='light'] {
   --color-surface: #d8e7dd;
+  --surface-section: #6b8e7b;
   --primary: #6b8e7b;
   --primary-50: #bccac1;
   --primary-100: #a9bdb1;
@@ -232,6 +254,7 @@ html[data-theme='forest'][data-mode='light'] {
    --primary-100/300 paints the page and header gradient. */
 html[data-theme='forest'][data-mode='dark'] {
   --color-surface: #131f18;
+  --surface-section: #0b140f;
   --primary: #4f7a5f;
   --primary-50: #0a130d;
   --primary-100: #101c15;
@@ -249,6 +272,7 @@ html[data-theme='forest'][data-mode='dark'] {
    the former html[data-env='prod'] palette. */
 html[data-theme='silver'][data-mode='light'] {
   --color-surface: #ffffff;
+  --surface-section: #c0c0c0;
   --primary: #c0c0c0;
   --primary-50: #f9f9f9;
   --primary-100: #f2f2f2;
@@ -266,6 +290,7 @@ html[data-theme='silver'][data-mode='light'] {
    forest · dark above). */
 html[data-theme='silver'][data-mode='dark'] {
   --color-surface: #1a1a1a;
+  --surface-section: #0f0f0f;
   --primary: #7a7a7a;
   --primary-50: #0a0a0a;
   --primary-100: #111111;
@@ -529,9 +554,9 @@ html[data-env='demo'] {
   --env-banner-text: var(--color-violet-900);
 }
 
-/* Primary section wrapper */
 .section-primary {
-  @apply bg-primary-500 p-4 rounded-lg;
+  @apply p-4 rounded-lg;
+  background-color: var(--surface-section);
 }
 
 /* Contextual sidebar — desktop-only rail (md+), shared by the campaign and
@@ -739,6 +764,12 @@ html[data-env='demo'] {
   @apply hover:text-primary-600;
 }
 
+/* Brand mark (Hat Man logo). The artwork is dark ink on a transparent field, so
+   it sits on a fixed light disc to read the same in every theme and mode. */
+.brand-mark {
+  @apply rounded-full bg-white p-2;
+}
+
 /* Notification component colour types */
 .notification-success {
   @apply bg-(--tone-success-surface) border border-(--tone-success-border) text-(--tone-success-text);
@@ -797,6 +828,9 @@ html[data-env='demo'] {
 .text-default {
   @apply text-(--text-default);
 } /* form labels, headings, primary body text */
+.text-heading {
+  @apply text-(--text-heading);
+} /* section headings and card titles */
 
 .border-subtle {
   @apply border-(--border-subtle);

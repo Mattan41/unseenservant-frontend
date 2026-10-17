@@ -14,7 +14,7 @@ const { displayName } = storeToRefs(userStore)
       <img
         src="@/assets/logo.svg"
         alt="Unseen Servant Logo"
-        class="logo max-w-[150px] h-auto my-4 mx-auto block"
+        class="logo brand-mark max-w-[150px] h-auto my-4 mx-auto block"
       />
     </div>
     <div class="text-center">

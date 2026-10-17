@@ -48,7 +48,7 @@ const handleSubmit = async () => {
 <template>
   <div class="login max-w-md mx-auto mt-10 p-6 bg-[var(--color-surface)] rounded-lg shadow-md">
     <div class="flex flex-col items-center mb-8">
-      <img src="@/assets/logo.svg" alt="Hat Man" class="w-16 h-16 mb-3 object-contain" />
+      <img src="@/assets/logo.svg" alt="Hat Man" class="brand-mark w-16 h-16 mb-3 object-contain" />
       <div class="text-center pb-4 mb-6 border-b border-subtle flex flex-col items-center">
         <h2 class="text-xl font-bold text-default tracking-wide uppercase">Demo Login</h2>
         <p class="text-xs text-muted mt-2 max-w-xs normal-case italic font-normal">

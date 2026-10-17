@@ -84,7 +84,7 @@ async function removeSpellFromCharacter(spell) {
     <!-- Vitals -->
     <div class="p-6 border-t border-section">
       <h2 class="section-heading mb-4">Vitals</h2>
-      <div class="flex flex-wrap gap-6" style="color: var(--color-third-700)">
+      <div class="flex flex-wrap gap-6 text-default">
         <p><strong>Race:</strong> {{ dnd5e.race }}</p>
         <p><strong>Class:</strong> {{ dnd5e.characterClass }}</p>
         <p><strong>Level:</strong> {{ dnd5e.level }}</p>
@@ -94,7 +94,7 @@ async function removeSpellFromCharacter(spell) {
     </div>
 
     <!-- Ability scores -->
-    <div class="p-6" style="background-color: var(--color-third-50)">
+    <div class="p-6" style="background-color: var(--surface-muted)">
       <h2 class="section-heading mb-4">Ability Scores</h2>
       <Dnd5eStatsPanel :stats="dnd5e.stats" />
     </div>
@@ -118,7 +118,7 @@ async function removeSpellFromCharacter(spell) {
 
       <div v-if="spellsLoading" class="text-center py-4">
         <div class="spinner h-6 w-6 border-t-2 border-b-2"></div>
-        <span class="ml-2" style="color: var(--color-third-500)">Loading spells...</span>
+        <span class="ml-2 text-muted">Loading spells...</span>
       </div>
 
       <div v-else-if="characterSpells.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -133,7 +133,7 @@ async function removeSpellFromCharacter(spell) {
         />
       </div>
 
-      <div v-else class="text-center py-4" style="color: var(--color-third-400)">
+      <div v-else class="text-center py-4 text-subtle">
         <p>No spells saved yet. Use the "Search Spells to add" button to find and save spells.</p>
       </div>
     </div>

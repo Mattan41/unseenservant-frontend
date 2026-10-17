@@ -20,12 +20,12 @@ function displayValue(stat) {
       v-for="stat in DND5E_ABILITY_SCORES"
       :key="stat"
       class="p-2 rounded-lg shadow text-center"
-      style="background-color: var(--color-third-200)"
+      style="background-color: var(--surface-raised)"
     >
       <div class="text-lg font-bold" style="color: var(--color-primary-700)">
         {{ displayValue(stat) }}
       </div>
-      <div class="text-xs uppercase tracking-wide" style="color: var(--color-third-600)">
+      <div class="text-xs uppercase tracking-wide text-secondary">
         {{ stat }}
       </div>
     </div>

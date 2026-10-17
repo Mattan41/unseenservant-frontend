@@ -41,13 +41,21 @@ environment banner's own `--env-banner-*` roles (§1.4 and §2).
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
 active theme's `--primary-500` value via the `@theme` block.
 
-`--color-surface` is per-theme and per-mode: `#ffffff` (silver · light) /
-`#d8e7dd` (forest · light) / `#1a1a1a` (silver · dark) / `#131f18` (forest ·
-dark). All themes and modes are reachable from the running app: the switchers
-live in **Settings → General**
+`--color-surface` and `--surface-section` are per-theme and per-mode:
+`#ffffff`/`#c0c0c0` (silver · light), `#d8e7dd`/`#6b8e7b` (forest · light),
+`#1a1a1a`/`#0f0f0f` (silver · dark), `#131f18`/`#0b140f` (forest · dark).
+`--surface-section` backs `.section-primary` (the Characters/Campaigns panel).
+All themes and modes are reachable from the running app: the switchers live in
+**Settings → General**
 (`src/features/settings/components/GeneralSettingsSection.vue`) and persist the
 choices in `localStorage.theme` / `localStorage.mode` via
 `src/utils/environment.js`.
+
+> **`main.js` is the bootstrap.** `applyEnvironmentAttributes()` runs before the
+> app is mounted and writes all three `data-*` attributes. A matching
+> silver · light default also lives on `:root` (see the "Default palette" block
+> in `main.css`) so the very first frame is themed even before that call —
+> there is no inline script in `index.html`.
 
 > **Three-axis model.** `<html>` carries `data-env`
 > (local|dev|test|staging|prod|demo — banner text and tone only),
@@ -265,12 +273,14 @@ all conditional styling in `*Utils.js` files.
 | `.text-muted` | Help text, empty states | `text-(--text-muted)` | implemented |
 | `.text-secondary` | Secondary body text, loading text | `text-(--text-secondary)` | implemented |
 | `.text-default` | Form labels, headings, primary body text | `text-(--text-default)` | implemented |
+| `.text-heading` | Section headings and card titles | `text-(--text-heading)` | implemented |
 | `.border-subtle` | Light dividers between grouped items | `border-(--border-subtle)` | implemented |
 | `.border-section` | Section dividers between major content areas | `border-(--border-section)` | implemented |
 | `.border-input` | Input and button borders | `border-(--border-input)` | implemented |
 | `.chip` | Removable skill/ability chip (name + inline remove button) | `inline-flex items-center gap-1 rounded-full bg-(--surface-raised) px-2 py-1 text-xs text-(--text-default)` | implemented |
 | `.muted-surface` | Muted inset surface for repeated form rows / panels | `rounded-md bg-(--surface-muted)` | implemented |
 | `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-(--surface-raised) p-2 text-center` | implemented |
+| `.brand-mark` | Hat Man logo: dark ink on a fixed light disc so it reads the same in every theme/mode | `rounded-full bg-white p-2` | implemented |
 | `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
 | `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
 | `.stat-strip` | Campaign summary panel: label/value rows | `flex flex-col gap-1` | implemented |

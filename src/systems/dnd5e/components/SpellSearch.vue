@@ -66,7 +66,7 @@ async function onSaveSpell(spell) {
   <div class="spell-search">
     <!-- Header with 5E context -->
     <div class="mb-4">
-      <h4 class="mb-0.5" style="color: var(--color-third-800)">Search 5E Spells</h4>
+      <h4 class="mb-0.5 text-heading">Search 5E Spells</h4>
       <p class="text-xs text-default">
         Search spells compatible with the 5th Edition of the world's oldest fantasy roleplaying
         game.
@@ -79,7 +79,6 @@ async function onSaveSpell(spell) {
           type="text"
           placeholder="Search spells (e.g., fireball, healing, charm)..."
           class="w-full px-4 py-3 pr-10 border border-input rounded-lg input-field"
-          style="color: var(--color-third-800)"
           @input="onSearchInput"
           @keydown.escape="onClearSearch"
         />
@@ -156,7 +155,7 @@ async function onSaveSpell(spell) {
         <!-- Column headings only where there is room for real columns. -->
         <div
           class="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] gap-2 px-4 py-2 border-b border-section font-semibold text-xs text-muted uppercase tracking-wider"
-          style="background-color: var(--color-third-50)"
+          style="background-color: var(--surface-muted)"
         >
           <div>Name</div>
           <div>Level</div>
@@ -178,8 +177,7 @@ async function onSaveSpell(spell) {
             @click="toggleExpand(spell.key)"
           >
             <div
-              class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap"
-              style="color: var(--color-third-800)"
+              class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading"
             >
               {{ spell.name }}
               <span
@@ -232,7 +230,7 @@ async function onSaveSpell(spell) {
           <div
             v-if="expandedSpellKey === spell.key"
             class="px-4 pb-4 pt-2 border-t border-subtle text-sm text-default"
-            style="background-color: color-mix(in srgb, var(--color-third-50) 50%, transparent)"
+            style="background-color: var(--surface-muted)"
           >
             <div
               class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-xs text-muted border-b border-subtle pb-2"
@@ -277,7 +275,7 @@ async function onSaveSpell(spell) {
     </div>
 
     <div v-else class="text-center py-8">
-      <p class="text-sm" style="color: var(--color-third-800)">
+      <p class="text-sm text-default">
         Why not start with searching for the handy spell
         <span class="italic animate-pulse font-medium">Unseen Servant</span>
       </p>
@@ -285,7 +283,7 @@ async function onSaveSpell(spell) {
 
     <!-- Attribution footer -->
     <div class="mt-6 pt-4 border-t border-subtle text-center">
-      <p class="text-[11px] italic" style="color: var(--color-third-800)">
+      <p class="text-[11px] italic text-default">
         Data provided via the
         <a
           href="https://open5e.com"
