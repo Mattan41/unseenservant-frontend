@@ -67,6 +67,10 @@ deep link to a section the visitor may not open falls back to General.
 `/user-profile` is kept as a redirect to `/settings?section=user` so existing
 links keep working.
 
+`/privacy` and `/terms` are public too: neither route carries `meta`, so the
+privacy policy and the terms can be read without an account. The footer links to
+both, and the login card links to both as well.
+
 The router guard will automatically check authentication:
 
 ```javascript
