@@ -10,7 +10,9 @@ import { ref } from 'vue'
  *                  banner's text here and its colours in main.css
  *                  (`html[data-env='X']` → --env-banner-*).
  *   data-theme — 'silver'        : identity / brand palette (forest alternative)
- *   data-mode  — 'light'         : surface / neutral palette (dark later)
+ *   data-mode  — 'light' | 'dark': surface / neutral palette. Resolved from a
+ *                'system' | 'light' | 'dark' preference that follows the OS by
+ *                default and can be overridden in Settings → General.
  */
 
 /** Build environment, sourced from the Vite env (falls back to 'local'). */
@@ -108,18 +110,111 @@ export function setTheme(newTheme) {
   }
 }
 
-/** Active mode. Only 'light' exists today; prefers-color-scheme is a later pass. */
-export const DEFAULT_MODE = 'light'
+/**
+ * Mode preference — 'system' follows the OS, 'light'/'dark' override it. The
+ * default is `system`, so no stored value means "follow prefers-color-scheme".
+ */
+export const DEFAULT_MODE = 'system'
+
+/** localStorage key holding the user's mode preference. */
+export const MODE_STORAGE_KEY = 'mode'
+
+/** Modes the user can pick — must match the data-mode values in main.css. */
+export const AVAILABLE_MODES = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+]
+
+/** Media query that reports the OS colour-scheme preference. */
+const SYSTEM_DARK_QUERY = '(prefers-color-scheme: dark)'
+
+/**
+ * True when the OS asks for dark. Guarded because `matchMedia` is absent in
+ * jsdom and in any non-browser render, and importing this module must not throw.
+ */
+function prefersDark() {
+  try {
+    return typeof window !== 'undefined' && window.matchMedia
+      ? window.matchMedia(SYSTEM_DARK_QUERY).matches
+      : false
+  } catch {
+    return false
+  }
+}
+
+/** Resolves a preference to the concrete mode painted on <html>. */
+function resolveMode(preference) {
+  if (preference === 'system') return prefersDark() ? 'dark' : 'light'
+  return preference
+}
+
+/**
+ * Reads the persisted mode preference, falling back to DEFAULT_MODE when
+ * nothing valid is stored (or when localStorage is unavailable).
+ */
+function readStoredMode() {
+  try {
+    const stored = localStorage.getItem(MODE_STORAGE_KEY)
+    return AVAILABLE_MODES.some((option) => option.id === stored) ? stored : DEFAULT_MODE
+  } catch {
+    return DEFAULT_MODE
+  }
+}
+
+/** Active mode preference (reactive). Initialised from localStorage at app start. */
+export const mode = ref(readStoredMode())
+
+/** The concrete mode currently painted ('light' or 'dark'); 'system' resolved. */
+export const resolvedMode = ref(resolveMode(mode.value))
+
+/** Writes the resolved mode onto <html data-mode>. */
+function applyModeAttribute() {
+  resolvedMode.value = resolveMode(mode.value)
+  document.documentElement.setAttribute('data-mode', resolvedMode.value)
+}
+
+/**
+ * Switches the mode preference: updates the ref, <html data-mode>, and the
+ * persisted preference. Unknown ids are ignored; 'system' re-reads the OS.
+ */
+export function setMode(newMode) {
+  if (!AVAILABLE_MODES.some((option) => option.id === newMode)) return
+
+  mode.value = newMode
+  applyModeAttribute()
+
+  // Client-side only for now, like the theme. Keep the localStorage write — it
+  // is the source of truth before any future backend mirror.
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, newMode)
+  } catch {
+    // localStorage unavailable (e.g. privacy mode) — mode still applies this session.
+  }
+}
+
+// Live OS changes only matter while the preference is 'system'. Subscribing
+// once here (guarded for non-browser environments) keeps <html> in step
+// without any component polling.
+try {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    window.matchMedia(SYSTEM_DARK_QUERY).addEventListener?.('change', () => {
+      if (mode.value === 'system') applyModeAttribute()
+    })
+  }
+} catch {
+  // No matchMedia (jsdom/build) — nothing to subscribe to.
+}
 
 /**
  * Applies the three axes to <html>.
  *
- * data-mode will become reactive (prefers-color-scheme) in a future pass;
- * data-theme is applied from the (possibly persisted) reactive `theme`.
+ * data-mode is the resolved OS/override mode; data-theme is applied from the
+ * (possibly persisted) reactive `theme`.
  */
 export function applyEnvironmentAttributes() {
   const root = document.documentElement
   root.setAttribute('data-env', ENVIRONMENT)
   root.setAttribute('data-theme', theme.value)
-  root.setAttribute('data-mode', DEFAULT_MODE)
+  applyModeAttribute()
 }

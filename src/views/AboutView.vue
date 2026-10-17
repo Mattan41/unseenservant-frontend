@@ -193,7 +193,7 @@
   margin-bottom: 0.75rem;
   padding-left: 0.75rem;
   border-left: 2px solid var(--color-primary-200);
-  color: var(--color-third-600);
+  color: var(--text-secondary);
 }
 
 /* Publisher list in the Open5e / OGL credit. */

@@ -35,7 +35,7 @@ function close() {
       >
         <!-- Modal header -->
         <div class="flex items-start justify-between mb-4">
-          <h3 class="text-2xl font-bold" style="color: var(--color-third-800)">{{ spell.name }}</h3>
+          <h3 class="text-2xl font-bold text-heading">{{ spell.name }}</h3>
           <BaseButton variant="icon" class="text-xl" @click="close">✕</BaseButton>
         </div>
 
@@ -71,7 +71,7 @@ function close() {
 
         <!-- Description -->
         <div class="mt-4">
-          <h4 class="font-semibold mb-2" style="color: var(--color-third-800)">Description</h4>
+          <h4 class="font-semibold mb-2 text-heading">Description</h4>
           <MarkdownText
             v-if="spell.desc || spell.description"
             :text="spell.desc || spell.description"

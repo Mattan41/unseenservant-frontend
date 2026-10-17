@@ -110,7 +110,7 @@ onUnmounted(() => {
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">
             <div class="flex items-baseline gap-2 mb-1">
-              <span class="font-semibold text-sm" style="color: var(--color-third-800)">
+              <span class="font-semibold text-sm text-heading">
                 {{ getSenderNickname(message.userId) }}
               </span>
               <span class="text-xs text-subtle">

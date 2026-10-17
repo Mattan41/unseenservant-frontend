@@ -30,7 +30,7 @@ defineEmits(['adjust-vital'])
     :saving="saving"
     @adjust-vital="$emit('adjust-vital', $event)"
   />
-  <div v-else class="p-6 text-center" style="color: var(--color-third-500)">
+  <div v-else class="p-6 text-center text-muted">
     <p>No character sheet is available for the "{{ character.systemType }}" system yet.</p>
   </div>
 </template>

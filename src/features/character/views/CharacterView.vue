@@ -153,11 +153,11 @@ const exportCharacter = async (format) => {
   <div class="mx-auto w-full max-w-7xl p-4">
     <div v-if="loading" class="text-center py-8">
       <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
-      <p class="mt-2" style="color: var(--color-third-600)">Loading character...</p>
+      <p class="mt-2 text-secondary">Loading character...</p>
     </div>
 
     <div v-else-if="!currentCharacter" class="text-center py-8">
-      <p style="color: var(--color-third-600)">Character not found.</p>
+      <p class="text-secondary">Character not found.</p>
       <BaseButton variant="default" class="mt-4" @click="router.push({ name: 'CharactersView' })">
         Back to Character List
       </BaseButton>

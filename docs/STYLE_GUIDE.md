@@ -13,32 +13,49 @@
 ### 1.1 `--color-primary` (theme + mode aware)
 
 Set on `<html data-theme="silver" data-mode="light">`. Source:
-`src/assets/main.css`. Values live in the **palette layer**
-(`html[data-theme='silver'][data-mode='light']`); the active theme/mode is
-applied at runtime by `src/utils/environment.js`. `data-env` does **not** touch
-these palettes: the only colours it drives are the environment banner's own
-`--env-banner-*` roles (§1.4 and §2).
+`src/assets/main.css`. Values live in the **palette layer** — one block per
+theme+mode (`html[data-theme='silver'][data-mode='light']` and its dark
+counterpart). Every theme ships a light and a dark block (a pair). The active
+theme/mode is applied at runtime by `src/utils/environment.js`: the mode follows
+`prefers-color-scheme` unless the user overrides it in Settings → General.
+`data-env` does **not** touch these palettes: the only colours it drives are the
+environment banner's own `--env-banner-*` roles (§1.4 and §2).
 
-| Token | silver · light (active default) | forest · light (alternative) | Status |
-|-------|---------------------------------|------------------------------|--------|
-| `--color-primary-50` | #f9f9f9 | #bccac1 | implemented |
-| `--color-primary-100` | #f2f2f2 | #a9bdb1 | implemented |
-| `--color-primary-200` | #e5e5e5 | #96b0a1 | implemented |
-| `--color-primary-300` | #d8d8d8 | #83a391 | implemented |
-| `--color-primary-400` | #c5c5c5 | #749584 | implemented |
-| `--color-primary-500` | #c0c0c0 | #6b8e7b | implemented |
-| `--color-primary-600` | #a0a0a0 | #567263 | implemented |
-| `--color-primary-700` | #5c5c5c | #41564a | implemented |
-| `--color-primary-800` | #3d3d3d | #2c3a32 | implemented |
-| `--color-primary-900` | #2b2b2b | #171e1a | implemented |
+| Token | silver · light (active default) | forest · light (alternative) | silver · dark | forest · dark | Status |
+|-------|---------------------------------|------------------------------|---------------|---------------|--------|
+| `--color-primary-50` | #f9f9f9 | #bccac1 | #0a0a0a | #0a130d | implemented |
+| `--color-primary-100` | #f2f2f2 | #a9bdb1 | #111111 | #101c15 | implemented |
+| `--color-primary-200` | #e5e5e5 | #96b0a1 | #171717 | #16271d | implemented |
+| `--color-primary-300` | #d8d8d8 | #83a391 | #1f1f1f | #1d3327 | implemented |
+| `--color-primary-400` | #c5c5c5 | #749584 | #3f3f3f | #2d4d3b | implemented |
+| `--color-primary-500` | #c0c0c0 | #6b8e7b | #7a7a7a | #4f7a5f | implemented |
+| `--color-primary-600` | #a0a0a0 | #567263 | #a6a6a6 | #79a487 | implemented |
+| `--color-primary-700` | #5c5c5c | #41564a | #cccccc | #a9c9b4 | implemented |
+| `--color-primary-800` | #3d3d3d | #2c3a32 | #e0e0e0 | #c7dccd | implemented |
+| `--color-primary-900` | #2b2b2b | #171e1a | #f5f5f5 | #e8f1ea | implemented |
+
+> The dark shades **invert** the ramp (50 darkest → 900 lightest) because
+> `--primary-900` is used as body text and `--primary-100/300` paints the page
+> and header gradient.
 
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
 active theme's `--primary-500` value via the `@theme` block.
 
-`--color-surface` is per-theme too: `#ffffff` (silver) / `#d8e7dd` (forest).
-Both themes are reachable from the running app: the switcher lives in
-**Settings → General** (`src/features/settings/components/GeneralSettingsSection.vue`)
-and persists the choice in `localStorage` via `src/utils/environment.js`.
+`--color-surface` and `--surface-section` are per-theme and per-mode:
+`#ffffff`/`#c0c0c0` (silver · light), `#d8e7dd`/`#6b8e7b` (forest · light),
+`#1a1a1a`/`#0f0f0f` (silver · dark), `#131f18`/`#0b140f` (forest · dark).
+`--surface-section` backs `.section-primary` (the Characters/Campaigns panel).
+All themes and modes are reachable from the running app: the switchers live in
+**Settings → General**
+(`src/features/settings/components/GeneralSettingsSection.vue`) and persist the
+choices in `localStorage.theme` / `localStorage.mode` via
+`src/utils/environment.js`.
+
+> **`main.js` is the bootstrap.** `applyEnvironmentAttributes()` runs before the
+> app is mounted and writes all three `data-*` attributes. A matching
+> silver · light default also lives on `:root` (see the "Default palette" block
+> in `main.css`) so the very first frame is themed even before that call —
+> there is no inline script in `index.html`.
 
 > **Three-axis model.** `<html>` carries `data-env`
 > (local|dev|test|staging|prod|demo — banner text and tone only),
@@ -61,20 +78,68 @@ Status: implemented.
 
 Status: implemented.
 
+The `third` ramp itself is fixed; the mode-aware **roles** in §1.4 point at it in
+light mode and at dark values inside `html[data-mode='dark']`, so the neutral
+scale flips without changing the palette.
+
 ### 1.4 Additional semantic-role variables
 
-Based on patterns observed in the audit. Define role variables in the
-`:root` role layer of `src/assets/main.css`; their values may be overridden
-per theme/mode in the `html[data-theme][data-mode]` palette blocks.
+Neutral, text, border, surface and callout colours are exposed as semantic
+**role** variables in the `:root` role layer of `src/assets/main.css`; the
+light values point at the fixed `third`/`secondary` ramps, and one
+`html[data-mode='dark']` block re-points every role at its dark counterpart.
+The per-theme `--color-surface` is the exception — it lives in the palette
+blocks. Components consume roles, never raw shades.
 
 | Variable | Proposed value | Rationale | Status |
 |----------|---------------|-----------|--------|
-| `--color-surface` | `#ffffff` / `#d8e7dd` | Card/modals/form backgrounds — used in 10+ components. **Per-theme role** (set in each `html[data-theme][data-mode]` block, not `:root`): `#ffffff` (silver), `#d8e7dd` (forest). A dark-mode value is TBD in the dark-mode pass. | implemented |
+| `--color-surface` | `#ffffff`/`#d8e7dd` (light) · `#1a1a1a`/`#131f18` (dark) | Card/modals/form backgrounds — used in 10+ components. **Per-theme and per-mode** (set in each `html[data-theme][data-mode]` block, not `:root`). | implemented |
 | `--color-border-default` | `var(--color-third-200)` | Form input borders — used in 17+ locations | proposed |
 | `--color-text-muted` | `var(--color-third-500)` | "Loading...", empty states — used in 20+ locations | proposed |
 | `--env-banner-surface` | `var(--color-third-100)` | Environment banner background. The neutral fallback sits in `:root`; each `html[data-env='X']` block next to `.env-banner` overrides it — `local` blue, `dev` green, `test` yellow, `staging` orange, `demo` violet. Production draws no banner, so it has no tone. | implemented |
 | `--env-banner-border` | `var(--color-third-400)` | Environment banner bottom border — same per-environment overrides. | implemented |
 | `--env-banner-text` | `var(--color-third-900)` | Environment banner text colour — same per-environment overrides. | implemented |
+
+#### Neutral / text / border / surface roles (mode-aware)
+
+Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them.
+
+| Role | Light | Dark | Used by |
+|------|-------|------|---------|
+| `--text-subtle` | `third-400` | `#7c8698` | `.text-subtle`, `.base-btn-icon` |
+| `--text-muted` | `third-500` | `#97a0b0` | `.text-muted`, `.stat-label` |
+| `--text-secondary` | `third-600` | `#b3bbc9` | `.text-secondary`, `.field-tab`, `.edit-bar-label` |
+| `--text-default` | `third-700` | `#d2d7df` | `.text-default`, `.chip`, `.stat-value`, `.export-menu-item` |
+| `--text-heading` | `third-800` | `#e4e8ee` | `.rich-text h1–h5` |
+| `--text-strong` | `third-900` | `#f3f5f8` | `.rich-text strong` |
+| `--text-faint` | `third-300` | `#4b5563` | `.stat-separator` |
+| `--border-subtle` | `third-100` | `#232a35` | `.border-subtle` |
+| `--border-section` | `third-200` | `#2e3642` | `.border-section`, `.empty-cta`, `.export-menu`, `.rich-text hr/table` |
+| `--border-input` | `third-300` | `#3d4653` | `.border-input`, `.field-tabs`, `.markdown-preview`, `.edit-bar`, `.number-stepper-btn` |
+| `--surface-muted` | `third-50` | `#12181f` | `.muted-surface`, `.profile-section`, `.spell-row-hover` |
+| `--surface-inset` | `third-100` | `#18202a` | `.profile-value`, `.field-tabs`, `.edit-bar`, `.rich-text code/pre/th`, `.markdown-help-source` |
+| `--surface-raised` | `third-200` | `#222b36` | `.chip`, `.attribute-tile`, `.spell-history-hover` |
+| `--neutral-fill` / `--neutral-fill-hover` | `third-300` / `third-400` | `#2e3642` / `#3d4653` | `.base-btn-ghost` (with `--btn-ghost-*`), `.button-secondary` |
+| `--neutral-strong` / `--neutral-strong-hover` | `third-400` / `third-500` | `#3d4653` / `#4b5563` | `.header-nav-link-secondary` |
+| `--popover-surface` / `--popover-text` | `third-800` / `primary-50` | `#e4e8ee` / `#12181f` | `.info-popover` (inverted surface) |
+
+#### Amber + callout tone roles (mode-aware)
+
+| Role | Light | Dark | Used by |
+|------|-------|------|---------|
+| `--secondary-surface` / `--secondary-text` | `secondary-100` / `secondary-800` | `#43350f` / `#ffd98a` | `.character-tag-level`, `.notification-warning` |
+| `--secondary-surface-soft` | `secondary-50` | `#2b2209` | `.suggested-choice`, `.suggested-choice-group` |
+| `--secondary-border` / `--secondary-text-strong` | `secondary-400` / `secondary-900` | `#a97e1f` / `#ffe9b8` | `.info-box--warning` |
+| `--secondary-accent` | `secondary-700` | `#ffc44d` | `.text-warning` |
+| `--tone-success-*` | `green-100/400/700` | `#10301c`/`#2f7d4a`/`#86e0a2` | `.success-message`, `.info-box--success`, `.notification-success` |
+| `--tone-danger-*` | `red-100/400/700` | `#3a1618`/`#b4444a`/`#ff9ea1` | `.error-message`, `.info-box--danger`, `.notification-error`, `.danger-zone`, `.badge-danger` |
+| `--tone-notice-*` | `cyan-50/200/800` | `#0f3038`/`#2f7d8c`/`#8fdceb` | `.guest-notice` |
+
+Deliberately **not** mode-aware (fixed on purpose): the hue `.badge-*` variants
+(blue/purple/indigo/pink/teal/yellow), the legacy solid `.button-*` variants,
+`.slide-over-backdrop` (`bg-black/50` scrim) and the environment banner tones
+(meant to be loud).
+
 ---
 
 ## 2. Semantic Classes
@@ -87,7 +152,7 @@ per theme/mode in the `html[data-theme][data-mode]` palette blocks.
 |-------|------|--------------|--------|
 | `.button` | Base | ml-1 mt-1 px-2 py-1 text-xs font-semibold rounded cursor-pointer transition focus:outline-none focus:ring-2 | in progress |
 | `.button-primary` | Primary action | `bg-primary-700 text-primary-100 hover:bg-primary-800 focus:ring-primary-700` | in progress |
-| `.button-secondary` | Ghost/secondary | `bg-gray-300 text-black hover:bg-gray-400 focus:ring-gray-300` | in progress |
+| `.button-secondary` | Ghost/secondary | `bg-(--neutral-fill) text-(--btn-ghost-text) hover:bg-(--neutral-fill-hover) focus:ring-(--btn-ghost-ring)` | in progress |
 | `.button-add` | Save/create | `bg-green-800 text-gray-100 hover:bg-green-900 focus:ring-green-900` | in progress |
 | `.button-update` | Update/edit | `bg-yellow-600 text-gray-200 hover:bg-yellow-700 focus:ring-yellow-500` | in progress |
 | `.button-remove` | Delete | `bg-red-900 text-gray-200 hover:bg-red-950 focus:ring-red-500` | in progress |
@@ -204,16 +269,18 @@ all conditional styling in `*Utils.js` files.
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-name` | Character name (clickable card title) | `text-primary-700 hover:text-primary-800` | implemented |
-| `.text-subtle` | Faint labels, e.g. "Sign in" | `text-third-400` | implemented |
-| `.text-muted` | Help text, empty states | `text-third-500` | implemented |
-| `.text-secondary` | Secondary body text, loading text | `text-third-600` | implemented |
-| `.text-default` | Form labels, headings, primary body text | `text-third-700` | implemented |
-| `.border-subtle` | Light dividers between grouped items | `border-third-100` | implemented |
-| `.border-section` | Section dividers between major content areas | `border-third-200` | implemented |
-| `.border-input` | Input and button borders | `border-third-300` | implemented |
-| `.chip` | Removable skill/ability chip (name + inline remove button) | `inline-flex items-center gap-1 rounded-full bg-third-200 px-2 py-1 text-xs text-third-700` | implemented |
-| `.muted-surface` | Muted inset surface for repeated form rows / panels | `rounded-md bg-third-50` | implemented |
-| `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-third-200 p-2 text-center` | implemented |
+| `.text-subtle` | Faint labels, e.g. "Sign in" | `text-(--text-subtle)` | implemented |
+| `.text-muted` | Help text, empty states | `text-(--text-muted)` | implemented |
+| `.text-secondary` | Secondary body text, loading text | `text-(--text-secondary)` | implemented |
+| `.text-default` | Form labels, headings, primary body text | `text-(--text-default)` | implemented |
+| `.text-heading` | Section headings and card titles | `text-(--text-heading)` | implemented |
+| `.border-subtle` | Light dividers between grouped items | `border-(--border-subtle)` | implemented |
+| `.border-section` | Section dividers between major content areas | `border-(--border-section)` | implemented |
+| `.border-input` | Input and button borders | `border-(--border-input)` | implemented |
+| `.chip` | Removable skill/ability chip (name + inline remove button) | `inline-flex items-center gap-1 rounded-full bg-(--surface-raised) px-2 py-1 text-xs text-(--text-default)` | implemented |
+| `.muted-surface` | Muted inset surface for repeated form rows / panels | `rounded-md bg-(--surface-muted)` | implemented |
+| `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-(--surface-raised) p-2 text-center` | implemented |
+| `.brand-mark` | Hat Man logo: dark ink on a fixed light disc so it reads the same in every theme/mode | `rounded-full bg-white p-2` | implemented |
 | `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
 | `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
 | `.stat-strip` | Campaign summary panel: label/value rows | `flex flex-col gap-1` | implemented |
@@ -221,7 +288,7 @@ all conditional styling in `*Utils.js` files.
 | `.stat-label` / `.stat-value` | Row label / figure | `shrink-0 text-xs uppercase tracking-wide text-third-500` / `min-w-0 font-semibold text-third-700` | implemented |
 | `.stat-entry` / `.stat-separator` | One participant in the summary roster (`nickname · ROLE`) / its leading `\|` | `whitespace-nowrap` / `mr-1.5 text-third-300` | implemented |
 | `.stat-roster` | Participants roster wrapper: entries wrap *between* participants so a long roster stays inside the panel | `flex flex-wrap gap-x-3 gap-y-1` | implemented |
-| `.info-popover` | Info popover body (`BaseTooltip.vue`) | `rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg` | implemented |
+| `.info-popover` | Info popover body (`BaseTooltip.vue`) | `rounded-md bg-(--popover-surface) p-2 text-left text-xs font-normal normal-case leading-snug text-(--popover-text) shadow-lg` | implemented |
 | `.info-popover--fixed` | Info popover on desktop (md+); teleported + JS-positioned | `fixed z-[60]` | implemented |
 | `.info-popover--inline` | Info popover on mobile (<md); expands under the trigger | `mt-1 block` | implemented |
 | `.text-warning` | Warning text tone (e.g. attribute array mismatch) | `text-secondary-700` | implemented |

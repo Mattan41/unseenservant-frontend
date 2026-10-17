@@ -42,8 +42,8 @@ const viewCharacter = (id) => {
     </div>
 
     <div v-else-if="characterStore.characters.length === 0" class="text-center py-8">
-      <p style="color: var(--color-third-600)">You don't have any characters yet.</p>
-      <p class="text-sm mt-1" style="color: var(--color-third-400)">
+      <p class="text-secondary">You don't have any characters yet.</p>
+      <p class="text-sm mt-1 text-subtle">
         Click the button below to create your first one.
       </p>
     </div>
@@ -88,7 +88,7 @@ const viewCharacter = (id) => {
           </div>
 
           <!-- Character information -->
-          <div class="mt-3 pt-2 border-t" style="border-color: var(--color-third-100)">
+          <div class="mt-3 pt-2 border-t" style="border-color: var(--border-subtle)">
             <div class="flex flex-wrap gap-2">
               <template v-if="character.dnd5e">
                 <span class="character-tag">{{ character.dnd5e.race }}</span>
@@ -112,7 +112,7 @@ const viewCharacter = (id) => {
         <!-- Field for actions -->
         <div
           class="px-4 py-2 border-t flex justify-between items-center"
-          style="background-color: var(--color-third-50); border-color: var(--color-third-100)"
+          style="background-color: var(--surface-muted); border-color: var(--border-subtle)"
         >
           <div class="text-xs text-muted truncate mr-2">
             <span v-if="character.lastUpdated"

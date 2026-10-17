@@ -35,7 +35,7 @@
 
 /* ghost button */
 .base-btn-ghost {
-  @apply bg-gray-300 text-black hover:bg-gray-400 focus:ring-gray-300;
+  @apply bg-(--neutral-fill) text-(--btn-ghost-text) hover:bg-(--neutral-fill-hover) focus:ring-(--btn-ghost-ring);
 }
 
 /* Add / Save button */
@@ -60,7 +60,7 @@
 
 /* Icon / close button */
 .base-btn-icon {
-  @apply text-third-400 hover:text-third-600 cursor-pointer leading-none transition duration-300;
+  @apply text-(--text-subtle) hover:text-(--text-secondary) cursor-pointer leading-none transition duration-300;
 }
 
 /* Guest-session button ("Guest Demo mode" on the login card). Shares the guest

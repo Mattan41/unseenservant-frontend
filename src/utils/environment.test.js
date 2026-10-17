@@ -21,7 +21,23 @@ const ENVIRONMENT_FLAGS = {
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
+  localStorage.clear()
 })
+
+/**
+ * Stubs `matchMedia` so a `system` preference resolves deterministically. The
+ * default jsdom environment has no `matchMedia`, which the module treats as
+ * "light".
+ */
+function stubMatchMedia(matches) {
+  vi.stubGlobal('matchMedia', (query) => ({
+    matches,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }))
+}
 
 describe('environment', () => {
   it('gives every origin its own value, so no two share a banner tone', async () => {
@@ -54,5 +70,54 @@ describe('environment', () => {
     const environment = await loadEnvironment('test')
     environment.applyEnvironmentAttributes()
     expect(document.documentElement.getAttribute('data-env')).toBe('test')
+  })
+})
+
+describe('mode', () => {
+  it('defaults to system and resolves to light when the OS has no dark preference', async () => {
+    stubMatchMedia(false)
+    const environment = await loadEnvironment('local')
+    expect(environment.DEFAULT_MODE).toBe('system')
+    expect(environment.mode.value).toBe('system')
+    expect(environment.resolvedMode.value).toBe('light')
+  })
+
+  it('resolves system to dark when the OS prefers dark', async () => {
+    stubMatchMedia(true)
+    const environment = await loadEnvironment('local')
+    expect(environment.resolvedMode.value).toBe('dark')
+  })
+
+  it('honours and persists an explicit override', async () => {
+    stubMatchMedia(false)
+    const environment = await loadEnvironment('local')
+
+    environment.setMode('dark')
+
+    expect(environment.mode.value).toBe('dark')
+    expect(environment.resolvedMode.value).toBe('dark')
+    expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
+    expect(localStorage.getItem('mode')).toBe('dark')
+  })
+
+  it('ignores an unknown mode id', async () => {
+    const environment = await loadEnvironment('local')
+    environment.setMode('neon')
+    expect(environment.mode.value).toBe('system')
+  })
+
+  it('reads a stored preference instead of the default', async () => {
+    localStorage.setItem('mode', 'light')
+    stubMatchMedia(true)
+    const environment = await loadEnvironment('local')
+    expect(environment.mode.value).toBe('light')
+    expect(environment.resolvedMode.value).toBe('light')
+  })
+
+  it('writes the resolved mode to <html data-mode>', async () => {
+    stubMatchMedia(true)
+    const environment = await loadEnvironment('local')
+    environment.applyEnvironmentAttributes()
+    expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
   })
 })

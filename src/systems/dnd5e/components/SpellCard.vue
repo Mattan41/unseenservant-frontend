@@ -39,7 +39,7 @@ const shortDescription = computed(() => {
   <BaseCard clickable @click="emit('click', spell)">
     <div>
       <div class="flex items-start justify-between gap-2 mb-2">
-        <h4 class="text-lg font-semibold line-clamp-2" style="color: var(--color-third-800)">
+        <h4 class="text-lg font-semibold line-clamp-2 text-heading">
           {{ spell.name }}
         </h4>
         <span
