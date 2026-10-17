@@ -13,6 +13,7 @@ import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import ExportMenu from '@/components/base/ExportMenu.vue'
 import { buildCharacterExport, buildCharacterBackup } from '@/features/character/characterExport.js'
+import { characterSystemLabel } from '@/features/character/dispatchers/systemRegistry.js'
 import { fetchExportExtras } from '@/features/character/dispatchers/systemExport.js'
 import { downloadTextFile, dateStamp, slugifyFileName } from '@/utils/download.js'
 
@@ -218,7 +219,9 @@ const exportCharacter = async (format) => {
             <h3 class="mt-3 text-xl font-bold text-default">
               {{ currentCharacter.name }}
             </h3>
-            <span class="badge badge-primary mt-1">{{ currentCharacter.systemType }}</span>
+            <span class="badge badge-primary mt-1">
+              {{ characterSystemLabel(currentCharacter.systemType) }}
+            </span>
 
             <!-- Link to the character's own campaign (independent of the
                  `from=campaign` context). A full button, so the association is

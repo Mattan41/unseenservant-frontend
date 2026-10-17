@@ -21,10 +21,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  /** Active system, e.g. 'DND5E' | 'OFFWORLDERS'. */
+  /** Active system, e.g. 'DND5E' | 'OFFWORLDERS'; null when the character has none. */
   systemType: {
     type: String,
-    required: true,
+    default: null,
   },
 })
 
@@ -50,5 +50,7 @@ function updateOffworlders(value) {
     :model-value="modelValue.offworlders"
     @update:model-value="updateOffworlders"
   />
-  <p v-else class="text-muted">No form is available for this system.</p>
+  <!-- No system chosen: nothing to render (the character keeps the generic
+       core fields only). The message below is for a system we cannot draw. -->
+  <p v-else-if="systemType" class="text-muted">No form is available for this system.</p>
 </template>

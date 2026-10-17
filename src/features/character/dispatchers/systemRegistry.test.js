@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { buildPayload } from '@/features/character/dispatchers/systemRegistry.js'
+import {
+  buildPayload,
+  characterSystemLabel,
+  createEmptyCharacterBlocks,
+  SYSTEM_FORM_OPTIONS,
+} from '@/features/character/dispatchers/systemRegistry.js'
 import { DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
 import { OFFWORLDERS_SYSTEM_TYPE } from '@/systems/offworlders/constants.js'
 
@@ -52,5 +57,48 @@ describe('buildPayload', () => {
     const offworldersPayload = buildPayload(OFFWORLDERS_SYSTEM_TYPE, CHARACTER)
     expect(offworldersPayload.offworlders).toEqual(CHARACTER.offworlders)
     expect(offworldersPayload.dnd5e).toBeUndefined()
+  })
+
+  it('creates a system-less character without attaching any system block', () => {
+    const payload = buildPayload('', { ...CHARACTER, systemType: '' })
+
+    expect(payload.systemType).toBeNull()
+    expect(payload.dnd5e).toBeUndefined()
+    expect(payload.offworlders).toBeUndefined()
+    // The generic core fields are still sent.
+    expect(payload).toMatchObject({
+      name: CHARACTER.name,
+      notes: CHARACTER.notes,
+      appearance: CHARACTER.appearance,
+      backstory: CHARACTER.backstory,
+      privateBackstory: CHARACTER.privateBackstory,
+    })
+  })
+})
+
+describe('SYSTEM_FORM_OPTIONS', () => {
+  it('offers "no system" first and never leaks into the empty data blocks', () => {
+    expect(SYSTEM_FORM_OPTIONS[0]).toEqual({ id: '', label: 'No system' })
+
+    // The "no system" choice has no data block, so the form model must not grow
+    // a bogus third key for it.
+    expect(Object.keys(createEmptyCharacterBlocks()).sort()).toEqual(['dnd5e', 'offworlders'])
+  })
+})
+
+describe('characterSystemLabel', () => {
+  it('labels a known system', () => {
+    expect(characterSystemLabel(DND5E_SYSTEM_TYPE)).toBe('Dungeons & Dragons 5e')
+    expect(characterSystemLabel(OFFWORLDERS_SYSTEM_TYPE)).toBe('Offworlders')
+  })
+
+  it('labels a character with no system instead of printing null', () => {
+    expect(characterSystemLabel(null)).toBe('No system')
+    expect(characterSystemLabel(undefined)).toBe('No system')
+    expect(characterSystemLabel('')).toBe('No system')
+  })
+
+  it('shows an unknown-but-set system id as-is', () => {
+    expect(characterSystemLabel('FATE')).toBe('FATE')
   })
 })

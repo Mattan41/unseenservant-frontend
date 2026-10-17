@@ -10,7 +10,7 @@ import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import { parseCharacterBackup, characterFromBackup } from '@/features/character/characterExport.js'
 import {
   DEFAULT_SYSTEM_TYPE,
-  SYSTEM_OPTIONS,
+  SYSTEM_FORM_OPTIONS,
   SYSTEM_LABELS,
   createEmptyCharacterBlocks,
   validate,
@@ -166,7 +166,11 @@ const submitCharacter = async () => {
               v-model="character.systemType"
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
-              <option v-for="option in SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+              <option
+                v-for="option in SYSTEM_FORM_OPTIONS"
+                :key="String(option.id)"
+                :value="option.id"
+              >
                 {{ option.label }}
               </option>
             </select>

@@ -30,7 +30,10 @@ defineEmits(['adjust-vital'])
     :saving="saving"
     @adjust-vital="$emit('adjust-vital', $event)"
   />
-  <div v-else class="p-6 text-center text-muted">
+  <!-- A character created without a game system has no sheet to draw, and that
+       is not an error — the main column stays empty. The message below is for a
+       system we cannot draw. -->
+  <div v-else-if="character.systemType" class="p-6 text-center text-muted">
     <p>No character sheet is available for the "{{ character.systemType }}" system yet.</p>
   </div>
 </template>

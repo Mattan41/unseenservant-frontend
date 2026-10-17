@@ -240,7 +240,7 @@ all conditional styling in `*Utils.js` files.
 | `.context-gradient` | Vertical theme gradient for context rails and their mobile drawers | `bg-linear-to-b from-primary-100 via-primary-300 to-primary-100` | implemented |
 | `.context-mobile-bar` | Mobile contextual top bar: title + local nav trigger | `flex items-center justify-between gap-2 p-2 md:hidden` | implemented |
 | `.context-mobile-title` | Context title shown in the mobile top bar | `min-w-0 truncate text-lg font-bold text-third-700` | implemented |
-| `.context-nav-trigger` | Section-drawer trigger in the mobile top bar (a `BaseButton` with base margins/padding reset) | `ml-0 mt-0 inline-flex items-center gap-2 bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
+| `.context-nav-trigger` | Section-drawer trigger in the mobile top bar (a `BaseButton` with base margins/padding reset). Never shrinks or wraps, so a long context title cannot reshape it | `ml-0 mt-0 inline-flex flex-shrink-0 items-center gap-2 whitespace-nowrap bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
 | `.context-nav-list` | Section-button list wrapper | `flex flex-col items-stretch justify-start gap-2 flex-1` | implemented |
 | `.context-nav-item` | Section navigation button | `relative inline-flex items-center justify-start gap-2 text-sm font-medium px-3 py-2 rounded-md cursor-pointer transition-colors bg-primary-200 text-primary-900 hover:bg-primary-300 text-left` | implemented |
 | `.context-nav-item--active` | Active/selected section modifier | `bg-primary-700 text-primary-100 hover:bg-primary-700` | implemented |

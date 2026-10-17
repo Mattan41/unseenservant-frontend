@@ -13,7 +13,7 @@ import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DEFAULT_SYSTEM_TYPE,
-  SYSTEM_OPTIONS,
+  SYSTEM_FORM_OPTIONS,
   SYSTEM_LABELS,
   createEmptyCharacterBlocks,
   normalizeCharacterBlocks,
@@ -75,7 +75,9 @@ onMounted(async () => {
     if (fetchedCharacter) {
       character.value = {
         name: fetchedCharacter.name,
-        systemType: fetchedCharacter.systemType || DEFAULT_SYSTEM_TYPE,
+        // A character with no game system keeps that state (the empty string,
+        // like the campaign's `primarySystem`); only an omitted field falls back.
+        systemType: fetchedCharacter.systemType || '',
         notes: fetchedCharacter.notes || '',
         appearance: fetchedCharacter.appearance || '',
         backstory: fetchedCharacter.backstory || '',
@@ -255,7 +257,11 @@ const submitCharacter = async () => {
               disabled
               class="input-field w-full px-3 py-2 border border-input rounded-md"
             >
-              <option v-for="option in SYSTEM_OPTIONS" :key="option.id" :value="option.id">
+              <option
+                v-for="option in SYSTEM_FORM_OPTIONS"
+                :key="String(option.id)"
+                :value="option.id"
+              >
                 {{ option.label }}
               </option>
             </select>

@@ -6,6 +6,7 @@ import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import { characterSystemLabel } from '@/features/character/dispatchers/systemRegistry.js'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -131,7 +132,7 @@ watch(
                       {{ character.dnd5e.level }})</span
                     >
                   </template>
-                  <span v-else>{{ character.systemType }}</span>
+                  <span v-else>{{ characterSystemLabel(character.systemType) }}</span>
                 </div>
               </div>
             </div>

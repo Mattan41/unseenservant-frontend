@@ -10,7 +10,10 @@ import CampaignOwnershipSection from '@/features/campaign/components/CampaignOwn
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ImportCharacterModal from '@/features/campaign/components/ImportCharacterModal.vue'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
-import { characterHealthLabel } from '@/features/character/dispatchers/systemRegistry.js'
+import {
+  characterHealthLabel,
+  characterSystemLabel,
+} from '@/features/character/dispatchers/systemRegistry.js'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
@@ -621,12 +624,6 @@ watch(
 
       <!-- Characters -->
       <BaseSection v-else-if="activeSection === 'characters'" title="Party Characters">
-        <template #actions>
-          <BaseButton variant="default" icon="plus" @click="showImportModal = true">
-            Import Character
-          </BaseButton>
-        </template>
-
         <div v-if="isLoadingCharacters" class="py-6 text-center">
           <div class="spinner h-8 w-8 border-t-2 border-b-2"></div>
           <p class="mt-2 text-muted">Loading characters...</p>
@@ -693,7 +690,7 @@ watch(
                   </span>
                   <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
                 </template>
-                <span v-else class="character-tag">{{ character.systemType }}</span>
+                <span v-else class="character-tag">{{ characterSystemLabel(character.systemType) }}</span>
               </div>
             </div>
 
