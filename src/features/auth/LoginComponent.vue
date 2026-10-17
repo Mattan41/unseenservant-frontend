@@ -1,6 +1,6 @@
 <script setup>
 import { useAuthStore } from '@/features/auth/authStore.js'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import LoginForm from '@/features/auth/LoginForm.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
@@ -91,6 +91,14 @@ const handleGuestMode = () => {
       >
         Guest Demo mode
       </BaseButton>
+
+      <!-- Signing in implies accepting the legal pages; both are readable without an account. -->
+      <p class="text-xs text-muted text-center">
+        By signing in you accept the
+        <RouterLink to="/terms" class="element-link underline">Terms of Service</RouterLink>
+        and the
+        <RouterLink to="/privacy" class="element-link underline">Privacy Policy</RouterLink>.
+      </p>
     </div>
   </div>
 </template>

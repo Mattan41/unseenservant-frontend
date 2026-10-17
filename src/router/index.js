@@ -22,6 +22,18 @@ const router = createRouter({
       component: () => import('../views/AboutView.vue'),
     },
     {
+      // Public on purpose: the privacy policy and the terms have to be readable
+      // before anyone signs in. Linked from the footer.
+      path: '/privacy',
+      name: 'privacy',
+      component: () => import('../views/PrivacyPolicyView.vue'),
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('../views/TermsView.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginComponent,

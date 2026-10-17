@@ -33,6 +33,8 @@ src/
 ├── views/                    # Top-level views not belonging to a feature
 │   ├── HomeView.vue
 │   ├── AboutView.vue
+│   ├── PrivacyPolicyView.vue # /privacy — how personal data is handled
+│   ├── TermsView.vue         # /terms — the terms for using the service
 │   ├── NotFoundView.vue
 │   └── UnderConstructionView.vue
 ├── features/
@@ -170,6 +172,7 @@ three components, not copying their markup.
 ### Routing & Navigation
 - Protected routes are explicitly flagged using `meta: { requiresAuth: true }`.
 - A global router navigation guard validates sessions and initializes user context via `authStore.initializeAuth()` on the initial application boot.
+- The legal pages (`/privacy`, `/terms`) are deliberately public — no `meta` — so they can be read before signing in, and the footer links to both.
 
 ## General Practices
 - Absolute imports are strictly enforced across the codebase using the `@/` path alias pointing to the `src/` root directory.

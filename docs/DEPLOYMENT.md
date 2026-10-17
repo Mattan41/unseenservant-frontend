@@ -225,6 +225,11 @@ directly. Two things keep it that way:
   `"127.0.0.1:8090:8080"`, or dropped — nginx reaches it over the compose
   network). A direct hit on that port bypasses nginx *and* Cloudflare, which is
   what would make every limit in this document optional for an attacker;
+* **Managed Transforms must not strip the header.** In the Cloudflare dashboard,
+  *Rules → Settings → Managed Transforms → Remove visitor IP headers* removes
+  `CF-Connecting-IP`, and the limiter would then key every request on
+  `$remote_addr` — the tunnel — i.e. one bucket for the whole site. Leave it off;
+  it is the one Cloudflare setting that can silently defeat this layer.
 * if the host's port 80 must stay reachable on the LAN, uncomment the two lines
   in `nginx/default.conf`, with the subnet from
   `docker network inspect <compose network>`:
