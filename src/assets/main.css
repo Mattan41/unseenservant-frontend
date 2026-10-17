@@ -52,8 +52,12 @@
                    prod | demo        (the --env-banner-* roles below). No other
                                       effect on colour.
      data-theme — forest | silver   → identity / brand palette (--primary-*).
-     data-mode  — light | dark      → surface / neutral palette
-                                      (--color-surface and, later, neutrals).
+     data-mode  — light | dark      → surface / neutral palette. Each theme
+                                      carries BOTH modes as a pair of blocks in
+                                      the palette layer below (--primary-*,
+                                      --color-surface) plus the text, border and
+                                      surface roles set once in
+                                      `html[data-mode='dark']`.
 
    data-env names WHERE the bundle is being served: `local` for `npm run dev`,
    `dev` for dev.unseenservant.se, `test` for test.unseenservant.se, `staging`
@@ -69,23 +73,28 @@
      • A new brand palette value    → the matching
        `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
      • A new theme (e.g. silver)    → add
-       `html[data-theme='newtheme'][data-mode='light']` (+ a dark variant
-       later) and point the runtime (src/utils/environment.js) at it.
-     • A new mode (e.g. dark)       → add `[data-mode='dark']` variants and
-       wire data-mode to prefers-color-scheme in environment.js (future pass).
+       `html[data-theme='newtheme'][data-mode='light']` AND `[data-mode='dark']`
+       blocks and point the runtime (src/utils/environment.js) at it.
+     • A new mode (beyond light|dark) → add `[data-mode='X']` variants and a
+       matching option in environment.js. dark already exists: the OS
+       preference is the default and the user can override it in Settings.
      • A new environment            → add its `html[data-env='X']` tone in the
        ENVIRONMENT BANNER section below, a message in App.vue, and the value
        to src/utils/environment.js.
 
    Active default: silver · light. forest · light is retained as an
-   alternative (add a switcher later to make it reachable). Dark mode is a
-   future pass.
+   alternative, and every theme ships a light and a dark block. The mode
+   follows the OS (`prefers-color-scheme`) unless the user overrides it in
+   Settings → General; `src/utils/environment.js` owns that state.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
-   ROLE LAYER — semantic variables that are genuinely theme-agnostic.
-   Per-theme / per-mode role values (e.g. --color-surface) live in the palette
-   layer below so each theme can set its own value.
+   ROLE LAYER — the semantic variables components style against.
+   The light values map onto the fixed `third` (neutral) and `secondary`
+   (amber) ramps; the `html[data-mode='dark']` block below re-points every role
+   at its dark counterpart, so a component reads a role by meaning and the
+   active mode decides the colour. `--color-surface` is the exception: it is
+   per-theme and lives in the palette layer.
    -------------------------------------------------------------------------- */
 :root {
   /* Environment banner fallback — neutral, so a banner on an environment
@@ -95,6 +104,106 @@
   --env-banner-surface: var(--color-third-100);
   --env-banner-border: var(--color-third-400);
   --env-banner-text: var(--color-third-900);
+
+  /* Neutral text roles */
+  --text-subtle: var(--color-third-400);
+  --text-muted: var(--color-third-500);
+  --text-secondary: var(--color-third-600);
+  --text-default: var(--color-third-700);
+  --text-heading: var(--color-third-800);
+  --text-strong: var(--color-third-900);
+  --text-faint: var(--color-third-300);
+
+  /* Neutral border roles */
+  --border-subtle: var(--color-third-100);
+  --border-section: var(--color-third-200);
+  --border-input: var(--color-third-300);
+
+  /* Neutral surface roles (inset → raised) */
+  --surface-muted: var(--color-third-50);
+  --surface-inset: var(--color-third-100);
+  --surface-raised: var(--color-third-200);
+
+  /* Interactive neutral fills (ghost button, secondary header link) */
+  --neutral-fill: var(--color-third-300);
+  --neutral-fill-hover: var(--color-third-400);
+  --neutral-strong: var(--color-third-400);
+  --neutral-strong-hover: var(--color-third-500);
+  --btn-ghost-text: #000000;
+  --btn-ghost-ring: var(--color-third-300);
+
+  /* Tooltip / popover: an inverted surface (dark on the light themes) */
+  --popover-surface: var(--color-third-800);
+  --popover-text: var(--color-primary-50);
+
+  /* Amber (secondary) tint roles */
+  --secondary-surface: var(--color-secondary-100);
+  --secondary-surface-soft: var(--color-secondary-50);
+  --secondary-border: var(--color-secondary-400);
+  --secondary-text: var(--color-secondary-800);
+  --secondary-text-strong: var(--color-secondary-900);
+  --secondary-accent: var(--color-secondary-700);
+
+  /* Semantic callout tones. Fixed hues at the 100 level; hex literals rather
+     than `--color-green-*` etc. so the roles do not depend on Tailwind
+     emitting a default-palette variable. */
+  --tone-success-surface: #dcfce7;
+  --tone-success-border: #4ade80;
+  --tone-success-text: #15803d;
+  --tone-danger-surface: #fee2e2;
+  --tone-danger-border: #f87171;
+  --tone-danger-text: #b91c1c;
+  --tone-notice-surface: #ecfeff;
+  --tone-notice-border: #a5f3fc;
+  --tone-notice-text: #155e75;
+}
+
+/* Dark-mode role values. One block re-points every neutral/text/border/surface
+   role at its dark counterpart; the theme's own dark palette block supplies
+   --primary-* and --color-surface. */
+html[data-mode='dark'] {
+  --text-subtle: #7c8698;
+  --text-muted: #97a0b0;
+  --text-secondary: #b3bbc9;
+  --text-default: #d2d7df;
+  --text-heading: #e4e8ee;
+  --text-strong: #f3f5f8;
+  --text-faint: #4b5563;
+
+  --border-subtle: #232a35;
+  --border-section: #2e3642;
+  --border-input: #3d4653;
+
+  --surface-muted: #12181f;
+  --surface-inset: #18202a;
+  --surface-raised: #222b36;
+
+  --neutral-fill: #2e3642;
+  --neutral-fill-hover: #3d4653;
+  --neutral-strong: #3d4653;
+  --neutral-strong-hover: #4b5563;
+  --btn-ghost-text: #e4e8ee;
+  --btn-ghost-ring: #3d4653;
+
+  --popover-surface: #e4e8ee;
+  --popover-text: #12181f;
+
+  --secondary-surface: #43350f;
+  --secondary-surface-soft: #2b2209;
+  --secondary-border: #a97e1f;
+  --secondary-text: #ffd98a;
+  --secondary-text-strong: #ffe9b8;
+  --secondary-accent: #ffc44d;
+
+  --tone-success-surface: #10301c;
+  --tone-success-border: #2f7d4a;
+  --tone-success-text: #86e0a2;
+  --tone-danger-surface: #3a1618;
+  --tone-danger-border: #b4444a;
+  --tone-danger-text: #ff9ea1;
+  --tone-notice-surface: #0f3038;
+  --tone-notice-border: #2f7d8c;
+  --tone-notice-text: #8fdceb;
 }
 
 /* --------------------------------------------------------------------------
@@ -118,6 +227,24 @@ html[data-theme='forest'][data-mode='light'] {
   --primary-900: #171e1a;
 }
 
+/* forest · dark — the dark half of the forest pair. The primary shades invert
+   (50 darkest → 900 lightest) because --primary-900 is body text and
+   --primary-100/300 paints the page and header gradient. */
+html[data-theme='forest'][data-mode='dark'] {
+  --color-surface: #131f18;
+  --primary: #4f7a5f;
+  --primary-50: #0a130d;
+  --primary-100: #101c15;
+  --primary-200: #16271d;
+  --primary-300: #1d3327;
+  --primary-400: #2d4d3b;
+  --primary-500: #4f7a5f;
+  --primary-600: #79a487;
+  --primary-700: #a9c9b4;
+  --primary-800: #c7dccd;
+  --primary-900: #e8f1ea;
+}
+
 /* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from
    the former html[data-env='prod'] palette. */
 html[data-theme='silver'][data-mode='light'] {
@@ -133,6 +260,31 @@ html[data-theme='silver'][data-mode='light'] {
   --primary-700: #5c5c5c;
   --primary-800: #3d3d3d;
   --primary-900: #2b2b2b;
+}
+
+/* silver · dark — the dark half of the silver pair (same inversion rule as
+   forest · dark above). */
+html[data-theme='silver'][data-mode='dark'] {
+  --color-surface: #1a1a1a;
+  --primary: #7a7a7a;
+  --primary-50: #0a0a0a;
+  --primary-100: #111111;
+  --primary-200: #171717;
+  --primary-300: #1f1f1f;
+  --primary-400: #3f3f3f;
+  --primary-500: #7a7a7a;
+  --primary-600: #a6a6a6;
+  --primary-700: #cccccc;
+  --primary-800: #e0e0e0;
+  --primary-900: #f5f5f5;
+}
+
+/* Page canvas. The `<main>` element paints the primary gradient (App.vue), so
+   this only covers the gap behind it — without it the body stays white and a
+   dark theme leaks a light edge. */
+body {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-900);
 }
 
 /* Base button styles */
@@ -160,7 +312,7 @@ html[data-theme='silver'][data-mode='light'] {
 
 /* Secondary button (gray) */
 .button-secondary {
-  @apply bg-gray-300 text-black hover:bg-gray-400 focus:ring-gray-300;
+  @apply bg-(--neutral-fill) text-(--btn-ghost-text) hover:bg-(--neutral-fill-hover) focus:ring-(--btn-ghost-ring);
 }
 
 /* Save button */
@@ -185,7 +337,7 @@ html[data-theme='silver'][data-mode='light'] {
 
 /* Icon/close button */
 .button-icon {
-  @apply text-third-400 hover:text-third-600 cursor-pointer leading-none transition duration-300;
+  @apply text-(--text-subtle) hover:text-(--text-secondary) cursor-pointer leading-none transition duration-300;
 }
 
 /* Section heading */
@@ -203,7 +355,7 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .badge-secondary {
-  @apply text-third-700 bg-third-100;
+  @apply text-(--text-default) bg-(--surface-inset);
 }
 
 .badge-blue {
@@ -231,11 +383,11 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .badge-muted {
-  @apply text-third-500 bg-third-100;
+  @apply text-(--text-muted) bg-(--surface-inset);
 }
 
 .badge-danger {
-  @apply text-red-600 bg-red-50;
+  @apply text-(--tone-danger-text) bg-(--tone-danger-surface);
 }
 
 .badge-info {
@@ -249,11 +401,11 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .number-stepper-btn {
-  @apply inline-flex h-6 w-6 items-center justify-center rounded border border-third-300 bg-third-100 text-sm leading-none text-third-700 cursor-pointer transition-colors hover:bg-third-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply inline-flex h-6 w-6 items-center justify-center rounded border border-(--border-input) bg-(--surface-inset) text-sm leading-none text-(--text-default) cursor-pointer transition-colors hover:bg-(--surface-raised) focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40 disabled:cursor-not-allowed;
 }
 
 .number-stepper-value {
-  @apply min-w-6 text-center font-semibold text-third-700;
+  @apply min-w-6 text-center font-semibold text-(--text-default);
 }
 
 /* Links and list styles */
@@ -262,11 +414,11 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .error-message {
-  @apply bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded;
+  @apply bg-(--tone-danger-surface) border border-(--tone-danger-border) text-(--tone-danger-text) px-4 py-3 rounded;
 }
 
 .success-message {
-  @apply bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded;
+  @apply bg-(--tone-success-surface) border border-(--tone-success-border) text-(--tone-success-text) px-4 py-3 rounded;
 }
 
 /* Loading spinner (color only — size via utilities) */
@@ -298,7 +450,7 @@ html[data-theme='silver'][data-mode='light'] {
    independent of `data-env`: it marks the guest session, not the origin, so it
    can sit under any environment banner. Cyan is used by nothing else. */
 .guest-notice {
-  @apply bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs px-3 py-2 rounded;
+  @apply bg-(--tone-notice-surface) border border-(--tone-notice-border) text-(--tone-notice-text) text-xs px-3 py-2 rounded;
 }
 
 /* Callout / info box (`BaseInfoBox.vue`) — an inset notice with a semantic
@@ -313,15 +465,15 @@ html[data-theme='silver'][data-mode='light'] {
 }
 
 .info-box--success {
-  @apply border-green-400 bg-green-100 text-green-700;
+  @apply border-(--tone-success-border) bg-(--tone-success-surface) text-(--tone-success-text);
 }
 
 .info-box--warning {
-  @apply border-secondary-400 bg-secondary-100 text-secondary-900;
+  @apply border-(--secondary-border) bg-(--secondary-surface) text-(--secondary-text-strong);
 }
 
 .info-box--danger {
-  @apply border-red-400 bg-red-100 text-red-700;
+  @apply border-(--tone-danger-border) bg-(--tone-danger-surface) text-(--tone-danger-text);
 }
 
 .info-box-icon {
@@ -399,7 +551,7 @@ html[data-env='demo'] {
 }
 
 .context-mobile-title {
-  @apply min-w-0 truncate text-lg font-bold text-third-700;
+  @apply min-w-0 truncate text-lg font-bold text-(--text-default);
 }
 
 /* Section-drawer trigger in the mobile top bar (a BaseButton with the base
@@ -431,11 +583,11 @@ html[data-env='demo'] {
 
 /* Owner-only destructive/settings grouping (Campaign Settings section) */
 .danger-zone {
-  @apply border border-red-300 rounded-lg p-4;
+  @apply border border-(--tone-danger-border) rounded-lg p-4;
 }
 
 .danger-zone-title {
-  @apply text-lg font-semibold mb-3 text-red-700;
+  @apply text-lg font-semibold mb-3 text-(--tone-danger-text);
 }
 
 /* Discovery tile for add/import actions (e.g. import a character) */
@@ -445,7 +597,7 @@ html[data-env='demo'] {
 
 /* Empty-state call-to-action container */
 .empty-cta {
-  @apply flex flex-col items-center gap-3 rounded-lg border border-third-200 p-6 text-center;
+  @apply flex flex-col items-center gap-3 rounded-lg border border-(--border-section) p-6 text-center;
 }
 
 /* Base icon button (IconButton.vue) */
@@ -458,7 +610,7 @@ html[data-env='demo'] {
 }
 
 .icon-btn-plain {
-  @apply text-third-700 hover:bg-primary-300/60 focus:ring-primary-600;
+  @apply text-(--text-default) hover:bg-primary-300/60 focus:ring-primary-600;
 }
 
 .icon-btn-solid {
@@ -471,7 +623,7 @@ html[data-env='demo'] {
 
 /* Icon button variant: chip remove — small, no background, colour-only hover */
 .icon-btn-chip {
-  @apply p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0;
+  @apply p-0 text-(--text-default) hover:text-primary-800 leading-none focus:ring-0;
 }
 
 /* Slide-over drawer / overlay (SlideOverDrawer.vue) */
@@ -551,7 +703,7 @@ html[data-env='demo'] {
 
 /* Character level tag */
 .character-tag-level {
-  @apply inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full;
+  @apply inline-block bg-(--secondary-surface) text-(--secondary-text) text-xs px-2 py-1 rounded-full;
 }
 
 /* Character name (clickable card title) */
@@ -562,12 +714,12 @@ html[data-env='demo'] {
 
 /* Search history badge hover */
 .spell-history-hover {
-  @apply hover:bg-third-200 transition-colors;
+  @apply hover:bg-(--surface-raised) transition-colors;
 }
 
 /* Search result row hover */
 .spell-row-hover {
-  @apply hover:bg-third-50 transition-colors;
+  @apply hover:bg-(--surface-muted) transition-colors;
 }
 
 /* Header / Footer */
@@ -578,21 +730,24 @@ html[data-env='demo'] {
   @apply flex items-center justify-center bg-primary-500/70 hover:bg-primary-600 px-4 rounded-full;
 }
 .header-nav-link-secondary {
-  @apply flex items-center justify-center bg-third-400/70 hover:bg-third-500 px-4 rounded-full;
+  @apply flex items-center justify-center bg-(--neutral-strong)/70 hover:bg-(--neutral-strong-hover) px-4 rounded-full;
 }
+/* Hover through --primary-600 rather than --primary-300: the primary ramp
+   inverts in dark mode, so 300 would be near-black on the dark header. 600
+   gives a visible contrast change in both modes. */
 .header-logo-hover {
-  @apply hover:text-primary-300;
+  @apply hover:text-primary-600;
 }
 
 /* Notification component colour types */
 .notification-success {
-  @apply bg-green-100 border border-green-400 text-green-700;
+  @apply bg-(--tone-success-surface) border border-(--tone-success-border) text-(--tone-success-text);
 }
 .notification-error {
-  @apply bg-red-100 border border-red-400 text-red-700;
+  @apply bg-(--tone-danger-surface) border border-(--tone-danger-border) text-(--tone-danger-text);
 }
 .notification-warning {
-  @apply bg-yellow-100 border border-yellow-400 text-yellow-700;
+  @apply bg-(--secondary-surface) border border-(--secondary-border) text-(--secondary-text);
 }
 
 /* UnderConstruction — parchment theme */
@@ -620,10 +775,10 @@ html[data-env='demo'] {
 
 /* UserProfile — section/value blocks */
 .profile-section {
-  @apply bg-third-50 p-4 rounded-lg;
+  @apply bg-(--surface-muted) p-4 rounded-lg;
 }
 .profile-value {
-  @apply bg-third-100 p-3 rounded;
+  @apply bg-(--surface-inset) p-3 rounded;
 }
 
 /* --------------------------------------------------------------------------
@@ -631,26 +786,26 @@ html[data-env='demo'] {
    Replace direct text-third-X/border-third-X utility usage in templates.
    -------------------------------------------------------------------------- */
 .text-subtle {
-  @apply text-third-400;
+  @apply text-(--text-subtle);
 } /* faint labels, e.g. "Sign in" */
 .text-muted {
-  @apply text-third-500;
+  @apply text-(--text-muted);
 } /* help text, empty states */
 .text-secondary {
-  @apply text-third-600;
+  @apply text-(--text-secondary);
 } /* secondary body text */
 .text-default {
-  @apply text-third-700;
+  @apply text-(--text-default);
 } /* form labels, headings, primary body text */
 
 .border-subtle {
-  @apply border-third-100;
+  @apply border-(--border-subtle);
 } /* light dividers between grouped items */
 .border-section {
-  @apply border-third-200;
+  @apply border-(--border-section);
 } /* section dividers between major content areas */
 .border-input {
-  @apply border-third-300;
+  @apply border-(--border-input);
 } /* input and button borders */
 
 /* --------------------------------------------------------------------------
@@ -660,11 +815,11 @@ html[data-env='demo'] {
 /* Write/Preview toggle buttons. Two independent toggle buttons rather than an
    ARIA tablist, so there is no arrow-key navigation contract to implement. */
 .field-tabs {
-  @apply inline-flex items-center gap-1 rounded-full border border-third-300 bg-third-100 p-0.5;
+  @apply inline-flex items-center gap-1 rounded-full border border-(--border-input) bg-(--surface-inset) p-0.5;
 }
 
 .field-tab {
-  @apply cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium text-third-500 transition-colors hover:text-third-700;
+  @apply cursor-pointer rounded-full px-2 py-0.5 text-xs font-medium text-(--text-muted) transition-colors hover:text-(--text-default);
 }
 
 .field-tab--active,
@@ -675,7 +830,7 @@ html[data-env='demo'] {
 /* Preview surface: reads like a read-only field, so switching tabs does not
    change the perceived size of the form row. */
 .markdown-preview {
-  @apply min-h-24 w-full rounded-md border border-third-300 px-3 py-2;
+  @apply min-h-24 w-full rounded-md border border-(--border-input) px-3 py-2;
 }
 
 /* Rendered markdown. Structure only — the surrounding colour is inherited, and
@@ -710,15 +865,15 @@ html[data-env='demo'] {
 }
 
 .rich-text strong {
-  @apply font-semibold text-third-900;
+  @apply font-semibold text-(--text-strong);
 }
 
 .rich-text code {
-  @apply rounded bg-third-100 px-1 text-[0.85em];
+  @apply rounded bg-(--surface-inset) px-1 text-[0.85em];
 }
 
 .rich-text pre {
-  @apply mb-2 overflow-x-auto rounded bg-third-100 p-2 text-[0.85em];
+  @apply mb-2 overflow-x-auto rounded bg-(--surface-inset) p-2 text-[0.85em];
 }
 
 .rich-text pre code {
@@ -726,11 +881,11 @@ html[data-env='demo'] {
 }
 
 .rich-text blockquote {
-  @apply mb-2 border-l-4 border-third-300 pl-3 text-third-600;
+  @apply mb-2 border-l-4 border-(--border-input) pl-3 text-(--text-secondary);
 }
 
 .rich-text hr {
-  @apply my-3 border-third-200;
+  @apply my-3 border-(--border-section);
 }
 
 .rich-text table {
@@ -739,11 +894,11 @@ html[data-env='demo'] {
 
 .rich-text th,
 .rich-text td {
-  @apply border border-third-200 px-2 py-1 text-left align-top;
+  @apply border border-(--border-section) px-2 py-1 text-left align-top;
 }
 
 .rich-text th {
-  @apply bg-third-100 font-semibold;
+  @apply bg-(--surface-inset) font-semibold;
 }
 
 .rich-text h1,
@@ -751,7 +906,7 @@ html[data-env='demo'] {
 .rich-text h3,
 .rich-text h4,
 .rich-text h5 {
-  @apply mb-2 font-semibold text-third-800;
+  @apply mb-2 font-semibold text-(--text-heading);
 }
 
 .rich-text h1 {
@@ -964,36 +1119,36 @@ select {
    surface (mirrors .character-tag-level).
    -------------------------------------------------------------------------- */
 .suggested-choice {
-  @apply rounded bg-secondary-50 px-1;
+  @apply rounded bg-(--secondary-surface-soft) px-1;
 }
 .suggested-choice-group {
-  @apply rounded-md bg-secondary-50;
+  @apply rounded-md bg-(--secondary-surface-soft);
 }
 
 /* Neutral removable pill for skill/ability chips */
 .chip {
-  @apply inline-flex items-center gap-1 rounded-full bg-third-200 px-2 py-1 text-xs text-third-700;
+  @apply inline-flex items-center gap-1 rounded-full bg-(--surface-raised) px-2 py-1 text-xs text-(--text-default);
 }
 
 /* Warning text tone (e.g. attribute array not matching) */
 .text-warning {
-  @apply text-secondary-700;
+  @apply text-(--secondary-accent);
 }
 
 /* Muted inset surface (e.g. repeated form rows) */
 .muted-surface {
-  @apply rounded-md bg-third-50;
+  @apply rounded-md bg-(--surface-muted);
 }
 
 /* Floating edit action bar (e.g. the ship sheet). A compact "tag" so the primary
    save action stays reachable while scrolling a long form, instead of a
    full-width strip. Position it with `sticky bottom-*` on the wrapper. */
 .edit-bar {
-  @apply flex items-center gap-2 rounded-full border border-third-300 bg-third-100 px-2 py-1 shadow-lg;
+  @apply flex items-center gap-2 rounded-full border border-(--border-input) bg-(--surface-inset) px-2 py-1 shadow-lg;
 }
 
 .edit-bar-label {
-  @apply hidden pl-2 text-xs font-medium text-third-600 sm:inline;
+  @apply hidden pl-2 text-xs font-medium text-(--text-secondary) sm:inline;
 }
 
 /* Button variant that renders an optional leading `BaseIcon` (see the `icon`
@@ -1008,7 +1163,7 @@ select {
 
 /* Attribute score tile (shared by system stats panels) */
 .attribute-tile {
-  @apply rounded-lg bg-third-200 p-2 text-center;
+  @apply rounded-lg bg-(--surface-raised) p-2 text-center;
 }
 .attribute-value {
   @apply text-lg font-bold text-primary-700;
@@ -1032,11 +1187,11 @@ select {
 }
 
 .stat-label {
-  @apply shrink-0 text-xs uppercase tracking-wide text-third-500;
+  @apply shrink-0 text-xs uppercase tracking-wide text-(--text-muted);
 }
 
 .stat-value {
-  @apply min-w-0 font-semibold text-third-700;
+  @apply min-w-0 font-semibold text-(--text-default);
 }
 
 /* One participant in the summary roster (`nickname · ROLE · characters`), kept
@@ -1054,12 +1209,12 @@ select {
 }
 
 .stat-separator {
-  @apply mr-1.5 text-third-300;
+  @apply mr-1.5 text-(--text-faint);
 }
 
 /* Info popover: hover tooltip on desktop, inline block on mobile */
 .info-popover {
-  @apply rounded-md bg-third-800 p-2 text-left text-xs font-normal normal-case leading-snug text-primary-50 shadow-lg;
+  @apply rounded-md bg-(--popover-surface) p-2 text-left text-xs font-normal normal-case leading-snug text-(--popover-text) shadow-lg;
 }
 .info-popover--fixed {
   @apply fixed z-[60];
@@ -1092,7 +1247,7 @@ select {
 }
 
 .markdown-help-source {
-  @apply w-24 shrink-0 break-all rounded bg-third-100 px-1 font-mono text-xs;
+  @apply w-24 shrink-0 break-all rounded bg-(--surface-inset) px-1 font-mono text-xs;
 }
 
 .markdown-help-result {
@@ -1104,10 +1259,10 @@ select {
    positioned `fixed` from the trigger so no ancestor `overflow-hidden` clips it.
    -------------------------------------------------------------------------- */
 .export-menu {
-  @apply fixed z-50 flex min-w-[12rem] flex-col overflow-hidden rounded-md border border-third-200 py-1 text-left shadow-lg;
+  @apply fixed z-50 flex min-w-[12rem] flex-col overflow-hidden rounded-md border border-(--border-section) py-1 text-left shadow-lg;
   background-color: var(--color-surface);
 }
 
 .export-menu-item {
-  @apply block w-full px-3 py-2 text-left text-sm text-third-700 transition-colors hover:bg-third-100;
+  @apply block w-full px-3 py-2 text-left text-sm text-(--text-default) transition-colors hover:bg-(--surface-inset);
 }

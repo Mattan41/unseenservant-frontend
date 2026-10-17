@@ -70,7 +70,7 @@ src/
 │       ├── userStore.js          # The single owner of the signed-in profile
 │       └── userUtils.js          # Role labels + badge classes (isAdminRole, getRoleLabel)
 │   ├── settings/
-│   │   ├── components/          # GeneralSettingsSection.vue (theme, environment), UserSettingsSection.vue
+│   │   ├── components/          # GeneralSettingsSection.vue (theme, mode, environment), UserSettingsSection.vue
 │   │   └── views/
 │   │       └── SettingsView.vue # /settings — the contextual shell (general | user | admin)
 │   └── admin/
