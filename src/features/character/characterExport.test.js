@@ -133,10 +133,14 @@ describe('parseCharacterBackup', () => {
     expect(() => parseCharacterBackup(text)).toThrow(/newer version/)
   })
 
-  it('rejects a payload missing the name or system', () => {
-    expect(() => parseCharacterBackup(JSON.stringify({ character: { name: '' } }))).toThrow(
-      /name or game system/,
-    )
+  it('rejects a payload missing the character name', () => {
+    expect(() => parseCharacterBackup(JSON.stringify({ character: { name: '' } }))).toThrow(/name/)
+  })
+
+  it('accepts a backup for a character with no game system', () => {
+    // A system-less character is valid, so its own backup must round-trip.
+    const text = JSON.stringify(buildCharacterBackup({ name: 'Nameless', systemType: null }))
+    expect(parseCharacterBackup(text).systemType).toBe('')
   })
 })
 
@@ -154,8 +158,8 @@ describe('characterFromBackup', () => {
     expect(form.dnd5e.stats.intelligence).toBe(10)
   })
 
-  it('falls back to the default system when the backup has none', () => {
+  it('keeps a backup that names no system system-less', () => {
     const form = characterFromBackup({ name: 'Nameless' })
-    expect(form.systemType).toBeTruthy()
+    expect(form.systemType).toBe('')
   })
 })

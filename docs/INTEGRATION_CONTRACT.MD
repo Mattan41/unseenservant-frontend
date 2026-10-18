@@ -18,7 +18,8 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Request: `{ username, password }`
 - Response body: `AuthDTO { id, username, email, role }`
 - JWT returned in `Authorization` response header: `Bearer <token>` — **not** in the body
-- Status: 200, 400, 401
+- Status: 200, 400, 401, 429
+- Throttled on two axes — the client address and the username (`LoginAttemptLimiter`) — because a guess costs a BCrypt comparison and a distributed attack on one account is invisible to a proxy. Over budget the answer is `429` with `Retry-After` in seconds, and a body that says nothing about whether the account exists. The frontend must treat 429 as "wait and retry", never as a logout: `src/api/lib/axios.js` has a branch for it, and nginx's own `limit_req` on the same path answers 429 too.
 
 **GET /api/auth/oauth-init**
 - Query params: `provider` (google|github), `origin`
@@ -26,7 +27,7 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - Disabled in `demo` profile
 - Account linking: a login is matched by provider identity (`providerType` + `providerId`), then by email (case-insensitive) — an existing account with the same email is reused, no duplicate user is created
 - Google requires a verified email (`email_verified = true`); a rejected login (unverified or non-whitelisted email) redirects to `{FRONTEND_URL}/under-construction`, not `/oauth-redirect`
-- Status: 302, 400
+- Status: 302, 400, 429 (the handshake start is throttled per client address)
 
 **GET /api/auth/me**
 - Response: `AuthDTO { id, username, email, role }`
@@ -64,9 +65,9 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 
 ## Admin
 
-Every endpoint below requires **ROLE_ADMIN**, twice over: the whole
-`/api/admin/**` prefix is matched in `SecurityConfig`, and each controller
-repeats the rule with `@PreAuthorize("hasRole('ROLE_ADMIN')")`.
+Every endpoint below requires **ROLE_ADMIN**, twice over: the whole `/api/admin/**`
+prefix is matched in `SecurityConfig`, and each controller repeats the rule with
+`@PreAuthorize("hasRole('ROLE_ADMIN')")`.
 
 **GET /api/admin/users**
 - Response: `[ UserDTO ]` — every account
@@ -78,10 +79,11 @@ repeats the rule with `@PreAuthorize("hasRole('ROLE_ADMIN')")`.
 - Status: 200, 400, 401, 403, 404
 - Rules: 400 when the caller targets themselves ("You cannot change your own role.")
   or when the target is the last administrator ("The last administrator cannot be
-  demoted."). Authorities are rebuilt from the database on every request, so the
-  new role is effective on the account's next request — no re-login needed. An
-  **active** whitelist row for the same email is set to the same role, so a
-  rebuilt database does not silently demote the account at its next login.
+  demoted."). Authorities are rebuilt from the database on every request
+  (`JwtAuthenticationFilter`), so the new role is effective on the account's next
+  request — no re-login needed. An **active** whitelist row for the same email is
+  set to the same role, so a rebuilt database does not silently demote the account
+  at its next login.
 
 **GET /api/admin/whitelist**
 - Response: `[ WhitelistEntryDTO { id, email, role, active } ]` — includes revoked rows
@@ -121,7 +123,7 @@ repeats the rule with `@PreAuthorize("hasRole('ROLE_ADMIN')")`.
 **POST /api/characters**
 - Requires: ROLE_USER
 - Request: `CharacterInputDTO { ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
-  - `systemType`: `DND5E` | `OFFWORLDERS`
+  - `systemType`: `DND5E` | `OFFWORLDERS`, optional — `null`/omitted creates a character with **no game system**: only the generic core fields (name, notes, avatarUrl, appearance, backstory, privateBackstory) exist and neither nested block is stored
   - `appearance` / `backstory` / `privateBackstory`: free-text fields on the core character (any system). `appearance` and `backstory` are visible to every campaign member; `privateBackstory` is visible to the owner and the campaign GM only. Writes are owner-only (PATCH already requires ownership; a GM has read access, not write).
   - `dnd5e`: `{ level (1–20), characterClass, race, hitPoints?, armorClass?, stats }` — only used when `systemType === 'DND5E'`
   - `offworlders`: `{ characterClass?, species?, xp?, health?, currentHealth?, healthModifier?, armor?, supply?, supplyMax?, credits?, stats?, skills?, abilities?, weapons?, items? }` — only used when `systemType === 'OFFWORLDERS'`
@@ -155,13 +157,15 @@ repeats the rule with `@PreAuthorize("hasRole('ROLE_ADMIN')")`.
 - Requires: ROLE_USER
 - Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, appearance, backstory, privateBackstory, dnd5e, offworlders, createdAt, updatedAt }`
   - `privateBackstory` is `null` unless the requester is the character's owner or the campaign GM
+  - `systemType` is `null` when the character was created without a game system (see POST) — nothing is defaulted in its place
   - `dnd5e` is a nullable nested block `{ level, characterClass, race, hitPoints, armorClass, stats }`, present only when `systemType === 'DND5E'`
   - `offworlders` is a nullable nested block `{ characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }`, present only when `systemType === 'OFFWORLDERS'`
+  - both blocks are `null` on a system-less character
 - Status: 200, 401, 404
 
 **PATCH /api/characters/{id}**
 - Requires: ROLE_USER, must be owner
-- Request: `CharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged. The nested `dnd5e` object is patch-applied field-by-field when `systemType === 'DND5E'`; likewise the nested `offworlders` object when `systemType === 'OFFWORLDERS'`.
+- Request: `CharacterInputDTO` — partial, null-safe patch. Omitted/null fields are left unchanged, `systemType` included (a null never clears or re-defaults the stored system). The nested `dnd5e` object is patch-applied field-by-field when `systemType === 'DND5E'`; likewise the nested `offworlders` object when `systemType === 'OFFWORLDERS'`.
 - Response: `CharacterOutputDTO`
 - Status: 200, 400, 401, 403, 404
 
@@ -274,8 +278,8 @@ repeats the rule with `@PreAuthorize("hasRole('ROLE_ADMIN')")`.
 
 A ship is `1:1` with a campaign (unique `campaign_id` FK) and only meaningful when the
 campaign's `primarySystem` is `OFFWORLDERS`. Defaults mirror the Offworlders rulebook
-(p.13): 15 Hull, 0 Armor, 1D6 Damage, 4 Max Drive Fuel, no upgrades. Every campaign
-participant may view and edit; there is **no delete**.
+(p.13): 15 Hull, 0 Armor, 1D6 Damage, 4 Max Drive Fuel, 0 Credits, no upgrades. Every
+campaign participant may view and edit; there is **no delete**.
 
 **GET /api/campaigns/{id}/ship**
 - Requires: campaign participant

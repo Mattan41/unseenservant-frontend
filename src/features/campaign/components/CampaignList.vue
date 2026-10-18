@@ -34,15 +34,25 @@ onMounted(async () => {
 </script>
 <template>
   <div>
-    <div class="mb-4 flex flex-col gap-2 sm:flex-row justify-between items-start sm:items-center">
-      <h2>Campaigns</h2>
-      <CreateCampaign />
-    </div>
+    <h2 class="mb-4">Campaigns</h2>
+
     <div v-if="campaignStore.isLoading" class="text-center p-8">
       <div class="spinner h-8 w-8 border-b-2"></div>
       <p class="mt-2">Loading campaigns...</p>
     </div>
+
+    <!-- Empty state: the dashed discovery tile, as on the characters list. -->
+    <div v-else-if="!campaignStore.campaigns.length" class="mx-auto max-w-xs py-4 text-center">
+      <p class="text-secondary mb-3">You aren't in any campaign yet.</p>
+      <CreateCampaign />
+    </div>
+
     <ul v-else>
+      <!-- First row: the same dashed tile, so creating a campaign reads like
+           adding a row to the list. -->
+      <li class="mb-4">
+        <CreateCampaign />
+      </li>
       <li
         v-for="campaign in campaignStore.campaigns"
         :key="campaign.id"

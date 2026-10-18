@@ -561,7 +561,12 @@ useUnsavedChanges(
           class="relative block overflow-hidden rounded border border-section"
           @click="lightboxUrl = url"
         >
-          <CampaignImage :src="url" alt="Ship image" class="w-full h-28 object-cover" />
+          <CampaignImage
+            :src="url"
+            alt="Ship image"
+            :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
+            class="w-full h-28 object-cover"
+          />
           <span
             v-if="isProfileImage(url)"
             class="absolute top-2 left-2 rounded bg-black/60 px-2 py-0.5 text-xs text-white"
@@ -610,6 +615,7 @@ useUnsavedChanges(
           <CampaignImage
             :src="lightboxUrl"
             alt="Ship image"
+            :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
             class="max-h-[80vh] w-auto mx-auto rounded"
           />
           <!-- Discreet previous/next arrows (only when there is more than one image) -->

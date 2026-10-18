@@ -22,7 +22,7 @@ defineProps({
   },
   // Valid variants map to `.base-btn-<variant>` classes in
   // src/assets/base-button.css: default, ghost, add, update, remove,
-  // retry, icon, demo, form, link.
+  // retry, icon, demo, form, link, tile.
   variant: {
     type: String,
     default: 'default',

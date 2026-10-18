@@ -23,7 +23,6 @@ import {
 } from '@/utils/environment.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
-import BaseInfoBox from '@/components/base/BaseInfoBox.vue'
 </script>
 
 <template>
@@ -74,23 +73,11 @@ import BaseInfoBox from '@/components/base/BaseInfoBox.vue'
       </p>
     </BaseCard>
 
-    <!-- Environment (read-only) -->
-    <BaseCard>
-      <h3 class="section-heading mb-2">Environment</h3>
-      <dl class="stat-strip muted-surface px-3 py-2">
-        <div class="stat">
-          <dt class="stat-label">Environment</dt>
-          <dd class="stat-value">{{ ENVIRONMENT_LABEL }}</dd>
-        </div>
-      </dl>
-
-      <div class="mt-3">
-        <BaseInfoBox variant="info">
-          This is fixed when the application is built (<code>VITE_USER_NODE_ENV</code>) and cannot be
-          changed from here. Guest Demo runs entirely in your browser, with no server involved.
-        </BaseInfoBox>
-      </div>
-    </BaseCard>
+    <!-- Environment (read-only, deliberately terse: it only names which build
+         this is, so it reads as one line rather than its own card with help) -->
+    <p class="text-sm text-default">
+      <span class="text-muted">Environment:</span> {{ ENVIRONMENT_LABEL }}
+    </p>
   </div>
 </template>
 

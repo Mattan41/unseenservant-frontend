@@ -19,7 +19,7 @@ import {
 } from '@/systems/offworlders/constants.js'
 import { offworldersExportSections } from '@/systems/offworlders/offworldersExport.js'
 
-/** System id used when a character has none. */
+/** System pre-selected in the create form (a character may also have none). */
 export const DEFAULT_SYSTEM_TYPE = DND5E_SYSTEM_TYPE
 
 /** Selectable systems, in display order (drives the <select>). */
@@ -30,6 +30,31 @@ export const SYSTEM_OPTIONS = [
 
 /** System id → display label. */
 export const SYSTEM_LABELS = Object.fromEntries(SYSTEM_OPTIONS.map((o) => [o.id, o.label]))
+
+/** Label for a character that has no game system at all (empty/null `systemType`). */
+export const NO_SYSTEM_LABEL = 'No system'
+
+/**
+ * The game-system choices offered by the character forms: "no system" first,
+ * then the real systems.
+ *
+ * A character may be created without one — only the generic core fields (name,
+ * notes, appearance, backstory) exist then, and no ruleset form or sheet is
+ * rendered. "No system" is therefore part of the form model only: it is the
+ * empty string (the same convention as the campaign's `primarySystem`), it has
+ * no data block, and `buildPayload` sends it as `null`.
+ */
+export const SYSTEM_FORM_OPTIONS = [{ id: '', label: NO_SYSTEM_LABEL }, ...SYSTEM_OPTIONS]
+
+/**
+ * Display label for a character's system, including the system-less case (e.g.
+ * a badge). An unknown-but-set id is shown as-is rather than hidden.
+ * @param {string|null|undefined} systemType
+ * @returns {string}
+ */
+export function characterSystemLabel(systemType) {
+  return SYSTEM_LABELS[systemType] || systemType || NO_SYSTEM_LABEL
+}
 
 /** System id → the property key holding that system's data block on a character. */
 const SYSTEM_DATA_KEYS = {
@@ -132,7 +157,8 @@ export function exportSectionsFor(systemType, character, context = {}) {
 export function buildPayload(systemType, character) {
   const payload = {
     name: character.name,
-    systemType: character.systemType,
+    // "No system" is the empty string in the form and `null` on the wire.
+    systemType: systemType || null,
     notes: character.notes,
     appearance: character.appearance,
     backstory: character.backstory,

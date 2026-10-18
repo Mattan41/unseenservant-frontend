@@ -70,13 +70,16 @@ useUnsavedChanges(
 
 <template>
   <div>
-    <BaseButton variant="add" @click="showCreateCampaignModal = true">
+    <!-- The trigger is the same dashed discovery tile as the characters list
+         uses for "create a character", so "create" reads the same in both
+         collections. -->
+    <BaseButton variant="tile" icon="plus" @click="showCreateCampaignModal = true">
       Create new campaign
     </BaseButton>
 
-    <!-- Teleported to <body>: the trigger sits inside the "Campaigns" <h2>, and
-         an un-teleported overlay would inherit that heading's `text-transform:
-         uppercase` plus its page-sized type ramp. -->
+    <!-- Teleported to <body>: an un-teleported overlay would inherit the list
+         markup around the trigger, including the page-sized type ramp and
+         `text-transform` those rules carry (see `.modal-title`). -->
     <Teleport to="body">
       <BaseModal v-if="showCreateCampaignModal" @close="closeCreateCampaignModal">
         <!-- Capped height so a long description preview scrolls inside the
@@ -89,8 +92,6 @@ useUnsavedChanges(
           <h2 id="create-campaign-title" class="modal-title mb-4">Create a new campaign</h2>
 
           <form @submit.prevent="createCampaign">
-            <div v-if="errorMessage" class="error-message mb-4">{{ errorMessage }}</div>
-
             <BaseInput
               id="name"
               v-model="newCampaignName"
@@ -151,19 +152,25 @@ useUnsavedChanges(
               </select>
             </div>
 
-            <div class="flex justify-end gap-3">
-              <!-- `type="button"`: BaseButton renders no `type`, so inside a form
-                   it would default to `submit` and cancel would create the
-                   campaign. -->
-              <BaseButton
-                variant="ghost"
-                type="button"
-                :disabled="isCreating"
-                @click="closeCreateCampaignModal"
-              >
-                Cancel
-              </BaseButton>
-              <BaseButton variant="add" type="submit" :loading="isCreating">Create</BaseButton>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <!-- The error sits with the buttons: the dialog scrolls, so a message
+                   at the top of it is off-screen exactly when the save fails. -->
+              <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+              <div class="ml-auto flex justify-end gap-3">
+                <!-- `type="button"`: BaseButton renders no `type`, so inside a form
+                     it would default to `submit` and cancel would create the
+                     campaign. -->
+                <BaseButton
+                  variant="ghost"
+                  type="button"
+                  :disabled="isCreating"
+                  @click="closeCreateCampaignModal"
+                >
+                  Cancel
+                </BaseButton>
+                <BaseButton variant="add" type="submit" :loading="isCreating">Create</BaseButton>
+              </div>
             </div>
           </form>
         </div>

@@ -103,6 +103,13 @@ src/
 > `Character` shape (`systemType`, `notes`, `avatarUrl`) and delegates all
 > ruleset-specific rendering to `systems/<system>/`. `SystemSheetRouter.vue`
 > selects the correct sheet component based on `character.systemType`.
+>
+> A character may also have **no game system at all**. `systemType` is the empty
+> string in the form model (like the campaign's `primarySystem`) and `null` on
+> the wire; `systemRegistry.buildPayload` sends it as such, and both routers
+> render nothing then — only the generic core fields (name, notes, appearance,
+> backstory) exist. `SYSTEM_FORM_OPTIONS` adds that "No system" choice to the
+> forms, and `characterSystemLabel()` labels it for badges.
 
 ## Feature structure
 Each feature follows the same pattern:

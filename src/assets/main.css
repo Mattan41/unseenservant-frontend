@@ -580,9 +580,10 @@ html[data-env='demo'] {
 }
 
 /* Section-drawer trigger in the mobile top bar (a BaseButton with the base
-   margins/padding reset) */
+   margins/padding reset). It never shrinks or wraps — a long context title
+   next to it truncates instead, so the trigger keeps its shape */
 .context-nav-trigger {
-  @apply ml-0 mt-0 inline-flex items-center gap-2 bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700;
+  @apply ml-0 mt-0 inline-flex flex-shrink-0 items-center gap-2 whitespace-nowrap bg-primary-800 px-3 py-2 text-sm font-semibold text-primary-100 hover:bg-primary-900 focus:ring-primary-700;
 }
 
 .context-nav-list {
@@ -613,11 +614,6 @@ html[data-env='demo'] {
 
 .danger-zone-title {
   @apply text-lg font-semibold mb-3 text-(--tone-danger-text);
-}
-
-/* Discovery tile for add/import actions (e.g. import a character) */
-.add-tile {
-  @apply flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-center cursor-pointer transition-colors text-primary-700 hover:bg-primary-200;
 }
 
 /* Empty-state call-to-action container */

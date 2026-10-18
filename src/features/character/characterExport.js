@@ -17,7 +17,6 @@
  */
 import { renderDocument } from '@/utils/textExport.js'
 import {
-  DEFAULT_SYSTEM_TYPE,
   SYSTEM_LABELS,
   exportSectionsFor,
   normalizeCharacterBlocks,
@@ -114,8 +113,10 @@ export function parseCharacterBackup(text) {
   if (Number(parsed.schemaVersion) > CHARACTER_BACKUP_SCHEMA_VERSION) {
     throw new Error('This backup was made by a newer version of the app.')
   }
-  if (!character.name || !character.systemType) {
-    throw new Error('The backup is missing the character name or game system.')
+  // A character may have no game system at all, so the name is the only field a
+  // backup must carry; the system is optional.
+  if (!character.name) {
+    throw new Error('The backup is missing the character name.')
   }
 
   return character
@@ -134,7 +135,9 @@ export function parseCharacterBackup(text) {
 export function characterFromBackup(backup) {
   return {
     name: backup.name,
-    systemType: backup.systemType || DEFAULT_SYSTEM_TYPE,
+    // A system-less character stays system-less (the empty string, like the
+    // create form); a backup that names a system keeps it.
+    systemType: backup.systemType || '',
     notes: backup.notes || '',
     appearance: backup.appearance || '',
     backstory: backup.backstory || '',

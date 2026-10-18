@@ -81,6 +81,24 @@
   @apply bg-primary-500 hover:bg-primary-600 text-white font-medium rounded transition duration-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-300 disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
+/* Discovery tile ("create a character" / "import a character" / "create new
+   campaign"): a tall dashed panel rather than a compact control, so it carries
+   its own layout — the action-bar margins of `.base-btn` are reset, and `w-full`
+   plus a block-level `flex` make it fill the slot it sits in (a grid cell, a list
+   row, or an empty state) instead of shrinking to its label. The selector is
+   compounded with `.base-btn` because `main.css` is loaded after this file and
+   gives `.base-btn-with-icon` an inline row: `.base-btn.base-btn-tile` (0-2-0)
+   has to outrank `.base-btn-with-icon` (0-1-0) whatever the order. */
+.base-btn.base-btn-tile {
+  @apply m-0 flex w-full min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-sm font-medium text-primary-700 hover:bg-primary-200 focus:ring-primary-600;
+}
+
+/* The tile's glyph is a hint, not a compact control's icon: bigger than the
+   `h-4 w-4` `.base-btn-icon` sets for ordinary buttons. */
+.base-btn-tile .base-btn-icon {
+  @apply h-6 w-6;
+}
+
 .base-btn:disabled,
 .base-btn[disabled] {
   @apply opacity-50 cursor-not-allowed;
