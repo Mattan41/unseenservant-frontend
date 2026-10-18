@@ -70,13 +70,16 @@ useUnsavedChanges(
 
 <template>
   <div>
-    <BaseButton variant="add" @click="showCreateCampaignModal = true">
+    <!-- The trigger is the same dashed discovery tile as the characters list
+         uses for "create a character", so "create" reads the same in both
+         collections. -->
+    <BaseButton variant="tile" icon="plus" @click="showCreateCampaignModal = true">
       Create new campaign
     </BaseButton>
 
-    <!-- Teleported to <body>: the trigger sits inside the "Campaigns" <h2>, and
-         an un-teleported overlay would inherit that heading's `text-transform:
-         uppercase` plus its page-sized type ramp. -->
+    <!-- Teleported to <body>: an un-teleported overlay would inherit the list
+         markup around the trigger, including the page-sized type ramp and
+         `text-transform` those rules carry (see `.modal-title`). -->
     <Teleport to="body">
       <BaseModal v-if="showCreateCampaignModal" @close="closeCreateCampaignModal">
         <!-- Capped height so a long description preview scrolls inside the
