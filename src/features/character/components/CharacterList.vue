@@ -4,6 +4,7 @@ import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
+import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import {
   characterHealthLabel,
   characterSystemLabel,
@@ -44,13 +45,22 @@ const viewCharacter = (id) => {
       <p class="mt-2 text-secondary">Loading characters...</p>
     </div>
 
-    <div v-else-if="characterStore.characters.length === 0" class="text-center py-8">
-      <p class="text-secondary">You don't have any characters yet.</p>
-      <p class="text-sm mt-1 text-subtle">
-        Click the button below to create your first one.
-      </p>
+    <!-- Empty state: the dashed discovery tile, so "create" reads the same
+         wherever a character can be added. -->
+    <div
+      v-else-if="characterStore.characters.length === 0"
+      class="mx-auto max-w-xs py-4 text-center"
+    >
+      <p class="text-secondary mb-3">You don't have any characters yet.</p>
+      <BaseLinkButton variant="tile" icon="plus" :to="{ name: 'CreateCharacter' }">
+        Create your first character
+      </BaseLinkButton>
     </div>
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- First cell: the discovery tile, so creating one is always one click away. -->
+      <BaseLinkButton variant="tile" icon="plus" :to="{ name: 'CreateCharacter' }">
+        Create a character
+      </BaseLinkButton>
       <div
         v-for="character in characterStore.characters"
         :key="character.id"
@@ -149,15 +159,6 @@ const viewCharacter = (id) => {
           </router-link>
         </div>
       </div>
-    </div>
-
-    <div class="mt-6 text-center">
-      <router-link
-        :to="{ name: 'CreateCharacter' }"
-        class="base-btn base-btn-add inline-flex items-center"
-      >
-        Create New Character
-      </router-link>
     </div>
   </div>
 </template>

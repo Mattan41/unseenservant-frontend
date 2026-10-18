@@ -16,7 +16,6 @@ import {
 } from '@/features/character/dispatchers/systemRegistry.js'
 import CampaignSidebar from '@/features/campaign/components/CampaignSidebar.vue'
 import CampaignHeader from '@/features/campaign/components/CampaignHeader.vue'
-import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCard from '@/components/base/BaseCard.vue'
@@ -712,11 +711,11 @@ watch(
             </div>
           </BaseCard>
 
-          <!-- Discoverable import affordance -->
-          <button type="button" class="add-tile" @click="showImportModal = true">
-            <CampaignNavIcon name="plus" class="w-6 h-6" />
-            <span class="text-sm font-medium">Import a character</span>
-          </button>
+          <!-- Discoverable import affordance — the same dashed `tile` button the
+               characters list uses for "create a character" -->
+          <BaseButton variant="tile" icon="plus" @click="showImportModal = true">
+            Import a character
+          </BaseButton>
         </div>
       </BaseSection>
 

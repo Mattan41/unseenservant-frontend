@@ -136,8 +136,6 @@ const submitCharacter = async () => {
       </div>
 
       <form @submit.prevent="submitCharacter" class="p-6">
-        <div v-if="formError" class="error-message mb-4">{{ formError }}</div>
-
         <!-- Basic Info -->
         <div class="mb-6">
           <h3 class="text-lg font-semibold mb-3" style="color: var(--color-primary-700)">
@@ -225,6 +223,10 @@ const submitCharacter = async () => {
           </h3>
           <SystemFormRouter v-model="character" :system-type="character.systemType" />
         </div>
+
+        <!-- Validation and save errors sit with the buttons: the form is long, so a
+             message at the top is off-screen exactly when it matters. -->
+        <div v-if="formError" class="error-message mt-8 mb-4">{{ formError }}</div>
 
         <!-- Buttons -->
         <div class="flex justify-end space-x-3 mt-8">

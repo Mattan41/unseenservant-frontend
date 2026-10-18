@@ -89,8 +89,6 @@ useUnsavedChanges(
           <h2 id="create-campaign-title" class="modal-title mb-4">Create a new campaign</h2>
 
           <form @submit.prevent="createCampaign">
-            <div v-if="errorMessage" class="error-message mb-4">{{ errorMessage }}</div>
-
             <BaseInput
               id="name"
               v-model="newCampaignName"
@@ -151,19 +149,25 @@ useUnsavedChanges(
               </select>
             </div>
 
-            <div class="flex justify-end gap-3">
-              <!-- `type="button"`: BaseButton renders no `type`, so inside a form
-                   it would default to `submit` and cancel would create the
-                   campaign. -->
-              <BaseButton
-                variant="ghost"
-                type="button"
-                :disabled="isCreating"
-                @click="closeCreateCampaignModal"
-              >
-                Cancel
-              </BaseButton>
-              <BaseButton variant="add" type="submit" :loading="isCreating">Create</BaseButton>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <!-- The error sits with the buttons: the dialog scrolls, so a message
+                   at the top of it is off-screen exactly when the save fails. -->
+              <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+              <div class="ml-auto flex justify-end gap-3">
+                <!-- `type="button"`: BaseButton renders no `type`, so inside a form
+                     it would default to `submit` and cancel would create the
+                     campaign. -->
+                <BaseButton
+                  variant="ghost"
+                  type="button"
+                  :disabled="isCreating"
+                  @click="closeCreateCampaignModal"
+                >
+                  Cancel
+                </BaseButton>
+                <BaseButton variant="add" type="submit" :loading="isCreating">Create</BaseButton>
+              </div>
             </div>
           </form>
         </div>

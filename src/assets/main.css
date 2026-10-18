@@ -616,11 +616,6 @@ html[data-env='demo'] {
   @apply text-lg font-semibold mb-3 text-(--tone-danger-text);
 }
 
-/* Discovery tile for add/import actions (e.g. import a character) */
-.add-tile {
-  @apply flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-center cursor-pointer transition-colors text-primary-700 hover:bg-primary-200;
-}
-
 /* Empty-state call-to-action container */
 .empty-cta {
   @apply flex flex-col items-center gap-3 rounded-lg border border-(--border-section) p-6 text-center;

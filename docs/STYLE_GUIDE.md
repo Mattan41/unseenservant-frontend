@@ -177,9 +177,11 @@ Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
 | `"icon"` | `base-btn base-btn-icon` | implemented |
 | `"demo"` | `base-btn base-btn-demo` | implemented |
 | `"form"` | `base-btn base-btn-form` | implemented |
+| `"tile"` | `base-btn base-btn-tile` | implemented |
 
 - `"demo"` — guest-session button ("Guest Demo mode" on the login card). Cyan palette (`bg-cyan-100 border-cyan-400 text-cyan-800 hover:bg-cyan-200 focus:ring-cyan-300`) — the same tone as `.guest-notice`, so starting guest mode and being in it read as one thing, and the tone no longer doubles as the `test` environment banner's colour. Distinct from `.guest-notice` itself, which is a banner, not a button.
 - `"form"` — larger primary call-to-action button for form submissions. Lighter shade (`bg-primary-500`) than `.base-btn-default` (`primary-700`) — a distinct variant, not an inconsistency. `w-64 h-10` sizing stays as layout utilities in the template.
+- `"tile"` — discovery tile for "create / import" affordances (`min-h-32` dashed `border-primary-400` panel with the icon above the label). The one variant that carries layout: it resets `.base-btn`'s action-bar margins (`m-0`) so it can be a grid cell. `.base-btn-tile.base-btn-with-icon` keeps it stacked — `main.css` is imported after `base-button.css` and would otherwise lay the icon and label out as an inline row — and its glyph is `h-6 w-6`. Replaces the former `.add-tile` class; used by the campaign party grid (`Import a character`) and the characters list (`Create a character`), on `BaseButton` and `BaseLinkButton` alike.
 
 Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
 
@@ -248,7 +250,6 @@ all conditional styling in `*Utils.js` files.
 | `.context-nav-icon` | Monochrome nav icon sizing | `w-5 h-5 flex-shrink-0` | implemented |
 | `.danger-zone` | Owner-only destructive grouping (Campaign Settings section) | `border border-red-300 rounded-lg p-4` | implemented |
 | `.danger-zone-title` | Danger Zone heading | `text-lg font-semibold mb-3 text-red-700` | implemented |
-| `.add-tile` | Discovery tile for add/import actions (e.g. import a character) | `flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-center cursor-pointer transition-colors text-primary-700 hover:bg-primary-200` | implemented |
 | `.empty-cta` | Empty-state call-to-action container | `flex flex-col items-center gap-3 rounded-lg border border-third-200 p-6 text-center` | implemented |
 | `.icon-btn` | Base icon-only button (`IconButton.vue`) | `inline-flex items-center justify-center rounded-md p-2 cursor-pointer transition-colors focus:outline-none focus:ring-2` | implemented |
 | `.icon-btn-glyph` | Icon sizing inside icon buttons | `w-5 h-5 flex-shrink-0` | implemented |
