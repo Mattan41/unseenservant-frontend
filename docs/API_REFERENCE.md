@@ -333,6 +333,7 @@ re-deriving a role check.
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
 - **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
   - `backstory` / `privateBackstory` are free-text core-character fields (any system). `backstory` is public to the campaign; `privateBackstory` is returned only to the owner or the campaign GM. Writes are owner-only.
+  - `systemType` is optional: `null` (which is what the form sends for "No system") creates a **system-less character** — only the generic core fields exist and neither nested block is stored. The server no longer defaults it to `DND5E`.
   - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
   - `offworlders = { characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }` (used when `systemType === 'OFFWORLDERS'`)
     - `supplyMax` is fixed at `3` per the rules (not player-editable).
