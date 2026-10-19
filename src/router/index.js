@@ -119,7 +119,9 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to, _from, next) => {
+// The guard returns its decision instead of calling the third `next()` argument:
+// that callback is deprecated in vue-router 5 (warning VUE_ROUTER_R0025).
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
   // Ensure initialization check runs before testing state properties
@@ -133,25 +135,22 @@ router.beforeEach(async (to, _from, next) => {
 
   // 1. Redirect already authenticated users away from the login page
   if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'home' })
-    return
+    return { name: 'home' }
   }
 
   // 2. Route requires a registered account (requiresAuth), but user lacks it
   if (to.meta?.requiresAuth && !isAuthenticated) {
     // Send active guests to home page; send completely anonymous users to login
-    next(isGuest ? { name: 'home' } : { name: 'login' })
-    return
+    return isGuest ? { name: 'home' } : { name: 'login' }
   }
 
   // 3. Route requires an active session (guest or auth), but user is completely anonymous
   if (to.meta?.requiresSession && !hasSession) {
-    next({ name: 'login' })
-    return
+    return { name: 'login' }
   }
 
   // 4. Proceed for public routes or when all session requirements are fully satisfied
-  next()
+  return true
 })
 
 export default router
