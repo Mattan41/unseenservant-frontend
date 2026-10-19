@@ -1,9 +1,13 @@
 /**
  * Campaign presentation helpers.
  *
- * Keeps role/ownership colour decisions and display fallbacks out of component
- * templates, mirroring the pattern established by `spellUtils.js`.
+ * Keeps role/ownership colour decisions, display fallbacks and the fixed party
+ * order out of component templates, mirroring the pattern established by
+ * `spellUtils.js`. Role/ownership rules themselves live in
+ * `campaignPermissions.js` — this module only presents them.
  */
+
+import { GM_ROLE, getParticipantRole, sameId } from './campaignPermissions.js'
 
 /**
  * Map a participant table role to a semantic badge class.
@@ -67,4 +71,36 @@ export function formatParticipantRoster(participants = []) {
     id: participant.id,
     label: [getParticipantDisplayName(participant), participant.role || 'PLAYER'].join(' · '),
   }))
+}
+
+/**
+ * Fixed party order inside a campaign:
+ *
+ *   1. the viewer's own characters,
+ *   2. characters whose owner is a GM at this table,
+ *   3. everybody else,
+ *
+ * — alphabetical by character name within each group (case- and
+ * accent-insensitive, so `Doc` and `doc` sort together). Characters with equal
+ * names keep their incoming order, since `sort` is stable.
+ *
+ * The viewer's own characters stay first even when the viewer is the GM, and a
+ * character whose owner is not a participant at all falls into the last group.
+ * The input is never mutated; a new array is returned.
+ *
+ * @param {Array<object>} characters - CharacterOutputDTO list for one campaign
+ * @param {object|null} campaign - the campaign, for its participant roles
+ * @param {number|string|null} currentUserId - the viewer
+ * @returns {Array<object>} A re-ordered copy of `characters`
+ */
+export function sortPartyCharacters(characters = [], campaign = null, currentUserId = null) {
+  const rank = (character) => {
+    if (sameId(character?.ownerId, currentUserId)) return 1
+    return getParticipantRole(campaign, character?.ownerId) === GM_ROLE ? 2 : 3
+  }
+
+  const byName = (a, b) =>
+    String(a?.name || '').localeCompare(String(b?.name || ''), undefined, { sensitivity: 'base' })
+
+  return [...(characters || [])].sort((a, b) => rank(a) - rank(b) || byName(a, b))
 }

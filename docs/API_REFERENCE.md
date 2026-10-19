@@ -42,6 +42,21 @@ The frontend uses a three-layer API architecture that transparently switches bet
 
 ---
 
+## View history — client-only, no endpoint
+
+The campaign and character lists are ordered by "what the user looked at last",
+which the backend does not track and has no field for. `src/utils/viewHistory.js`
+keeps it per user in a single localStorage key:
+
+- **Key**: `view_history` — `{ [userId]: { campaign: { [id]: epochMs }, character: { [id]: epochMs } } }`.
+- **Written by**: the smart views through `src/utils/useViewRecency.js` (`CampaignView`, `CharacterView`), never by a store fetch — `campaignStore.fetchCampaign` also runs for side reads (resolving the campaign of a character being viewed) and such a read must not count as a view of that campaign.
+- **Read by**: `campaignStore.sortedCampaigns` and `characterStore.sortedCharacters` (both getters, so a new view re-sorts without a refetch) via the pure `src/utils/sortUtils.js:sortByLastViewed`, plus the campaign party order in `campaignUtils.js:sortPartyCharacters`.
+- **Ids are stored as strings**, so a backend id (`4`) and a guest-mode id (`guest_campaign_1`) can live in the same map; entries are capped at 100 per user and kind (oldest dropped). A missing id or user id records nothing — the profile loads asynchronously, so the view is recorded once it arrives.
+- **Never-viewed items keep the backend order** and follow the viewed ones.
+- **Guest Demo** needs no adapter: `guest_demo` is just another user key, and `authStore.exitGuestMode` clears that user's history so the demo session leaves nothing behind.
+
+---
+
 ## Feature: Auth
 
 ### authStore — State Shape
@@ -319,7 +334,9 @@ re-deriving a role check.
 {
   characters: Array<CharacterOutputDTO>,
   currentCharacter: CharacterOutputDTO | null,
-  isLoading: boolean
+  isLoading: boolean,
+  sortedCharacters: computed       // getter: most recently viewed first (see
+                                   // "View history" below)
 }
 
 ```
@@ -449,10 +466,20 @@ re-deriving a role check.
   campaignCharacters: { [campaignId]: Array<CharacterOutputDTO> },
   isLoading: boolean,
   loadingCharacters: boolean,
-  error: string | null
+  error: string | null,
+  sortedCampaigns: computed        // getter: most recently viewed first (see
+                                   // "View history" below)
 }
 
 ```
+
+`sortedCampaigns` is what the campaign list renders; `campaigns` keeps the
+backend order so lookups (`getCampaignById`, `getCampaignTitle`, …) are
+unaffected. `getCharactersByCampaignId(campaignId)` returns a campaign's
+characters in the **fixed party order** — the viewer's own characters first,
+then a GM's, then the rest alphabetically
+(`campaignUtils.js:sortPartyCharacters`); both the Characters section and the
+Overview party preview read it, so the two cannot disagree.
 
 ---
 
@@ -593,7 +620,7 @@ re-deriving a role check.
 - **Guest Mode**: Mocked — filters character assets by campaignId
 - **Response**: Array of CharacterOutputDTO
 - **Status Codes**: 200, 401
-- **Notes**: Fetches characters linked to a specific campaign. Stores data in the campaignCharacters map keyed by campaignId.
+- **Notes**: Fetches characters linked to a specific campaign. Stores data in the campaignCharacters map keyed by campaignId. Read back through `campaignStore.getCharactersByCampaignId`, which applies the fixed party order (own characters → GM characters → alphabetical).
 
 ---
 

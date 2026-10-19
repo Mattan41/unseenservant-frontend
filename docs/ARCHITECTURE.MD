@@ -78,7 +78,10 @@ src/
 │       ├── adminStore.js
 │       └── components/          # AdminUsersSection.vue, AdminWhitelistSection.vue
 ├── utils/
-│   └──errorUtils.js          # Extracts a human-readable error message from an Axios error.
+│   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
+│   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
+│   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
+│   └── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
 ├── systems/                  # System-specific (tabletop RPG ruleset) code
 │   ├── offworlders/          # Offworlders (rules-light sci-fi)
 │   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm, OffworldersGearForm
@@ -175,6 +178,14 @@ three components, not copying their markup.
 - Pinia stores are the single source of truth
 - Components read state via `storeToRefs()` for reactivity
 - API calls live in Service files, called from store actions
+- List order is **derived** state, never stored: the stores expose
+  `sortedCampaigns` / `sortedCharacters` (most recently viewed first, from the
+  client-only `view_history` — see `utils/viewHistory.js`), and
+  `campaignStore.getCharactersByCampaignId` returns a campaign's party in the
+  fixed order (own characters → GM characters → alphabetical, see
+  `campaignUtils.js:sortPartyCharacters`). Views record a view through
+  `utils/useViewRecency.js`; a store fetch deliberately never does, because
+  fetches also run for side reads.
 
 ### Routing & Navigation
 - Protected routes are explicitly flagged using `meta: { requiresAuth: true }`.
