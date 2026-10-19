@@ -10,7 +10,7 @@ import {
   getCampaignPermissions,
   canRemoveCharacter,
   canSeePrivateBackstory,
-} from './campaignPermissions.js'
+} from '@/features/campaign/campaignPermissions.js'
 
 /**
  * Fixture campaigns covering the two independent axes:

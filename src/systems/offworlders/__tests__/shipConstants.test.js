@@ -15,7 +15,7 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
   toggleShipUpgrade,
-} from './shipConstants.js'
+} from '@/systems/offworlders/shipConstants.js'
 
 describe('createEmptyShipData', () => {
   it('uses the rulebook defaults (p.13)', () => {

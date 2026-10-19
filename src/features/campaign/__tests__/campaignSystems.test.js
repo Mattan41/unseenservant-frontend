@@ -6,7 +6,7 @@ import {
   OFFWORLDERS_SYSTEM_TYPE,
   isDnd5e,
   isOffworlders,
-} from './campaignSystems.js'
+} from '@/features/campaign/campaignSystems.js'
 
 describe('campaign systems registry', () => {
   it('offers both character systems as campaign primary systems', () => {

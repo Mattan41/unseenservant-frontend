@@ -194,6 +194,7 @@ three components, not copying their markup.
 
 ## General Practices
 - Absolute imports are strictly enforced across the codebase using the `@/` path alias pointing to the `src/` root directory.
+- Tests live in a `__tests__/` folder next to the code they test (one per directory that has tests, including `src/utils/`), named `<subject>.test.js` — or `<subject>.integration.test.js` when a test wires several real modules without service mocks. Code under test is imported via `@/`, helpers shared across features belong in `src/test-utils/`, and no test file sits beside its source.
 
 ## Long-text fields are markdown
 

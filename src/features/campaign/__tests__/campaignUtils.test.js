@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatParticipantRoster, sortPartyCharacters } from './campaignUtils.js'
+import { formatParticipantRoster, sortPartyCharacters } from '@/features/campaign/campaignUtils.js'
 
 describe('formatParticipantRoster', () => {
   it('lists each participant with their role', () => {
