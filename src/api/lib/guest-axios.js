@@ -265,26 +265,37 @@ function guestCampaignPermissions(campaignId) {
   return getCampaignPermissions(campaign, currentGuestUserId())
 }
 
-/** Reject a guest request with the same 403 shape axios surfaces in full mode. */
-function forbidden(message) {
-  return Promise.reject({
+/**
+ * Build an axios-shaped rejection for guest mode.
+ *
+ * Guest mode has no HTTP layer, but every caller expects an axios error: a real
+ * `Error` whose `response.data.message` and `response.status` are set (the
+ * stores branch on `err.response.status`, `extractErrorMessage` reads
+ * `response.data`). Wrapping the object in `new Error(...)` keeps that shape
+ * while the rejection reason is a proper `Error`.
+ *
+ * @param {string} message Human-readable error message.
+ * @param {number} status HTTP status code to mirror.
+ * @returns {Error} An `Error` carrying a `response` shaped like axios'.
+ */
+function guestError(message, status) {
+  return Object.assign(new Error(message), {
     response: {
       data: { message },
-      status: 403,
+      status,
       handled: false,
     },
   })
 }
 
+/** Reject a guest request with the same 403 shape axios surfaces in full mode. */
+function forbidden(message) {
+  return Promise.reject(guestError(message, 403))
+}
+
 /** Reject a guest request with the same 400 shape the backend's validation uses. */
 function badRequest(message) {
-  return Promise.reject({
-    response: {
-      data: { message },
-      status: 400,
-      handled: false,
-    },
-  })
+  return Promise.reject(guestError(message, 400))
 }
 
 // ============================================================================
@@ -467,13 +478,7 @@ const guestAxios = {
       const campaignId = match ? match[1] : null
       const ship = campaignId ? findShip(campaignId) : null
       if (!ship) {
-        return Promise.reject({
-          response: {
-            data: { message: 'Ship not found for campaign: ' + campaignId },
-            status: 404,
-            handled: false,
-          },
-        })
+        return Promise.reject(guestError('Ship not found for campaign: ' + campaignId, 404))
       }
       return Promise.resolve({ data: ship })
     }
@@ -734,13 +739,9 @@ const guestAxios = {
         data.version !== null &&
         Number(data.version) !== Number(current.version)
       ) {
-        return Promise.reject({
-          response: {
-            data: { message: 'The ship was updated by someone else. Reload and try again.' },
-            status: 409,
-            handled: false,
-          },
-        })
+        return Promise.reject(
+          guestError('The ship was updated by someone else. Reload and try again.', 409),
+        )
       }
 
       ships[index] = {
@@ -1126,12 +1127,9 @@ const guestAxios = {
           const currentUserId = guestUser?.id || 'guest_demo'
           // Only the message sender can delete
           if (String(messages[messageIndex].userId) !== String(currentUserId)) {
-            const error = {
-              data: { message: 'You do not have permission to delete this message.' },
-              status: 403,
-              handled: false,
-            }
-            return Promise.reject({ response: error })
+            return Promise.reject(
+              guestError('You do not have permission to delete this message.', 403),
+            )
           }
           messages.splice(messageIndex, 1)
           setData(KEYS.MESSAGES, messages)
