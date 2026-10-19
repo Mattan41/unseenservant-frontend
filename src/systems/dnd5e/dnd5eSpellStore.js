@@ -152,7 +152,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
    */
   function debouncedSearch(query, page = 1) {
     debounce(() => {
-      searchSpells(query, page)
+      void searchSpells(query, page)
     }, 300)
   }
 
@@ -267,7 +267,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
    */
   function nextPage() {
     if (hasNextPage.value && currentQuery.value) {
-      searchSpells(currentQuery.value, currentPage.value + 1)
+      void searchSpells(currentQuery.value, currentPage.value + 1)
     }
   }
 
@@ -276,7 +276,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
    */
   function previousPage() {
     if (hasPreviousPage.value && currentQuery.value) {
-      searchSpells(currentQuery.value, currentPage.value - 1)
+      void searchSpells(currentQuery.value, currentPage.value - 1)
     }
   }
 
