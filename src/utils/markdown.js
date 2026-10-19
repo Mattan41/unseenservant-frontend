@@ -60,7 +60,9 @@ export function renderMarkdown(text) {
 export function toPlainText(text) {
   if (!text) return ''
   const html = markdown.render(String(text))
-  return decodeHtmlEntities(html.replace(/<[^>]*>/g, ' '))
+  // `[^<>]`, not `[^>]`: the scan stops at the next `<` or `>`, so a stray `<`
+  // fails at once instead of re-scanning the rest of the document.
+  return decodeHtmlEntities(html.replace(/<[^<>]*>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim()
 }

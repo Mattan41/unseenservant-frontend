@@ -82,4 +82,17 @@ describe('toPlainText', () => {
     expect(toPlainText('fire & brimstone')).toBe('fire & brimstone')
     expect(toPlainText('5 < 6')).toBe('5 < 6')
   })
+
+  it('strips tags from links, inline code and blockquotes', () => {
+    expect(toPlainText('see [docs](https://example.org)')).toBe('see docs')
+    expect(toPlainText('`code <b> x`')).toBe('code <b> x')
+    expect(toPlainText('> quoted')).toBe('quoted')
+  })
+
+  it('stays correct and fast on long adversarial inputs', () => {
+    // A raw `<` is escaped to `&lt;` by the renderer, so no tag run is built.
+    expect(toPlainText('<'.repeat(30000))).toBe('<'.repeat(30000))
+    // Many real tags: exercises the tag strip across the whole document.
+    expect(toPlainText('**a** '.repeat(20000))).toBe('a '.repeat(20000).trim())
+  })
 })

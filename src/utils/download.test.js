@@ -14,6 +14,23 @@ describe('slugifyFileName', () => {
     expect(slugifyFileName('***', 'character')).toBe('character')
     expect(slugifyFileName('', 'ship')).toBe('ship')
   })
+
+  it('trims the single dash a leading or trailing run leaves behind', () => {
+    expect(slugifyFileName('---Morsan---')).toBe('morsan')
+    expect(slugifyFileName('a---a---')).toBe('a-a')
+    expect(slugifyFileName('  ***  ')).toBe('export')
+    expect(slugifyFileName('---', 'character')).toBe('character')
+  })
+
+  it('collapses every run of separators to a single dash', () => {
+    expect(slugifyFileName('a -- b')).toBe('a-b')
+    expect(slugifyFileName('a....b')).toBe('a-b')
+  })
+
+  it('stays correct and fast on a long adversarial input', () => {
+    expect(slugifyFileName('a' + '-'.repeat(30000) + 'a')).toBe('a-a')
+    expect(slugifyFileName('*'.repeat(30000), 'character')).toBe('character')
+  })
 })
 
 describe('dateStamp', () => {

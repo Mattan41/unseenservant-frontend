@@ -24,7 +24,9 @@ export function slugifyFileName(name, fallback = 'export') {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    // The step above collapses every separator run to one dash, so a single
+    // dash per edge is all that is left to trim (`-+$` would backtrack).
+    .replace(/^-|-$/g, '')
   return slug || fallback
 }
 
