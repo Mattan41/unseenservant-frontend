@@ -37,7 +37,7 @@ describe('guest-axios admin mocks', () => {
       })
     })
 
-    it('changes another account\'s role', async () => {
+    it("changes another account's role", async () => {
       const { data } = await guestAxios.patch('api/admin/users/guest_player_1/role', {
         role: 'ADMIN',
       })

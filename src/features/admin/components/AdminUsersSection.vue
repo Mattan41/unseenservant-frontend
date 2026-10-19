@@ -84,8 +84,8 @@ function changeRole(user) {
     </div>
 
     <BaseInfoBox variant="info">
-      An account's role takes effect immediately — it is checked on every request, so the holder does
-      not have to log in again. Always keep at least one administrator account.
+      An account's role takes effect immediately — it is checked on every request, so the holder
+      does not have to log in again. Always keep at least one administrator account.
     </BaseInfoBox>
   </div>
 </template>

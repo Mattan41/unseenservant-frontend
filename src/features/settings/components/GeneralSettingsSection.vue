@@ -69,7 +69,8 @@ import BaseCard from '@/components/base/BaseCard.vue'
 
       <p v-if="mode === 'system'" class="text-sm text-muted mt-2">
         Currently following your system:
-        <strong>{{ resolvedMode === 'dark' ? 'Dark' : 'Light' }}</strong>.
+        <strong>{{ resolvedMode === 'dark' ? 'Dark' : 'Light' }}</strong
+        >.
       </p>
     </BaseCard>
 

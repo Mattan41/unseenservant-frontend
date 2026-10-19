@@ -100,7 +100,11 @@ function selectSection(key) {
 <template>
   <div class="flex flex-col md:flex-row md:items-stretch md:h-full">
     <!-- Mobile top bar: title + local navigation trigger -->
-    <ContextMobileBar title="Settings" trigger-label="Settings Views" @open="settingsNavOpen = true" />
+    <ContextMobileBar
+      title="Settings"
+      trigger-label="Settings Views"
+      @open="settingsNavOpen = true"
+    />
 
     <!-- Contextual navigation (rail on desktop, drawer on mobile) -->
     <ContextSidebar

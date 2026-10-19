@@ -177,9 +177,7 @@ async function onSaveSpell(spell) {
             class="flex flex-col gap-1 px-4 py-3 cursor-pointer spell-row-hover sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-2"
             @click="toggleExpand(spell.key)"
           >
-            <div
-              class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading"
-            >
+            <div class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading">
               {{ spell.name }}
               <span
                 v-if="spell.concentration"

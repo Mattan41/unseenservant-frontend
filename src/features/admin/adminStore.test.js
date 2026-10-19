@@ -15,8 +15,20 @@ vi.mock('@/features/admin/AdminService.js', () => ({
   },
 }))
 
-const ADMIN = { id: 1, username: 'admin', displayName: 'Admin', email: 'a@example.com', role: 'ADMIN' }
-const MEMBER = { id: 2, username: 'member', displayName: 'Member', email: 'm@example.com', role: 'USER' }
+const ADMIN = {
+  id: 1,
+  username: 'admin',
+  displayName: 'Admin',
+  email: 'a@example.com',
+  role: 'ADMIN',
+}
+const MEMBER = {
+  id: 2,
+  username: 'member',
+  displayName: 'Member',
+  email: 'm@example.com',
+  role: 'USER',
+}
 
 describe('adminStore', () => {
   beforeEach(() => {
