@@ -227,7 +227,7 @@ function extractId(url) {
   const parts = cleanUrl.split('/').filter(Boolean)
   for (let i = parts.length - 1; i >= 0; i--) {
     const part = parts[i]
-    if (part.startsWith('guest_') || !isNaN(parseInt(part, 10))) {
+    if (part.startsWith('guest_') || !Number.isNaN(Number.parseInt(part, 10))) {
       return part
     }
   }

@@ -115,7 +115,7 @@ function onInput(event) {
     emit('update:modelValue', value)
     return
   }
-  const parsed = parseFloat(value)
+  const parsed = Number.parseFloat(value)
   emit('update:modelValue', Number.isNaN(parsed) ? value : parsed)
 }
 </script>
