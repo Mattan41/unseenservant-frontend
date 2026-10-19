@@ -186,6 +186,7 @@ const saveParticipantNickname = async (participant) => {
           type="text"
           class="input-field p-3 rounded flex-grow"
           placeholder="username or email"
+          aria-label="Search users by username or email"
           @keyup.enter="searchUsers"
         />
         <BaseButton
@@ -274,6 +275,7 @@ const saveParticipantNickname = async (participant) => {
               type="text"
               class="input-field p-2 rounded w-full"
               :disabled="isSaving"
+              :aria-label="`New nickname for ${getParticipantDisplayName(participant)}`"
               placeholder="Enter new nickname"
             />
             <div class="flex gap-2">

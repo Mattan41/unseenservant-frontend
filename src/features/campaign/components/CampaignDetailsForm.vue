@@ -11,7 +11,7 @@
  * without a modal wrapper. Emits `save` with the edited payload — the parent
  * owns all store interactions.
  */
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, useId } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
@@ -41,6 +41,8 @@ const editedName = ref(props.campaign.title || '')
 const editedDescription = ref(props.campaign.description || '')
 const editedPrimarySystem = ref(props.campaign.primarySystem || '')
 const fileInput = ref(null)
+// Per-instance id so `label[for]` always resolves (the form can render twice).
+const imageInputId = `campaign-image-${useId()}`
 const selectedFile = ref(null)
 const localPreviewUrl = ref(null)
 const repositionFile = ref(null)
@@ -150,7 +152,9 @@ useUnsavedChanges(
 
     <!-- Right: image -->
     <div class="space-y-3">
-      <label class="block text-sm font-medium text-default mb-1">Campaign Image</label>
+      <label :for="imageInputId" class="block text-sm font-medium text-default mb-1">
+        Campaign Image
+      </label>
 
       <div v-if="isGuestMode" class="guest-notice">
         ⚠️ Image upload is not supported in guest mode. A default image will be used.
@@ -176,6 +180,7 @@ useUnsavedChanges(
 
         <input
           v-if="!isGuestMode"
+          :id="imageInputId"
           type="file"
           ref="fileInput"
           @change="handleImageChange"

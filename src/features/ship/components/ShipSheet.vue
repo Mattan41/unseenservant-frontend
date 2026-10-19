@@ -346,6 +346,7 @@ useUnsavedChanges(
           type="file"
           accept=".jpg,.jpeg,.png,.gif,.webp"
           class="hidden"
+          aria-label="Upload ship profile image"
           @change="onProfileFileChange"
         />
       </div>
@@ -582,6 +583,7 @@ useUnsavedChanges(
         type="file"
         accept=".jpg,.jpeg,.png,.gif,.webp"
         class="hidden"
+        aria-label="Add image to the ship gallery"
         @change="onGalleryFileChange"
       />
     </div>

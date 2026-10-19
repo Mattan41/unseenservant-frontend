@@ -102,7 +102,11 @@ const deleteCampaign = () => {
         Hand over full control of this campaign to another participant.
       </p>
       <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-        <select v-model="transferTargetId" class="input-field p-2 rounded">
+        <select
+          v-model="transferTargetId"
+          class="input-field p-2 rounded"
+          aria-label="Participant to transfer ownership to"
+        >
           <option value="">Select a participant…</option>
           <option
             v-for="participant in transferCandidates"

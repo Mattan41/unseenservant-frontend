@@ -79,6 +79,7 @@ async function onSaveSpell(spell) {
           type="text"
           placeholder="Search spells (e.g., fireball, healing, charm)..."
           class="w-full px-4 py-3 pr-10 border border-input rounded-lg input-field"
+          aria-label="Search spells"
           @input="onSearchInput"
           @keydown.escape="onClearSearch"
         />
