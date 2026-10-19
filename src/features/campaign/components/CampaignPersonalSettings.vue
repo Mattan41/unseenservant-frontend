@@ -103,6 +103,7 @@ const saveNickname = async () => {
         class="input-field p-3 rounded w-full mb-3"
         :readonly="!isEditingNickname"
         :disabled="isSaving"
+        aria-label="Your nickname in this campaign"
         :placeholder="currentUserNickname || 'Enter your nickname'"
         @click="startEditingNickname"
       />

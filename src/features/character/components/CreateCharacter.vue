@@ -130,6 +130,7 @@ const submitCharacter = async () => {
             type="file"
             accept=".json,application/json"
             class="hidden"
+            aria-label="Import character from a backup file"
             @change="importBackup"
           />
         </div>

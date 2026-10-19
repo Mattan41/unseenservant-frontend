@@ -214,6 +214,7 @@ const submitCharacter = async () => {
               v-if="!isGuestMode"
               type="file"
               ref="fileInput"
+              aria-label="Upload character image"
               @change="handleImageChange"
               accept=".jpg,.jpeg,.png,.gif,.webp"
               class="hidden"

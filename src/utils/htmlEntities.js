@@ -39,7 +39,7 @@ const ENTITY_PATTERN = /&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi
  * @returns {string|null} The character, or null when out of range.
  */
 function decodeCodePoint(digits, radix) {
-  const codePoint = parseInt(digits, radix)
+  const codePoint = Number.parseInt(digits, radix)
   if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return null
   try {
     return String.fromCodePoint(codePoint)

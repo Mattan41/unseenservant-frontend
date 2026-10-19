@@ -324,12 +324,14 @@ function removeAbility(name) {
         type="text"
         class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
         placeholder="Custom skill name"
+        aria-label="Custom skill name"
       />
       <input
         v-model="customSkill.description"
         type="text"
         class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"
         placeholder="Description (shown on hover)"
+        aria-label="Custom skill description"
         @keyup.enter.prevent="addCustomSkill"
       />
       <BaseButton variant="add" type="button" @click="addCustomSkill">Add</BaseButton>
@@ -409,12 +411,14 @@ function removeAbility(name) {
         type="text"
         class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
         placeholder="Custom ability name"
+        aria-label="Custom ability name"
       />
       <input
         v-model="customAbility.description"
         type="text"
         class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"
         placeholder="Description (shown on hover)"
+        aria-label="Custom ability description"
         @keyup.enter.prevent="addCustomAbility"
       />
       <BaseButton variant="add" type="button" @click="addCustomAbility">Add</BaseButton>

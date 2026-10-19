@@ -24,7 +24,7 @@ export const useCharacterStore = defineStore('character', () => {
   const getCharacterById = computed(() => {
     return (id) => {
       return characters.value.find(
-        (character) => character.id === parseInt(id) || character.id === id,
+        (character) => character.id === Number.parseInt(id) || character.id === id,
       )
     }
   })

@@ -215,7 +215,7 @@ const loadCampaignData = async (campaignId) => {
 
 const campaignCharacters = computed(() => {
   const id = route.params.id
-  const safeId = isNaN(id) ? id : parseInt(id)
+  const safeId = Number.isNaN(Number(id)) ? id : Number.parseInt(id)
   return campaignStore.getCharactersByCampaignId(safeId)
 })
 
@@ -364,7 +364,7 @@ onMounted(async () => {
 onUnmounted(() => {
   if (route.params.id) {
     const id = route.params.id
-    const safeId = isNaN(id) ? id : parseInt(id)
+    const safeId = Number.isNaN(Number(id)) ? id : Number.parseInt(id)
     campaignStore.clearCampaignCharacters(safeId)
   }
   messageStore.clearMessages()
