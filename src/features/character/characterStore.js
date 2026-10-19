@@ -2,8 +2,15 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import CharacterService from '@/features/character/CharacterService.js'
+import { useUserStore } from '@/features/user/userStore.js'
+import { sortByLastViewed } from '@/utils/sortUtils.js'
+import { viewedAtByUser } from '@/utils/viewHistory.js'
 
 export const useCharacterStore = defineStore('character', () => {
+  // The viewer, for the per-user view history. The user store never imports this
+  // one, so there is no import cycle.
+  const userStore = useUserStore()
+
   // ==========================================================================
   // State
   // ==========================================================================
@@ -21,6 +28,15 @@ export const useCharacterStore = defineStore('character', () => {
       )
     }
   })
+
+  /**
+   * The current user's characters, most recently viewed first — the order the
+   * character list renders in. Never-viewed characters keep the order the
+   * backend returned (see `sortUtils.js` / `viewHistory.js`).
+   */
+  const sortedCharacters = computed(() =>
+    sortByLastViewed(characters.value, viewedAtByUser('character', userStore.userId)),
+  )
 
   const getCharacterImageUrl = computed(() => {
     return (id) => {
@@ -232,6 +248,7 @@ export const useCharacterStore = defineStore('character', () => {
     // Getters
     getCharacterById,
     getCharacterImageUrl,
+    sortedCharacters,
 
     // Actions
     createCharacter,

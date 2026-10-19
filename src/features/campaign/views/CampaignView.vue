@@ -41,6 +41,7 @@ import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConsta
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import { confirmDiscardUnsavedChanges, useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import { useViewRecency } from '@/utils/useViewRecency.js'
 import {
   CAMPAIGN_SYSTEM_LABELS,
   DND5E_SYSTEM_TYPE,
@@ -54,6 +55,16 @@ const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const shipStore = useShipStore()
+
+// Opening a campaign is what the campaign list orders by (`viewHistory.js`).
+// Deliberately recorded here and not in the store fetch: `fetchCampaign` also
+// runs for side reads — e.g. `CharacterView` resolving a character's campaign
+// name — and such a read must not count as having viewed the campaign.
+useViewRecency(
+  'campaign',
+  () => route.params.id,
+  () => userStore.userId,
+)
 
 const campaign = ref(null)
 const isLoading = ref(false)
@@ -689,7 +700,9 @@ watch(
                   </span>
                   <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
                 </template>
-                <span v-else class="character-tag">{{ characterSystemLabel(character.systemType) }}</span>
+                <span v-else class="character-tag">{{
+                  characterSystemLabel(character.systemType)
+                }}</span>
               </div>
             </div>
 

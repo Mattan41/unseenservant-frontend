@@ -14,6 +14,9 @@ const router = useRouter()
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
 
+// The rendered order is the store's derived, per-user one: most recently viewed
+// character first (see `characterStore.sortedCharacters` and `viewHistory.js`).
+
 const loading = ref(false)
 const getCampaignName = (campaignId) => {
   if (!campaignId) return 'No campaign'
@@ -48,7 +51,7 @@ const viewCharacter = (id) => {
     <!-- Empty state: the dashed discovery tile, so "create" reads the same
          wherever a character can be added. -->
     <div
-      v-else-if="characterStore.characters.length === 0"
+      v-else-if="characterStore.sortedCharacters.length === 0"
       class="mx-auto max-w-xs py-4 text-center"
     >
       <p class="text-secondary mb-3">You don't have any characters yet.</p>
@@ -62,7 +65,7 @@ const viewCharacter = (id) => {
         Create a character
       </BaseLinkButton>
       <div
-        v-for="character in characterStore.characters"
+        v-for="character in characterStore.sortedCharacters"
         :key="character.id"
         class="bg-[var(--color-surface)] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-subtle flex flex-col h-full"
         @click="viewCharacter(character.id)"
@@ -117,7 +120,9 @@ const viewCharacter = (id) => {
                 </span>
                 <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
               </template>
-              <span v-else class="character-tag">{{ characterSystemLabel(character.systemType) }}</span>
+              <span v-else class="character-tag">{{
+                characterSystemLabel(character.systemType)
+              }}</span>
             </div>
           </div>
         </div>

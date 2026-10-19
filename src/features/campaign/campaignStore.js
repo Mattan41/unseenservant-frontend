@@ -2,10 +2,18 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import CampaignService from './CampaignService.js'
 import { isCampaignGm } from './campaignPermissions.js'
+import { sortPartyCharacters } from './campaignUtils.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
+import { useUserStore } from '@/features/user/userStore.js'
+import { sortByLastViewed } from '@/utils/sortUtils.js'
+import { viewedAtByUser } from '@/utils/viewHistory.js'
 import { extractErrorMessage } from '@/utils/errorUtils.js'
 
 export const useCampaignStore = defineStore('campaign', () => {
+  // The viewer, for the party order and the per-user view history. The user
+  // store never imports this one, so there is no import cycle.
+  const userStore = useUserStore()
+
   // ==========================================================================
   // State
   // ==========================================================================
@@ -22,18 +30,33 @@ export const useCampaignStore = defineStore('campaign', () => {
     return (id) => campaigns.value.find((campaign) => campaign.id == id)
   })
 
-  const isUserGM = computed(() => {
-    return (campaignId, userId) => {
-      // Prefer the fully-loaded current campaign (it always carries the
-      // participant list); fall back to the cached list entry.
-      const campaign =
-        currentCampaign.value && currentCampaign.value.id == campaignId
-          ? currentCampaign.value
-          : campaigns.value.find((c) => c.id == campaignId)
-
-      return isCampaignGm(campaign || null, userId)
+  /**
+   * The campaign behind an id: the fully-loaded one currently being viewed (it
+   * always carries the participant list) when it matches, else the cached list
+   * entry, else `null`.
+   *
+   * @param {number|string} campaignId
+   * @returns {object|null}
+   */
+  function resolveCampaign(campaignId) {
+    if (currentCampaign.value && currentCampaign.value.id == campaignId) {
+      return currentCampaign.value
     }
+    return campaigns.value.find((c) => c.id == campaignId) || null
+  }
+
+  const isUserGM = computed(() => {
+    return (campaignId, userId) => isCampaignGm(resolveCampaign(campaignId), userId)
   })
+
+  /**
+   * The current user's campaigns, most recently viewed first — the order the
+   * campaign list renders in. Never-viewed campaigns keep the order the backend
+   * returned (see `sortUtils.js` / `viewHistory.js`).
+   */
+  const sortedCampaigns = computed(() =>
+    sortByLastViewed(campaigns.value, viewedAtByUser('campaign', userStore.userId)),
+  )
 
   const ownerId = computed(() => {
     return (id) => {
@@ -72,9 +95,19 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   })
 
+  /**
+   * A campaign's characters in the fixed party order: the viewer's own
+   * characters first, then a GM's, then the rest alphabetically (see
+   * `sortPartyCharacters`). Both the party section and the Overview preview read
+   * this getter, so the two can never disagree.
+   */
   const getCharactersByCampaignId = computed(() => {
     return (campaignId) => {
-      return [...(campaignCharacters.value[campaignId] || [])]
+      return sortPartyCharacters(
+        campaignCharacters.value[campaignId] || [],
+        resolveCampaign(campaignId),
+        userStore.userId,
+      )
     }
   })
 
@@ -515,6 +548,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     // Getters
     getCampaignById,
     isUserGM,
+    sortedCampaigns,
     ownerId,
     getCampaignDescription,
     getCampaignTitle,

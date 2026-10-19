@@ -8,6 +8,9 @@ import { toPlainText } from '@/utils/markdown.js'
 const campaignStore = useCampaignStore()
 const expandedDescriptions = ref({})
 
+// The rendered order is the store's derived, per-user one: most recently viewed
+// campaign first (see `campaignStore.sortedCampaigns` and `viewHistory.js`).
+
 /**
  * Descriptions as plain text, keyed by campaign id.
  *
@@ -42,7 +45,10 @@ onMounted(async () => {
     </div>
 
     <!-- Empty state: the dashed discovery tile, as on the characters list. -->
-    <div v-else-if="!campaignStore.campaigns.length" class="mx-auto max-w-xs py-4 text-center">
+    <div
+      v-else-if="!campaignStore.sortedCampaigns.length"
+      class="mx-auto max-w-xs py-4 text-center"
+    >
       <p class="text-secondary mb-3">You aren't in any campaign yet.</p>
       <CreateCampaign />
     </div>
@@ -54,7 +60,7 @@ onMounted(async () => {
         <CreateCampaign />
       </li>
       <li
-        v-for="campaign in campaignStore.campaigns"
+        v-for="campaign in campaignStore.sortedCampaigns"
         :key="campaign.id"
         class="mb-4 p-4 rounded"
         style="background-color: var(--color-primary-100)"

@@ -16,6 +16,7 @@ import { buildCharacterExport, buildCharacterBackup } from '@/features/character
 import { characterSystemLabel } from '@/features/character/dispatchers/systemRegistry.js'
 import { fetchExportExtras } from '@/features/character/dispatchers/systemExport.js'
 import { downloadTextFile, dateStamp, slugifyFileName } from '@/utils/download.js'
+import { useViewRecency } from '@/utils/useViewRecency.js'
 
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
@@ -31,6 +32,9 @@ const campaignId = route.query.campaignId || null
 
 const { userId } = storeToRefs(userStore)
 const { currentCharacter } = storeToRefs(characterStore)
+
+// Opening a character is what the character list orders by (`viewHistory.js`).
+useViewRecency('character', () => route.params.id, userId)
 
 // The character's own campaign, independent of the `from=campaign` context.
 // Resolved from the campaign store; the campaign is fetched on mount when it is
