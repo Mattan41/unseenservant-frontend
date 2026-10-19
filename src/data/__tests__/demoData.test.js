@@ -22,27 +22,30 @@ const GUEST_KEYS = [
 
 describe('demo data integrity', () => {
   it('every character points at an existing campaign (or none)', () => {
-    for (const character of guestCharacters) {
-      if (character.campaignId) {
-        expect(
-          campaignById(character.campaignId),
-          `${character.name} -> ${character.campaignId}`,
-        ).toBeTruthy()
-      }
-    }
+    const dangling = guestCharacters
+      .filter((character) => character.campaignId)
+      .filter((character) => !campaignById(character.campaignId))
+      .map((character) => `${character.name} -> ${character.campaignId}`)
+
+    expect(dangling).toEqual([])
   })
 
   it("each campaign's roster matches its primary system", () => {
+    const labelledSystems = ['OFFWORLDERS', 'DND5E']
+    const mismatched = []
+
     for (const campaign of guestCampaigns) {
-      const roster = guestCharacters.filter((c) => c.campaignId === campaign.id)
-      if (campaign.primarySystem === 'OFFWORLDERS') {
-        roster.forEach((c) =>
-          expect(c.systemType, `${c.name} in ${campaign.name}`).toBe('OFFWORLDERS'),
-        )
-      } else if (campaign.primarySystem === 'DND5E') {
-        roster.forEach((c) => expect(c.systemType, `${c.name} in ${campaign.name}`).toBe('DND5E'))
+      if (!labelledSystems.includes(campaign.primarySystem)) continue
+
+      for (const character of guestCharacters) {
+        if (character.campaignId !== campaign.id) continue
+        if (character.systemType !== campaign.primarySystem) {
+          mismatched.push(`${character.name} in ${campaign.name}`)
+        }
       }
     }
+
+    expect(mismatched).toEqual([])
   })
 
   it('every ship belongs to an OFFWORLDERS campaign', () => {
@@ -71,17 +74,17 @@ describe('guest storage seeding', () => {
 
   it('seeds every key, including ships', () => {
     seedGuestStorage()
-    for (const key of GUEST_KEYS) {
-      expect(localStorage.getItem(key), key).not.toBeNull()
-    }
+
+    const missing = GUEST_KEYS.filter((key) => localStorage.getItem(key) === null)
+    expect(missing).toEqual([])
     expect(JSON.parse(localStorage.getItem('guest_ships'))).toHaveLength(guestShips.length)
   })
 
   it('clearGuestStorage removes every key', () => {
     seedGuestStorage()
     clearGuestStorage()
-    for (const key of GUEST_KEYS) {
-      expect(localStorage.getItem(key), key).toBeNull()
-    }
+
+    const leftover = GUEST_KEYS.filter((key) => localStorage.getItem(key) !== null)
+    expect(leftover).toEqual([])
   })
 })

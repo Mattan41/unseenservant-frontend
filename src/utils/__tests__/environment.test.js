@@ -46,9 +46,10 @@ describe('environment', () => {
       expect(environment.ENVIRONMENT).toBe(value)
       expect(environment[flag]).toBe(true)
 
-      for (const other of Object.values(ENVIRONMENT_FLAGS)) {
-        if (other !== flag) expect(environment[other]).toBe(false)
-      }
+      const alsoRaised = Object.values(ENVIRONMENT_FLAGS).filter(
+        (other) => other !== flag && environment[other] !== false,
+      )
+      expect(alsoRaised).toEqual([])
     }
   })
 
