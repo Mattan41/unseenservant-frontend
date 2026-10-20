@@ -85,6 +85,34 @@ describe('guest-axios GET routes', () => {
     await expect(guestAxios.get('api/me')).resolves.toEqual({ data: expected })
   })
 
+  it('keeps the profile route matching exactly the same URLs', async () => {
+    const expected = read('guest_user')
+
+    // One URL per alternative of the pattern: `users/me`, the `api/me`
+    // substring (`api/messages…` satisfies it as well) and a path ending in
+    // `/me`. Grouping the alternation must not change a single one of them.
+    const profileUrls = [
+      'api/users/me',
+      'api/me',
+      'api/users/5/me',
+      'api/users/me/roles',
+      'api/messages',
+      'api/messages/guest_msg_5',
+    ]
+    for (const url of profileUrls) {
+      await expect(guestAxios.get(url)).resolves.toEqual({ data: expected })
+    }
+
+    // The neighbours keep reaching their own handlers.
+    const search = await guestAxios.get('api/users/search?query=user1')
+    expect(search.data.map((user) => user.id)).toEqual(['guest_player_1'])
+
+    await expect(guestAxios.get('api/characters/me')).resolves.toEqual({
+      data: characters().filter((character) => character.ownerId === 'guest_demo'),
+    })
+    await expect(guestAxios.get('api/campaigns')).resolves.toEqual({ data: campaigns() })
+  })
+
   it('searches the seeded players by username and email', async () => {
     const byUsername = await guestAxios.get('api/users/search?query=user3')
     expect(byUsername.data.map((user) => user.id)).toEqual(['guest_player_3'])

@@ -988,8 +988,10 @@ function deleteMessage({ url }) {
 const ROUTES = [
   // --- GET ------------------------------------------------------------------
   // The profile test is a substring, exactly as before: it also matches
-  // `api/messages…`, so the messages route below never runs for a GET.
-  { method: 'get', pattern: /users\/me|api\/me|users.*\/me$/, handler: handleProfile },
+  // `api/messages…`, so the messages route below never runs for a GET. The
+  // alternation is wrapped in a non-capturing group, which is cosmetic — it
+  // changes neither what the pattern matches nor what it captures.
+  { method: 'get', pattern: /(?:users\/me|api\/me|users.*\/me$)/, handler: handleProfile },
   { method: 'get', pattern: /users\/search/, handler: handleUserSearch },
   { method: 'get', pattern: /characters.*\/spells/, handler: handleCharacterSpells },
   { method: 'get', pattern: /characters.*campaignId=/, handler: handleCharactersByCampaign },
