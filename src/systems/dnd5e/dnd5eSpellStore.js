@@ -73,7 +73,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
    * @param {string} query
    */
   function addToSearchHistory(query) {
-    if (!query || !query.trim()) return
+    if (!query?.trim()) return
     const trimmed = query.trim()
     searchHistory.value = searchHistory.value.filter((h) => h.query !== trimmed)
     searchHistory.value.unshift({ query: trimmed, timestamp: Date.now() })
@@ -174,7 +174,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
 
     try {
       const spell = await SpellService.fetchSpellByKey(key)
-      if (spell && spell.key) {
+      if (spell?.key) {
         const normalized = normalizeSpell(spell)
         spellCache.value.set(normalized.key, normalized)
         return normalized
@@ -201,7 +201,7 @@ export const useDnd5eSpellStore = defineStore('dnd5eSpell', () => {
   async function saveSpellToCharacter(characterId, spell) {
     const notificationStore = useNotificationStore()
 
-    if (!spell || !spell.key) {
+    if (!spell?.key) {
       notificationStore.addNotification('Invalid spell data.', 'error')
       return null
     }

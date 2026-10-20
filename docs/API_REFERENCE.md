@@ -22,13 +22,15 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### src/api/lib/guest-axios.js — LocalStorage Mock Adapter
 
 - Provides an axios-like interface that reads and writes to localStorage.
-- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages, guest_whitelist.
+- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
+- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — ship crew before ship images — and a new endpoint is one new entry, not another branch in a method.
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
   - Characters: CRUD operations, campaign assignment
   - Campaigns: CRUD operations, participant management
   - Image uploads: Returns placeholder URLs
+  - Admin: **not served** — Guest Demo has no admin surface (see ARCHITECTURE.MD → Guest Mode Limitations)
 
 ### src/api/lib/open5e-axios.js — External API Client
 
@@ -131,7 +133,7 @@ and in Guest Demo), **User Settings** for any visitor with a profile, and
   displayName: computed,    // currentUser.displayName || username || 'Traveler'
   userRole: computed,       // currentUser.role ('USER' | 'ADMIN') || null — the raw backend role
   userRoleLabel: computed,  // 'Administrator' | 'Standard user' (see features/user/userUtils.js)
-  isAdmin: computed,        // true for ADMIN; gates the Settings → Admin section
+  isAdmin: computed,        // true for ADMIN; gates the Settings → Admin section (never in Guest Demo)
   userId: computed,         // currentUser.id || null
   isUserLoaded: computed    // currentUser !== null
 }
@@ -845,9 +847,11 @@ Overview party preview read it, so the two cannot disagree.
 
 The administrator surface lives under `/api/admin/**` and is reached through
 **Settings → Admin**. The Settings sidebar only lists that section when
-`userStore.isAdmin` is true, but the UI gate is convenience, not the boundary:
-the backend protects the prefix twice over (the `/api/admin/**` request matcher
-and a class-level `@PreAuthorize("hasRole('ROLE_ADMIN')")`).
+`userStore.isAdmin` is true **and** `authStore.isGuest` is false, but the UI gate
+is convenience, not the boundary: the backend protects the prefix twice over (the
+`/api/admin/**` request matcher and a class-level
+`@PreAuthorize("hasRole('ROLE_ADMIN')")`), and guest mode serves no
+`/api/admin/**` route at all.
 
 ### adminStore — State Shape
 
@@ -875,10 +879,10 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.fetchUsers()
 - **Store Action**: adminStore.fetchUsers() (also via adminStore.fetchAll())
-- **Guest Mode**: Mocked — the demo user plus `guest_users`, with the same guards
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Response**: Array of UserDTO
 - **Status Codes**: 200, 401, 403
-- **Notes**: The guest demo user is an administrator (`demoData.js`), so the section is explorable without a backend; change `guestUser.role` to `USER` to hide it.
+- **Notes**: Requires ROLE_ADMIN. Guest Demo answers the generic fallback instead (see ARCHITECTURE.MD → Guest Mode Limitations): the demo user is an ordinary `USER`, the section is unreachable, and a request to the endpoint changes nothing.
 
 ---
 
@@ -886,7 +890,7 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.updateUserRole(userId, role)
 - **Store Action**: adminStore.changeUserRole(userId, role)
-- **Guest Mode**: Mocked — writes to `guest_user`/`guest_users`
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Request**: `{ role: 'USER' | 'ADMIN' }`
 - **Response**: UserDTO
 - **Status Codes**: 200, 400, 401, 403, 404
@@ -898,7 +902,7 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.fetchWhitelist()
 - **Store Action**: adminStore.fetchWhitelist()
-- **Guest Mode**: Mocked — `guest_whitelist` in localStorage
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Response**: Array of WhitelistEntryDTO
 - **Status Codes**: 200, 401, 403
 - **Notes**: Includes revoked rows (`active: false`), so a decision can be revisited.
@@ -909,7 +913,7 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.addWhitelistEntry(email, role)
 - **Store Action**: adminStore.addWhitelistEntry(email, role)
-- **Guest Mode**: Mocked — adds, or re-activates an existing row
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Request**: `{ email, role }` — the address is stored lower-cased
 - **Response**: WhitelistEntryDTO (201)
 - **Status Codes**: 201, 400, 401, 403
@@ -921,7 +925,7 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.updateWhitelistEntry(id, patch)
 - **Store Action**: adminStore.updateWhitelistEntry(id, patch)
-- **Guest Mode**: Mocked
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Request**: `{ role?, active? }` — a null field is left unchanged
 - **Response**: WhitelistEntryDTO
 - **Status Codes**: 200, 400, 401, 403, 404
@@ -933,7 +937,7 @@ and the last administrator cannot be demoted.
 
 - **Service**: AdminService.removeWhitelistEntry(id)
 - **Store Action**: adminStore.revokeWhitelistEntry(id)
-- **Guest Mode**: Mocked — sets `active: false`
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
 - **Status Codes**: 204, 401, 403, 404
 - **Notes**: Soft delete. The row stays in the table (and in the response of GET) with `active: false`; the frontend therefore keeps rendering it, marked "Revoked".
 
@@ -988,4 +992,8 @@ They are **not** the same switch, and the Admin section says so in its copy:
 - User search functionality within Guest Mode references a static guest_users list loaded from demo datasets.
 - Campaign participant management inside Guest Mode simulates execution without mutating shared global user records.
 - Image upload steps within Guest Mode default to returning structural fallback placeholder graphics.
-- The admin surface is mocked against `guest_user`/`guest_users`/`guest_whitelist`, including the self-demotion and last-administrator guards; an unknown row or account answers 400 there, where the live backend answers 404.
+- The admin surface is **not served at all**: Guest Demo answers the generic
+  fallback, the Settings → Admin section is hidden for the whole guest session,
+  and the demo user is an ordinary `USER`. `guest_whitelist` no longer exists on
+  the client, so the live backend's 400/404 differences for an unknown row or
+  account have no guest counterpart.

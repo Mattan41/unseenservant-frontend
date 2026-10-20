@@ -141,7 +141,7 @@ export const useCharacterStore = defineStore('character', () => {
         characters.value[index] = updatedCharacter
       }
 
-      if (currentCharacter.value && currentCharacter.value.id === characterId) {
+      if (currentCharacter.value?.id === characterId) {
         currentCharacter.value = updatedCharacter
       }
 
@@ -175,7 +175,7 @@ export const useCharacterStore = defineStore('character', () => {
         characters.value[index] = updatedCharacter
       }
 
-      if (currentCharacter.value && currentCharacter.value.id === characterId) {
+      if (currentCharacter.value?.id === characterId) {
         currentCharacter.value = updatedCharacter
       }
 
@@ -225,7 +225,7 @@ export const useCharacterStore = defineStore('character', () => {
 
       characters.value = characters.value.filter((char) => char.id !== characterId)
 
-      if (currentCharacter.value && currentCharacter.value.id === characterId) {
+      if (currentCharacter.value?.id === characterId) {
         currentCharacter.value = null
       }
 

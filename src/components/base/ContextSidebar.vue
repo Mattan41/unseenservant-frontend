@@ -76,5 +76,3 @@ function selectFromDrawer(key) {
     />
   </SlideOverDrawer>
 </template>
-
-<style scoped></style>

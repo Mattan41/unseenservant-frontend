@@ -39,6 +39,17 @@ describe('BaseInput', () => {
     expect(wrapper.get('input').attributes('aria-invalid')).toBe('true')
   })
 
+  it('omits autocomplete unless a caller asks for it', async () => {
+    const wrapper = mount(BaseInput, { props: { modelValue: '', label: 'Nickname' } })
+
+    // Never render `autocomplete=""`: browsers flag an empty autocomplete
+    // attribute (Chrome DevTools "Incorrect use of autocomplete attribute").
+    expect(wrapper.get('input').attributes('autocomplete')).toBeUndefined()
+
+    await wrapper.setProps({ autocomplete: 'nickname' })
+    expect(wrapper.get('input').attributes('autocomplete')).toBe('nickname')
+  })
+
   it('passes numeric bounds through and disables the input when asked', () => {
     const wrapper = mount(BaseInput, {
       props: { modelValue: 1, type: 'number', min: -1, max: 3, disabled: true },

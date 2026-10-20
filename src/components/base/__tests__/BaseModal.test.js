@@ -36,9 +36,22 @@ describe('BaseModal', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('emits close when the backdrop itself is clicked', async () => {
+  it('offers the dimming backdrop as a native button that closes the dialog', async () => {
     const wrapper = mountModal()
-    await wrapper.trigger('click')
+    const backdrop = wrapper.get('button')
+
+    // A real button, so Enter/Space activation is native behaviour; nothing
+    // removes it from the tab order or from the accessibility tree either.
+    expect(backdrop.element.tagName).toBe('BUTTON')
+    expect(backdrop.attributes('type')).toBe('button')
+    expect(backdrop.attributes('aria-label')).toBe('Close dialog')
+    expect(backdrop.attributes('tabindex')).toBeUndefined()
+    expect(backdrop.attributes('aria-hidden')).toBeUndefined()
+
+    // `-z-10` is the class that keeps the scrim painted under the panel.
+    expect(backdrop.classes()).toContain('-z-10')
+
+    await backdrop.trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 

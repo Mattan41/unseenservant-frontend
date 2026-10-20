@@ -174,7 +174,7 @@ function onFileChange(event) {
                 class="block overflow-hidden rounded border border-section"
                 @click="emit('open-image', url)"
               >
-                <CampaignImage :src="url" alt="Crew image" class="w-full h-20 object-cover" />
+                <CampaignImage :src="url" alt="Crew artwork" class="w-full h-20 object-cover" />
               </button>
               <BaseButton variant="remove" :disabled="saving" @click="emit('remove-image', url)">
                 Remove
@@ -246,7 +246,7 @@ function onFileChange(event) {
             class="block overflow-hidden rounded border border-section"
             @click="emit('open-image', url)"
           >
-            <CampaignImage :src="url" alt="Crew image" class="w-full h-20 object-cover" />
+            <CampaignImage :src="url" alt="Crew artwork" class="w-full h-20 object-cover" />
           </button>
         </div>
       </li>

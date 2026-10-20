@@ -81,7 +81,9 @@ src/
 │   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
-│   └── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
+│   ├── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
+│   ├── bodyScrollLock.js     # Counted body scroll lock shared by the modal and drawer overlays.
+│   └── interactiveEvent.js   # Event guards for an interactive container that nests controls (cards, rows).
 ├── systems/                  # System-specific (tabletop RPG ruleset) code
 │   ├── offworlders/          # Offworlders (rules-light sci-fi)
 │   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm, OffworldersGearForm
@@ -129,7 +131,7 @@ External (Open5e):    open5e-axios.js  → SpellService.js → Store
 ```
 - `api/axios.js`: Standard Axios instance for authenticated traffic. Automatically attaches JWT headers to requests and intercepts `401 Unauthorized` responses to clear local auth and trigger system notifications.
 - `api/apiClient.js`: Dynamic wrapper client. It acts as a gateway that checks `authStore.isGuest` and seamlessly switches all traffic between the live backend client (`axios.js`) and the mock client (`guest-axios.js`). Provides only generic `get`, `post`, `put`, `patch`, `delete` methods — no feature-specific routing or translation logic. All feature services import from this file.
-- `api/guest-axios.js`: Simulates backend behavior inside the browser. It intercepts incoming HTTP requests and redirects full CRUD operations (GET, POST, PUT, PATCH, DELETE) to `localStorage`, enabling full application functionality in standalone mode.
+- `api/guest-axios.js`: Simulates backend behavior inside the browser: it answers the requests the app makes in standalone mode by reading and writing `localStorage`. Its endpoints live in one ordered **route table** (`ROUTES`: method + URL pattern → handler, first match wins), so the entries that have to precede others — ship crew before ship images — are ordered deliberately, and the five public methods are only a thin dispatcher on top. Adding an endpoint means adding one entry. The admin prefix is deliberately not served (see Guest Mode below).
 - `api/open5e-axios.js`: Dedicated Axios instance for Open5e API v2 calls. Public API with no authentication headers. Includes a response interceptor that classifies transport errors (timeout/unreachable), rate limiting (429), and server errors (5xx) into user-facing notifications. Used directly by `SpellService.js` for guest-mode spell operations.
 
 ## Authentication
@@ -138,7 +140,24 @@ External (Open5e):    open5e-axios.js  → SpellService.js → Store
 - Auth state persisted in `authStore` (Pinia)
 
 ## Guest Mode
+
 Standalone preview mode populated entirely via mock data from `src/data/demoData.js`. When activated, state changes are written directly to `localStorage`. Image uploads are not supported in guest mode and are gracefully mocked out or bypassed via a disclaimer. Character spell operations (save, fetch, remove from character) are mocked in guest-axios.js, while spell search and single-spell fetch go directly to the Open5e API via `open5e-axios.js`.
+
+### Guest Mode Limitations
+
+- **No user administration.** `/api/admin/**` is not served at all, so the
+  Settings → Admin section is unreachable for the whole session: `SettingsView`
+  filters it out when `authStore.isGuest` is true (and a `?section=admin` deep
+  link falls back to General), the demo user is an ordinary `USER`, and
+  `guest_whitelist` is gone, so nothing can be written to one.
+- **No image uploads.** Campaign, character, ship and crew uploads answer stock
+  placeholder URLs instead of storing a file; the UI says so where it matters.
+- **Spell data comes from Open5e.** Guest mode has no spell table of its own —
+  `dnd5eSpellService` calls the public Open5e API directly (`open5e-axios.js`)
+  for search and single-spell fetches.
+- **Everything lives in this browser.** A guest session keeps its data in
+  `localStorage` under the `guest_*` keys, and `authStore.exitGuestMode` clears
+  every key it owns.
 
 ## Campaign permissions
 

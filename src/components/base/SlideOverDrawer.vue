@@ -8,11 +8,15 @@
  *
  * Behaviour handled here so consumers stay presentational:
  * - teleports to <body> so it is never clipped by ancestors
- * - closes on backdrop click and on Escape
- * - locks body scroll while open
+ * - closes on backdrop click — the backdrop is a native button, so that
+ *   affordance is reachable and operable by keyboard too — and on Escape
+ * - locks body scroll while open, through the shared counted lock in
+ *   `utils/bodyScrollLock.js` (a drawer over an open dialog cannot unlock the
+ *   body early on close)
  * - animates in/out with a slide + fade
  */
-import { onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
+import { lockBodyScroll, unlockBodyScroll } from '@/utils/bodyScrollLock.js'
 
 const props = defineProps({
   /** Whether the drawer is open (use with `v-model`). */
@@ -49,6 +53,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'close'])
 
+/** Accessible name for the backdrop's close affordance. */
+const backdropLabel = computed(() => (props.label ? `Close ${props.label}` : 'Close'))
+
 function close() {
   emit('update:modelValue', false)
   emit('close')
@@ -58,29 +65,48 @@ function onKeydown(event) {
   if (event.key === 'Escape') close()
 }
 
+/** Whether this drawer currently holds the shared body scroll lock. */
+let holdsBodyLock = false
+
+function setBodyLock(locked) {
+  if (locked === holdsBodyLock) return
+  holdsBodyLock = locked
+  if (locked) lockBodyScroll()
+  else unlockBodyScroll()
+}
+
+// `immediate`, so a drawer mounted already open answers Escape and locks the
+// body too; the watcher doubles as the open/close hook.
 watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
       document.addEventListener('keydown', onKeydown)
-      document.body.style.overflow = 'hidden'
     } else {
       document.removeEventListener('keydown', onKeydown)
-      document.body.style.overflow = ''
     }
+    setBodyLock(isOpen)
   },
+  { immediate: true },
 )
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
-  document.body.style.overflow = ''
+  setBodyLock(false)
 })
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="slide-over-fade">
-      <div v-if="modelValue" class="slide-over-backdrop" :class="zIndex" @click="close"></div>
+      <button
+        v-if="modelValue"
+        type="button"
+        class="slide-over-backdrop"
+        :class="zIndex"
+        :aria-label="backdropLabel"
+        @click="close"
+      ></button>
     </Transition>
 
     <Transition :name="`slide-over-${side}`">
@@ -102,5 +128,3 @@ onBeforeUnmount(() => {
     </Transition>
   </Teleport>
 </template>
-
-<style scoped></style>

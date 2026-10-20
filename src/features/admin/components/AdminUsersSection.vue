@@ -89,5 +89,3 @@ function changeRole(user) {
     </BaseInfoBox>
   </div>
 </template>
-
-<style scoped></style>

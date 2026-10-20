@@ -560,25 +560,32 @@ export function normalizeOffworldersData(data) {
   const legacy = isLegacyOffworldersPayload(data)
   const migrated = legacy ? migrateLegacyOffworldersGear(data) : null
 
+  // A migrated payload owns both lists; otherwise keep whatever was stored.
+  let weapons = []
+  if (migrated) {
+    weapons = migrated.weapons
+  } else if (Array.isArray(data.weapons)) {
+    weapons = data.weapons.map(normalizeOffworldersWeapon)
+  }
+
+  let items = []
+  if (migrated) {
+    items = migrated.items
+  } else if (Array.isArray(data.items)) {
+    items = data.items.map(normalizeOffworldersItem)
+  }
+
   const normalized = {
     ...empty,
     ...data,
     // Supply is always capped at 3 (p.11); ignore any stored/derived value.
     supplyMax: OFFWORLDERS_SUPPLY_MAX,
     armor: clampArmor(migrated ? Math.max(migrated.armor, Number(data.armor) || 0) : data.armor),
-    stats: { ...empty.stats, ...(data.stats || {}) },
+    stats: { ...empty.stats, ...data.stats },
     skills: Array.isArray(data.skills) ? data.skills.map(normalizeOffworldersEntry) : [],
     abilities: Array.isArray(data.abilities) ? data.abilities.map(normalizeOffworldersEntry) : [],
-    weapons: migrated
-      ? migrated.weapons
-      : Array.isArray(data.weapons)
-        ? data.weapons.map(normalizeOffworldersWeapon)
-        : [],
-    items: migrated
-      ? migrated.items
-      : Array.isArray(data.items)
-        ? data.items.map(normalizeOffworldersItem)
-        : [],
+    weapons,
+    items,
   }
   delete normalized.gear
   return normalized

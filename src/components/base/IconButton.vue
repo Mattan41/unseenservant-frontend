@@ -46,5 +46,3 @@ defineEmits(['click'])
     <slot v-else />
   </button>
 </template>
-
-<style scoped></style>

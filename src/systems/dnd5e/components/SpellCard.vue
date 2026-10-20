@@ -66,7 +66,7 @@ const shortDescription = computed(() => {
       </span>
       <span v-else></span>
 
-      <div class="flex items-center gap-2" @click.stop>
+      <div class="flex items-center gap-2">
         <BaseButton v-if="showSave" variant="add" :loading="isSaving" @click="emit('save', spell)">
           Save to Character
         </BaseButton>

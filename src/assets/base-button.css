@@ -93,6 +93,20 @@
   @apply m-0 flex w-full min-h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary-400 p-4 text-sm font-medium text-primary-700 hover:bg-primary-200 focus:ring-primary-600;
 }
 
+/* Disclosure row: the whole row is the control (a spell result that expands in
+   place). Resets `.base-btn`'s compact chrome — the action-bar margins, the
+   tight padding, the small centred bold label — and fills the slot it sits in,
+   so the row's own grid columns stay in the template. The wrapping element
+   keeps the row chrome (border, padding, `spell-row-hover`) and holds any
+   secondary control the row must not swallow: a native button cannot contain
+   another control, which is why the row is a button and the control is a
+   sibling. Compounded with `.base-btn` for the same reason as the tile:
+   `main.css` loads after this file, so a plain `.base-btn-row` would lose to
+   `.base-btn-with-icon`. */
+.base-btn.base-btn-row {
+  @apply m-0 w-full p-0 text-left text-base font-normal text-(--text-default) cursor-pointer focus:ring-2 focus:ring-primary-600;
+}
+
 /* The tile's glyph is a hint, not a compact control's icon: bigger than the
    `h-4 w-4` `.base-btn-icon` sets for ordinary buttons. */
 .base-btn-tile .base-btn-icon {

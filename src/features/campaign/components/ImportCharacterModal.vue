@@ -160,5 +160,3 @@ watch(
     </div>
   </BaseModal>
 </template>
-
-<style scoped></style>

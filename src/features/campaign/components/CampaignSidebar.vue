@@ -46,5 +46,3 @@ defineEmits(['select', 'update:open'])
     @update:open="$emit('update:open', $event)"
   />
 </template>
-
-<style scoped></style>

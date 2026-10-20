@@ -57,8 +57,10 @@ additionally see **Settings → Admin**:
   account that already exists keeps its own role, which is changed under Users.
 
 Both are enforced by the backend (`/api/admin/**`, ROLE_ADMIN) and gated in the
-UI. Guest Demo mocks them, including the two guards — the demo account is an
-administrator so the section can be explored without a backend (`demoData.js`).
+UI. Guest Demo does not demo them: it serves no `/api/admin/**` route, the
+Settings → Admin section is hidden for the whole guest session (see
+`docs/ARCHITECTURE.MD` → Guest Mode Limitations), and the demo account is an
+ordinary user (`demoData.js`).
 
 ## Getting Started
 

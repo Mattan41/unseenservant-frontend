@@ -26,7 +26,7 @@ class AuthService {
 
     // Extract JWT token from Authorization header (format: "Bearer <token>")
     const authHeader = response.headers?.authorization || response.headers?.Authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       throw new Error('No authorization token received in response headers')
     }
 

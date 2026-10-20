@@ -53,8 +53,9 @@ choices in `localStorage.theme` / `localStorage.mode` via
 
 > **`main.js` is the bootstrap.** `applyEnvironmentAttributes()` runs before the
 > app is mounted and writes all three `data-*` attributes. A matching
-> silver · light default also lives on `:root` (see the "Default palette" block
-> in `main.css`) so the very first frame is themed even before that call —
+> silver · light default also lives on `:root` (see the "Default palette" note
+> inside the role layer in `main.css`) so the very first frame is themed even
+> before that call —
 > there is no inline script in `index.html`.
 
 > **Three-axis model.** `<html>` carries `data-env`
@@ -178,10 +179,12 @@ Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
 | `"demo"` | `base-btn base-btn-demo` | implemented |
 | `"form"` | `base-btn base-btn-form` | implemented |
 | `"tile"` | `base-btn base-btn-tile` | implemented |
+| `"row"` | `base-btn base-btn-row` | implemented |
 
 - `"demo"` — guest-session button ("Guest Demo mode" on the login card). Cyan palette (`bg-cyan-100 border-cyan-400 text-cyan-800 hover:bg-cyan-200 focus:ring-cyan-300`) — the same tone as `.guest-notice`, so starting guest mode and being in it read as one thing, and the tone no longer doubles as the `test` environment banner's colour. Distinct from `.guest-notice` itself, which is a banner, not a button.
 - `"form"` — larger primary call-to-action button for form submissions. Lighter shade (`bg-primary-500`) than `.base-btn-default` (`primary-700`) — a distinct variant, not an inconsistency. `w-64 h-10` sizing stays as layout utilities in the template.
 - `"tile"` — discovery tile for "create / import" affordances (`min-h-32` dashed `border-primary-400` panel with the icon above the label, filling the slot it sits in via `w-full`). The one variant that carries layout: it resets `.base-btn`'s action-bar margins (`m-0`) so it can be a grid cell or a list row. Its rule is `.base-btn.base-btn-tile` — a compounded selector, because `main.css` is loaded after `base-button.css` and gives `.base-btn-with-icon` an inline `gap-1` row that would otherwise win; the glyph is `h-6 w-6`. Replaces the former `.add-tile` class: `BaseButton` (`Import a character`, `Create new campaign`), `BaseLinkButton` (`Create a character`), and the empty states of both collection lists.
+- `"row"` — disclosure row: a whole result row that is itself the control (`SpellSearch`'s spell rows, which expand in place). Resets `.base-btn`'s compact chrome (action-bar margins, tight padding, small centred bold label) and fills its slot; the row's own grid columns stay in the template, and the wrapping element keeps the row chrome (border, padding, `.spell-row-hover`). Because a native button cannot contain another control, the row's secondary control ("+ Add") is rendered as a sibling of the button rather than inside it. Rule: `.base-btn.base-btn-row` — compounded like the tile, for the same cascade reason.
 
 Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
 
@@ -257,7 +260,7 @@ all conditional styling in `*Utils.js` files.
 | `.icon-btn-solid` | Icon button variant: filled | `bg-primary-800 text-primary-100 hover:bg-primary-900 focus:ring-primary-700` | implemented |
 | `.icon-btn-on-dark` | Icon button variant: on dark surfaces | `text-primary-100 hover:bg-primary-800 focus:ring-primary-500` | implemented |
 | `.icon-btn-chip` | Icon button variant: chip remove (small, no background, colour-only hover) | `p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0` | implemented |
-| `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`) | `fixed inset-0 bg-black/50` | implemented |
+| `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`), rendered as a native `<button>` so click-outside is keyboard-operable | `fixed inset-0 bg-black/50` | implemented |
 | `.slide-over-panel` | Slide-over panel base | `fixed inset-y-0 flex flex-col overflow-y-auto` | implemented |
 | `.slide-over-panel--left` / `.slide-over-panel--right` | Slide-over anchor edge | `left-0` / `right-0` | implemented |
 | `.slide-over-panel--sidebar` | Slide-over width: sidebar panel | `w-72 max-w-[80vw] gap-4 p-4` | implemented |
@@ -332,15 +335,16 @@ identity (name, system, image).
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
-| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close` on backdrop click). Also closes on Escape and locks body scroll while mounted (counted at module scope, so a stacked dialog cannot unlock the body early). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. `BaseModal` only centres its slot: a dialog whose content can grow must cap its own panel (`max-h-[90vh] overflow-y-auto`, as in `CreateCampaign.vue` / `SpellDetailModal.vue`), and any dialog opened from inside a heading must `<Teleport to="body">` — otherwise it inherits that heading's `text-transform: uppercase` and its page-sized type ramp. | implemented |
+| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close`). The dimming layer is a native `<button aria-label="Close dialog">` painted under the panel (`-z-10` inside the overlay's stacking context), so closing on outside-click is keyboard-operable too. Also closes on Escape and locks body scroll while mounted (`src/utils/bodyScrollLock.js` counts the open overlays, so a stacked dialog cannot unlock the body early). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. `BaseModal` only centres its slot: a dialog whose content can grow must cap its own panel (`max-h-[90vh] overflow-y-auto`, as in `CreateCampaign.vue` / `SpellDetailModal.vue`), and any dialog opened from inside a heading must `<Teleport to="body">` — otherwise it inherits that heading's `text-transform: uppercase` and its page-sized type ramp. | implemented |
+| `<BaseCard>` component | Content card that can act as one click target | `src/components/base/BaseCard.vue` (props: `clickable`; emits: `click`). A clickable card keeps the character/campaign card chrome (surface, `border-section`, hover lift, `cursor-pointer`) and gains `role="button"` + `tabindex="0"` + Enter/Space, so the whole card is keyboard-operable. Clicks and key events from a control in the slot stay with that control (`src/utils/interactiveEvent.js`), so call sites no longer need `@click.stop` wrappers around a card's own buttons. | implemented |
 | `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `info`, `help`, `alert`, `overview`, `lore`, `characters`, `participants`, `messages`, `settings`, `edit`, `plus`, `ship`, `spells`, `chevron-left`, `chevron-right`, `download`, `upload`, `shield`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
 | `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
 | `<BaseButton icon="…">` prop | Leading icon on a text button | `icon` prop on `src/components/base/BaseButton.vue` renders a `BaseIcon` before the label (`.base-btn-with-icon` / `.base-btn-icon`: `inline-flex items-center gap-1`, `h-4 w-4`). Use it instead of hand-rolled `<CampaignNavIcon …>` + `inline-flex items-center gap-1` wrappers. Edit affordances should be `variant="update" icon="edit"` (`.base-btn-update`) so they read as the prominent action. | implemented |
 | `<BaseLinkButton>` component | Router link styled as a button | `src/components/base/BaseLinkButton.vue` (props: `to`, `variant`, `icon`; default slot). Renders a `<RouterLink>` with the same `.base-btn` / `.base-btn-<variant>` classes as `<BaseButton>` (plus `.base-link-btn`, which drops the action-bar margins so the wrapping element owns the spacing). Use it for navigation actions that should read as buttons (e.g. the character → campaign link) instead of a quiet `.element-link`. | implemented |
 | `<BaseNumberStepper>` component | Compact `−`/`+` control for nudging a number in place | `src/components/base/BaseNumberStepper.vue` (props: `modelValue`, `min`, `max` (`null` = no cap), `step`, `editable`, `disabled`, `ariaLabel`; emits `update:modelValue`). Renders `− value +` (`.number-stepper*` in `main.css`); when `editable` is false only the value renders, so non-owners see the figure without controls. Used for the Offworlders sheet's HP/Supply/Credits/XP and the ship's Hull/Drive fuel/Credits quick-edit. | implemented |
-| `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
+| `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. `autocomplete` is rendered only when a call site sets it (an empty attribute is flagged by browsers). No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
 | `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue`, `EditCharacter.vue` and `CampaignView.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
-| `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on backdrop click/Escape, locks body scroll. Used by `HeaderComponent` (full-screen menu) and `ContextSidebar` (section drawer). | implemented |
+| `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on Escape and on a click on its labelled backdrop button, locks body scroll through the shared `src/utils/bodyScrollLock.js` lock. Used by `HeaderComponent` (full-screen menu) and `ContextSidebar` (section drawer). | implemented |
 | `<ContextSidebar>` component | Contextual navigation shell (desktop rail + mobile drawer) | `src/components/base/ContextSidebar.vue` (props: `items` (`{ key, label, icon }`), `activeSection`, `label`, `contextId`, `open`; emits `select`/`update:open`). Shared by the campaign and settings shells; `CampaignSidebar` is a thin campaign-named wrapper. One place for the `.context-sidebar` rail, the `.context-nav-*` list and the `context-gradient` drawer. | implemented |
 | `<ContextNavList>` component | Presentational section list for a `ContextSidebar` | `src/components/base/ContextNavList.vue` (props: `items`, `activeSection`, `label`; emits `select`). Rendered twice by `ContextSidebar` (rail + drawer) so the markup exists once. Icons come from `BaseIcon`. | implemented |
 | `<ContextMobileBar>` component | Mobile contextual top bar (drawer trigger + title) | `src/components/base/ContextMobileBar.vue` (props: `title`, `triggerLabel`; emits `open`). Replaced by the `ContextSidebar` rail at md+ (`.context-mobile-bar` is `md:hidden`). Used by `CampaignView` and `SettingsView`. | implemented |
@@ -460,6 +464,34 @@ Specifically banned examples (now including gray/white/black shades):
 with the output of `renderMarkdown()` (which escapes raw HTML and validates link
 targets). Any other `v-html` binding is a review blocker — it bypasses the
 escaping model, and ESLint is not configured to catch it.
+
+### 3.6 Interactive containers are operable by keyboard
+
+Anything that acts on click must be reachable and operable by keyboard: use a
+native `<button>` or link when the element's content allows it (a dialog scrim,
+a card that only navigates), otherwise keep the element's tag and give it
+`role`, `tabindex` and Enter/Space handlers — `<BaseCard clickable>` and the
+spell-search result row both do this. A click handler on a plain element
+without them is a review blocker.
+
+Nested controls own their events: never wrap a button in a `@click.stop`
+element to keep its click out of the surrounding clickable card or row. The
+container ignores clicks and key events that originate inside a nested control
+instead (`src/utils/interactiveEvent.js`) — that guard cannot move onto a
+component listener, where `@click.stop` would run against the component's
+payload rather than the DOM event.
+
+Form fields carry an `id` (or a `name`): a field with neither is flagged by
+Chrome DevTools (autofill cannot identify it), and an `id` is what a
+`label[for]` resolves against. A component that can render twice in one
+document — a rail + drawer pair, a page hosting two forms — derives its ids from
+`useId()` (`BaseInput`, `SpellSearch`, `CampaignDetailsForm`), and a row inside a
+list uses the row's own key (`participant-nickname-${participant.id}`). Render
+the label only together with its field — a `for` that points at a conditionally
+hidden input is flagged too (or use a `<span>` caption where the value is a
+read-only stepper instead of an input). Optional attributes stay unset rather
+than empty: pass `undefined` (e.g. `<BaseInput>` only renders `autocomplete` when
+a caller sets it).
 
 ## 4. Where to Add New Classes / Variables
 

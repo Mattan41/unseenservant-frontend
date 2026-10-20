@@ -57,6 +57,14 @@ function renderSectionBody(section, format) {
 }
 
 /**
+ * A section's long text: its markdown source verbatim in 'md', flattened in
+ * 'txt' (so no `**` markers leak into a downloaded `.txt`).
+ */
+function renderTextBody(text, md) {
+  return md ? String(text) : toPlainText(text)
+}
+
+/**
  * Render a document's sections (without title/subtitle) for a format.
  * @param {Array<object>} sections
  * @param {'md'|'txt'} [format='txt']
@@ -86,16 +94,15 @@ export function renderDocument(doc, format = 'txt') {
   for (const section of doc.sections || []) {
     if (!hasContent(section)) continue
     const joiner = md ? '\n\n' : '\n'
-    const heading = section.heading
-      ? md
-        ? `## ${section.heading}`
-        : section.heading.toUpperCase()
-      : ''
+
+    let heading = ''
+    if (section.heading) {
+      heading = md ? `## ${section.heading}` : section.heading.toUpperCase()
+    }
+
     const hasText = section.text !== undefined && section.text !== ''
     const body = hasText
-      ? md
-        ? String(section.text)
-        : toPlainText(section.text)
+      ? renderTextBody(section.text, md)
       : renderSectionBody(section, format).join('\n')
     const block = [heading, body].filter((part) => part !== '').join(joiner)
     if (block) blocks.push(block)

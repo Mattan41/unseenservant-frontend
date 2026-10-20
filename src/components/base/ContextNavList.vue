@@ -49,5 +49,3 @@ const isActive = (key) => key === props.activeSection
     </button>
   </nav>
 </template>
-
-<style scoped></style>
