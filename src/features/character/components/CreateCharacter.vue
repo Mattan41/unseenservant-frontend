@@ -55,7 +55,7 @@ const fileInput = ref(null)
  * flow. Relational fields are never restored (see `characterExport.js`).
  */
 async function importBackup(event) {
-  const file = event.target.files && event.target.files[0]
+  const file = event.target.files?.[0]
   if (!file) return
 
   // Blob#text() rejects when the file cannot be read, so the read and the parse
