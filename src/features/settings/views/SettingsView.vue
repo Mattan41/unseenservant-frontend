@@ -9,14 +9,16 @@
  * Sections:
  *   general — client-side preferences (colour theme) and read-only environment info
  *   user    — the signed-in profile (display name, email, username, account type)
- *   admin   — administrators only (users + email whitelist)
+ *   admin   — administrators only (users + email whitelist); never in Guest Demo
  *
  * The nav items are computed here so the sidebar stays presentational, and the
- * admin section is filtered out for ordinary accounts.
+ * admin section is filtered out for ordinary accounts and for every guest
+ * session — guest mode serves no `/api/admin/**` route at all.
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/features/user/userStore.js'
+import { useAuthStore } from '@/features/auth/authStore.js'
 import ContextSidebar from '@/components/base/ContextSidebar.vue'
 import ContextMobileBar from '@/components/base/ContextMobileBar.vue'
 import BaseSection from '@/components/base/BaseSection.vue'
@@ -28,6 +30,7 @@ import AdminWhitelistSection from '@/features/admin/components/AdminWhitelistSec
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const authStore = useAuthStore()
 
 const SECTIONS = [
   { key: 'general', label: 'General', icon: 'settings', title: 'General Settings' },
@@ -47,7 +50,7 @@ const DEFAULT_SECTION = 'general'
  * Sections this visitor may open:
  *   general — everyone, signed in or not (the colour theme is a browser preference)
  *   user    — anyone with a profile: an account or the Guest Demo identity
- *   admin   — administrators only
+ *   admin   — administrators only, and never during a guest session
  *
  * Filtered here so the sidebar, the URL guard and the rendered section all share
  * one source. Deep links to a section the visitor may not open fall back to
@@ -56,7 +59,9 @@ const DEFAULT_SECTION = 'general'
 const navItems = computed(() =>
   SECTIONS.filter((section) => {
     if (section.requiresProfile && !userStore.currentUser) return false
-    if (section.requiresAdmin && !userStore.isAdmin) return false
+    // Guest mode serves no /api/admin/** route, so the section stays hidden
+    // there even when a stored guest_user still carries role ADMIN.
+    if (section.requiresAdmin && (authStore.isGuest || !userStore.isAdmin)) return false
     return true
   }),
 )
