@@ -179,10 +179,12 @@ Identical styles as `.button-*` above. Mapped in `BaseButton.vue` via
 | `"demo"` | `base-btn base-btn-demo` | implemented |
 | `"form"` | `base-btn base-btn-form` | implemented |
 | `"tile"` | `base-btn base-btn-tile` | implemented |
+| `"row"` | `base-btn base-btn-row` | implemented |
 
 - `"demo"` — guest-session button ("Guest Demo mode" on the login card). Cyan palette (`bg-cyan-100 border-cyan-400 text-cyan-800 hover:bg-cyan-200 focus:ring-cyan-300`) — the same tone as `.guest-notice`, so starting guest mode and being in it read as one thing, and the tone no longer doubles as the `test` environment banner's colour. Distinct from `.guest-notice` itself, which is a banner, not a button.
 - `"form"` — larger primary call-to-action button for form submissions. Lighter shade (`bg-primary-500`) than `.base-btn-default` (`primary-700`) — a distinct variant, not an inconsistency. `w-64 h-10` sizing stays as layout utilities in the template.
 - `"tile"` — discovery tile for "create / import" affordances (`min-h-32` dashed `border-primary-400` panel with the icon above the label, filling the slot it sits in via `w-full`). The one variant that carries layout: it resets `.base-btn`'s action-bar margins (`m-0`) so it can be a grid cell or a list row. Its rule is `.base-btn.base-btn-tile` — a compounded selector, because `main.css` is loaded after `base-button.css` and gives `.base-btn-with-icon` an inline `gap-1` row that would otherwise win; the glyph is `h-6 w-6`. Replaces the former `.add-tile` class: `BaseButton` (`Import a character`, `Create new campaign`), `BaseLinkButton` (`Create a character`), and the empty states of both collection lists.
+- `"row"` — disclosure row: a whole result row that is itself the control (`SpellSearch`'s spell rows, which expand in place). Resets `.base-btn`'s compact chrome (action-bar margins, tight padding, small centred bold label) and fills its slot; the row's own grid columns stay in the template, and the wrapping element keeps the row chrome (border, padding, `.spell-row-hover`). Because a native button cannot contain another control, the row's secondary control ("+ Add") is rendered as a sibling of the button rather than inside it. Rule: `.base-btn.base-btn-row` — compounded like the tile, for the same cascade reason.
 
 Disabled state: `base-btn:disabled` → `opacity-50 cursor-not-allowed`.
 

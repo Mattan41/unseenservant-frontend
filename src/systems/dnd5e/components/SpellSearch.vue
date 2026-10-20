@@ -4,7 +4,6 @@ import { storeToRefs } from 'pinia'
 import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
-import { isNestedControlClick, isOwnKeyEvent } from '@/utils/interactiveEvent.js'
 
 const props = defineProps({
   characterId: {
@@ -53,24 +52,16 @@ function onHistoryClick(query) {
   spellStore.searchSpells(query)
 }
 
+/**
+ * Expand or collapse a spell's details.
+ *
+ * The row itself is the disclosure control — `<BaseButton variant="row">`, a
+ * native button, so Enter and Space come for free and no key handler is needed.
+ * The row's own "+ Add" control sits *beside* that button rather than inside it:
+ * a native button must not contain another control.
+ */
 function toggleExpand(key) {
   expandedSpellKey.value = expandedSpellKey.value === key ? null : key
-}
-
-/**
- * The result row is the disclosure control (a div carrying button semantics:
- * a native <button> cannot hold the row's own "+ Add" control). Clicks and
- * Enter/Space that belong to the "+ Add" button stay with that button.
- */
-function onRowClick(event, key) {
-  if (isNestedControlClick(event)) return
-  toggleExpand(key)
-}
-
-function onRowKeydown(event, key) {
-  if (!isOwnKeyEvent(event)) return
-  event.preventDefault()
-  toggleExpand(key)
 }
 
 async function onSaveSpell(spell) {
@@ -194,53 +185,59 @@ async function onSaveSpell(spell) {
         >
           <!-- Stacks (name, meta line, Add) on narrow screens and becomes the
                table row at sm+, so the "+ Add" control always stays inside the
-               bordered row instead of being clipped by `overflow-hidden`. -->
+               bordered row instead of being clipped by `overflow-hidden`. The
+               wrapper keeps the row chrome; the row itself is the disclosure
+               button, and "+ Add" is its sibling (a button cannot hold a
+               control). The button repeats the four text-column widths so they
+               stay aligned with the header row. -->
           <div
-            class="flex flex-col gap-1 px-4 py-3 cursor-pointer spell-row-hover sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-2"
-            role="button"
-            tabindex="0"
-            :aria-expanded="expandedSpellKey === spell.key"
-            @click="onRowClick($event, spell.key)"
-            @keydown.enter="onRowKeydown($event, spell.key)"
-            @keydown.space="onRowKeydown($event, spell.key)"
+            class="flex flex-col gap-1 px-4 py-3 spell-row-hover sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-2"
           >
-            <div class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading">
-              {{ spell.name }}
-              <span
-                v-if="spell.concentration"
-                class="badge badge-danger text-[10px] font-bold border border-red-200 px-1"
-                title="Concentration"
-                >C</span
-              >
-              <span
-                v-if="spell.ritual"
-                class="badge badge-info text-[10px] font-bold border border-blue-200 px-1"
-                title="Ritual"
-                >R</span
-              >
-            </div>
+            <BaseButton
+              variant="row"
+              class="flex flex-col gap-1 sm:col-span-4 sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)] sm:gap-2"
+              :aria-expanded="expandedSpellKey === spell.key"
+              @click="toggleExpand(spell.key)"
+            >
+              <div class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading">
+                {{ spell.name }}
+                <span
+                  v-if="spell.concentration"
+                  class="badge badge-danger text-[10px] font-bold border border-red-200 px-1"
+                  title="Concentration"
+                  >C</span
+                >
+                <span
+                  v-if="spell.ritual"
+                  class="badge badge-info text-[10px] font-bold border border-blue-200 px-1"
+                  title="Ritual"
+                  >R</span
+                >
+              </div>
 
-            <!-- Compact meta line (narrow screens): level · school · source -->
-            <div class="text-xs text-muted sm:hidden">
-              {{ spell.levelLabel }}
-              <template v-if="spell.school">
-                · <span class="capitalize">{{ spell.school }}</span>
-              </template>
-              <template v-if="spell.sourceLabel">
-                · <span class="italic">{{ spell.sourceLabel }}</span>
-              </template>
-            </div>
+              <!-- Compact meta line (narrow screens): level · school · source -->
+              <div class="text-xs text-muted sm:hidden">
+                {{ spell.levelLabel }}
+                <template v-if="spell.school">
+                  · <span class="capitalize">{{ spell.school }}</span>
+                </template>
+                <template v-if="spell.sourceLabel">
+                  · <span class="italic">{{ spell.sourceLabel }}</span>
+                </template>
+              </div>
 
-            <!-- Table cells (sm+) -->
-            <div class="hidden sm:block min-w-0 text-sm text-secondary">
-              {{ spell.levelLabel }}
-            </div>
-            <div class="hidden sm:block min-w-0 text-sm text-muted capitalize truncate">
-              {{ spell.school }}
-            </div>
-            <div class="hidden sm:block min-w-0 text-xs text-subtle italic truncate">
-              {{ spell.sourceLabel }}
-            </div>
+              <!-- Table cells (sm+) -->
+              <div class="hidden sm:block min-w-0 text-sm text-secondary">
+                {{ spell.levelLabel }}
+              </div>
+              <div class="hidden sm:block min-w-0 text-sm text-muted capitalize truncate">
+                {{ spell.school }}
+              </div>
+              <div class="hidden sm:block min-w-0 text-xs text-subtle italic truncate">
+                {{ spell.sourceLabel }}
+              </div>
+            </BaseButton>
+
             <div class="flex justify-end sm:w-16">
               <BaseButton
                 v-if="props.characterId"
