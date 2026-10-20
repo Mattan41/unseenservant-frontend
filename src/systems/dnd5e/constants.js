@@ -76,6 +76,6 @@ export function normalizeDnd5eData(data) {
   return {
     ...empty,
     ...data,
-    stats: { ...empty.stats, ...(data.stats || {}) },
+    stats: { ...empty.stats, ...data.stats },
   }
 }

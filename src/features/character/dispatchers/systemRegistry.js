@@ -19,8 +19,11 @@ import {
 } from '@/systems/offworlders/constants.js'
 import { offworldersExportSections } from '@/systems/offworlders/offworldersExport.js'
 
-/** System pre-selected in the create form (a character may also have none). */
-export const DEFAULT_SYSTEM_TYPE = DND5E_SYSTEM_TYPE
+/**
+ * System pre-selected in the create form (a character may also have none).
+ * Re-exported, so the create and edit forms read it from this one registry.
+ */
+export { DND5E_SYSTEM_TYPE as DEFAULT_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
 
 /** Selectable systems, in display order (drives the <select>). */
 export const SYSTEM_OPTIONS = [

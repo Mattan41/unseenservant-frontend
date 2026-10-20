@@ -306,5 +306,3 @@ const saveParticipantNickname = async (participant) => {
     </div>
   </div>
 </template>
-
-<style scoped></style>

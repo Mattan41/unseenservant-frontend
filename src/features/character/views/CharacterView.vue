@@ -311,5 +311,3 @@ const exportCharacter = async (format) => {
     </div>
   </div>
 </template>
-
-<style scoped></style>

@@ -119,5 +119,3 @@ async function saveDisplayName() {
     </div>
   </div>
 </template>
-
-<style scoped></style>

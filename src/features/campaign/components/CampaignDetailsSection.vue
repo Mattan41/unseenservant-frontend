@@ -106,5 +106,3 @@ const saveDetails = async (updated) => {
     <CampaignDetailsForm :campaign="details" :saving="isSaving" @save="saveDetails" />
   </div>
 </template>
-
-<style scoped></style>

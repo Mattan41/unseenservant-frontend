@@ -110,8 +110,8 @@ export function recordView(kind, id, userId) {
   if (id === null || id === undefined || id === '' || !userId) return
 
   const userKey = String(userId)
-  const perUser = { ...(viewHistory.value[userKey] || {}) }
-  const entries = { ...(perUser[kind] || {}), [String(id)]: Date.now() }
+  const perUser = { ...viewHistory.value[userKey] }
+  const entries = { ...perUser[kind], [String(id)]: Date.now() }
 
   viewHistory.value = {
     ...viewHistory.value,

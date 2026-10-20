@@ -206,7 +206,7 @@ const submitCharacter = async () => {
           <div class="flex items-center space-x-4">
             <CharacterImage
               :src="characterImageUrl"
-              alt="Character Image"
+              alt="Character portrait"
               class="w-24 h-24 rounded-lg object-cover border-2"
               style="border-color: var(--color-primary-300)"
             />

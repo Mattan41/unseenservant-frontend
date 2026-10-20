@@ -39,7 +39,7 @@ export const useCampaignStore = defineStore('campaign', () => {
    * @returns {object|null}
    */
   function resolveCampaign(campaignId) {
-    if (currentCampaign.value && currentCampaign.value.id == campaignId) {
+    if (currentCampaign.value?.id == campaignId) {
       return currentCampaign.value
     }
     return campaigns.value.find((c) => c.id == campaignId) || null
@@ -272,7 +272,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         campaigns.value[index] = { ...campaigns.value[index], ...campaignData }
       }
 
-      if (currentCampaign.value && currentCampaign.value.id == campaignId) {
+      if (currentCampaign.value?.id == campaignId) {
         currentCampaign.value = { ...currentCampaign.value, ...campaignData }
       }
 
@@ -313,7 +313,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       await CampaignService.deleteCampaign(campaignId)
 
       campaigns.value = campaigns.value.filter((c) => c.id != campaignId)
-      if (currentCampaign.value && currentCampaign.value.id == campaignId) {
+      if (currentCampaign.value?.id == campaignId) {
         currentCampaign.value = null
       }
 

@@ -143,5 +143,3 @@ const revoke = (row) => adminStore.revokeWhitelistEntry(row.id)
     </BaseInfoBox>
   </div>
 </template>
-
-<style scoped></style>

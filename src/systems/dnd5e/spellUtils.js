@@ -95,8 +95,11 @@ export function normalizeSpell(rawSpell) {
     rawSpell.material_specified || rawSpell.material_text || rawSpell.materialText || ''
 
   const rawRange = rawSpell.range_text || rawSpell.range
-  const range =
-    typeof rawRange === 'number' ? (rawRange === 0 ? 'Touch' : `${rawRange} feet`) : rawRange || ''
+  // A numeric range needs a unit; 0 is how the API spells "Touch".
+  let range = rawRange || ''
+  if (typeof rawRange === 'number') {
+    range = rawRange === 0 ? 'Touch' : `${rawRange} feet`
+  }
 
   return {
     key: rawSpell.key || '',

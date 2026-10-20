@@ -9,5 +9,3 @@ import CharacterList from '@/features/character/components/CharacterList.vue'
     </section>
   </div>
 </template>
-
-<style scoped></style>

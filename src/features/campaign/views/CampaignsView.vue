@@ -9,5 +9,3 @@ import CampaignList from '@/features/campaign/components/CampaignList.vue'
     </section>
   </div>
 </template>
-
-<style scoped></style>

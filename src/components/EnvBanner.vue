@@ -16,7 +16,9 @@ defineProps({
 </script>
 
 <template>
-  <div class="env-banner" role="status">
+  <!-- An <output>, so the element itself carries the implicit `status` role the
+       div had to declare. `block` keeps the full-width strip it used to be. -->
+  <output class="env-banner block">
     {{ text }}
-  </div>
+  </output>
 </template>

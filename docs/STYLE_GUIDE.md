@@ -53,8 +53,9 @@ choices in `localStorage.theme` / `localStorage.mode` via
 
 > **`main.js` is the bootstrap.** `applyEnvironmentAttributes()` runs before the
 > app is mounted and writes all three `data-*` attributes. A matching
-> silver · light default also lives on `:root` (see the "Default palette" block
-> in `main.css`) so the very first frame is themed even before that call —
+> silver · light default also lives on `:root` (see the "Default palette" note
+> inside the role layer in `main.css`) so the very first frame is themed even
+> before that call —
 > there is no inline script in `index.html`.
 
 > **Three-axis model.** `<html>` carries `data-env`

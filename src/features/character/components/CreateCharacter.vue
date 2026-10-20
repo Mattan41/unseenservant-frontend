@@ -54,33 +54,31 @@ const fileInput = ref(null)
  * save path; they attach it to a campaign afterwards via the campaign import
  * flow. Relational fields are never restored (see `characterExport.js`).
  */
-function importBackup(event) {
+async function importBackup(event) {
   const file = event.target.files && event.target.files[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = () => {
-    try {
-      character.value = characterFromBackup(parseCharacterBackup(String(reader.result)))
-      formError.value = ''
-      notificationStore.addNotification(
-        'Backup loaded — review the fields, then create.',
-        'success',
-      )
-    } catch (error) {
-      notificationStore.addNotification(
-        error.message || 'Could not read that backup file.',
-        'error',
-      )
-    } finally {
-      event.target.value = ''
-    }
-  }
-  reader.onerror = () => {
+  // Blob#text() rejects when the file cannot be read, so the read and the parse
+  // keep separate handlers: an unreadable file always gets the generic message,
+  // a rejected backup keeps the reason parseCharacterBackup threw.
+  let text
+  try {
+    text = await file.text()
+  } catch {
     notificationStore.addNotification('Could not read that backup file.', 'error')
     event.target.value = ''
+    return
   }
-  reader.readAsText(file)
+
+  try {
+    character.value = characterFromBackup(parseCharacterBackup(text))
+    formError.value = ''
+    notificationStore.addNotification('Backup loaded — review the fields, then create.', 'success')
+  } catch (error) {
+    notificationStore.addNotification(error.message || 'Could not read that backup file.', 'error')
+  } finally {
+    event.target.value = ''
+  }
 }
 
 const submitCharacter = async () => {

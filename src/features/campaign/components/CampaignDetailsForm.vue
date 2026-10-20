@@ -165,7 +165,7 @@ useUnsavedChanges(
           <img
             v-if="previewImageUrl"
             :src="previewImageUrl"
-            alt="Campaign image preview"
+            alt="Campaign preview"
             class="w-32 h-32 rounded-lg object-cover border-2"
             style="border-color: var(--color-primary-300)"
           />
@@ -220,5 +220,3 @@ useUnsavedChanges(
     @cancel="cancelReposition"
   />
 </template>
-
-<style scoped></style>

@@ -34,7 +34,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
         Choose the identity palette. Changes apply immediately and are remembered in this browser.
       </p>
 
-      <div class="flex flex-wrap gap-2" role="group" aria-label="Colour theme">
+      <fieldset class="flex flex-wrap gap-2 min-w-0" aria-label="Colour theme">
         <BaseButton
           v-for="option in AVAILABLE_THEMES"
           :key="option.id"
@@ -44,7 +44,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
         >
           {{ option.label }}
         </BaseButton>
-      </div>
+      </fieldset>
     </BaseCard>
 
     <!-- Colour Mode -->
@@ -55,7 +55,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
         automatically; the other options override it for this browser.
       </p>
 
-      <div class="flex flex-wrap gap-2" role="group" aria-label="Colour mode">
+      <fieldset class="flex flex-wrap gap-2 min-w-0" aria-label="Colour mode">
         <BaseButton
           v-for="option in AVAILABLE_MODES"
           :key="option.id"
@@ -65,7 +65,7 @@ import BaseCard from '@/components/base/BaseCard.vue'
         >
           {{ option.label }}
         </BaseButton>
-      </div>
+      </fieldset>
 
       <p v-if="mode === 'system'" class="text-sm text-muted mt-2">
         Currently following your system:
@@ -81,5 +81,3 @@ import BaseCard from '@/components/base/BaseCard.vue'
     </p>
   </div>
 </template>
-
-<style scoped></style>

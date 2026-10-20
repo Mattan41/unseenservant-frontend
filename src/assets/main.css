@@ -156,6 +156,25 @@
   --tone-notice-surface: #ecfeff;
   --tone-notice-border: #a5f3fc;
   --tone-notice-text: #155e75;
+
+  /* Default palette (silver · light) as a pre-JS fallback. `main.js` writes
+     data-theme/data-mode before mount; until then no palette block matches and
+     --primary-* would be undefined, leaving the canvas transparent. These
+     defaults keep the first paint a valid theme; the palette blocks below win
+     by specificity once the attributes exist. */
+  --color-surface: #ffffff;
+  --surface-section: #c0c0c0;
+  --primary: #c0c0c0;
+  --primary-50: #f9f9f9;
+  --primary-100: #f2f2f2;
+  --primary-200: #e5e5e5;
+  --primary-300: #d8d8d8;
+  --primary-400: #c5c5c5;
+  --primary-500: #c0c0c0;
+  --primary-600: #a0a0a0;
+  --primary-700: #5c5c5c;
+  --primary-800: #3d3d3d;
+  --primary-900: #2b2b2b;
 }
 
 /* Dark-mode role values. One block re-points every neutral/text/border/surface
@@ -204,27 +223,6 @@ html[data-mode='dark'] {
   --tone-notice-surface: #0f3038;
   --tone-notice-border: #2f7d8c;
   --tone-notice-text: #8fdceb;
-}
-
-/* Default palette (silver · light) on :root, as a pre-JS fallback. `main.js`
-   writes data-theme/data-mode before mount; until then no palette block matches
-   and --primary-* would be undefined, leaving the canvas transparent. These
-   defaults keep the first paint a valid theme; the palette blocks below win by
-   specificity once the attributes exist. */
-:root {
-  --color-surface: #ffffff;
-  --surface-section: #c0c0c0;
-  --primary: #c0c0c0;
-  --primary-50: #f9f9f9;
-  --primary-100: #f2f2f2;
-  --primary-200: #e5e5e5;
-  --primary-300: #d8d8d8;
-  --primary-400: #c5c5c5;
-  --primary-500: #c0c0c0;
-  --primary-600: #a0a0a0;
-  --primary-700: #5c5c5c;
-  --primary-800: #3d3d3d;
-  --primary-900: #2b2b2b;
 }
 
 /* --------------------------------------------------------------------------

@@ -576,7 +576,7 @@ useUnsavedChanges(
         >
           <CampaignImage
             :src="url"
-            alt="Ship image"
+            alt="Ship gallery artwork"
             :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
             class="w-full h-28 object-cover"
           />
@@ -629,7 +629,7 @@ useUnsavedChanges(
         <div class="relative flex items-center justify-center">
           <CampaignImage
             :src="lightboxUrl"
-            alt="Ship image"
+            alt="Ship gallery artwork"
             :default-src="OFFWORLDERS_SHIP_DEFAULT_IMAGE"
             class="max-h-[80vh] w-auto mx-auto rounded"
           />

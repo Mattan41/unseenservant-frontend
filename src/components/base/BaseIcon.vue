@@ -180,5 +180,3 @@ defineProps({
     </template>
   </svg>
 </template>
-
-<style scoped></style>

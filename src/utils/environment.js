@@ -98,7 +98,7 @@ export function setTheme(newTheme) {
   if (!AVAILABLE_THEMES.some((option) => option.id === newTheme)) return
 
   theme.value = newTheme
-  document.documentElement.setAttribute('data-theme', newTheme)
+  document.documentElement.dataset.theme = newTheme
 
   // Client-side only for now. A future commit may mirror this to the
   // backend and reconcile on login. Keep the localStorage write — it is
@@ -171,7 +171,7 @@ export const resolvedMode = ref(resolveMode(mode.value))
 /** Writes the resolved mode onto <html data-mode>. */
 function applyModeAttribute() {
   resolvedMode.value = resolveMode(mode.value)
-  document.documentElement.setAttribute('data-mode', resolvedMode.value)
+  document.documentElement.dataset.mode = resolvedMode.value
 }
 
 /**
@@ -214,7 +214,7 @@ try {
  */
 export function applyEnvironmentAttributes() {
   const root = document.documentElement
-  root.setAttribute('data-env', ENVIRONMENT)
-  root.setAttribute('data-theme', theme.value)
+  root.dataset.env = ENVIRONMENT
+  root.dataset.theme = theme.value
   applyModeAttribute()
 }

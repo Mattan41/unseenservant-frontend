@@ -4,7 +4,9 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { extractErrorMessage } from '@/utils/errorUtils'
 
 const rawBase = import.meta.env.VITE_API_BASE_URL ?? ''
-const normalizedBase = rawBase ? (rawBase.endsWith('/') ? rawBase : `${rawBase}/`) : '/'
+// One trailing slash on a configured base keeps every request path below relative.
+const baseWithSlash = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
+const normalizedBase = rawBase ? baseWithSlash : '/'
 
 const axios = Axios.create({
   baseURL: normalizedBase,

@@ -32,5 +32,3 @@ defineEmits(['open'])
     <h2 class="context-mobile-title">{{ title }}</h2>
   </div>
 </template>
-
-<style scoped></style>

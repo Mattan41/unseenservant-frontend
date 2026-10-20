@@ -20,5 +20,3 @@ defineProps({
 <template>
   <BaseIcon :name="name" />
 </template>
-
-<style scoped></style>
