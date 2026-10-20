@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
+import { isNestedControlClick, isOwnKeyEvent } from '@/utils/interactiveEvent.js'
 
 const props = defineProps({
   characterId: {
@@ -50,6 +51,22 @@ function onHistoryClick(query) {
 
 function toggleExpand(key) {
   expandedSpellKey.value = expandedSpellKey.value === key ? null : key
+}
+
+/**
+ * The result row is the disclosure control (a div carrying button semantics:
+ * a native <button> cannot hold the row's own "+ Add" control). Clicks and
+ * Enter/Space that belong to the "+ Add" button stay with that button.
+ */
+function onRowClick(event, key) {
+  if (isNestedControlClick(event)) return
+  toggleExpand(key)
+}
+
+function onRowKeydown(event, key) {
+  if (!isOwnKeyEvent(event)) return
+  event.preventDefault()
+  toggleExpand(key)
 }
 
 async function onSaveSpell(spell) {
@@ -175,7 +192,12 @@ async function onSaveSpell(spell) {
                bordered row instead of being clipped by `overflow-hidden`. -->
           <div
             class="flex flex-col gap-1 px-4 py-3 cursor-pointer spell-row-hover sm:grid sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-center sm:gap-2"
-            @click="toggleExpand(spell.key)"
+            role="button"
+            tabindex="0"
+            :aria-expanded="expandedSpellKey === spell.key"
+            @click="onRowClick($event, spell.key)"
+            @keydown.enter="onRowKeydown($event, spell.key)"
+            @keydown.space="onRowKeydown($event, spell.key)"
           >
             <div class="min-w-0 font-medium flex items-center gap-1.5 flex-wrap text-heading">
               {{ spell.name }}
@@ -214,7 +236,7 @@ async function onSaveSpell(spell) {
             <div class="hidden sm:block min-w-0 text-xs text-subtle italic truncate">
               {{ spell.sourceLabel }}
             </div>
-            <div class="flex justify-end sm:w-16" @click.stop>
+            <div class="flex justify-end sm:w-16">
               <BaseButton
                 v-if="props.characterId"
                 variant="add"

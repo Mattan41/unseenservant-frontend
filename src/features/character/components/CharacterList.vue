@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
-import { useRouter } from 'vue-router'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CharacterImage from '@/features/character/components/CharacterImage.vue'
 import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
@@ -10,7 +9,6 @@ import {
   characterSystemLabel,
 } from '@/features/character/dispatchers/systemRegistry.js'
 
-const router = useRouter()
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
 
@@ -29,10 +27,6 @@ onMounted(async () => {
   await campaignStore.fetchAllCampaignsForCurrentUser()
   loading.value = false
 })
-
-const viewCharacter = (id) => {
-  router.push({ name: 'CharacterView', params: { id } })
-}
 </script>
 
 <template>
@@ -64,11 +58,17 @@ const viewCharacter = (id) => {
       <BaseLinkButton variant="tile" icon="plus" :to="{ name: 'CreateCharacter' }">
         Create a character
       </BaseLinkButton>
-      <div
+      <!-- The whole card links to the character, so it is one keyboard-operable
+           control (the campaign list links its cards the same way). -->
+      <router-link
         v-for="character in characterStore.sortedCharacters"
         :key="character.id"
+        :to="{
+          name: 'CharacterView',
+          params: { id: character.id },
+          query: { from: 'characterList' },
+        }"
         class="bg-[var(--color-surface)] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer border border-subtle flex flex-col h-full"
-        @click="viewCharacter(character.id)"
       >
         <!-- Character card -->
         <div class="p-4 flex-grow">
@@ -137,14 +137,10 @@ const viewCharacter = (id) => {
               >Updated {{ new Date(character.lastUpdated).toLocaleDateString() }}</span
             >
           </div>
-          <router-link
-            :to="{
-              name: 'CharacterView',
-              params: { id: character.id },
-              query: { from: 'characterList' },
-            }"
+          <!-- The card itself navigates: "View Details" is that link's
+               affordance, not a second control (a link cannot nest a link). -->
+          <span
             class="read-more-link font-medium text-sm transition-colors inline-flex items-center flex-shrink-0"
-            @click.stop
           >
             View Details
             <svg
@@ -161,9 +157,9 @@ const viewCharacter = (id) => {
                 d="M9 5l7 7-7 7"
               />
             </svg>
-          </router-link>
+          </span>
         </div>
-      </div>
+      </router-link>
     </div>
   </div>
 </template>

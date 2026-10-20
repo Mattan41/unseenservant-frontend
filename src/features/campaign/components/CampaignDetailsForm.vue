@@ -169,13 +169,14 @@ useUnsavedChanges(
             class="w-32 h-32 rounded-lg object-cover border-2"
             style="border-color: var(--color-primary-300)"
           />
-          <div
+          <button
             v-if="previewImageUrl && !isGuestMode"
+            type="button"
             @click="triggerFileInput"
-            class="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+            class="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer"
           >
             <span class="text-white text-sm">Change</span>
-          </div>
+          </button>
         </div>
 
         <input

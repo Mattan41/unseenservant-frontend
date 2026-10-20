@@ -81,7 +81,9 @@ src/
 │   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
-│   └── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
+│   ├── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
+│   ├── bodyScrollLock.js     # Counted body scroll lock shared by the modal and drawer overlays.
+│   └── interactiveEvent.js   # Event guards for an interactive container that nests controls (cards, rows).
 ├── systems/                  # System-specific (tabletop RPG ruleset) code
 │   ├── offworlders/          # Offworlders (rules-light sci-fi)
 │   │   ├── components/       # OffworldersStatsPanel, OffworldersCharacterForm, OffworldersGearForm

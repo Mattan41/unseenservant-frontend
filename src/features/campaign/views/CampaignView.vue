@@ -706,7 +706,7 @@ watch(
               </div>
             </div>
 
-            <div class="mt-3 flex flex-wrap gap-2" @click.stop>
+            <div class="mt-3 flex flex-wrap gap-2">
               <BaseButton
                 v-if="canOpenCharacter(character)"
                 variant="default"

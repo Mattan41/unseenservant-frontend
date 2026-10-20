@@ -35,7 +35,7 @@ const exitGuestMode = () => {
       </button>
     </div>
 
-    <nav>
+    <nav aria-label="Main">
       <!-- Mobile bar: logo + icon-only menu toggle -->
       <div class="flex md:hidden justify-between items-center">
         <RouterLink @click="closeMenu" to="/" class="block">
@@ -117,7 +117,7 @@ const exitGuestMode = () => {
           <IconButton icon="close" label="Close menu" variant="plain" @click="closeMenu" />
         </div>
 
-        <nav class="app-menu-links">
+        <nav class="app-menu-links" aria-label="Main menu">
           <RouterLink @click="closeMenu" to="/" class="header-nav-link">
             <h5 class="p-2 uppercase">Home</h5>
           </RouterLink>
