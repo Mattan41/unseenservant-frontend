@@ -773,38 +773,61 @@ function updateParticipants({ url, data }) {
   if (index === -1) return ok(null)
 
   let participants = campaigns[index].participants || []
-
   if (data.participantIdsToRemove?.length > 0) {
-    const idsToRemove = new Set(
-      data.participantIdsToRemove.map((entry) =>
-        entry && typeof entry === 'object' ? String(entry.id) : String(entry),
-      ),
-    )
-    participants = participants.filter((p) => p?.id && !idsToRemove.has(String(p.id)))
+    participants = withoutParticipants(participants, data.participantIdsToRemove)
   }
-
   if (data.participantsToAdd?.length > 0) {
-    const directory = getData(KEYS.USERS, [])
-    for (const entry of data.participantsToAdd) {
-      const participantId = entry && typeof entry === 'object' ? String(entry.id) : String(entry)
-      if (!participantId || participants.some((p) => String(p.id) === participantId)) continue
-
-      const user = directory.find((u) => String(u.id) === participantId)
-      participants.push({
-        id: participantId,
-        nickname:
-          user?.displayName ||
-          user?.username ||
-          (entry && typeof entry === 'object' ? entry.displayName || entry.username : null) ||
-          'Player',
-        role: 'PLAYER',
-      })
-    }
+    participants = withParticipants(participants, data.participantsToAdd)
   }
 
   campaigns[index].participants = participants
   setData(KEYS.CAMPAIGNS, campaigns)
   return ok(campaigns[index])
+}
+
+/** A participant payload entry as an id string — a bare id or an `{ id }` object. */
+function asParticipantId(entry) {
+  return entry && typeof entry === 'object' ? String(entry.id) : String(entry)
+}
+
+/**
+ * Drop the listed participants. An entry without an id is dropped as well, which
+ * is what the inline filter did before this was extracted.
+ */
+function withoutParticipants(participants, entries) {
+  const idsToRemove = new Set(entries.map(asParticipantId))
+  return participants.filter((p) => p?.id && !idsToRemove.has(String(p.id)))
+}
+
+/**
+ * Append the new participants, skipping an id that is already listed. The list is
+ * extended in place, exactly like the branch this was extracted from.
+ */
+function withParticipants(participants, entries) {
+  const directory = getData(KEYS.USERS, [])
+
+  for (const entry of entries) {
+    const id = asParticipantId(entry)
+    if (!id || participants.some((p) => String(p.id) === id)) continue
+
+    participants.push({
+      id,
+      nickname: participantNickname(
+        directory.find((u) => String(u.id) === id),
+        entry,
+      ),
+      role: 'PLAYER',
+    })
+  }
+
+  return participants
+}
+
+/** The nickname a new participant gets: demo directory → payload → 'Player'. */
+function participantNickname(user, entry) {
+  const fromPayload =
+    entry && typeof entry === 'object' ? entry.displayName || entry.username : null
+  return user?.displayName || user?.username || fromPayload || 'Player'
 }
 
 /** PATCH api/campaigns/{id}/owner — transfer ownership. */

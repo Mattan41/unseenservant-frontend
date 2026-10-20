@@ -107,8 +107,12 @@ export function parseCharacterBackup(text) {
   if (!character || typeof character !== 'object') {
     throw new Error('This file does not look like a character backup.')
   }
-  if (parsed.kind && parsed.kind !== CHARACTER_BACKUP_KIND) {
-    throw new Error(`This backup is for a "${parsed.kind}", not a character.`)
+  // The kind is optional in older files, so the truthiness check stays explicit:
+  // only a *different* kind is refused. The optional chain is safe here because
+  // the guard above already proved `parsed` is a non-null object.
+  const kind = parsed?.kind
+  if (kind && kind !== CHARACTER_BACKUP_KIND) {
+    throw new Error(`This backup is for a "${kind}", not a character.`)
   }
   if (Number(parsed.schemaVersion) > CHARACTER_BACKUP_SCHEMA_VERSION) {
     throw new Error('This backup was made by a newer version of the app.')

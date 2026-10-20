@@ -125,6 +125,14 @@ describe('parseCharacterBackup', () => {
     expect(() => parseCharacterBackup(text)).toThrow(/ship/)
   })
 
+  it('accepts a backup that carries no kind at all', () => {
+    // `kind` is optional: a file without one is a character backup by default,
+    // and the guard must stay a truthiness check rather than a nullish one.
+    const text = JSON.stringify({ character: { name: 'Nameless', systemType: '' } })
+
+    expect(parseCharacterBackup(text).name).toBe('Nameless')
+  })
+
   it('rejects a newer schema version', () => {
     const text = JSON.stringify({
       schemaVersion: 99,
