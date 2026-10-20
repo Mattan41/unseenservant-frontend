@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { onUnmounted, ref, useId } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -30,6 +30,10 @@ const {
 } = storeToRefs(spellStore)
 
 const searchInput = ref('')
+// Instance-scoped: the search is rendered from three places (the spell page, the
+// campaign panel, the character sheet), so its field id has to stay unique if
+// two ever land in the same document.
+const searchInputId = `spell-search-${useId()}`
 const savingSpellKey = ref(null)
 const expandedSpellKey = ref(null)
 
@@ -92,7 +96,7 @@ async function onSaveSpell(spell) {
     <div class="mb-4">
       <div class="relative">
         <input
-          id="spell-search-input"
+          :id="searchInputId"
           v-model="searchInput"
           type="text"
           placeholder="Search spells (e.g., fireball, healing, charm)..."

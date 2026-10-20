@@ -480,11 +480,15 @@ payload rather than the DOM event.
 
 Form fields carry an `id` (or a `name`): a field with neither is flagged by
 Chrome DevTools (autofill cannot identify it), and an `id` is what a
-`label[for]` resolves against. Render the label only together with its field —
-a `for` that points at a conditionally hidden input is flagged too (or use a
-`<span>` caption where the value is a read-only stepper instead of an input).
-Optional attributes stay unset rather than empty: pass `undefined` (e.g.
-`<BaseInput>` only renders `autocomplete` when a caller sets it).
+`label[for]` resolves against. A component that can render twice in one
+document — a rail + drawer pair, a page hosting two forms — derives its ids from
+`useId()` (`BaseInput`, `SpellSearch`, `CampaignDetailsForm`), and a row inside a
+list uses the row's own key (`participant-nickname-${participant.id}`). Render
+the label only together with its field — a `for` that points at a conditionally
+hidden input is flagged too (or use a `<span>` caption where the value is a
+read-only stepper instead of an input). Optional attributes stay unset rather
+than empty: pass `undefined` (e.g. `<BaseInput>` only renders `autocomplete` when
+a caller sets it).
 
 ## 4. Where to Add New Classes / Variables
 
