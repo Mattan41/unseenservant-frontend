@@ -103,6 +103,7 @@ const deleteCampaign = () => {
       </p>
       <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
         <select
+          id="campaign-transfer-target"
           v-model="transferTargetId"
           class="input-field p-2 rounded"
           aria-label="Participant to transfer ownership to"

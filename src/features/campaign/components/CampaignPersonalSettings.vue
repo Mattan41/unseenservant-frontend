@@ -98,6 +98,7 @@ const saveNickname = async () => {
       <h5 class="font-medium mb-2">Your Nickname in Campaign</h5>
 
       <input
+        id="campaign-nickname-input"
         v-model="nickname"
         type="text"
         class="input-field p-3 rounded w-full mb-3"

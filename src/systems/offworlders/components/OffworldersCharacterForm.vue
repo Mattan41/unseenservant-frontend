@@ -320,6 +320,7 @@ function removeAbility(name) {
     </div>
     <div class="flex flex-wrap gap-2 mb-3">
       <input
+        id="ow-custom-skill-name"
         v-model="customSkill.name"
         type="text"
         class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
@@ -327,6 +328,7 @@ function removeAbility(name) {
         aria-label="Custom skill name"
       />
       <input
+        id="ow-custom-skill-description"
         v-model="customSkill.description"
         type="text"
         class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"
@@ -407,6 +409,7 @@ function removeAbility(name) {
     </div>
     <div class="flex flex-wrap gap-2 mb-3">
       <input
+        id="ow-custom-ability-name"
         v-model="customAbility.name"
         type="text"
         class="input-field flex-1 min-w-[10rem] px-3 py-2 border border-input rounded-md"
@@ -414,6 +417,7 @@ function removeAbility(name) {
         aria-label="Custom ability name"
       />
       <input
+        id="ow-custom-ability-description"
         v-model="customAbility.description"
         type="text"
         class="input-field flex-[2] min-w-[12rem] px-3 py-2 border border-input rounded-md"

@@ -127,6 +127,7 @@ const submitCharacter = async () => {
           </BaseButton>
           <input
             ref="fileInput"
+            id="character-backup-input"
             type="file"
             accept=".json,application/json"
             class="hidden"

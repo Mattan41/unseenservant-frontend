@@ -343,6 +343,7 @@ useUnsavedChanges(
         </button>
         <input
           ref="profileInput"
+          id="ship-profile-image-input"
           type="file"
           accept=".jpg,.jpeg,.png,.gif,.webp"
           class="hidden"
@@ -363,7 +364,12 @@ useUnsavedChanges(
          editing they are plain inputs that save with the form. -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
       <div>
-        <label for="ship-hull" class="block text-xs uppercase text-muted mb-1">Hull</label>
+        <!-- The caption is a label only while the input exists: in view mode the
+             quick-edit stepper owns the value, so a `for` would point nowhere. -->
+        <label v-if="editing" for="ship-hull" class="block text-xs uppercase text-muted mb-1">
+          Hull
+        </label>
+        <span v-else class="block text-xs uppercase text-muted mb-1">Hull</span>
         <input
           v-if="editing"
           id="ship-hull"
@@ -415,7 +421,10 @@ useUnsavedChanges(
         />
       </div>
       <div>
-        <label for="ship-fuel" class="block text-xs uppercase text-muted mb-1">Drive fuel</label>
+        <label v-if="editing" for="ship-fuel" class="block text-xs uppercase text-muted mb-1">
+          Drive fuel
+        </label>
+        <span v-else class="block text-xs uppercase text-muted mb-1">Drive fuel</span>
         <input
           v-if="editing"
           id="ship-fuel"
@@ -447,7 +456,10 @@ useUnsavedChanges(
         />
       </div>
       <div>
-        <label for="ship-credits" class="block text-xs uppercase text-muted mb-1">Credits</label>
+        <label v-if="editing" for="ship-credits" class="block text-xs uppercase text-muted mb-1">
+          Credits
+        </label>
+        <span v-else class="block text-xs uppercase text-muted mb-1">Credits</span>
         <input
           v-if="editing"
           id="ship-credits"
@@ -580,6 +592,7 @@ useUnsavedChanges(
 
       <input
         ref="galleryInput"
+        id="ship-gallery-image-input"
         type="file"
         accept=".jpg,.jpeg,.png,.gif,.webp"
         class="hidden"

@@ -6,9 +6,10 @@ import BaseModal from '@/components/base/BaseModal.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 
 const props = defineProps({
+  /** The spell to show, or `null` while no detail is open (see `visible`). */
   spell: {
     type: Object,
-    required: true,
+    default: null,
   },
   visible: {
     type: Boolean,

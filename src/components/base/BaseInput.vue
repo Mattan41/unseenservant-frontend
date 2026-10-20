@@ -89,8 +89,10 @@ const props = defineProps({
     default: undefined,
   },
   autocomplete: {
+    // Left unset by default: the attribute is only rendered when a call site
+    // asks for it, because an empty `autocomplete=""` is flagged by browsers.
     type: String,
-    default: '',
+    default: undefined,
   },
 })
 

@@ -212,6 +212,7 @@ const submitCharacter = async () => {
             />
             <input
               v-if="!isGuestMode"
+              id="character-image-input"
               type="file"
               ref="fileInput"
               aria-label="Upload character image"

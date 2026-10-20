@@ -182,6 +182,7 @@ const saveParticipantNickname = async (participant) => {
 
       <div class="flex flex-col sm:flex-row gap-2 mb-4">
         <input
+          id="participant-search-input"
           v-model="searchTerm"
           type="text"
           class="input-field p-3 rounded flex-grow"
@@ -271,6 +272,7 @@ const saveParticipantNickname = async (participant) => {
           <!-- Edit nickname mode (a GM managing another participant) -->
           <div v-else class="space-y-3">
             <input
+              :id="`participant-nickname-${participant.id}`"
               v-model="participant.nickname"
               type="text"
               class="input-field p-2 rounded w-full"

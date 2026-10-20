@@ -92,6 +92,7 @@ async function onSaveSpell(spell) {
     <div class="mb-4">
       <div class="relative">
         <input
+          id="spell-search-input"
           v-model="searchInput"
           type="text"
           placeholder="Search spells (e.g., fireball, healing, charm)..."
