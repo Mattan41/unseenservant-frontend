@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ADMIN_ROLE, USER_ROLE, getRoleBadgeClass, getRoleLabel, isAdminRole } from './userUtils.js'
+import {
+  ADMIN_ROLE,
+  USER_ROLE,
+  getRoleBadgeClass,
+  getRoleLabel,
+  isAdminRole,
+} from '@/features/user/userUtils.js'
 
 describe('userUtils', () => {
   describe('isAdminRole', () => {
