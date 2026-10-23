@@ -1091,19 +1091,25 @@ function shiftJournalPositions(journalId, fromPosition, delta) {
   setData(KEYS.JOURNAL_PAGES, shifted)
 }
 
-/** The request's page, resolved through the same rules the backend applies. */
+/**
+ * The request's page, resolved through the same rules the backend applies.
+ *
+ * `error` is a plain `Error`, not a rejection: the caller is what turns it into
+ * one (`return Promise.reject(resolved.error)`), so nothing here is tested as if
+ * it were a promise.
+ */
 function resolveJournalPage(url, userId) {
   const pageId = extractId(url)
   const page = getData(KEYS.JOURNAL_PAGES, []).find((entry) => String(entry.id) === String(pageId))
-  if (!page) return { error: notFound('Journal page not found with id: ' + pageId) }
+  if (!page) return { error: guestError('Journal page not found with id: ' + pageId, 404) }
 
   const journal = getData(KEYS.JOURNALS, []).find((entry) => String(entry.id) === String(page.journalId))
   if (!journal || String(journal.userId) !== String(userId)) {
     // Another participant's page is not addressable at all.
-    return { error: notFound('Journal page not found with id: ' + pageId) }
+    return { error: guestError('Journal page not found with id: ' + pageId, 404) }
   }
   if (!isGuestParticipant(journal.campaignId)) {
-    return { error: forbidden('You are not a participant in this campaign.') }
+    return { error: guestError('You are not a participant in this campaign.', 403) }
   }
   return { page, journal }
 }
@@ -1179,7 +1185,7 @@ function createJournalPage({ url, data }) {
 /** PATCH api/journals/pages/{pageId} — rewrite one page. */
 function updateJournalPage({ url, data }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return resolved.error
+  if (resolved.error) return Promise.reject(resolved.error)
   const { page, journal } = resolved
 
   const content = typeof data?.content === 'string' ? data.content : ''
@@ -1234,7 +1240,7 @@ function updateJournalPage({ url, data }) {
 /** DELETE api/journals/pages/{pageId} — delete one page. */
 function deleteJournalPage({ url }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return resolved.error
+  if (resolved.error) return Promise.reject(resolved.error)
   const { page, journal } = resolved
 
   setData(

@@ -52,7 +52,7 @@ export function resolveJump(rawValue, pageCount) {
   if (number < 1) return 1
 
   const last = lastPageNumber(pageCount)
-  return number > last ? last : number
+  return Math.min(number, last)
 }
 
 /**

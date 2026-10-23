@@ -15,6 +15,22 @@ import { extractErrorMessage } from '@/utils/errorUtils.js'
 /** How long the editor waits after the last keystroke before it saves itself. */
 export const AUTOSAVE_DELAY_MS = 800
 
+/** The signed-in user, for the draft mirror's key. Nothing local to capture. */
+function currentUserId() {
+  return useUserStore().userId
+}
+
+/**
+ * One notification. Defaults mirror the notification store's own, so a caller
+ * that only cares about the message can simply say so.
+ * @param {string} message
+ * @param {'success'|'error'} [type]
+ * @param {number} [duration] milliseconds on screen
+ */
+function notify(message, type = 'error', duration = 3000) {
+  useNotificationStore().addNotification(message, type, duration)
+}
+
 /**
  * The private journal of the current participant in one campaign.
  *
@@ -59,10 +75,6 @@ export const useJournalStore = defineStore('journal', () => {
   // Helpers
   // ==========================================================================
 
-  function currentUserId() {
-    return useUserStore().userId
-  }
-
   function emptyJournal() {
     return { id: null, campaignId: campaignId.value, userId: currentUserId(), pageCount: 0, pages: [] }
   }
@@ -81,10 +93,6 @@ export const useJournalStore = defineStore('journal', () => {
       clearTimeout(autosaveTimer)
       autosaveTimer = null
     }
-  }
-
-  function notify(message, type = 'error', duration) {
-    useNotificationStore().addNotification(message, type, duration)
   }
 
   /** Adopt a journal payload (or an empty one) and land on a valid page. */
