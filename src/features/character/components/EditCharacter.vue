@@ -10,6 +10,7 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
+import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DEFAULT_SYSTEM_TYPE,
@@ -108,13 +109,26 @@ function handleImageChange(event) {
   const file = event.target.files[0]
   // Reset so selecting the same file again still fires a change event.
   event.target.value = ''
-  if (file) {
-    repositionFile.value = file
-    showRepositionModal.value = true
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
   }
+
+  repositionFile.value = file
+  showRepositionModal.value = true
 }
 
 function applyRepositionedImage(file) {
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    cancelReposition()
+    return
+  }
+
   if (previewImage.value) URL.revokeObjectURL(previewImage.value)
   selectedFile.value = file
   previewImage.value = URL.createObjectURL(file)

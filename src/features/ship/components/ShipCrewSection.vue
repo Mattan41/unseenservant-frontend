@@ -14,6 +14,8 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import { getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
+import { useNotificationStore } from '@/stores/notificationStore.js'
+import { validateImageSize } from '@/utils/imageUpload.js'
 
 const props = defineProps({
   /** Crew manifest: one entry per current participant. */
@@ -34,6 +36,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['save', 'add-image', 'remove-image', 'open-image'])
+
+const notificationStore = useNotificationStore()
 
 const editing = ref(false)
 const draft = reactive({ notes: '', characters: [] })
@@ -96,7 +100,15 @@ function triggerFileInput() {
 function onFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) emit('add-image', file)
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
+  }
+
+  emit('add-image', file)
 }
 </script>
 

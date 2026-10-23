@@ -20,6 +20,7 @@ import ShipCrewSection from '@/features/ship/components/ShipCrewSection.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { buildShipPayload } from '@/features/ship/shipPayload.js'
+import { useNotificationStore } from '@/stores/notificationStore.js'
 import {
   OFFWORLDERS_SHIP_DEFAULT_IMAGE,
   OFFWORLDERS_SHIP_STARTING_UPGRADES,
@@ -30,6 +31,7 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
 } from '@/systems/offworlders/shipConstants.js'
+import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const props = defineProps({
@@ -71,6 +73,8 @@ const emit = defineEmits([
   'add-crew-image',
   'remove-crew-image',
 ])
+
+const notificationStore = useNotificationStore()
 
 const editing = ref(false)
 const draft = reactive(createEmptyShipData())
@@ -229,10 +233,25 @@ function triggerGalleryInput() {
 function onProfileFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) repositionFile.value = file
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
+  }
+
+  repositionFile.value = file
 }
 
 function applyRepositionedImage(file) {
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    cancelReposition()
+    return
+  }
+
   repositionFile.value = null
   pendingImageOp = true
   emit('upload-profile', file)
@@ -245,10 +264,16 @@ function cancelReposition() {
 function onGalleryFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) {
-    pendingImageOp = true
-    emit('add-gallery', file)
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
   }
+
+  pendingImageOp = true
+  emit('add-gallery', file)
 }
 
 function removeGalleryImage(url) {
