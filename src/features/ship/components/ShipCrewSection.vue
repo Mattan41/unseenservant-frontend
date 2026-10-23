@@ -6,7 +6,8 @@
  *
  * Presentational — props in, events out. The parent (ShipSheet/ShipSection)
  * persists each change and owns the shared image gallery, so crew images open in
- * the same lightbox as the ship's own images.
+ * the same lightbox as the ship's own images. A picked image over the upload
+ * limit emits `size-error` with the sentence to show.
  */
 import { computed, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -14,6 +15,7 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import { getRoleBadgeClass } from '@/features/campaign/campaignUtils.js'
+import { validateImageSize } from '@/utils/imageUpload.js'
 
 const props = defineProps({
   /** Crew manifest: one entry per current participant. */
@@ -33,7 +35,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['save', 'add-image', 'remove-image', 'open-image'])
+const emit = defineEmits(['save', 'add-image', 'remove-image', 'open-image', 'size-error'])
 
 const editing = ref(false)
 const draft = reactive({ notes: '', characters: [] })
@@ -96,7 +98,15 @@ function triggerFileInput() {
 function onFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) emit('add-image', file)
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    emit('size-error', sizeError)
+    return
+  }
+
+  emit('add-image', file)
 }
 </script>
 

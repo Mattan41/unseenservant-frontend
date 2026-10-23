@@ -6,7 +6,8 @@
  * the upgrade checklist and a free-text notes/look area. Every participant may
  * edit; the parent owns saving (and the optimistic-concurrency reload flow).
  *
- * Props in, events out — no store access.
+ * Props in, events out — no store access: an image over the upload limit emits
+ * `size-error` with the sentence to show, and the parent notifies.
  */
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -30,6 +31,7 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
 } from '@/systems/offworlders/shipConstants.js'
+import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const props = defineProps({
@@ -70,6 +72,7 @@ const emit = defineEmits([
   'save-crew',
   'add-crew-image',
   'remove-crew-image',
+  'size-error',
 ])
 
 const editing = ref(false)
@@ -229,10 +232,25 @@ function triggerGalleryInput() {
 function onProfileFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) repositionFile.value = file
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    emit('size-error', sizeError)
+    return
+  }
+
+  repositionFile.value = file
 }
 
 function applyRepositionedImage(file) {
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    emit('size-error', sizeError)
+    cancelReposition()
+    return
+  }
+
   repositionFile.value = null
   pendingImageOp = true
   emit('upload-profile', file)
@@ -245,10 +263,16 @@ function cancelReposition() {
 function onGalleryFileChange(event) {
   const file = event.target.files[0]
   event.target.value = ''
-  if (file) {
-    pendingImageOp = true
-    emit('add-gallery', file)
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    emit('size-error', sizeError)
+    return
   }
+
+  pendingImageOp = true
+  emit('add-gallery', file)
 }
 
 function removeGalleryImage(url) {
@@ -609,6 +633,7 @@ useUnsavedChanges(
       @save="(entry) => emit('save-crew', entry)"
       @add-image="(file) => emit('add-crew-image', file)"
       @remove-image="(url) => emit('remove-crew-image', url)"
+      @size-error="(msg) => emit('size-error', msg)"
       @open-image="openLightbox"
     />
 

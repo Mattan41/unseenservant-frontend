@@ -11,12 +11,13 @@
  * without a modal wrapper. Emits `save` with the edited payload — the parent
  * owns all store interactions.
  */
-import { computed, onBeforeUnmount, ref, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { CAMPAIGN_SYSTEM_OPTIONS } from '@/features/campaign/campaignSystems.js'
+import { useImagePicker } from '@/utils/useImagePicker.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const props = defineProps({
@@ -43,43 +44,24 @@ const editedPrimarySystem = ref(props.campaign.primarySystem || '')
 const fileInput = ref(null)
 // Per-instance id so `label[for]` always resolves (the form can render twice).
 const imageInputId = `campaign-image-${useId()}`
-const selectedFile = ref(null)
-const localPreviewUrl = ref(null)
-const repositionFile = ref(null)
-const showRepositionModal = ref(false)
+
+// The picked file, its preview and the reposition flow come from the shared
+// picker; the campaign image only adds the fallback to the saved URL.
+const {
+  selectedFile,
+  previewUrl: localPreviewUrl,
+  repositionFile,
+  showRepositionModal,
+  handleImageChange,
+  applyRepositionedImage,
+  cancelReposition,
+} = useImagePicker()
 
 const previewImageUrl = computed(() => localPreviewUrl.value || props.campaign.imageUrl || null)
 
 function triggerFileInput() {
   fileInput.value.click()
 }
-
-function handleImageChange(event) {
-  const file = event.target.files[0]
-  // Reset so selecting the same file again still fires a change event.
-  event.target.value = ''
-  if (file) {
-    repositionFile.value = file
-    showRepositionModal.value = true
-  }
-}
-
-function applyRepositionedImage(file) {
-  if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value)
-  selectedFile.value = file
-  localPreviewUrl.value = URL.createObjectURL(file)
-  repositionFile.value = null
-  showRepositionModal.value = false
-}
-
-function cancelReposition() {
-  repositionFile.value = null
-  showRepositionModal.value = false
-}
-
-onBeforeUnmount(() => {
-  if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value)
-})
 
 function saveChanges() {
   emit('save', {

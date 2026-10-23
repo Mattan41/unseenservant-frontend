@@ -123,6 +123,11 @@ async function handleRemoveCrewImage(url) {
   }
 }
 
+/** An image over the upload limit: show the sentence the sheet produced. */
+function handleSizeError(message) {
+  notificationStore.addNotification(message, 'error')
+}
+
 // The ship is loaded (and cleared) by the parent CampaignView so the Overview
 // summary and this section share one store; mount just refreshes it.
 onMounted(loadShip)
@@ -160,6 +165,7 @@ onMounted(loadShip)
         @save-crew="handleSaveCrew"
         @add-crew-image="handleAddCrewImage"
         @remove-crew-image="handleRemoveCrewImage"
+        @size-error="handleSizeError"
       />
     </div>
   </div>
