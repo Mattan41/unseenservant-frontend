@@ -15,6 +15,7 @@ import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { getCampaignPermissions } from '@/features/campaign/campaignPermissions.js'
+import { campaignDefaultImage } from '@/features/campaign/campaignSystems.js'
 import CampaignDetailsForm from '@/features/campaign/components/CampaignDetailsForm.vue'
 
 const props = defineProps({
@@ -61,7 +62,7 @@ const details = computed(() => ({
   title: campaign.value?.name || '',
   description: campaign.value?.description || '',
   primarySystem: campaign.value?.primarySystem || null,
-  imageUrl: campaign.value?.imageUrl || '/default-campaign.svg',
+  imageUrl: campaign.value?.imageUrl || campaignDefaultImage(campaign.value?.primarySystem),
 }))
 
 const saveDetails = async (updated) => {

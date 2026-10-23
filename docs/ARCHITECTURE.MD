@@ -25,13 +25,14 @@ src/
 │   ├── FooterComponent.vue
 │   └── NotificationComponent.vue
 ├── data/
-│   └── demoData.js           # Static mock seed data used to populate localStorage when initializing guest mode   
+│   ├── demoData.js           # Static mock seed data used to populate localStorage when initializing guest mode   
+│   └── homePreview.js        # Example cards an anonymous visitor sees on / (illustrations only — never stored)
 ├── stores/
 │   └── notificationStore.js  # Global notification state (Pinia)
 ├── router/
 │   └── index.js              # Routes + auth guard
 ├── views/                    # Top-level views not belonging to a feature
-│   ├── HomeView.vue
+│   ├── HomeView.vue          # greeting + the signed-in visitor's campaign/character carousels
 │   ├── AboutView.vue
 │   ├── PrivacyPolicyView.vue # /privacy — how personal data is handled
 │   ├── TermsView.vue         # /terms — the terms for using the service
@@ -92,13 +93,13 @@ src/
 │   │   ├── constants.js      # Classes, attributes, skill/ability catalogs + descriptions, weapons/armor/items, empty-data factory
 │   │   ├── shipConstants.js  # Ship defaults + upgrade catalog + upgrade helpers (pp.13/26)
 │   │   └── OffworldersSheet.vue  # The Offworlders character sheet (vitals + gear + attributes + skills/abilities)
-│   └── dnd5e/                # Dungeons & Dragons 5e
+│   └── dnd5e/                # 5e (identifier mirrors the API contract)
 │       ├── api/
 │       │   └── open5e-axios.js        # Open5e API client (public, no auth)
 │       ├── components/       # SpellSearch, SpellCard, SpellDetailModal, Dnd5eSpellSearchPanel, Dnd5eStatsPanel, Dnd5eCharacterForm
 │       ├── views/            # SpellSearchView
 │       ├── constants.js      # Races, classes, ability scores, empty-data factory
-│       ├── Dnd5eSheet.vue    # The D&D 5e character sheet (stats + spells + Open5e search)
+│       ├── Dnd5eSheet.vue    # The 5e character sheet (stats + spells + Open5e search)
 │       ├── dnd5eSpellService.js
 │       ├── dnd5eSpellStore.js
 │       └── spellUtils.js
@@ -202,6 +203,47 @@ three components, not copying their markup. The journal is one more campaign
 section rather than a new area: `CampaignView.SECTIONS` carries it (flagged
 `participantOnly`, since a journal belongs to a participant) and it renders
 `JournalBoard`, the same way Messages renders `MessageBoard`.
+
+### Brand & chrome
+The brand lives in the header: `HeaderComponent` renders `logo.svg` as the bar's
+mark (`.brand-mark .brand-mark--sm`, `alt=""` — the wordmark beside it carries the
+name) in one row with the links and the session action, and the bar is sticky with
+a bottom border, so a page starts right under it and no page repeats the brand
+name. `HomeView` therefore opens with a greeting (`Welcome, <name>` in
+`.welcome-name`, under a `.page-heading-rule`) instead of a hero. Card and page
+headings use `main.css`'s opt-out family (`.card-title` / `.page-heading`) —
+STYLE_GUIDE §3.7 explains why utilities cannot do that job.
+
+### Placeholder art
+Every image a visitor may leave empty has shipped placeholder art in `/public`,
+chosen by meaning rather than per call site: `characterDefaultImage(systemType)`
+(`features/character/dispatchers/systemRegistry.js`) and
+`campaignDefaultImage(systemType)` (`features/campaign/campaignSystems.js`) map a
+system to its art — Offworlders gets the sci-fi pieces, 5e / no-system / unknown
+the generic ones (the ship keeps `OFFWORLDERS_SHIP_DEFAULT_IMAGE`). The art paths
+live with their system (`systems/*/constants.js`), the mapping in the registries.
+`CharacterImage` and `CampaignImage` resolve it for a missing *or* broken image,
+and an explicit `defaultSrc` still wins — which is how the ship gallery borrows
+`CampaignImage`. `campaignStore.getCampaignImageUrl` does the same for a campaign
+without an image, and `HeaderComponent` shows the logo on its `.brand-mark` disc.
+
+`data/homePreview.js` is the illustration set an anonymous visitor sees on `/`:
+example cards built from that same art, so the first page is never a bare
+greeting. Deliberately not `demoData.js` — nothing there is stored, and nothing
+links.
+
+### Home collections
+`HomeView` is the one page that shows a visitor's own campaigns and characters
+without being asked. Both lists are the stores' derived order
+(`sortedCampaigns` / `sortedCharacters`, see "State management" below) and render
+through `BaseCarousel` (`src/components/base/`), the shared scroll-snapping strip
+that each caller sizes itself (`itemClass`: campaigns `w-72 md:w-96`, characters
+`w-80`). Characters render through the same `CharacterCard` the character list
+uses, so one character looks the same in both places. The strips appear for any
+session — an account or the Guest Demo identity — a collection that is still
+empty shows its discovery tile instead of a strip (and the dashboard waits for
+both fetches, so those empty states never flash at somebody who has plenty),
+while an anonymous visitor gets the example strips described above.
 
 ### State management
 - Pinia stores are the single source of truth

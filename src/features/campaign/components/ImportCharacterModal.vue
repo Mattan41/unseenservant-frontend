@@ -109,6 +109,7 @@ watch(
               <CharacterImage
                 :src="character.avatarUrl"
                 :alt="`${character.name} portrait`"
+                :system-type="character.systemType"
                 class="w-14 h-14 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
                 style="border-color: var(--color-primary-300)"
               />

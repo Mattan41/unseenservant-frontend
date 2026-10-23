@@ -189,6 +189,7 @@ const submitCharacter = async () => {
             <CharacterImage
               :src="characterImageUrl"
               alt="Character portrait"
+              :system-type="character.systemType"
               class="w-24 h-24 rounded-lg object-cover border-2"
               style="border-color: var(--color-primary-300)"
             />

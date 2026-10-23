@@ -1,6 +1,6 @@
 <script setup>
 /**
- * D&D 5e spell-search panel for the campaign view.
+ * 5e spell-search panel for the campaign view.
  *
  * Wraps the shared `SpellSearch` + `SpellDetailModal` (no character context, so
  * the "+ Add" affordance inside SpellSearch simply stays hidden). Rendered by

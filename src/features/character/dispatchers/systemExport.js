@@ -12,7 +12,7 @@ import { useDnd5eSpellStore } from '@/systems/dnd5e/dnd5eSpellStore.js'
 /**
  * Fetch the system-specific extras for an export, best-effort.
  *
- * For D&D 5e that is the character's saved spells (they live in their own table
+ * For 5e that is the character's saved spells (they live in their own table
  * and are not part of the character object). Any other system has no extras.
  * Errors are swallowed: an export should still succeed without the extras.
  *

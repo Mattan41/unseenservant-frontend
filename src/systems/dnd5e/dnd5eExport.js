@@ -1,5 +1,5 @@
 /**
- * D&D 5e game-specific export sections.
+ * 5e game-specific export sections.
  *
  * Pure — no Vue, no store. Returns the neutral section model consumed by
  * `src/utils/textExport.js`. Deliberately thin today (the system carries little
@@ -20,7 +20,7 @@ function formatSpellLine(spell) {
 }
 
 /**
- * Build the ordered D&D 5e sections for a character's export.
+ * Build the ordered 5e sections for a character's export.
  *
  * @param {object} character
  * @param {Array<object>} [spells] normalized spells (owner/GM view only)

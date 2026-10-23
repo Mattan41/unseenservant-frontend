@@ -13,7 +13,7 @@ defineProps({
     type: String,
     required: true,
   },
-  /** Trigger label, e.g. "Campaign Views" or "Settings Views". */
+  /** Trigger label, e.g. "Campaign Menu" or "Settings Menu". */
   triggerLabel: {
     type: String,
     default: 'Sections',

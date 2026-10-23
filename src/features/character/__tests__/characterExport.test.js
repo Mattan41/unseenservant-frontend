@@ -65,7 +65,7 @@ describe('buildCharacterExport', () => {
     expect(buildCharacterExport(publicOnly, { format: 'md' })).not.toContain('Private backstory')
   })
 
-  it('includes D&D 5e spells in the export', () => {
+  it('includes 5e spells in the export', () => {
     const spells = [{ name: 'Fireball', level: 3, levelLabel: '3rd level', school: 'Evocation' }]
     const md = buildCharacterExport(dnd5e, { format: 'md', spells })
     expect(md).toContain('## Spells')

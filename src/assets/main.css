@@ -725,6 +725,13 @@ html[data-env='demo'] {
   @apply inline-block bg-(--secondary-surface) text-(--secondary-text) text-xs px-2 py-1 rounded-full;
 }
 
+/* Game-system marker on a card (character or campaign). Same shape and size as
+   `.character-tag`, but on a neutral surface, so it reads as "which game" rather
+   than as one more attribute of the thing. */
+.system-tag {
+  @apply inline-block bg-(--surface-raised) text-(--text-default) text-xs px-2 py-1 rounded-full;
+}
+
 /* Character name (clickable card title) */
 .character-name {
   @apply text-primary-700 hover:text-primary-800;
@@ -762,6 +769,12 @@ html[data-env='demo'] {
    it sits on a fixed light disc to read the same in every theme and mode. */
 .brand-mark {
   @apply rounded-full bg-white p-2;
+}
+
+/* The same disc at header-chrome size: the bar carries the brand mark next to
+   the wordmark, so no page-sized artwork is needed in the page body. */
+.brand-mark--sm {
+  @apply h-9 w-9 p-1;
 }
 
 /* Notification component colour types */
@@ -1009,6 +1022,43 @@ h5 {
   line-height: 1.3em;
   font-weight: 600;
   text-transform: none;
+}
+
+/* Card title (a character or campaign name inside a card). Same opt-out as
+   `.modal-title` and for the same reason: the global `h1–h5` rules are
+   page-sized and unlayered, so a card heading asked for with `text-base` still
+   renders at up to 44px and wraps. One size for every card, in every mode. */
+.card-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.25em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Page heading — the compact greeting that opens a page. Sized for a header
+   rather than a hero, and not uppercased: the brand's shouting case is for
+   section headings and the wordmark, not for a sentence. */
+.page-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.25em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Short accent rule under a page heading — the marker that says "this is what
+   the page is about", as a page heading pairs with its subject. */
+.page-heading-rule {
+  @apply mt-2 block h-0.5 w-16 rounded-full bg-(--secondary-accent);
+}
+
+/* The signed-in name inside the welcome heading. One accent colour, no
+   animation. Uses the *strong* amber role, not `--secondary-accent`: the
+   heading sits on a light gradient in the light themes, where the 700 amber
+   fails contrast even for large text, while the 900 value clears it. */
+.welcome-name {
+  @apply text-(--secondary-text-strong);
 }
 
 /* Native form controls share one type ramp (`.input-field` owns the box, see
@@ -1293,4 +1343,39 @@ select {
 
 .export-menu-item {
   @apply block w-full px-3 py-2 text-left text-sm text-(--text-default) transition-colors hover:bg-(--surface-inset);
+}
+
+/* --------------------------------------------------------------------------
+   Carousel (BaseCarousel.vue): a horizontally scrolling, scroll-snapping strip
+   of cards with optional previous/next controls. Layout only — the cards
+   inside own their own surface and colours, and the controls are
+   `<IconButton variant="plain">`, whose colours come from `.icon-btn-plain`.
+   -------------------------------------------------------------------------- */
+.base-carousel {
+  @apply flex items-center gap-2;
+}
+
+.base-carousel-track {
+  @apply flex min-w-0 flex-1 list-none gap-4 overflow-x-auto pb-2;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+/* The strip is scrolled by dragging, the arrow controls or the keyboard:
+   a visible scrollbar would only add chrome. */
+.base-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.base-carousel-item {
+  /* Width is deliberately not set here: an unlayered width would win over the
+     caller's Tailwind width utilities (`@layer utilities` loses to unlayered
+     CSS — the trap `.modal-title` documents), so each strip passes its own
+     through `itemClass` (e.g. `w-72 md:w-96`). */
+  @apply shrink-0;
+  scroll-snap-align: start;
+}
+
+.base-carousel-control {
+  @apply flex-shrink-0 self-center;
 }

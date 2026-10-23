@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import CampaignService from './CampaignService.js'
 import { isCampaignGm } from './campaignPermissions.js'
+import { campaignDefaultImage } from './campaignSystems.js'
 import { sortPartyCharacters } from './campaignUtils.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
@@ -84,7 +85,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       const campaign = campaigns.value.find((campaign) => campaign.id == id)
 
       const imageUrl = campaign?.imageUrl
-      if (!imageUrl) return '/default-campaign.svg'
+      if (!imageUrl) return campaignDefaultImage(campaign?.primarySystem)
 
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
       if (apiBaseUrl && imageUrl.startsWith('/images/')) {

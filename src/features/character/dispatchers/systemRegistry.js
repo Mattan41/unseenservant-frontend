@@ -8,6 +8,7 @@
 import {
   createEmptyDnd5eData,
   normalizeDnd5eData,
+  DND5E_CHARACTER_DEFAULT_IMAGE,
   DND5E_SYSTEM_TYPE,
 } from '@/systems/dnd5e/constants.js'
 import { dnd5eExportSections } from '@/systems/dnd5e/dnd5eExport.js'
@@ -15,6 +16,7 @@ import {
   createEmptyOffworldersData,
   normalizeOffworldersData,
   offworldersHealthLabel,
+  OFFWORLDERS_CHARACTER_DEFAULT_IMAGE,
   OFFWORLDERS_SYSTEM_TYPE,
 } from '@/systems/offworlders/constants.js'
 import { offworldersExportSections } from '@/systems/offworlders/offworldersExport.js'
@@ -27,7 +29,7 @@ export { DND5E_SYSTEM_TYPE as DEFAULT_SYSTEM_TYPE } from '@/systems/dnd5e/consta
 
 /** Selectable systems, in display order (drives the <select>). */
 export const SYSTEM_OPTIONS = [
-  { id: DND5E_SYSTEM_TYPE, label: 'Dungeons & Dragons 5e' },
+  { id: DND5E_SYSTEM_TYPE, label: '5e' },
   { id: OFFWORLDERS_SYSTEM_TYPE, label: 'Offworlders' },
 ]
 
@@ -36,6 +38,28 @@ export const SYSTEM_LABELS = Object.fromEntries(SYSTEM_OPTIONS.map((o) => [o.id,
 
 /** Label for a character that has no game system at all (empty/null `systemType`). */
 export const NO_SYSTEM_LABEL = 'No system'
+
+/**
+ * Placeholder portrait for a character without one. The 5e art is the generic
+ * one, so only the systems that differ need an entry.
+ */
+export const DEFAULT_CHARACTER_IMAGE = DND5E_CHARACTER_DEFAULT_IMAGE
+
+/** System id → the placeholder art (in `/public`) that system's characters use. */
+const SYSTEM_DEFAULT_IMAGES = {
+  [OFFWORLDERS_SYSTEM_TYPE]: OFFWORLDERS_CHARACTER_DEFAULT_IMAGE,
+}
+
+/**
+ * Placeholder portrait for a character of `systemType` — an Offworlders character
+ * gets the sci-fi art, everything else (5e, no system, unknown) the generic
+ * portrait.
+ * @param {string|null|undefined} systemType
+ * @returns {string} a `/public` path
+ */
+export function characterDefaultImage(systemType) {
+  return SYSTEM_DEFAULT_IMAGES[systemType] || DEFAULT_CHARACTER_IMAGE
+}
 
 /**
  * The game-system choices offered by the character forms: "no system" first,

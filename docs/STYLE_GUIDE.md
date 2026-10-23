@@ -272,6 +272,7 @@ all conditional styling in `*Utils.js` files.
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
+| `.system-tag` | Game-system marker on a card (character or campaign) — same shape as `.character-tag`, neutral surface so it reads as "which game" rather than as another attribute (`characterSystemLabel` / `campaignSystemLabel` supply the text) | `inline-block bg-(--surface-raised) text-(--text-default) text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-name` | Character name (clickable card title) | `text-primary-700 hover:text-primary-800` | implemented |
 | `.text-subtle` | Faint labels, e.g. "Sign in" | `text-(--text-subtle)` | implemented |
 | `.text-muted` | Help text, empty states | `text-(--text-muted)` | implemented |
@@ -285,6 +286,7 @@ all conditional styling in `*Utils.js` files.
 | `.muted-surface` | Muted inset surface for repeated form rows / panels | `rounded-md bg-(--surface-muted)` | implemented |
 | `.attribute-tile` | Attribute score tile (system stats panels) | `rounded-lg bg-(--surface-raised) p-2 text-center` | implemented |
 | `.brand-mark` | Hat Man logo: dark ink on a fixed light disc so it reads the same in every theme/mode | `rounded-full bg-white p-2` | implemented |
+| `.brand-mark--sm` | The same disc at header-chrome size (the bar's brand mark) | `h-9 w-9 p-1` | implemented |
 | `.attribute-value` | Attribute score value | `text-lg font-bold text-primary-700` | implemented |
 | `.attribute-label` | Attribute score label | `text-xs uppercase tracking-wide text-secondary` | implemented |
 | `.stat-strip` | Campaign summary panel: label/value rows | `flex flex-col gap-1` | implemented |
@@ -301,13 +303,21 @@ all conditional styling in `*Utils.js` files.
 | `.info-box` / `.info-box--{info,success,warning,danger}` | Inset callout with a semantic tone (`BaseInfoBox.vue`) | `flex items-start gap-2 rounded-md border px-3 py-2 text-sm`, plus a per-tone border/bg/text pair | implemented |
 | `.info-box-icon` | Tone glyph sizing inside a callout | `mt-0.5 h-4 w-4 flex-shrink-0` | implemented |
 | `.info-box-title` | Optional callout heading | `font-semibold` | implemented |
-| `.modal-title` | Dialog/panel title | Opts out of the page-sized `h1–h3` rules: `font-size: 1.25rem`, `text-transform: none` | implemented |
+| `.modal-title` | Dialog/panel title | Opts out of the page-sized `h1–h3` rules: `font-size: 1.25rem`, `text-transform: none` (the family also holds `.card-title` / `.page-heading` — see §3.7) | implemented |
+| `.card-title` | A character/campaign name inside a card | Opts out of the page-sized `h1–h5` rules: `font-size: 1.125rem`, `text-transform: none`. One size for every card, in every mode | implemented |
+| `.page-heading` | The sentence that opens a page (the Welcome greeting) | Opts out of the page-sized `h1–h3` rules: `font-size: 1.5rem`, `text-transform: none` | implemented |
+| `.page-heading-rule` | Short accent rule under a page heading | `mt-2 block h-0.5 w-16 rounded-full bg-(--secondary-accent)` | implemented |
+| `.welcome-name` | The signed-in name inside the welcome heading | `text-(--secondary-text-strong)` — the strong amber role, because the accent amber fails contrast on the light gradient. No animation, no gradient | implemented |
 | `.markdown-help` | Formatting-help disclosure wrapper (`MarkdownHelp.vue`) | `flex flex-col items-start gap-1` | implemented |
 | `.markdown-help-panel` | Cheat-sheet panel (a `BaseInfoBox`), filling the field it sits under | `w-full` | implemented |
 | `.markdown-help-list` | Cheat-sheet rows (capped, so a dialog cannot grow unbounded) | `flex max-h-64 flex-col gap-1 overflow-y-auto` | implemented |
 | `.markdown-help-row` | One source/render pair | `flex items-start gap-2` | implemented |
 | `.markdown-help-source` | The literal snippet a user types | `w-24 shrink-0 break-all rounded bg-third-100 px-1 font-mono text-xs` | implemented |
 | `.markdown-help-result` | What the snippet renders to | `min-w-0` | implemented |
+| `.base-carousel` | Carousel strip wrapper (`BaseCarousel.vue`): keeps the prev/next controls beside the track | `flex items-center gap-2` | implemented |
+| `.base-carousel-track` | The scrolling strip itself — flex row, scroll-snapping, scrollbar hidden | `flex min-w-0 flex-1 list-none gap-4 overflow-x-auto pb-2`, `scroll-snap-type: x mandatory`, `scrollbar-width: none` | implemented |
+| `.base-carousel-item` | One card inside a carousel. Carries **no width**: each caller passes its own through `itemClass` (`w-72 md:w-96`, `w-80`), because an unlayered width here would beat the caller's Tailwind utilities (see §3.7) | `shrink-0`, `scroll-snap-align: start` | implemented |
+| `.base-carousel-control` | Prev/next `IconButton` in a carousel | `flex-shrink-0 self-center` | implemented |
 
 ### 2.5 Edit action bar → `src/assets/main.css`
 
@@ -356,6 +366,8 @@ identity (name, system, image).
 | `<BaseClampedText>` component | Long markdown block clamped behind a reveal control | `src/components/base/BaseClampedText.vue` (props: `text`, `lines`, `threshold`, `moreLabel`, `lessLabel`, `mode` (`inline` / `modal`), `title`). `inline` (default) expands in place — the campaign description; `modal` opens the full text in a `<BaseModal>` dialog, so use it for long blocks in a narrow column (the character identity rail). The toggle appears only when `toPlainText(text)` exceeds `threshold`, so markdown markers never count towards the cut-off. | implemented |
 | `<BaseInfoBox>` component | Inset callout with a semantic tone | `src/components/base/BaseInfoBox.vue` (props: `variant` (`info` / `success` / `warning` / `danger`), `title`, `icon` (`true` picks by tone, a `BaseIcon` name overrides it, `false` hides it); default slot). Colours come from the `.info-box--{tone}` modifiers, so the tone is a prop — never pass palette utilities from the call site. No outer spacing (pass `class="mb-4"`). | implemented |
 | `<MarkdownHelp>` component | Markdown formatting cheat sheet | `src/components/base/MarkdownHelp.vue` (props: `label`, default `Formatting help`). A `variant="link"` disclosure that expands an in-flow `<BaseInfoBox variant="info">` listing each supported construct as a source snippet plus a live rendering. Deliberately in-flow (not a popover or nested dialog) so it is never clipped inside a scrollable dialog. Rendered by `<BaseMarkdownField>`; use it directly wherever users need the reference. | implemented |
+| `<BaseCarousel>` component | Horizontally scrolling strip of cards, with optional prev/next controls | `src/components/base/BaseCarousel.vue` (props: `items` (Array, required), `label` (the strip's accessible name), `controls` (default `true`), `itemClass` (the card width — the base sets none); scoped slot `item` with `{ item, index }`; no emits). Scrolling is native — drag, trackpad, and tabbing into a card — so touch and keyboard need nothing extra; the controls render only while the strip actually overflows and disable at each end, so a list that already fits gets no dead buttons. Colours belong to the cards inside (the controls are `IconButton variant="plain"`); only `.base-carousel*` layout lives in `main.css`. Used by `HomeView` for the signed-in Campaigns and Characters strips. | implemented |
+| `<CharacterCard>` component | One character, as a card | `src/features/character/components/CharacterCard.vue` (props: `character`, `campaignName` (resolved by the parent from `campaignStore`), `from` (the `?from=` context, default `characterList`)). The card is the link, so "View Details" is that link's affordance; a character reads the same on the character list and in the home strip. Its tag row leads with the `.system-tag` marker (`characterSystemLabel`), so the game the character belongs to is on the card itself. | implemented |
 ---
 
 ### 2.7 Markdown & long-text fields → `src/assets/main.css`, `src/utils/markdown.js`
@@ -495,6 +507,25 @@ hidden input is flagged too (or use a `<span>` caption where the value is a
 read-only stepper instead of an input). Optional attributes stay unset rather
 than empty: pass `undefined` (e.g. `<BaseInput>` only renders `autocomplete` when
 a caller sets it).
+
+### 3.7 Headings: the global `h1–h5` ramp is unlayered
+
+`main.css` sets the page's type ramp with **unlayered** element rules — Oswald,
+uppercase for `h1–h3`, 30 → 60 px across breakpoints — and unlayered CSS beats
+Tailwind's `@layer utilities`, whatever the specificity. Two consequences for new
+markup:
+
+- **A heading inside a card, a dialog or a page header uses the opt-out family**,
+  never utilities: `.modal-title`, `.card-title`, `.page-heading` (see §2.4). They
+  reset the size *and* the uppercase, which is what those surfaces need — a card
+  name asked for with `text-base` would otherwise render page-sized and wrap.
+- **A shared class must not set a value the caller has to override.** That is why
+  `.base-carousel-item` carries no width: each strip passes its own through
+  `itemClass`, where Tailwind's utilities apply normally.
+
+`.section-heading` deliberately stays outside the family: it is a section title,
+so it keeps the brand's uppercase (it only sets size, weight and colour, so the
+element rule's `text-transform` still applies) and wins its size by specificity.
 
 ## 4. Where to Add New Classes / Variables
 

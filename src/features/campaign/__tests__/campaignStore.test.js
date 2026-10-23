@@ -3,6 +3,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import CampaignService from '@/features/campaign/CampaignService.js'
+import { DEFAULT_CAMPAIGN_IMAGE } from '@/features/campaign/campaignSystems.js'
+import { OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE } from '@/systems/offworlders/constants.js'
 import { recordView, viewHistory } from '@/utils/viewHistory.js'
 
 vi.mock('@/features/campaign/CampaignService.js', () => ({
@@ -36,6 +38,38 @@ describe('campaignStore', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  describe('getCampaignImageUrl', () => {
+    it('falls back to the art of the campaign primary system', async () => {
+      CampaignService.fetchAllCampaignsForCurrentUser.mockResolvedValue([
+        { id: 1, name: 'Fantasy', primarySystem: 'DND5E', participants: [] },
+        { id: 2, name: 'Sci-fi', primarySystem: 'OFFWORLDERS', participants: [] },
+        { id: 3, name: 'Unlabelled', participants: [] },
+      ])
+      const store = useCampaignStore()
+      await store.fetchAllCampaignsForCurrentUser()
+
+      expect(store.getCampaignImageUrl(1)).toBe(DEFAULT_CAMPAIGN_IMAGE)
+      expect(store.getCampaignImageUrl(2)).toBe(OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE)
+      expect(store.getCampaignImageUrl(3)).toBe(DEFAULT_CAMPAIGN_IMAGE)
+    })
+
+    it('keeps a campaign image that exists', async () => {
+      CampaignService.fetchAllCampaignsForCurrentUser.mockResolvedValue([
+        {
+          id: 1,
+          name: 'Fantasy',
+          primarySystem: 'DND5E',
+          imageUrl: '/images/one.png',
+          participants: [],
+        },
+      ])
+      const store = useCampaignStore()
+      await store.fetchAllCampaignsForCurrentUser()
+
+      expect(store.getCampaignImageUrl(1)).toBe('/images/one.png')
+    })
   })
 
   describe('sortedCampaigns', () => {

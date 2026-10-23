@@ -111,7 +111,7 @@ const CHARACTER_EXPORT_FORMATS = [
 const exporting = ref(false)
 
 /**
- * Build and download the character in the chosen format. Spells (D&D 5e) are
+ * Build and download the character in the chosen format. Spells (5e) are
  * fetched best-effort beforehand; every other system has no extras.
  * @param {'md'|'txt'|'json'} format
  */
@@ -217,6 +217,7 @@ const exportCharacter = async (format) => {
             <CharacterImage
               :src="currentCharacter.avatarUrl"
               alt="Character portrait"
+              :system-type="currentCharacter.systemType"
               class="w-full max-w-64 aspect-square rounded-lg border-2 shadow-md object-cover"
               style="border-color: var(--color-primary-300)"
             />

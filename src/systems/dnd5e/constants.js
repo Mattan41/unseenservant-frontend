@@ -1,9 +1,15 @@
 /**
- * D&D 5e system constants and helpers.
+ * 5e system constants and helpers.
  * Pure data/functions — no Vue or store dependencies.
  */
 
 export const DND5E_SYSTEM_TYPE = 'DND5E'
+
+/**
+ * Placeholder portrait (in `/public`) for a 5e character. It is also the generic
+ * one, so `characterDefaultImage` only maps the systems that differ.
+ */
+export const DND5E_CHARACTER_DEFAULT_IMAGE = '/defaultCharacter.svg'
 
 export const DND5E_RACES = [
   'Human',
@@ -43,7 +49,7 @@ export const DND5E_ABILITY_SCORES = [
 ]
 
 /**
- * Build a fresh, valid D&D 5e data block for a new character.
+ * Build a fresh, valid 5e data block for a new character.
  * @returns {object}
  */
 export function createEmptyDnd5eData() {
@@ -65,7 +71,7 @@ export function createEmptyDnd5eData() {
 }
 
 /**
- * Normalize a D&D 5e data block coming from the API, filling in defaults so
+ * Normalize a 5e data block coming from the API, filling in defaults so
  * the UI never has to deal with missing nested properties.
  * @param {object|null|undefined} data
  * @returns {object}

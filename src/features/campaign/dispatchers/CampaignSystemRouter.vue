@@ -7,7 +7,7 @@
  * `CampaignView` stays system-agnostic and never imports `src/systems/**`.
  *
  * The Offworlders Ship lives in the campaign-scoped `features/ship/` feature;
- * the D&D 5e spell search is owned by the `systems/dnd5e/` module.
+ * the 5e spell search is owned by the `systems/dnd5e/` module.
  */
 import { DND5E_SYSTEM_TYPE, OFFWORLDERS_SYSTEM_TYPE } from '@/features/campaign/campaignSystems.js'
 import ShipSection from '@/features/ship/components/ShipSection.vue'

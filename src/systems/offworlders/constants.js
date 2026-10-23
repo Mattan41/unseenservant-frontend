@@ -10,6 +10,15 @@
 
 export const OFFWORLDERS_SYSTEM_TYPE = 'OFFWORLDERS'
 
+/**
+ * Placeholder art (in `/public`) for an Offworlders character and campaign that
+ * has no image of its own. The ruleset's own art lives with the ruleset, like
+ * `OFFWORLDERS_SHIP_DEFAULT_IMAGE` in `shipConstants.js`; the "which system gets
+ * which art" mapping lives in the registries.
+ */
+export const OFFWORLDERS_CHARACTER_DEFAULT_IMAGE = '/default-scifi-Character.svg'
+export const OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE = '/default-scifi-campaign.svg'
+
 /** The four playable classes ("roles"). */
 export const OFFWORLDERS_CLASSES = ['Geek', 'Outlaw', 'Psychic', 'Warrior']
 

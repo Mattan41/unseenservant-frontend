@@ -107,7 +107,7 @@ function selectSection(key) {
     <!-- Mobile top bar: title + local navigation trigger -->
     <ContextMobileBar
       title="Settings"
-      trigger-label="Settings Views"
+      trigger-label="Settings Menu"
       @open="settingsNavOpen = true"
     />
 

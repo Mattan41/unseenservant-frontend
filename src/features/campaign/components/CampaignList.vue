@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import { campaignSystemLabel } from '@/features/campaign/campaignSystems.js'
 import { toPlainText } from '@/utils/markdown.js'
 
 const campaignStore = useCampaignStore()
@@ -69,12 +70,18 @@ onMounted(async () => {
           :to="{ name: 'CampaignView', params: { id: campaign.id } }"
           class="element-link"
         >
-          <h3 class="text-lg font-bold break-words">
-            {{ campaignStore.getCampaignTitle(campaign.id) }}
-          </h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="text-lg font-bold break-words">
+              {{ campaignStore.getCampaignTitle(campaign.id) }}
+            </h3>
+            <span v-if="campaignSystemLabel(campaign.primarySystem)" class="system-tag">
+              {{ campaignSystemLabel(campaign.primarySystem) }}
+            </span>
+          </div>
 
           <CampaignImage
             :src="campaignStore.getCampaignImageUrl(campaign.id)"
+            :system-type="campaign.primarySystem"
             :alt="campaignStore.getCampaignTitle(campaign.id)"
             class="w-full h-48 object-cover rounded"
           />

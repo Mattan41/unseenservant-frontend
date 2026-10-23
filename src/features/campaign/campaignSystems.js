@@ -4,19 +4,40 @@
  * Mirrors `features/character/dispatchers/systemRegistry.js` for the
  * campaign-level `primarySystem` field: it is the single place that knows which
  * systems a campaign can be played in and which campaign sub-sections that
- * unlocks (Offworlders -> Ship, D&D 5e -> spell search). Views import from here
+ * unlocks (Offworlders -> Ship, 5e -> spell search). Views import from here
  * so they never reach into `src/systems/**` directly.
  *
  * Pure data + pure functions: no Vue, no stores, no UI.
  */
 import { DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
-import { OFFWORLDERS_SYSTEM_TYPE } from '@/systems/offworlders/constants.js'
+import {
+  OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 export { DND5E_SYSTEM_TYPE, OFFWORLDERS_SYSTEM_TYPE }
 
+/** Placeholder art (in `/public`) for a campaign that has no image of its own. */
+export const DEFAULT_CAMPAIGN_IMAGE = '/default-campaign.svg'
+
+/** Primary system → the placeholder art (in `/public`) that system's campaigns use. */
+const SYSTEM_DEFAULT_IMAGES = {
+  [OFFWORLDERS_SYSTEM_TYPE]: OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE,
+}
+
+/**
+ * Placeholder art for a campaign played in `systemType` — an Offworlders campaign
+ * gets the sci-fi art, everything else (5e, no system, unknown) the generic one.
+ * @param {string|null|undefined} systemType
+ * @returns {string} a `/public` path
+ */
+export function campaignDefaultImage(systemType) {
+  return SYSTEM_DEFAULT_IMAGES[systemType] || DEFAULT_CAMPAIGN_IMAGE
+}
+
 /** Selectable campaign primary systems, in display order (drives the <select>). */
 export const CAMPAIGN_SYSTEM_OPTIONS = [
-  { id: DND5E_SYSTEM_TYPE, label: 'Dungeons & Dragons 5e' },
+  { id: DND5E_SYSTEM_TYPE, label: '5e' },
   { id: OFFWORLDERS_SYSTEM_TYPE, label: 'Offworlders' },
 ]
 
@@ -30,7 +51,19 @@ export function isOffworlders(systemType) {
   return systemType === OFFWORLDERS_SYSTEM_TYPE
 }
 
-/** True when a campaign's primary system is Dungeons & Dragons 5e. */
+/**
+ * Display label for a campaign's `primarySystem`, or `null` when it has none.
+ *
+ * A campaign's system is optional ("No system yet" in the editor), so a card can
+ * leave the marker out entirely instead of printing that placeholder.
+ * @param {string|null|undefined} systemType
+ * @returns {string|null}
+ */
+export function campaignSystemLabel(systemType) {
+  return CAMPAIGN_SYSTEM_LABELS[systemType] || null
+}
+
+/** True when a campaign's primary system is 5e. */
 export function isDnd5e(systemType) {
   return systemType === DND5E_SYSTEM_TYPE
 }
