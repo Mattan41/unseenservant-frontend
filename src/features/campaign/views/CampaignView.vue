@@ -24,6 +24,7 @@ import BaseSection from '@/components/base/BaseSection.vue'
 import ContextMobileBar from '@/components/base/ContextMobileBar.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import MessageBoard from '@/features/message/components/MessageBoard.vue'
+import JournalBoard from '@/features/journal/components/JournalBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import {
   formatParticipantRoster,
@@ -92,6 +93,7 @@ const SECTIONS = [
   { key: 'lore', label: 'World Lore & Background', icon: 'lore' },
   { key: 'characters', label: 'Characters', icon: 'characters' },
   { key: 'messages', label: 'Messages', icon: 'messages' },
+  { key: 'journal', label: 'My journal', icon: 'journal', participantOnly: true },
   { key: 'ship', label: 'Ship', icon: 'ship', system: OFFWORLDERS_SYSTEM_TYPE },
   { key: 'spells', label: 'Spell Search', icon: 'spells', system: DND5E_SYSTEM_TYPE },
   { key: 'campaign-settings', label: 'Campaign Settings', icon: 'settings' },
@@ -108,6 +110,9 @@ const navItems = computed(() =>
     // System-specific sections only appear when the campaign's primary system
     // matches (e.g. the Offworlders Ship, the D&D 5e spell search).
     if (section.system && campaign.value?.primarySystem !== section.system) return false
+    // A journal belongs to a participant — someone who is only the campaign's
+    // owner, without a seat at the table, has none (the backend refuses it too).
+    if (section.participantOnly && !permissions.value.isParticipant) return false
     return true
   }),
 )
@@ -735,6 +740,16 @@ watch(
       <!-- Messages -->
       <BaseSection v-else-if="activeSection === 'messages'" title="Messages">
         <MessageBoard :campaign-id="campaign.id" :participants="campaign.participants" />
+      </BaseSection>
+
+      <!-- My journal: the caller's own private book. The extra gate keeps a
+           ?section=journal deep link from rendering it for someone without a
+           seat — the privacy itself is enforced by the backend. -->
+      <BaseSection
+        v-else-if="activeSection === 'journal' && permissions.isParticipant"
+        title="My journal"
+      >
+        <JournalBoard :campaign-id="campaign.id" />
       </BaseSection>
 
       <!-- System-specific sections (Offworlders Ship / D&D 5e spell search) -->

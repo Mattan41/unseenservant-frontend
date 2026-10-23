@@ -178,5 +178,12 @@ defineProps({
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       <polyline points="9 12 11 14 15 10" />
     </template>
+
+    <!-- Journal: a notebook with a spine and a bookmark (the private journal) -->
+    <template v-else-if="name === 'journal'">
+      <path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <line x1="8" y1="3" x2="8" y2="21" />
+      <path d="M12 3v6l2.5-1.5L17 9V3" />
+    </template>
   </svg>
 </template>

@@ -17,6 +17,8 @@ const GUEST_KEYS = [
   'guest_ships',
   'guest_ship_crew',
   'guest_messages',
+  'guest_journals',
+  'guest_journal_pages',
 ]
 
 describe('demo data integrity', () => {

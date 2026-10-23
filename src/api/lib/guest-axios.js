@@ -12,6 +12,7 @@
 
 import { useAuthStore } from '@/features/auth/authStore'
 import { getCampaignPermissions, isCampaignGm } from '@/features/campaign/campaignPermissions.js'
+import { MAX_PAGES as JOURNAL_MAX_PAGES, MAX_PAGE_CHARS as JOURNAL_MAX_PAGE_CHARS } from '@/features/journal/journalLimits.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -22,6 +23,8 @@ const KEYS = {
   MESSAGES: 'guest_messages',
   SHIPS: 'guest_ships',
   CREW: 'guest_ship_crew',
+  JOURNALS: 'guest_journals',
+  JOURNAL_PAGES: 'guest_journal_pages',
 }
 
 // ============================================================================
@@ -299,6 +302,16 @@ function forbidden(message) {
 /** Reject a guest request with the same 400 shape the backend's validation uses. */
 function badRequest(message) {
   return Promise.reject(guestError(message, 400))
+}
+
+/** Reject a guest request with the same 404 shape the backend uses. */
+function notFound(message) {
+  return Promise.reject(guestError(message, 404))
+}
+
+/** Reject a guest request with the same 409 shape the backend uses. */
+function conflict(message) {
+  return Promise.reject(guestError(message, 409))
 }
 
 /**
@@ -996,6 +1009,244 @@ function deleteMessage({ url }) {
 }
 
 // ============================================================================
+// Journals — the private book of numbered pages each participant owns
+// ============================================================================
+// The rules mirror the backend exactly: only the owner may read or write a
+// journal, a page that belongs to somebody else answers like an unknown id, and
+// the page after the last stored one is a blank, *virtual* page — writing on it
+// creates a page, and clearing a stored last page removes it again (together
+// with any further blank pages at the end), so no empty rows accumulate.
+
+/** The stored pages of a journal, in reading order (position, then id). */
+function journalPagesFor(journalId) {
+  return getData(KEYS.JOURNAL_PAGES, [])
+    .filter((page) => String(page.journalId) === String(journalId))
+    .sort((a, b) => a.position - b.position || String(a.id).localeCompare(String(b.id)))
+}
+
+/** The caller's journal row in a campaign, if they have written anything. */
+function findJournal(campaignId, userId) {
+  return (
+    getData(KEYS.JOURNALS, []).find(
+      (journal) =>
+        String(journal.campaignId) === String(campaignId) && String(journal.userId) === String(userId),
+    ) || null
+  )
+}
+
+/** The journal row, created on first write (never on a read). */
+function findOrCreateJournal(campaignId, userId) {
+  const existing = findJournal(campaignId, userId)
+  if (existing) return existing
+
+  const journals = getData(KEYS.JOURNALS, [])
+  const created = {
+    id: generateId(),
+    campaignId: String(campaignId),
+    userId: String(userId),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  journals.push(created)
+  setData(KEYS.JOURNALS, journals)
+  return created
+}
+
+/** One page as the API describes it: the number is its 1-based position. */
+function journalPageDTO(page) {
+  return {
+    id: page.id,
+    pageNumber: page.position,
+    content: page.content || '',
+    version: Number(page.version) || 0,
+    createdAt: page.createdAt || null,
+    updatedAt: page.updatedAt || null,
+  }
+}
+
+/** A journal as the API describes it: stored pages only, never the virtual one. */
+function journalDTO(campaignId, userId) {
+  const journal = findJournal(campaignId, userId)
+  if (!journal) {
+    return { id: null, campaignId: String(campaignId), userId: String(userId), pageCount: 0, pages: [] }
+  }
+
+  const pages = journalPagesFor(journal.id).map(journalPageDTO)
+  return {
+    id: journal.id,
+    campaignId: journal.campaignId,
+    userId: journal.userId,
+    pageCount: pages.length,
+    pages,
+  }
+}
+
+/** Move every later page one step, like the backend's bulk UPDATE. */
+function shiftJournalPositions(journalId, fromPosition, delta) {
+  const shifted = getData(KEYS.JOURNAL_PAGES, []).map((page) => {
+    if (String(page.journalId) !== String(journalId)) return page
+    const affected = delta > 0 ? page.position >= fromPosition : page.position > fromPosition
+    return affected ? { ...page, position: page.position + delta } : page
+  })
+  setData(KEYS.JOURNAL_PAGES, shifted)
+}
+
+/** The request's page, resolved through the same rules the backend applies. */
+function resolveJournalPage(url, userId) {
+  const pageId = extractId(url)
+  const page = getData(KEYS.JOURNAL_PAGES, []).find((entry) => String(entry.id) === String(pageId))
+  if (!page) return { error: notFound('Journal page not found with id: ' + pageId) }
+
+  const journal = getData(KEYS.JOURNALS, []).find((entry) => String(entry.id) === String(page.journalId))
+  if (!journal || String(journal.userId) !== String(userId)) {
+    // Another participant's page is not addressable at all.
+    return { error: notFound('Journal page not found with id: ' + pageId) }
+  }
+  if (!isGuestParticipant(journal.campaignId)) {
+    return { error: forbidden('You are not a participant in this campaign.') }
+  }
+  return { page, journal }
+}
+
+/** GET api/journals/campaign/{campaignId} — the caller's own journal. */
+function handleJournal({ url }) {
+  const match = url.match(/journals\/campaign\/([^/?]+)/)
+  const campaignId = match?.[1] || null
+  if (!campaignId) return badRequest('A journal needs a campaign.')
+
+  const exists = getData(KEYS.CAMPAIGNS, []).some((c) => String(c.id) === String(campaignId))
+  if (!exists) return notFound('Campaign not found with id: ' + campaignId)
+  if (!isGuestParticipant(campaignId)) {
+    return forbidden('You are not a participant in this campaign.')
+  }
+
+  return ok(journalDTO(campaignId, currentGuestUserId()))
+}
+
+/** POST api/journals/campaign/{campaignId}/pages — insert a page. */
+function createJournalPage({ url, data }) {
+  const match = url.match(/journals\/campaign\/([^/?]+)\/pages/)
+  const campaignId = match?.[1] || null
+  if (!campaignId) return badRequest('A journal page needs a campaign.')
+
+  const exists = getData(KEYS.CAMPAIGNS, []).some((c) => String(c.id) === String(campaignId))
+  if (!exists) return notFound('Campaign not found with id: ' + campaignId)
+  if (!isGuestParticipant(campaignId)) {
+    return forbidden('You are not a participant in this campaign.')
+  }
+
+  const content = typeof data?.content === 'string' ? data.content : ''
+  const afterPageId = data?.afterPageId ?? null
+  if (content.length > JOURNAL_MAX_PAGE_CHARS) {
+    return badRequest('A journal page may be at most ' + JOURNAL_MAX_PAGE_CHARS + ' characters')
+  }
+
+  const userId = currentGuestUserId()
+
+  // Appending a blank page is a no-op, and it must not create the journal row
+  // either: the backend writes nothing at all on this path.
+  if (afterPageId === null && content.trim() === '') return ok(journalDTO(campaignId, userId))
+
+  const journal = findOrCreateJournal(campaignId, userId)
+
+  const pages = journalPagesFor(journal.id)
+  if (pages.length >= JOURNAL_MAX_PAGES) {
+    return badRequest('A journal may have at most ' + JOURNAL_MAX_PAGES + ' pages')
+  }
+
+  let position = pages.length > 0 ? pages[pages.length - 1].position + 1 : 1
+  if (afterPageId !== null) {
+    const anchor = pages.find((page) => String(page.id) === String(afterPageId))
+    if (!anchor) return notFound('Journal page not found with id: ' + afterPageId)
+    // The pages after the anchor move along, exactly as the backend does it.
+    position = anchor.position + 1
+    shiftJournalPositions(journal.id, position, 1)
+  }
+
+  const created = {
+    id: generateId(),
+    journalId: journal.id,
+    content,
+    position,
+    version: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  setData(KEYS.JOURNAL_PAGES, [...getData(KEYS.JOURNAL_PAGES, []), created])
+  return ok(journalDTO(campaignId, userId))
+}
+
+/** PATCH api/journals/pages/{pageId} — rewrite one page. */
+function updateJournalPage({ url, data }) {
+  const resolved = resolveJournalPage(url, currentGuestUserId())
+  if (resolved.error) return resolved.error
+  const { page, journal } = resolved
+
+  const content = typeof data?.content === 'string' ? data.content : ''
+  if (content.length > JOURNAL_MAX_PAGE_CHARS) {
+    return badRequest('A journal page may be at most ' + JOURNAL_MAX_PAGE_CHARS + ' characters')
+  }
+  // Required, like the backend: without the token the check below is skipped.
+  if (data?.version === undefined || data?.version === null) {
+    return badRequest('version is required')
+  }
+  if (Number(data.version) !== Number(page.version)) {
+    return conflict('This journal page was updated by someone else. Reload and try again.')
+  }
+
+  const all = getData(KEYS.JOURNAL_PAGES, [])
+  const mine = (entries) =>
+    entries.filter((entry) => String(entry.journalId) === String(journal.id))
+  const lastStored = mine(all)
+    .sort((a, b) => a.position - b.position)
+    .at(-1)
+
+  if (content.trim() === '' && lastStored && String(lastStored.id) === String(page.id)) {
+    // Clearing the last page removes it, and blank pages before it collapse with
+    // it: a journal keeps exactly one trailing blank page, and it is virtual.
+    let remaining = all.filter((entry) => String(entry.id) !== String(page.id))
+    let tail = mine(remaining)
+      .sort((a, b) => a.position - b.position)
+      .at(-1)
+    while (tail && String(tail.content || '').trim() === '') {
+      remaining = remaining.filter((entry) => String(entry.id) !== String(tail.id))
+      tail = mine(remaining)
+        .sort((a, b) => a.position - b.position)
+        .at(-1)
+    }
+    setData(KEYS.JOURNAL_PAGES, remaining)
+    return ok({ page: null, pageCount: mine(remaining).length })
+  }
+
+  const updated = all.map((entry) =>
+    String(entry.id) === String(page.id)
+      ? { ...entry, content, version: Number(entry.version) + 1, updatedAt: new Date().toISOString() }
+      : entry,
+  )
+  setData(KEYS.JOURNAL_PAGES, updated)
+
+  return ok({
+    page: journalPageDTO(updated.find((entry) => String(entry.id) === String(page.id))),
+    pageCount: mine(updated).length,
+  })
+}
+
+/** DELETE api/journals/pages/{pageId} — delete one page. */
+function deleteJournalPage({ url }) {
+  const resolved = resolveJournalPage(url, currentGuestUserId())
+  if (resolved.error) return resolved.error
+  const { page, journal } = resolved
+
+  setData(
+    KEYS.JOURNAL_PAGES,
+    getData(KEYS.JOURNAL_PAGES, []).filter((entry) => String(entry.id) !== String(page.id)),
+  )
+  shiftJournalPositions(journal.id, page.position, -1)
+
+  return ok(journalDTO(journal.campaignId, currentGuestUserId()))
+}
+
+// ============================================================================
 // Route table — method + URL pattern → handler
 // ============================================================================
 // Entries are tested in order and the first match wins, exactly like the
@@ -1016,6 +1267,7 @@ const ROUTES = [
   // changes neither what the pattern matches nor what it captures.
   { method: 'get', pattern: /(?:users\/me|api\/me|users.*\/me$)/, handler: handleProfile },
   { method: 'get', pattern: /users\/search/, handler: handleUserSearch },
+  { method: 'get', pattern: /journals\/campaign\//, handler: handleJournal },
   { method: 'get', pattern: /characters.*\/spells/, handler: handleCharacterSpells },
   { method: 'get', pattern: /characters.*campaignId=/, handler: handleCharactersByCampaign },
   { method: 'get', pattern: /characters.*without-campaign/, handler: handleDetachedCharacters },
@@ -1027,6 +1279,7 @@ const ROUTES = [
   { method: 'get', pattern: /messages/, handler: handleMessages },
 
   // --- POST -----------------------------------------------------------------
+  { method: 'post', pattern: /journals\/campaign\/.*\/pages/, handler: createJournalPage },
   { method: 'post', pattern: /campaigns.*\/ship\/crew\/me\/images/, handler: addCrewImage },
   { method: 'post', pattern: /campaigns.*\/ship\/image/, handler: addShipImage },
   { method: 'post', pattern: /campaigns.*\/ship\/images/, handler: addShipGalleryImage },
@@ -1043,6 +1296,7 @@ const ROUTES = [
   { method: 'put', pattern: /campaigns/, handler: mergeCampaign },
 
   // --- PATCH ----------------------------------------------------------------
+  { method: 'patch', pattern: /journals\/pages\//, handler: updateJournalPage },
   { method: 'patch', pattern: /users/, unless: /admin\/users/, handler: updateOwnProfile },
   { method: 'patch', pattern: /characters/, handler: patchCharacter },
   {
@@ -1055,6 +1309,7 @@ const ROUTES = [
   { method: 'patch', pattern: /campaigns/, handler: updateCampaignDetails },
 
   // --- DELETE ---------------------------------------------------------------
+  { method: 'delete', pattern: /journals\/pages\//, handler: deleteJournalPage },
   { method: 'delete', pattern: /characters.*\/spells\//, handler: removeSpell },
   { method: 'delete', pattern: /characters.*\/campaign/, handler: detachCharacter },
   { method: 'delete', pattern: /characters/, handler: deleteCharacter },
