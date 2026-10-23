@@ -152,6 +152,11 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
   filters it out when `authStore.isGuest` is true (and a `?section=admin` deep
   link falls back to General), the demo user is an ordinary `USER`, and
   `guest_whitelist` is gone, so nothing can be written to one.
+- **The journal is per-browser and private.** `/api/journals/**` is served from
+  `guest_journals` / `guest_journal_pages`, seeded empty: a journal row and its
+  pages appear with the first write, and the same ownership rules apply as on the
+  backend (a page in another participant's journal answers 404). Unsaved page text
+  is mirrored per user/campaign/page in `journal_draft:*` keys.
 - **No image uploads.** Campaign, character, ship and crew uploads answer stock
   placeholder URLs instead of storing a file; the UI says so where it matters.
 - **Spell data comes from Open5e.** Guest mode has no spell table of its own —
@@ -193,7 +198,10 @@ bar opening a `SlideOverDrawer`, a desktop rail at md+, and a content column.
 `CampaignSidebar.vue` and `SettingsView.vue` both build on it, and the active
 section is mirrored into the URL (`?section=…`) so a refresh or a shared link
 reopens the same subview. Adding a third contextual area means composing these
-three components, not copying their markup.
+three components, not copying their markup. The journal is one more campaign
+section rather than a new area: `CampaignView.SECTIONS` carries it (flagged
+`participantOnly`, since a journal belongs to a participant) and it renders
+`JournalBoard`, the same way Messages renders `MessageBoard`.
 
 ### State management
 - Pinia stores are the single source of truth

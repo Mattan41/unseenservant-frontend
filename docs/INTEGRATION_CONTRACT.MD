@@ -384,6 +384,50 @@ Intended as per-campaign message boards. Messages are visible only to campaign p
 
 ---
 
+## Journals
+
+Each campaign participant has one private journal in a campaign: a book of
+numbered markdown pages. **Only its owner can read or write it** — another
+participant, the campaign owner and a GM are all refused. A page id that belongs
+to somebody else answers exactly like an unknown one (404), so nothing about
+another participant's writing is discoverable, and a caller who is not a
+participant of the campaign gets 403.
+
+The page after the last stored one (`lastPageNumber = pageCount + 1`) is a blank
+**virtual** page: nothing is stored for it, so reading a journal creates no rows.
+Writing on it creates a page; clearing a stored last page deletes it again
+(together with any further blank pages at the end — a blank page in the middle is
+kept), so a journal never has more than one trailing blank page. The `journal` row
+itself appears with the first write, so existing participants need no data fixing.
+
+Limits: `app.journal.max-page-length` (default 10000 characters per page) and
+`app.journal.max-pages` (default 500 stored pages per journal).
+
+**GET /api/journals/campaign/{campaignId}**
+- Requires: campaign participant (the caller's own journal only)
+- Response: `JournalDTO { id, campaignId, userId, pageCount, pages }`; nothing written yet answers `{ "id": null, "campaignId": …, "userId": …, "pageCount": 0, "pages": [] }`
+- Pure read. Status: 200, 401, 403, 404
+
+**POST /api/journals/campaign/{campaignId}/pages**
+- Requires: campaign participant
+- Request: `{ afterPageId, content }` — `afterPageId` null appends at the end; `content` is markdown, at most 10000 characters by default, and may be blank (which keeps an empty page where it was inserted)
+- The book renumbers: inserted after page 3, the old page 4 becomes page 5
+- Appending a **blank** page is a no-op — the trailing blank page is already virtual — and the journal is returned unchanged
+- Response: `JournalDTO`. Status: 201, 400, 401, 403, 404
+
+**PATCH /api/journals/pages/{pageId}**
+- Requires: the page's owner (a campaign participant)
+- Request: `{ content, version }` — `version` is **required** (the token from the page as it was loaded; missing → 400, stale → 409)
+- Clearing the last stored page deletes it, and any further blank pages at the end with it; a blank page in the middle stays
+- Response: `{ page: JournalPageDTO | null, pageCount }` — `page` is null when the page was removed
+- Status: 200, 400, 401, 403, 404, 409
+
+**DELETE /api/journals/pages/{pageId}**
+- Requires: the page's owner (a campaign participant)
+- Response: `JournalDTO`. Status: 200, 401, 403, 404
+
+---
+
 ## Spells
 
 > Spells are stored in the local DB from bulk Open5e import. Shared spell cache — removing a spell from a character does not delete the spell record.
@@ -607,6 +651,33 @@ for its 401/403, so one parser covers every status.
   "createdAt": "2026-05-29T10:00:00",
   "updatedAt": "2026-05-29T10:00:00"
 }
+```
+
+### JournalDTO
+
+```json
+{
+  "id": 4,
+  "campaignId": 1,
+  "userId": 7,
+  "pageCount": 2,
+  "pages": [
+    {
+      "id": 31,
+      "pageNumber": 1,
+      "content": "# Session 1\n\nWe met **Old Man Winters** at the docks.",
+      "version": 0,
+      "createdAt": "2026-05-29T10:00:00",
+      "updatedAt": "2026-05-29T10:00:00"
+    }
+  ]
+}
+```
+
+Nothing written yet — the read creates nothing:
+
+```json
+{ "id": null, "campaignId": 1, "userId": 7, "pageCount": 0, "pages": [] }
 ```
 
 ### CharacterSpellResponseDTO

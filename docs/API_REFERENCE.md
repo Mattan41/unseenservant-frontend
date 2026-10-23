@@ -843,6 +843,122 @@ Overview party preview read it, so the two cannot disagree.
 
 ---
 
+---
+
+## Feature: Journal
+
+Each campaign participant has one private journal per campaign: a book of
+numbered markdown pages. **Only its owner can read or write it** — another
+participant, the campaign owner and a GM are all refused (403), and a page that
+belongs to somebody else answers 404 with the same body as an unknown id. That is
+enforced by the backend; hiding the section is only convenience.
+
+The campaign view shows it as **My journal** between Messages and the
+system-specific sections. It is the one campaign section gated on being a
+participant (the `SECTIONS` entry is flagged `participantOnly`), so a campaign
+owner without a seat never sees it.
+
+The page after the last stored one is a blank **virtual** page
+(`lastPageNumber = pageCount + 1`): nothing is stored for it, so opening a journal
+creates no rows. Writing on it creates a page; clearing a stored last page removes
+it again, and blank pages at the end collapse into the single virtual one — a
+journal never accumulates empty rows. Inserting a page after page 3 makes the old
+page 4 the new page 5, because a page number is a position and not an identity
+(every page keeps its own stable id).
+
+Saving is autosaved with an 800 ms debounce (`AUTOSAVE_DELAY_MS`) and every
+navigation point flushes what is pending. The text is additionally mirrored in
+localStorage on each keystroke (`journalDraft.js`), which is what makes a closed
+tab lose nothing: the mirror is restored on the next visit.
+
+### journalStore — State Shape
+
+```js
+{
+  journal: { id, campaignId, userId, pageCount, pages: JournalPageDTO[] } | null,
+  currentPageNumber: number,   // 1..lastPageNumber
+  draft: string,               // the editor's text for the page on screen
+  isLoading: boolean,
+  isSaving: boolean,
+  saveState: 'idle' | 'dirty' | 'saving' | 'saved' | 'error',
+  hasConflict: boolean,        // the last save was refused with 409
+  error: string | null,
+  // computed: pages, pageCount, lastPageNumber,
+  //           currentPage (null on the virtual page), charCount, atPageLimit
+}
+```
+
+---
+
+### GET /api/journals/campaign/{campaignId}
+
+- **Service**: JournalService.fetchJournal(campaignId)
+- **Store Action**: journalStore.fetchJournal(campaignId)
+- **Guest Mode**: Mocked — reads `guest_journals` / `guest_journal_pages`, participant-only
+- **Response**: `JournalDTO { id, campaignId, userId, pageCount, pages }`. A read creates nothing, so a participant who has not written yet gets `{ id: null, pageCount: 0, pages: [] }`
+- **Status Codes**: 200, 401, 403, 404
+
+---
+
+### POST /api/journals/campaign/{campaignId}/pages
+
+- **Service**: JournalService.createPage(campaignId, { afterPageId, content })
+- **Store Action**: journalStore.saveNow() (the first write on the virtual page) and journalStore.insertPageAfterCurrent()
+- **Guest Mode**: Mocked — participant-only; appending a blank page writes nothing
+- **Request**: `{ afterPageId: number|null, content: string }` — `afterPageId` null appends at the end; the pages after it renumber
+- **Response**: `JournalDTO` — the whole journal after the change
+- **Status Codes**: 201, 400, 401, 403, 404 — 400 past `app.journal.max-page-length` or `app.journal.max-pages`
+
+---
+
+### PATCH /api/journals/pages/{pageId}
+
+- **Service**: JournalService.updatePage(pageId, { content, version })
+- **Store Action**: journalStore.setContent() (debounced autosave) and journalStore.flush()
+- **Guest Mode**: Mocked — a foreign page answers 404, a stale token 409, a missing token 400
+- **Request**: `{ content: string, version: number }` — `version` is **required**; it is the token from the page as it was loaded
+- **Response**: `{ page: JournalPageDTO | null, pageCount: number }` — `page` is null when clearing the last page removed it
+- **Status Codes**: 200, 400, 401, 403, 404, 409
+
+---
+
+### DELETE /api/journals/pages/{pageId}
+
+- **Service**: JournalService.deletePage(pageId)
+- **Store Action**: journalStore.deleteCurrentPage()
+- **Guest Mode**: Mocked — a foreign page answers 404
+- **Response**: `JournalDTO` — the whole journal after the change
+- **Status Codes**: 200, 401, 403, 404
+
+---
+
+### JournalPageDTO
+
+```json
+{
+  "id": 31,
+  "pageNumber": 1,
+  "content": "# Session 1\n\nWe met **Old Man Winters** at the docks.",
+  "version": 0,
+  "createdAt": "2026-05-29T10:00:00",
+  "updatedAt": "2026-05-29T10:00:00"
+}
+```
+
+`pageNumber` is the page's place in the book (1-based) and is derived from the
+order, so inserting or deleting a page renumbers the display without changing any
+page's identity.
+
+### Limits
+
+- `journalLimits.js` mirrors the backend's `app.journal.max-page-length` (10 000
+  characters) and `app.journal.max-pages` (500). An over-limit value is refused
+  **whole**, with a message, and the previous text stays in the field: nothing is
+  ever truncated. The counter appears from 90 % of the limit (`COUNTER_THRESHOLD`)
+  and turns into the warning style at the limit.
+
+---
+
 ## Feature: Admin
 
 The administrator surface lives under `/api/admin/**` and is reached through

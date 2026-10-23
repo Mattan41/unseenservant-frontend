@@ -648,6 +648,8 @@ const GUEST_STORAGE_KEYS = [
   'guest_ships',
   'guest_ship_crew',
   'guest_messages',
+  'guest_journals',
+  'guest_journal_pages',
 ]
 
 /**
@@ -663,6 +665,10 @@ export function seedGuestStorage() {
   localStorage.setItem('guest_ships', JSON.stringify(guestShips))
   localStorage.setItem('guest_ship_crew', JSON.stringify(guestShipCrew))
   localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
+  // A journal is created by its owner's first write, so the demo seeds the keys
+  // empty: nothing to write means nothing stored, exactly like the backend.
+  localStorage.setItem('guest_journals', JSON.stringify([]))
+  localStorage.setItem('guest_journal_pages', JSON.stringify([]))
 }
 
 /** Remove every guest/demo key (used when leaving guest mode). */

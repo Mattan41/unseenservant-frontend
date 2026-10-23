@@ -19,6 +19,7 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
   surface for accounts and the email whitelist. The theme (Settings → General) is
   reachable without an account, so it can be set before logging in.
 - Image uploads (campaign, character and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`)
+- Private journals per campaign participant: a book of numbered markdown pages, one per participant per campaign, readable only by its owner (10,000 characters per page by default, at most 500 pages)
 
 ## Campaign roles & permissions
 
