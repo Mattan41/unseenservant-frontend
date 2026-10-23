@@ -6,7 +6,8 @@
  * the upgrade checklist and a free-text notes/look area. Every participant may
  * edit; the parent owns saving (and the optimistic-concurrency reload flow).
  *
- * Props in, events out — no store access.
+ * Props in, events out — no store access: an image over the upload limit emits
+ * `size-error` with the sentence to show, and the parent notifies.
  */
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -20,7 +21,6 @@ import ShipCrewSection from '@/features/ship/components/ShipCrewSection.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { buildShipPayload } from '@/features/ship/shipPayload.js'
-import { useNotificationStore } from '@/stores/notificationStore.js'
 import {
   OFFWORLDERS_SHIP_DEFAULT_IMAGE,
   OFFWORLDERS_SHIP_STARTING_UPGRADES,
@@ -72,9 +72,8 @@ const emit = defineEmits([
   'save-crew',
   'add-crew-image',
   'remove-crew-image',
+  'size-error',
 ])
-
-const notificationStore = useNotificationStore()
 
 const editing = ref(false)
 const draft = reactive(createEmptyShipData())
@@ -237,7 +236,7 @@ function onProfileFileChange(event) {
 
   const sizeError = validateImageSize(file)
   if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
+    emit('size-error', sizeError)
     return
   }
 
@@ -247,7 +246,7 @@ function onProfileFileChange(event) {
 function applyRepositionedImage(file) {
   const sizeError = validateImageSize(file)
   if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
+    emit('size-error', sizeError)
     cancelReposition()
     return
   }
@@ -268,7 +267,7 @@ function onGalleryFileChange(event) {
 
   const sizeError = validateImageSize(file)
   if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
+    emit('size-error', sizeError)
     return
   }
 
@@ -634,6 +633,7 @@ useUnsavedChanges(
       @save="(entry) => emit('save-crew', entry)"
       @add-image="(file) => emit('add-crew-image', file)"
       @remove-image="(url) => emit('remove-crew-image', url)"
+      @size-error="(msg) => emit('size-error', msg)"
       @open-image="openLightbox"
     />
 

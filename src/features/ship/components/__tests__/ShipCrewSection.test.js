@@ -59,4 +59,22 @@ describe('ShipCrewSection', () => {
     expect(fileInput.attributes('type')).toBe('file')
     expect(wrapper.get('label[for="crew-image-upload"]').text()).toBe('Upload crew image')
   })
+
+  it('emits size-error instead of add-image for an image over the limit', async () => {
+    const wrapper = mountSection()
+
+    await editButton(wrapper).trigger('click')
+
+    const fileInput = wrapper.get('#crew-image-upload')
+    const oversized = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'x.png')
+    Object.defineProperty(fileInput.element, 'files', { value: [oversized] })
+
+    await fileInput.trigger('change')
+
+    // The parent turns the sentence into a notification, so the component only
+    // reports it — and the oversized file is never handed on for upload.
+    expect(wrapper.emitted('size-error')).toHaveLength(1)
+    expect(wrapper.emitted('size-error')[0][0]).toContain('maximum')
+    expect(wrapper.emitted('add-image')).toBeUndefined()
+  })
 })
