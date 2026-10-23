@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useRoute, useRouter } from 'vue-router'
@@ -10,7 +10,7 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
-import { validateImageSize } from '@/utils/imageUpload.js'
+import { useImagePicker } from '@/utils/useImagePicker.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import {
   DEFAULT_SYSTEM_TYPE,
@@ -38,10 +38,18 @@ const loading = ref(true)
 const isSubmitting = ref(false)
 
 const fileInput = ref(null)
-const previewImage = ref(null)
-const selectedFile = ref(null)
-const repositionFile = ref(null)
-const showRepositionModal = ref(false)
+
+// The picked file, its preview and the reposition flow come from the shared
+// picker; `characterImageUrl` below adds the saved avatar as the fallback.
+const {
+  selectedFile,
+  previewUrl: previewImage,
+  repositionFile,
+  showRepositionModal,
+  handleImageChange,
+  applyRepositionedImage,
+  cancelReposition,
+} = useImagePicker()
 
 const character = ref({
   name: '',
@@ -97,48 +105,8 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => {
-  if (previewImage.value) URL.revokeObjectURL(previewImage.value)
-})
-
 function triggerFileInput() {
   fileInput.value.click()
-}
-
-function handleImageChange(event) {
-  const file = event.target.files[0]
-  // Reset so selecting the same file again still fires a change event.
-  event.target.value = ''
-  if (!file) return
-
-  const sizeError = validateImageSize(file)
-  if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
-    return
-  }
-
-  repositionFile.value = file
-  showRepositionModal.value = true
-}
-
-function applyRepositionedImage(file) {
-  const sizeError = validateImageSize(file)
-  if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
-    cancelReposition()
-    return
-  }
-
-  if (previewImage.value) URL.revokeObjectURL(previewImage.value)
-  selectedFile.value = file
-  previewImage.value = URL.createObjectURL(file)
-  repositionFile.value = null
-  showRepositionModal.value = false
-}
-
-function cancelReposition() {
-  repositionFile.value = null
-  showRepositionModal.value = false
 }
 
 function goToCharacterView() {

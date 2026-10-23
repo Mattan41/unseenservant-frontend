@@ -79,6 +79,8 @@ src/
 │       └── components/          # AdminUsersSection.vue, AdminWhitelistSection.vue
 ├── utils/
 │   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
+│   ├── imageUpload.js        # Frontend mirror of the backend's 5MB upload limit (validateImageSize).
+│   ├── useImagePicker.js     # Composable: pick → reposition → preview, shared by the campaign/character image editors.
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
 │   ├── useViewRecency.js     # Composable: records that the user viewed a campaign/character.

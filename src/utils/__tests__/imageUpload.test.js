@@ -14,11 +14,11 @@ describe('validateImageSize', () => {
   })
 
   it('accepts an image exactly at the limit', () => {
-    expect(validateImageSize(imageOfSize(5 * 1024 * 1024))).toBeNull()
+    expect(validateImageSize(imageOfSize(MAX_IMAGE_BYTES))).toBeNull()
   })
 
   it('rejects an image one byte over the limit', () => {
-    const error = validateImageSize(imageOfSize(5 * 1024 * 1024 + 1))
+    const error = validateImageSize(imageOfSize(MAX_IMAGE_BYTES + 1))
 
     expect(error).toEqual(expect.stringContaining('maximum'))
   })
