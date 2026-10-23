@@ -725,6 +725,13 @@ html[data-env='demo'] {
   @apply inline-block bg-(--secondary-surface) text-(--secondary-text) text-xs px-2 py-1 rounded-full;
 }
 
+/* Game-system marker on a card (character or campaign). Same shape and size as
+   `.character-tag`, but on a neutral surface, so it reads as "which game" rather
+   than as one more attribute of the thing. */
+.system-tag {
+  @apply inline-block bg-(--surface-raised) text-(--text-default) text-xs px-2 py-1 rounded-full;
+}
+
 /* Character name (clickable card title) */
 .character-name {
   @apply text-primary-700 hover:text-primary-800;

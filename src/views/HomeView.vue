@@ -20,6 +20,7 @@ import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CharacterCard from '@/features/character/components/CharacterCard.vue'
+import { campaignSystemLabel } from '@/features/campaign/campaignSystems.js'
 import { HOME_PREVIEW_CAMPAIGNS, HOME_PREVIEW_CHARACTERS } from '@/data/homePreview.js'
 
 const authStore = useAuthStore()
@@ -124,7 +125,12 @@ function participantCountLabel(campaign) {
                 <h3 class="card-title break-words">
                   {{ campaignStore.getCampaignTitle(campaign.id) }}
                 </h3>
-                <p class="mt-1 text-xs text-secondary">{{ participantCountLabel(campaign) }}</p>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <span v-if="campaignSystemLabel(campaign.primarySystem)" class="system-tag">
+                    {{ campaignSystemLabel(campaign.primarySystem) }}
+                  </span>
+                  <p class="text-xs text-secondary">{{ participantCountLabel(campaign) }}</p>
+                </div>
               </div>
             </RouterLink>
           </template>

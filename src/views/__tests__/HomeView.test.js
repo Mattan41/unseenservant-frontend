@@ -136,6 +136,8 @@ describe('home collections', () => {
     expect(wrapper.text()).toContain('Curse of Strahd')
     expect(wrapper.text()).toContain('Characters')
     expect(wrapper.text()).toContain('Gandalf')
+    // The cards name the game system, so a strip reads without opening anything.
+    expect(wrapper.get('.system-tag').text()).toBe('5e')
   })
 
   it('renders the plain welcome heading, with no rainbow name', async () => {

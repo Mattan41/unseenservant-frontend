@@ -82,10 +82,27 @@ describe('CharacterCard', () => {
     expect(wrapper.text()).toContain('HP 12/12')
   })
 
+  it('marks the card with the character game system', async () => {
+    const wrapper = await mountCard(DND5E_CHARACTER)
+
+    expect(wrapper.get('.system-tag').text()).toBe('5e')
+  })
+
+  it('marks an Offworlders card with its system too', async () => {
+    const wrapper = await mountCard({
+      id: 'ch2',
+      name: 'Ripley',
+      systemType: 'OFFWORLDERS',
+      offworlders: { species: 'Android', characterClass: 'Geek', health: 12, currentHealth: 12 },
+    })
+
+    expect(wrapper.get('.system-tag').text()).toBe('Offworlders')
+  })
+
   it('names the system of a character that has no system block', async () => {
     const wrapper = await mountCard({ id: 'ch3', name: 'Nameless', systemType: null })
 
-    expect(wrapper.text()).toContain('No system')
+    expect(wrapper.get('.system-tag').text()).toBe('No system')
   })
 
   it('offers the card itself as the only control', async () => {

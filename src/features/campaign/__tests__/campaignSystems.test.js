@@ -3,6 +3,7 @@ import {
   CAMPAIGN_SYSTEM_LABELS,
   CAMPAIGN_SYSTEM_OPTIONS,
   campaignDefaultImage,
+  campaignSystemLabel,
   DEFAULT_CAMPAIGN_IMAGE,
   DND5E_SYSTEM_TYPE,
   OFFWORLDERS_SYSTEM_TYPE,
@@ -26,6 +27,14 @@ describe('campaign systems registry', () => {
     expect(isOffworlders(null)).toBe(false)
     expect(isDnd5e('DND5E')).toBe(true)
     expect(isDnd5e('OFFWORLDERS')).toBe(false)
+  })
+
+  it('labels a primary system, and nothing when the campaign has none', () => {
+    expect(campaignSystemLabel(DND5E_SYSTEM_TYPE)).toBe('5e')
+    expect(campaignSystemLabel(OFFWORLDERS_SYSTEM_TYPE)).toBe('Offworlders')
+    expect(campaignSystemLabel(null)).toBeNull()
+    expect(campaignSystemLabel(undefined)).toBeNull()
+    expect(campaignSystemLabel('SOMETHING_ELSE')).toBeNull()
   })
 
   it('gives an Offworlders campaign the sci-fi placeholder art', () => {

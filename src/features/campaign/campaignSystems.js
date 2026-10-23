@@ -51,6 +51,18 @@ export function isOffworlders(systemType) {
   return systemType === OFFWORLDERS_SYSTEM_TYPE
 }
 
+/**
+ * Display label for a campaign's `primarySystem`, or `null` when it has none.
+ *
+ * A campaign's system is optional ("No system yet" in the editor), so a card can
+ * leave the marker out entirely instead of printing that placeholder.
+ * @param {string|null|undefined} systemType
+ * @returns {string|null}
+ */
+export function campaignSystemLabel(systemType) {
+  return CAMPAIGN_SYSTEM_LABELS[systemType] || null
+}
+
 /** True when a campaign's primary system is 5e. */
 export function isDnd5e(systemType) {
   return systemType === DND5E_SYSTEM_TYPE

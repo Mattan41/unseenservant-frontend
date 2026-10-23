@@ -69,9 +69,11 @@ defineProps({
         </div>
       </div>
 
-      <!-- Character information -->
+      <!-- Character information. The system comes first: it frames every tag
+           that follows (and is the only tag a system-less character has). -->
       <div class="mt-3 pt-2 border-t" style="border-color: var(--border-subtle)">
         <div class="flex flex-wrap gap-2">
+          <span class="system-tag">{{ characterSystemLabel(character.systemType) }}</span>
           <template v-if="character.dnd5e">
             <span class="character-tag">{{ character.dnd5e.race }}</span>
             <span class="character-tag">{{ character.dnd5e.characterClass }}</span>
@@ -86,7 +88,6 @@ defineProps({
             </span>
             <span class="character-tag-level">HP {{ characterHealthLabel(character) }}</span>
           </template>
-          <span v-else class="character-tag">{{ characterSystemLabel(character.systemType) }}</span>
         </div>
       </div>
     </div>
