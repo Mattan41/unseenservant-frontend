@@ -309,7 +309,7 @@ export const guestCharacters = [
       'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
     privateBackstory:
       'She is being hunted by a syndicate she double-crossed, and never files a flight plan.',
-    avatarUrl: '/defaultCharacter.svg',
+    avatarUrl: '/default-scifi-Character.svg',
     offworlders: {
       characterClass: 'Outlaw',
       species: 'Human',
@@ -355,7 +355,7 @@ export const guestCharacters = [
     notes: 'Ex-military. Talks little, shoots straight.',
     appearance: 'Shaved head, faded unit tattoos.',
     backstory: 'Walked away from the war with a rifle and no plan.',
-    avatarUrl: '/defaultCharacter.svg',
+    avatarUrl: '/default-scifi-Character.svg',
     offworlders: {
       characterClass: 'Warrior',
       species: 'Human',
@@ -396,7 +396,7 @@ export const guestCharacters = [
     notes: 'Patch-you-up medic with a sideline in forged manifests.',
     appearance: 'Wire-rimmed glasses, an ever-present medkit.',
     backstory: 'Bought a medical licence that does not actually exist.',
-    avatarUrl: '/defaultCharacter.svg',
+    avatarUrl: '/default-scifi-Character.svg',
     offworlders: {
       characterClass: 'Geek',
       species: 'Human',
@@ -527,7 +527,7 @@ Free Traders: No grand destiny — just a crew, a ship, and a debt or two. Every
 Sandbox Sci-Fi: Stations to dock at, systems to chart, factions to cross or court. The crew picks its own trouble.
 Leverage Over Firepower: A fast talk, a forged manifest, or a well-placed bribe usually beats a firefight. When it does not, you have guns too.
 Crew First: The ship is home. Keeping it flying, fuelled, and out of the impound lot is a game in itself.`,
-    imageUrl: '/default-campaign.svg',
+    imageUrl: '/default-scifi-campaign.svg',
     primarySystem: 'OFFWORLDERS',
     ownerId: 'guest_demo',
     participants: [

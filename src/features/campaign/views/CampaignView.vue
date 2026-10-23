@@ -419,6 +419,7 @@ watch(
         v-if="activeSection !== 'ship'"
         :title="campaignStore.getCampaignTitle(campaign.id)"
         :image-url="campaignStore.getCampaignImageUrl(campaign.id)"
+        :system-type="campaign.primarySystem"
       />
 
       <!-- Overview -->
@@ -487,6 +488,7 @@ watch(
                 <CharacterImage
                   :src="character.avatarUrl"
                   :alt="`${character.name || 'Character'} portrait`"
+                  :system-type="character.systemType"
                   class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
                   style="border-color: var(--color-primary-300)"
                 />
@@ -665,6 +667,7 @@ watch(
               <CharacterImage
                 :src="character.avatarUrl"
                 :alt="`${character.name || 'Character'} portrait`"
+                :system-type="character.systemType"
                 class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
                 style="border-color: var(--color-primary-300)"
               />

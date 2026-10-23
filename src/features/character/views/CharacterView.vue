@@ -217,6 +217,7 @@ const exportCharacter = async (format) => {
             <CharacterImage
               :src="currentCharacter.avatarUrl"
               alt="Character portrait"
+              :system-type="currentCharacter.systemType"
               class="w-full max-w-64 aspect-square rounded-lg border-2 shadow-md object-cover"
               style="border-color: var(--color-primary-300)"
             />

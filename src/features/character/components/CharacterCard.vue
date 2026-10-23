@@ -49,6 +49,7 @@ defineProps({
         <CharacterImage
           :src="character.avatarUrl"
           :alt="`${character.name} portrait`"
+          :system-type="character.systemType"
           class="w-16 h-16 rounded-lg border-2 shadow-sm flex-shrink-0 object-cover"
           style="border-color: var(--color-primary-300)"
         />

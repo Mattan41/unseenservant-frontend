@@ -10,9 +10,30 @@
  * Pure data + pure functions: no Vue, no stores, no UI.
  */
 import { DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
-import { OFFWORLDERS_SYSTEM_TYPE } from '@/systems/offworlders/constants.js'
+import {
+  OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 export { DND5E_SYSTEM_TYPE, OFFWORLDERS_SYSTEM_TYPE }
+
+/** Placeholder art (in `/public`) for a campaign that has no image of its own. */
+export const DEFAULT_CAMPAIGN_IMAGE = '/default-campaign.svg'
+
+/** Primary system → the placeholder art (in `/public`) that system's campaigns use. */
+const SYSTEM_DEFAULT_IMAGES = {
+  [OFFWORLDERS_SYSTEM_TYPE]: OFFWORLDERS_CAMPAIGN_DEFAULT_IMAGE,
+}
+
+/**
+ * Placeholder art for a campaign played in `systemType` — an Offworlders campaign
+ * gets the sci-fi art, everything else (5e, no system, unknown) the generic one.
+ * @param {string|null|undefined} systemType
+ * @returns {string} a `/public` path
+ */
+export function campaignDefaultImage(systemType) {
+  return SYSTEM_DEFAULT_IMAGES[systemType] || DEFAULT_CAMPAIGN_IMAGE
+}
 
 /** Selectable campaign primary systems, in display order (drives the <select>). */
 export const CAMPAIGN_SYSTEM_OPTIONS = [

@@ -5,6 +5,12 @@
 
 export const DND5E_SYSTEM_TYPE = 'DND5E'
 
+/**
+ * Placeholder portrait (in `/public`) for a 5e character. It is also the generic
+ * one, so `characterDefaultImage` only maps the systems that differ.
+ */
+export const DND5E_CHARACTER_DEFAULT_IMAGE = '/defaultCharacter.svg'
+
 export const DND5E_RACES = [
   'Human',
   'Centaur',

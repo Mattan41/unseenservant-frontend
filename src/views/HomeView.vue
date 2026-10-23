@@ -6,17 +6,21 @@
  * derived, per-user order the list pages render (`sortedCampaigns` /
  * `sortedCharacters`, most recently viewed first — see `utils/viewHistory.js`),
  * shown as `BaseCarousel` strips. The brand lives in the header bar, so this
- * page only greets the visitor.
+ * page only greets the visitor — and a visitor without a session gets the same
+ * strips filled with example content (`homePreview.js`), never a bare greeting.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
 import { useCharacterStore } from '@/features/character/characterStore.js'
 import BaseCarousel from '@/components/base/BaseCarousel.vue'
+import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
+import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CharacterCard from '@/features/character/components/CharacterCard.vue'
+import { HOME_PREVIEW_CAMPAIGNS, HOME_PREVIEW_CHARACTERS } from '@/data/homePreview.js'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
@@ -35,17 +39,27 @@ const { sortedCharacters } = storeToRefs(characterStore)
 const showCollections = computed(() => authStore.isAuthenticated || authStore.isGuest)
 
 /**
+ * Until the two collections have answered, the dashboard stays empty rather than
+ * flashing a "you aren't in any campaign yet" panel at a visitor who has plenty.
+ */
+const isFirstLoad = ref(true)
+
+/**
  * `allSettled`, not `all`: the character action rethrows on failure and each
  * store reports its own error, so one collection failing must neither hide the
  * other nor surface as an unhandled rejection.
  */
 onMounted(async () => {
-  if (!showCollections.value) return
+  if (!showCollections.value) {
+    isFirstLoad.value = false
+    return
+  }
 
   await Promise.allSettled([
     campaignStore.fetchAllCampaignsForCurrentUser(),
     characterStore.fetchAllCharactersForCurrentUser(),
   ])
+  isFirstLoad.value = false
 })
 
 /** A character's campaign name, with the same neutral fallbacks as the list. */
@@ -74,18 +88,27 @@ function participantCountLabel(campaign) {
     </header>
 
     <!-- Signed-in dashboard: the visitor's campaigns and characters as strips.
-         A panel appears only once its list has something in it, so an empty
-         collection leaves no heading behind. Each strip sets its own card
-         width — the base carousel deliberately does not. -->
-    <section v-if="showCollections" class="space-y-6">
-      <div v-if="sortedCampaigns.length">
+         A collection that is still empty shows its discovery tile instead of a
+         strip, so a new account never lands on a hole. Each strip sets its own
+         card width — the base carousel deliberately does not. -->
+    <section v-if="showCollections && !isFirstLoad" class="space-y-6">
+      <div>
         <div class="mb-3 flex items-baseline justify-between gap-3">
           <h2 class="section-heading">Campaigns</h2>
-          <RouterLink :to="{ name: 'CampaignsView' }" class="read-more-link text-sm">
+          <RouterLink
+            v-if="sortedCampaigns.length"
+            :to="{ name: 'CampaignsView' }"
+            class="read-more-link text-sm"
+          >
             View all →
           </RouterLink>
         </div>
-        <BaseCarousel :items="sortedCampaigns" label="Campaigns" item-class="w-72 md:w-96">
+        <BaseCarousel
+          v-if="sortedCampaigns.length"
+          :items="sortedCampaigns"
+          label="Campaigns"
+          item-class="w-72 md:w-96"
+        >
           <template #item="{ item: campaign }">
             <RouterLink
               :to="{ name: 'CampaignView', params: { id: campaign.id } }"
@@ -94,6 +117,7 @@ function participantCountLabel(campaign) {
               <CampaignImage
                 :src="campaignStore.getCampaignImageUrl(campaign.id)"
                 :alt="campaignStore.getCampaignTitle(campaign.id)"
+                :system-type="campaign.primarySystem"
                 class="h-32 w-full object-cover"
               />
               <div class="flex flex-1 flex-col p-3">
@@ -105,24 +129,104 @@ function participantCountLabel(campaign) {
             </RouterLink>
           </template>
         </BaseCarousel>
+        <div v-else class="mx-auto max-w-xs py-4 text-center">
+          <p class="text-secondary mb-3">You aren't in any campaign yet.</p>
+          <CreateCampaign />
+        </div>
       </div>
 
-      <div v-if="sortedCharacters.length">
+      <div>
         <div class="mb-3 flex items-baseline justify-between gap-3">
           <h2 class="section-heading">Characters</h2>
-          <RouterLink :to="{ name: 'CharactersView' }" class="read-more-link text-sm">
+          <RouterLink
+            v-if="sortedCharacters.length"
+            :to="{ name: 'CharactersView' }"
+            class="read-more-link text-sm"
+          >
             View all →
           </RouterLink>
         </div>
         <!-- The same card the character list renders, so a character reads the
              same in both places. -->
-        <BaseCarousel :items="sortedCharacters" label="Characters" item-class="w-80">
+        <BaseCarousel
+          v-if="sortedCharacters.length"
+          :items="sortedCharacters"
+          label="Characters"
+          item-class="w-80"
+        >
           <template #item="{ item: character }">
             <CharacterCard
               :character="character"
               :campaign-name="campaignName(character.campaignId)"
               from="home"
             />
+          </template>
+        </BaseCarousel>
+        <div v-else class="mx-auto max-w-xs py-4 text-center">
+          <p class="text-secondary mb-3">You don't have any characters yet.</p>
+          <BaseLinkButton variant="tile" icon="plus" :to="{ name: 'CreateCharacter' }">
+            Create your first character
+          </BaseLinkButton>
+        </div>
+      </div>
+    </section>
+
+    <!-- Anonymous visitor: the same page, filled with example content and the
+         shipped placeholder art. Illustrations only — nothing here is stored,
+         and nothing links (`homePreview.js`). -->
+    <section v-else-if="!showCollections" class="space-y-6">
+      <div>
+        <div class="mb-3 flex items-baseline justify-between gap-3">
+          <h2 class="section-heading">Example campaigns</h2>
+          <RouterLink :to="{ name: 'login' }" class="read-more-link text-sm">
+            Sign in to make your own →
+          </RouterLink>
+        </div>
+        <BaseCarousel
+          :items="HOME_PREVIEW_CAMPAIGNS"
+          label="Example campaigns"
+          item-class="w-72 md:w-96"
+        >
+          <template #item="{ item: example }">
+            <div
+              class="flex h-full flex-col overflow-hidden rounded-lg border border-subtle bg-[var(--color-surface)] shadow-md"
+            >
+              <img :src="example.imageUrl" alt="" class="h-32 w-full object-cover" />
+              <div class="flex flex-1 flex-col p-3">
+                <h3 class="card-title break-words">{{ example.title }}</h3>
+                <p class="mt-1 text-xs text-secondary">{{ example.meta }}</p>
+              </div>
+            </div>
+          </template>
+        </BaseCarousel>
+      </div>
+
+      <div>
+        <div class="mb-3 flex items-baseline justify-between gap-3">
+          <h2 class="section-heading">Example characters</h2>
+          <RouterLink :to="{ name: 'login' }" class="read-more-link text-sm">
+            Sign in to make your own →
+          </RouterLink>
+        </div>
+        <BaseCarousel
+          :items="HOME_PREVIEW_CHARACTERS"
+          label="Example characters"
+          item-class="w-72 md:w-80"
+        >
+          <template #item="{ item: example }">
+            <div
+              class="flex h-full items-center gap-3 rounded-lg border border-subtle bg-[var(--color-surface)] p-3 shadow-md"
+            >
+              <img
+                :src="example.imageUrl"
+                alt=""
+                class="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
+              />
+              <div class="min-w-0">
+                <h3 class="card-title truncate">{{ example.title }}</h3>
+                <p class="mt-0.5 text-xs text-secondary">{{ example.meta }}</p>
+              </div>
+            </div>
           </template>
         </BaseCarousel>
       </div>

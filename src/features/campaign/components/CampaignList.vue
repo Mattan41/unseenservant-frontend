@@ -75,6 +75,7 @@ onMounted(async () => {
 
           <CampaignImage
             :src="campaignStore.getCampaignImageUrl(campaign.id)"
+            :system-type="campaign.primarySystem"
             :alt="campaignStore.getCampaignTitle(campaign.id)"
             class="w-full h-48 object-cover rounded"
           />

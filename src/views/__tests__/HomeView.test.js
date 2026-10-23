@@ -46,6 +46,7 @@ async function mountHome({
   campaigns,
   characters,
   characterFetchFails = false,
+  pending = false,
 } = {}) {
   setActivePinia(createPinia())
   const authStore = useAuthStore()
@@ -53,19 +54,27 @@ async function mountHome({
   authStore.authStatus = authenticated ? 'authenticated' : 'unauthenticated'
   authStore.isGuest = guest
 
-  CampaignService.fetchAllCampaignsForCurrentUser.mockResolvedValue(campaigns ?? CAMPAIGNS)
-  if (characterFetchFails) {
-    CharacterService.fetchAllCharactersForCurrentUser.mockRejectedValue(new Error('offline'))
+  if (pending) {
+    // A request still in flight: the dashboard must not show its empty states.
+    CampaignService.fetchAllCampaignsForCurrentUser.mockReturnValue(new Promise(() => {}))
+    CharacterService.fetchAllCharactersForCurrentUser.mockReturnValue(new Promise(() => {}))
   } else {
-    CharacterService.fetchAllCharactersForCurrentUser.mockResolvedValue(characters ?? CHARACTERS)
+    CampaignService.fetchAllCampaignsForCurrentUser.mockResolvedValue(campaigns ?? CAMPAIGNS)
+    if (characterFetchFails) {
+      CharacterService.fetchAllCharactersForCurrentUser.mockRejectedValue(new Error('offline'))
+    } else {
+      CharacterService.fetchAllCharactersForCurrentUser.mockResolvedValue(characters ?? CHARACTERS)
+    }
   }
 
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: '/', name: 'home', component: { template: '<div />' } },
+      { path: '/login', name: 'login', component: { template: '<div />' } },
       { path: '/campaigns', name: 'CampaignsView', component: { template: '<div />' } },
       { path: '/characters', name: 'CharactersView', component: { template: '<div />' } },
+      { path: '/characters/create', name: 'CreateCharacter', component: { template: '<div />' } },
       { path: '/campaign/:id', name: 'CampaignView', component: { template: '<div />' } },
       { path: '/characters/:id', name: 'CharacterView', component: { template: '<div />' } },
     ],
@@ -85,14 +94,35 @@ describe('home collections', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps the greeting alone for an anonymous visitor', async () => {
+  it('shows example strips for an anonymous visitor, without fetching anything', async () => {
     const wrapper = await mountHome()
+    const carousels = wrapper.findAllComponents(BaseCarousel)
 
-    expect(wrapper.findComponent(BaseCarousel).exists()).toBe(false)
-    expect(wrapper.text()).toContain('Welcome')
+    // The same page, filled with illustrations: examples, not the visitor's data.
+    expect(carousels).toHaveLength(2)
+    expect(carousels[0].props('label')).toBe('Example campaigns')
+    expect(carousels[1].props('label')).toBe('Example characters')
+    expect(wrapper.text()).toContain('Example campaigns')
+    expect(wrapper.text()).toContain('Sign in to make your own')
     expect(wrapper.get('.welcome-name').text()).toBe('Traveler')
     expect(CampaignService.fetchAllCampaignsForCurrentUser).not.toHaveBeenCalled()
     expect(CharacterService.fetchAllCharactersForCurrentUser).not.toHaveBeenCalled()
+  })
+
+  it('offers the discovery tiles when a signed-in collection is empty', async () => {
+    const wrapper = await mountHome({ authenticated: true, campaigns: [], characters: [] })
+
+    expect(wrapper.findAllComponents(BaseCarousel)).toHaveLength(0)
+    expect(wrapper.text()).toContain("You aren't in any campaign yet.")
+    expect(wrapper.text()).toContain("You don't have any characters yet.")
+  })
+
+  it('does not flash the empty states while the collections are still loading', async () => {
+    const wrapper = await mountHome({ authenticated: true, pending: true })
+
+    expect(wrapper.findAllComponents(BaseCarousel)).toHaveLength(0)
+    expect(wrapper.text()).not.toContain("You aren't in any campaign yet.")
+    expect(wrapper.text()).not.toContain("You don't have any characters yet.")
   })
 
   it('shows a strip per collection for a signed-in account', async () => {

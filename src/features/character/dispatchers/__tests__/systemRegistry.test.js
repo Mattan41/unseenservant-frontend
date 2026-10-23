@@ -1,12 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildPayload,
+  characterDefaultImage,
   characterSystemLabel,
   createEmptyCharacterBlocks,
+  DEFAULT_CHARACTER_IMAGE,
   SYSTEM_FORM_OPTIONS,
 } from '@/features/character/dispatchers/systemRegistry.js'
 import { DND5E_SYSTEM_TYPE } from '@/systems/dnd5e/constants.js'
-import { OFFWORLDERS_SYSTEM_TYPE } from '@/systems/offworlders/constants.js'
+import {
+  OFFWORLDERS_CHARACTER_DEFAULT_IMAGE,
+  OFFWORLDERS_SYSTEM_TYPE,
+} from '@/systems/offworlders/constants.js'
 
 const CHARACTER = {
   name: 'F.R.E.Droid 27-b',
@@ -100,5 +105,17 @@ describe('characterSystemLabel', () => {
 
   it('shows an unknown-but-set system id as-is', () => {
     expect(characterSystemLabel('FATE')).toBe('FATE')
+  })
+})
+
+describe('characterDefaultImage', () => {
+  it('gives an Offworlders character the sci-fi art', () => {
+    expect(characterDefaultImage(OFFWORLDERS_SYSTEM_TYPE)).toBe(OFFWORLDERS_CHARACTER_DEFAULT_IMAGE)
+  })
+
+  it('gives 5e, system-less and unknown characters the generic portrait', () => {
+    for (const systemType of [DND5E_SYSTEM_TYPE, null, undefined, '', 'SOMETHING_ELSE']) {
+      expect(characterDefaultImage(systemType)).toBe(DEFAULT_CHARACTER_IMAGE)
+    }
   })
 })
