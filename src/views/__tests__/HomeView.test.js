@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import BaseCarousel from '@/components/base/BaseCarousel.vue'
+import CharacterCard from '@/features/character/components/CharacterCard.vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import CampaignService from '@/features/campaign/CampaignService.js'
 import CharacterService from '@/features/character/CharacterService.js'
@@ -63,6 +64,8 @@ async function mountHome({
     history: createMemoryHistory(),
     routes: [
       { path: '/', name: 'home', component: { template: '<div />' } },
+      { path: '/campaigns', name: 'CampaignsView', component: { template: '<div />' } },
+      { path: '/characters', name: 'CharactersView', component: { template: '<div />' } },
       { path: '/campaign/:id', name: 'CampaignView', component: { template: '<div />' } },
       { path: '/characters/:id', name: 'CharacterView', component: { template: '<div />' } },
     ],
@@ -82,11 +85,12 @@ describe('home collections', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps the hero alone for an anonymous visitor', async () => {
+  it('keeps the greeting alone for an anonymous visitor', async () => {
     const wrapper = await mountHome()
 
     expect(wrapper.findComponent(BaseCarousel).exists()).toBe(false)
-    expect(wrapper.text()).toContain('Unseen Servant')
+    expect(wrapper.text()).toContain('Welcome')
+    expect(wrapper.get('.welcome-name').text()).toBe('Traveler')
     expect(CampaignService.fetchAllCampaignsForCurrentUser).not.toHaveBeenCalled()
     expect(CharacterService.fetchAllCharactersForCurrentUser).not.toHaveBeenCalled()
   })
@@ -102,6 +106,23 @@ describe('home collections', () => {
     expect(wrapper.text()).toContain('Curse of Strahd')
     expect(wrapper.text()).toContain('Characters')
     expect(wrapper.text()).toContain('Gandalf')
+  })
+
+  it('renders the plain welcome heading, with no rainbow name', async () => {
+    const wrapper = await mountHome({ authenticated: true })
+
+    expect(wrapper.find('.page-heading').exists()).toBe(true)
+    expect(wrapper.find('.page-heading-rule').exists()).toBe(true)
+    expect(wrapper.find('.rainbow-text').exists()).toBe(false)
+  })
+
+  it('renders characters through the shared card, marking the home context', async () => {
+    const wrapper = await mountHome({ authenticated: true })
+    const card = wrapper.findComponent(CharacterCard)
+
+    expect(card.exists()).toBe(true)
+    expect(card.props('campaignName')).toBe('Curse of Strahd')
+    expect(card.get('a').attributes('href')).toBe('/characters/ch1?from=home')
   })
 
   it('shows the Guest Demo collections as well, since a guest has a session', async () => {

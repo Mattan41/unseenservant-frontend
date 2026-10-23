@@ -31,7 +31,7 @@ src/
 ├── router/
 │   └── index.js              # Routes + auth guard
 ├── views/                    # Top-level views not belonging to a feature
-│   ├── HomeView.vue          # hero + the signed-in visitor's campaign/character carousels
+│   ├── HomeView.vue          # greeting + the signed-in visitor's campaign/character carousels
 │   ├── AboutView.vue
 │   ├── PrivacyPolicyView.vue # /privacy — how personal data is handled
 │   ├── TermsView.vue         # /terms — the terms for using the service
@@ -203,14 +203,26 @@ section rather than a new area: `CampaignView.SECTIONS` carries it (flagged
 `participantOnly`, since a journal belongs to a participant) and it renders
 `JournalBoard`, the same way Messages renders `MessageBoard`.
 
+### Brand & chrome
+The brand lives in the header: `HeaderComponent` renders `logo.svg` as the bar's
+mark (`.brand-mark .brand-mark--sm`, `alt=""` — the wordmark beside it carries the
+name) in one row with the links and the session action, and the bar is sticky with
+a bottom border, so a page starts right under it and no page repeats the brand
+name. `HomeView` therefore opens with a greeting (`Welcome, <name>` in
+`.welcome-name`, under a `.page-heading-rule`) instead of a hero. Card and page
+headings use `main.css`'s opt-out family (`.card-title` / `.page-heading`) —
+STYLE_GUIDE §3.7 explains why utilities cannot do that job.
+
 ### Home collections
 `HomeView` is the one page that shows a visitor's own campaigns and characters
 without being asked. Both lists are the stores' derived order
 (`sortedCampaigns` / `sortedCharacters`, see "State management" below) and render
-through `BaseCarousel` (`src/components/base/`), the shared scroll-snapping
-strip. The strips appear for any session — an account or the Guest Demo identity
-— and each panel hides itself when its list is empty, so an anonymous visitor's
-home page stays the bare hero.
+through `BaseCarousel` (`src/components/base/`), the shared scroll-snapping strip
+that each caller sizes itself (`itemClass`: campaigns `w-72 md:w-96`, characters
+`w-80`). Characters render through the same `CharacterCard` the character list
+uses, so one character looks the same in both places. The strips appear for any
+session — an account or the Guest Demo identity — and each panel hides itself when
+its list is empty, so an anonymous visitor gets the greeting alone.
 
 ### State management
 - Pinia stores are the single source of truth
