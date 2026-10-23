@@ -77,7 +77,7 @@
           <ul class="list-none pl-5 space-y-2">
             <li class="flex items-center gap-2 parchment-text">
               <span style="color: var(--color-secondary-500)">📜</span>
-              <span>Create and manage your 5E RPG campaigns</span>
+              <span>Create and manage your 5e RPG campaigns</span>
             </li>
             <li class="flex items-center gap-2 parchment-text">
               <span style="color: var(--color-secondary-500)">👥</span>

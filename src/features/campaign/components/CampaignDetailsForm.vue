@@ -126,8 +126,8 @@ useUnsavedChanges(
           </option>
         </select>
         <p class="text-xs text-muted mt-1">
-          System-specific sections (Offworlders ship, D&amp;D 5e spell search) appear for members
-          when a system is chosen.
+          System-specific sections (Offworlders ship, 5e spell search) appear for members when a
+          system is chosen.
         </p>
       </div>
     </div>

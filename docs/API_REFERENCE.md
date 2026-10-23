@@ -753,7 +753,7 @@ Overview party preview read it, so the two cannot disagree.
 
 | Route                | Requires Auth | Requires session | Notes                                 |
 | -------------------- | ------------- | ---------------- | ------------------------------------- |
-| /                    | No            | No               | Public                                |
+| /                    | No            | No               | Public; a session also gets its campaigns/characters as carousels |
 | /about               | No            | No               | Public                                |
 | /spells              | No            | No               | Public                                |
 | /login               | No            | No               | Redirects authenticated users to home |

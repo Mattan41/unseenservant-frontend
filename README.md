@@ -13,7 +13,7 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 ## Features
 
 - Campaign management with participants and roles (GM/Player)
-- Character builder and tracker for D&D 5e
+- Character builder and tracker for 5e
 - Import characters into campaigns
 - Settings for everyone — colour theme and profile — plus an administrator
   surface for accounts and the email whitelist. The theme (Settings → General) is

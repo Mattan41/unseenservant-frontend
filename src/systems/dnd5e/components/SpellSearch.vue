@@ -76,9 +76,9 @@ async function onSaveSpell(spell) {
 
 <template>
   <div class="spell-search">
-    <!-- Header with 5E context -->
+    <!-- Header with 5e context -->
     <div class="mb-4">
-      <h4 class="mb-0.5 text-heading">Search 5E Spells</h4>
+      <h4 class="mb-0.5 text-heading">Search 5e Spells</h4>
       <p class="text-xs text-default">
         Search spells compatible with the 5th Edition of the world's oldest fantasy roleplaying
         game.

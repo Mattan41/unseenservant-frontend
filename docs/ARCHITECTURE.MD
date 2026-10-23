@@ -31,7 +31,7 @@ src/
 ├── router/
 │   └── index.js              # Routes + auth guard
 ├── views/                    # Top-level views not belonging to a feature
-│   ├── HomeView.vue
+│   ├── HomeView.vue          # hero + the signed-in visitor's campaign/character carousels
 │   ├── AboutView.vue
 │   ├── PrivacyPolicyView.vue # /privacy — how personal data is handled
 │   ├── TermsView.vue         # /terms — the terms for using the service
@@ -92,13 +92,13 @@ src/
 │   │   ├── constants.js      # Classes, attributes, skill/ability catalogs + descriptions, weapons/armor/items, empty-data factory
 │   │   ├── shipConstants.js  # Ship defaults + upgrade catalog + upgrade helpers (pp.13/26)
 │   │   └── OffworldersSheet.vue  # The Offworlders character sheet (vitals + gear + attributes + skills/abilities)
-│   └── dnd5e/                # Dungeons & Dragons 5e
+│   └── dnd5e/                # 5e (identifier mirrors the API contract)
 │       ├── api/
 │       │   └── open5e-axios.js        # Open5e API client (public, no auth)
 │       ├── components/       # SpellSearch, SpellCard, SpellDetailModal, Dnd5eSpellSearchPanel, Dnd5eStatsPanel, Dnd5eCharacterForm
 │       ├── views/            # SpellSearchView
 │       ├── constants.js      # Races, classes, ability scores, empty-data factory
-│       ├── Dnd5eSheet.vue    # The D&D 5e character sheet (stats + spells + Open5e search)
+│       ├── Dnd5eSheet.vue    # The 5e character sheet (stats + spells + Open5e search)
 │       ├── dnd5eSpellService.js
 │       ├── dnd5eSpellStore.js
 │       └── spellUtils.js
@@ -202,6 +202,15 @@ three components, not copying their markup. The journal is one more campaign
 section rather than a new area: `CampaignView.SECTIONS` carries it (flagged
 `participantOnly`, since a journal belongs to a participant) and it renders
 `JournalBoard`, the same way Messages renders `MessageBoard`.
+
+### Home collections
+`HomeView` is the one page that shows a visitor's own campaigns and characters
+without being asked. Both lists are the stores' derived order
+(`sortedCampaigns` / `sortedCharacters`, see "State management" below) and render
+through `BaseCarousel` (`src/components/base/`), the shared scroll-snapping
+strip. The strips appear for any session — an account or the Guest Demo identity
+— and each panel hides itself when its list is empty, so an anonymous visitor's
+home page stays the bare hero.
 
 ### State management
 - Pinia stores are the single source of truth

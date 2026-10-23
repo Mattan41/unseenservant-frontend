@@ -88,7 +88,7 @@ describe('SYSTEM_FORM_OPTIONS', () => {
 
 describe('characterSystemLabel', () => {
   it('labels a known system', () => {
-    expect(characterSystemLabel(DND5E_SYSTEM_TYPE)).toBe('Dungeons & Dragons 5e')
+    expect(characterSystemLabel(DND5E_SYSTEM_TYPE)).toBe('5e')
     expect(characterSystemLabel(OFFWORLDERS_SYSTEM_TYPE)).toBe('Offworlders')
   })
 

@@ -15,7 +15,7 @@ import BaseDocumentPage from '@/components/base/BaseDocumentPage.vue'
       </p>
       <p class="text-secondary">
         Questions about this policy, or about your data, go to
-        <a class="element-link" href="mailto:knishopf@gmail.com">knishopf@gmail.com</a>.
+        <a class="element-link" href="mailto:contact@unseenservant.se">contact@unseenservant.se</a>.
       </p>
     </section>
 

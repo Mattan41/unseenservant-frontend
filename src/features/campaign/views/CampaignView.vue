@@ -108,7 +108,7 @@ const SECTIONS = [
 const navItems = computed(() =>
   SECTIONS.filter((section) => {
     // System-specific sections only appear when the campaign's primary system
-    // matches (e.g. the Offworlders Ship, the D&D 5e spell search).
+    // matches (e.g. the Offworlders Ship, the 5e spell search).
     if (section.system && campaign.value?.primarySystem !== section.system) return false
     // A journal belongs to a participant — someone who is only the campaign's
     // owner, without a seat at the table, has none (the backend refuses it too).
@@ -398,7 +398,7 @@ watch(
     <!-- Mobile campaign bar: title + local navigation trigger -->
     <ContextMobileBar
       :title="campaignStore.getCampaignTitle(campaign.id)"
-      trigger-label="Campaign Views"
+      trigger-label="Campaign Menu"
       @open="campaignNavOpen = true"
     />
 
@@ -752,7 +752,7 @@ watch(
         <JournalBoard :campaign-id="campaign.id" />
       </BaseSection>
 
-      <!-- System-specific sections (Offworlders Ship / D&D 5e spell search) -->
+      <!-- System-specific sections (Offworlders Ship / 5e spell search) -->
       <BaseSection v-else-if="activeSection === 'ship'" :title="shipSectionTitle">
         <CampaignSystemRouter
           :system-type="campaign.primarySystem"

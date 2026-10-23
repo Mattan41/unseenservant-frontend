@@ -27,7 +27,7 @@ export { DND5E_SYSTEM_TYPE as DEFAULT_SYSTEM_TYPE } from '@/systems/dnd5e/consta
 
 /** Selectable systems, in display order (drives the <select>). */
 export const SYSTEM_OPTIONS = [
-  { id: DND5E_SYSTEM_TYPE, label: 'Dungeons & Dragons 5e' },
+  { id: DND5E_SYSTEM_TYPE, label: '5e' },
   { id: OFFWORLDERS_SYSTEM_TYPE, label: 'Offworlders' },
 ]
 

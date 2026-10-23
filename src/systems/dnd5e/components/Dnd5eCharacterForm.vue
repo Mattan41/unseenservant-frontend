@@ -7,7 +7,7 @@ const dnd5e = defineModel({ type: Object, required: true })
 
 <template>
   <div>
-    <!-- Basic D&D 5e info -->
+    <!-- Basic 5e info -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="mb-4">
         <label for="race" class="block text-sm font-medium text-default mb-1">Race</label>

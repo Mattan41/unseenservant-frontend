@@ -308,6 +308,10 @@ all conditional styling in `*Utils.js` files.
 | `.markdown-help-row` | One source/render pair | `flex items-start gap-2` | implemented |
 | `.markdown-help-source` | The literal snippet a user types | `w-24 shrink-0 break-all rounded bg-third-100 px-1 font-mono text-xs` | implemented |
 | `.markdown-help-result` | What the snippet renders to | `min-w-0` | implemented |
+| `.base-carousel` | Carousel strip wrapper (`BaseCarousel.vue`): keeps the prev/next controls beside the track | `flex items-center gap-2` | implemented |
+| `.base-carousel-track` | The scrolling strip itself — flex row, scroll-snapping, scrollbar hidden | `flex min-w-0 flex-1 list-none gap-4 overflow-x-auto pb-2`, `scroll-snap-type: x mandatory`, `scrollbar-width: none` | implemented |
+| `.base-carousel-item` | One card inside a carousel (`w-64`; a caller overrides it through `itemClass`) | `w-64 shrink-0`, `scroll-snap-align: start` | implemented |
+| `.base-carousel-control` | Prev/next `IconButton` in a carousel | `flex-shrink-0 self-center` | implemented |
 
 ### 2.5 Edit action bar → `src/assets/main.css`
 
@@ -356,6 +360,7 @@ identity (name, system, image).
 | `<BaseClampedText>` component | Long markdown block clamped behind a reveal control | `src/components/base/BaseClampedText.vue` (props: `text`, `lines`, `threshold`, `moreLabel`, `lessLabel`, `mode` (`inline` / `modal`), `title`). `inline` (default) expands in place — the campaign description; `modal` opens the full text in a `<BaseModal>` dialog, so use it for long blocks in a narrow column (the character identity rail). The toggle appears only when `toPlainText(text)` exceeds `threshold`, so markdown markers never count towards the cut-off. | implemented |
 | `<BaseInfoBox>` component | Inset callout with a semantic tone | `src/components/base/BaseInfoBox.vue` (props: `variant` (`info` / `success` / `warning` / `danger`), `title`, `icon` (`true` picks by tone, a `BaseIcon` name overrides it, `false` hides it); default slot). Colours come from the `.info-box--{tone}` modifiers, so the tone is a prop — never pass palette utilities from the call site. No outer spacing (pass `class="mb-4"`). | implemented |
 | `<MarkdownHelp>` component | Markdown formatting cheat sheet | `src/components/base/MarkdownHelp.vue` (props: `label`, default `Formatting help`). A `variant="link"` disclosure that expands an in-flow `<BaseInfoBox variant="info">` listing each supported construct as a source snippet plus a live rendering. Deliberately in-flow (not a popover or nested dialog) so it is never clipped inside a scrollable dialog. Rendered by `<BaseMarkdownField>`; use it directly wherever users need the reference. | implemented |
+| `<BaseCarousel>` component | Horizontally scrolling strip of cards, with optional prev/next controls | `src/components/base/BaseCarousel.vue` (props: `items` (Array, required), `label` (the strip's accessible name), `controls` (default `true`), `itemClass`; scoped slot `item` with `{ item, index }`; no emits). Scrolling is native — drag, trackpad, and tabbing into a card — so touch and keyboard need nothing extra; the controls render only while the strip actually overflows and disable at each end, so a list that already fits gets no dead buttons. Colours belong to the cards inside (the controls are `IconButton variant="plain"`); only `.base-carousel*` layout lives in `main.css`. Used by `HomeView` for the signed-in Campaigns and Characters strips. | implemented |
 ---
 
 ### 2.7 Markdown & long-text fields → `src/assets/main.css`, `src/utils/markdown.js`

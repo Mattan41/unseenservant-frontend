@@ -1294,3 +1294,34 @@ select {
 .export-menu-item {
   @apply block w-full px-3 py-2 text-left text-sm text-(--text-default) transition-colors hover:bg-(--surface-inset);
 }
+
+/* --------------------------------------------------------------------------
+   Carousel (BaseCarousel.vue): a horizontally scrolling, scroll-snapping strip
+   of cards with optional previous/next controls. Layout only — the cards
+   inside own their own surface and colours, and the controls are
+   `<IconButton variant="plain">`, whose colours come from `.icon-btn-plain`.
+   -------------------------------------------------------------------------- */
+.base-carousel {
+  @apply flex items-center gap-2;
+}
+
+.base-carousel-track {
+  @apply flex min-w-0 flex-1 list-none gap-4 overflow-x-auto pb-2;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+/* The strip is scrolled by dragging, the arrow controls or the keyboard:
+   a visible scrollbar would only add chrome. */
+.base-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.base-carousel-item {
+  @apply w-64 shrink-0;
+  scroll-snap-align: start;
+}
+
+.base-carousel-control {
+  @apply flex-shrink-0 self-center;
+}

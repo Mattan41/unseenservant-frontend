@@ -69,7 +69,7 @@ import BaseDocumentPage from '@/components/base/BaseDocumentPage.vue'
       <h2 class="section-heading mb-3">8. Contact</h2>
       <p class="text-secondary">
         Questions about these terms go to
-        <a class="element-link" href="mailto:knishopf@gmail.com">knishopf@gmail.com</a>.
+        <a class="element-link" href="mailto:contact@unseenservant.se">contact@unseenservant.se</a>.
       </p>
     </section>
   </BaseDocumentPage>
