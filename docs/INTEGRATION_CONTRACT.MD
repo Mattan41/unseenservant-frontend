@@ -9,6 +9,11 @@ The canonical API reference is `API_REFERENCE.md` — generated from source code
 - **Explicit responses:** All endpoints return DTOs (never raw entities)
 - **Error consistency:** Use standard HTTP status codes + custom exception types
 - **Authentication:** All `/api/**` endpoints require JWT (except `/api/auth/login` and `/api/auth/oauth-init`)
+- **Timestamps:** every `createdAt` / `updatedAt` is a **UTC** wall clock in ISO-8601 local form
+  (no offset, e.g. `2026-05-29T09:00:00`) — the backend writes them from a UTC clock. Parse them
+  through `src/utils/timestampUtils.js` (`parseUtcTimestamp`, `formatUtcDate`, `formatUtcDateTime`),
+  which appends the missing `Z`: `new Date("2026-05-29T09:00:00")` on its own reads the value as
+  *local* time and displays the wrong hour to anyone outside UTC.
 
 ---
 

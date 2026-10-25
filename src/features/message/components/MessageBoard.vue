@@ -6,6 +6,7 @@ import { useUserStore } from '@/features/user/userStore.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
+import { formatUtcDateTime } from '@/utils/timestampUtils.js'
 
 const props = defineProps({
   campaignId: {
@@ -35,16 +36,6 @@ function getSenderNickname(userId) {
   if (!props.participants || !props.participants.length) return 'Unknown User'
   const participant = props.participants.find((p) => String(p.id) === String(userId))
   return participant?.nickname || 'Unknown User'
-}
-
-/**
- * Format an ISO 8601 timestamp for display.
- * @param {string} timestamp
- * @returns {string}
- */
-function formatTimestamp(timestamp) {
-  if (!timestamp) return ''
-  return new Date(timestamp).toLocaleString()
 }
 
 /**
@@ -114,7 +105,7 @@ onUnmounted(() => {
                 {{ getSenderNickname(message.userId) }}
               </span>
               <span class="text-xs text-subtle">
-                {{ formatTimestamp(message.createdAt) }}
+                {{ formatUtcDateTime(message.createdAt) }}
               </span>
             </div>
             <MarkdownText :text="message.messageBody" />
