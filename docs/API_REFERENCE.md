@@ -25,6 +25,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages, guest_journals, guest_journal_pages, guest_planner_plans, guest_planner_dates, guest_planner_attendances, guest_planner_exclusions.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
 - **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — ship crew before ship images, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
+- **Errors are values until the boundary**: a handler returns either the response body (`ok({ … })`) or the `Error` it refuses with (`notFound` / `forbidden` / `badRequest` / `conflict`, all built by `guestError`). `dispatch` is the single place that settles those into a promise, rejecting when the value is an `Error` — so no handler builds a promise, and no refusal is ever tested as a boolean (a promise is always truthy: `if (frozen)` would read as "always decided" the day a handler returned one).
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
   - Characters: CRUD operations, campaign assignment

@@ -414,13 +414,13 @@ function guestCampaignPermissions(campaignId) {
 }
 
 /**
- * Build an axios-shaped rejection for guest mode.
+ * Build an axios-shaped error for guest mode.
  *
  * Guest mode has no HTTP layer, but every caller expects an axios error: a real
  * `Error` whose `response.data.message` and `response.status` are set (the
  * stores branch on `err.response.status`, `extractErrorMessage` reads
  * `response.data`). Wrapping the object in `new Error(...)` keeps that shape
- * while the rejection reason is a proper `Error`.
+ * while the reason a caller finally sees is a proper `Error`.
  *
  * @param {string} message Human-readable error message.
  * @param {number} status HTTP status code to mirror.
@@ -436,24 +436,30 @@ function guestError(message, status) {
   })
 }
 
-/** Reject a guest request with the same 403 shape axios surfaces in full mode. */
+// A refusal is a plain `Error`, never a rejected promise. Handlers return it like any
+// other value (`return notFound(...)`, `if (frozen) return frozen`) and `dispatch` is
+// the single place that turns it into a rejection. Keeping promises out of the handlers
+// is what makes those tests say what they mean: a promise is always truthy, so
+// `if (frozen)` would quietly stop meaning "the plan is decided".
+
+/** The 403 an outsider gets, shaped like the one axios surfaces in full mode. */
 function forbidden(message) {
-  return Promise.reject(guestError(message, 403))
+  return guestError(message, 403)
 }
 
-/** Reject a guest request with the same 400 shape the backend's validation uses. */
+/** The 400 the backend's validation uses. */
 function badRequest(message) {
-  return Promise.reject(guestError(message, 400))
+  return guestError(message, 400)
 }
 
-/** Reject a guest request with the same 404 shape the backend uses. */
+/** The 404 the backend uses. */
 function notFound(message) {
-  return Promise.reject(guestError(message, 404))
+  return guestError(message, 404)
 }
 
-/** Reject a guest request with the same 409 shape the backend uses. */
+/** The 409 the backend uses for a stale version. */
 function conflict(message) {
-  return Promise.reject(guestError(message, 409))
+  return guestError(message, 409)
 }
 
 /**
@@ -485,9 +491,12 @@ function withVisibleBackstories(characters) {
 // same guards, the same status codes and the same messages. Which handler runs
 // for a URL is decided by the ROUTES table further down, never by the handler.
 
-/** Wrap a payload in the axios-shaped response every caller expects. */
+/**
+ * The successful answer: the axios-shaped body every caller expects, as a plain
+ * value — `settle` is what makes it a promise.
+ */
 function ok(data) {
-  return Promise.resolve({ data })
+  return { data }
 }
 
 // --- GET --------------------------------------------------------------------
@@ -576,7 +585,7 @@ function handleShip({ url }) {
   const match = url.match(/campaigns\/([^/]+)\/ship/)
   const campaignId = match?.[1] || null
   const ship = campaignId ? findShip(campaignId) : null
-  if (!ship) return Promise.reject(guestError('Ship not found for campaign: ' + campaignId, 404))
+  if (!ship) return notFound('Ship not found for campaign: ' + campaignId)
 
   return ok(ship)
 }
@@ -801,9 +810,7 @@ function saveShip({ url, data }) {
     data.version !== null &&
     Number(data.version) !== Number(current.version)
   if (isStale) {
-    return Promise.reject(
-      guestError('The ship was updated by someone else. Reload and try again.', 409),
-    )
+    return conflict('The ship was updated by someone else. Reload and try again.')
   }
 
   ships[index] = {
@@ -1142,7 +1149,7 @@ function deleteMessage({ url }) {
 
   const currentUserId = getData(KEYS.USER, null)?.id || 'guest_demo'
   if (String(messages[index].userId) !== String(currentUserId)) {
-    return Promise.reject(guestError('You do not have permission to delete this message.', 403))
+    return forbidden('You do not have permission to delete this message.')
   }
 
   messages.splice(index, 1)
@@ -1236,22 +1243,21 @@ function shiftJournalPositions(journalId, fromPosition, delta) {
 /**
  * The request's page, resolved through the same rules the backend applies.
  *
- * `error` is a plain `Error`, not a rejection: the caller is what turns it into
- * one (`return Promise.reject(resolved.error)`), so nothing here is tested as if
- * it were a promise.
+ * `error` is a plain `Error`, like every refusal in this file: the handler returns
+ * it and `dispatch` rejects with it.
  */
 function resolveJournalPage(url, userId) {
   const pageId = extractId(url)
   const page = getData(KEYS.JOURNAL_PAGES, []).find((entry) => String(entry.id) === String(pageId))
-  if (!page) return { error: guestError('Journal page not found with id: ' + pageId, 404) }
+  if (!page) return { error: notFound('Journal page not found with id: ' + pageId) }
 
   const journal = getData(KEYS.JOURNALS, []).find((entry) => String(entry.id) === String(page.journalId))
   if (!journal || String(journal.userId) !== String(userId)) {
     // Another participant's page is not addressable at all.
-    return { error: guestError('Journal page not found with id: ' + pageId, 404) }
+    return { error: notFound('Journal page not found with id: ' + pageId) }
   }
   if (!isGuestParticipant(journal.campaignId)) {
-    return { error: guestError('You are not a participant in this campaign.', 403) }
+    return { error: forbidden('You are not a participant in this campaign.') }
   }
   return { page, journal }
 }
@@ -1327,7 +1333,7 @@ function createJournalPage({ url, data }) {
 /** PATCH api/journals/pages/{pageId} — rewrite one page. */
 function updateJournalPage({ url, data }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return Promise.reject(resolved.error)
+  if (resolved.error) return resolved.error
   const { page, journal } = resolved
 
   const content = typeof data?.content === 'string' ? data.content : ''
@@ -1382,7 +1388,7 @@ function updateJournalPage({ url, data }) {
 /** DELETE api/journals/pages/{pageId} — delete one page. */
 function deleteJournalPage({ url }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return Promise.reject(resolved.error)
+  if (resolved.error) return resolved.error
   const { page, journal } = resolved
 
   setData(
@@ -1659,10 +1665,10 @@ function setPlannerAttendance({ url, data }) {
   if (frozen) return frozen
 
   const userId = currentGuestUserId()
-  const exclusion = guestPlanExclusions(resolved.plan.id).find(
+  const isExcluded = guestPlanExclusions(resolved.plan.id).some(
     (row) => String(row.userId) === String(userId),
   )
-  if (exclusion) return forbidden('You are not in this plan. Rejoin it before answering.')
+  if (isExcluded) return forbidden('You are not in this plan. Rejoin it before answering.')
 
   const state = String(data?.state || '').toUpperCase()
   if (!['YES', 'NO', 'MAYBE'].includes(state)) {
@@ -1921,8 +1927,19 @@ const FALLBACKS = {
 }
 
 /**
- * Answer one request. A matching route either resolves with the response body
- * or rejects with an axios-shaped error (`forbidden` / `badRequest`).
+ * The one place a refused request becomes a rejection. A handler answers with either the
+ * response body (`ok`) or the `Error` it refuses with (`notFound`, `forbidden`, …); this
+ * turns that pair into the settled promise axios' callers expect, so no handler has to
+ * build a promise of its own.
+ */
+function settle(result) {
+  return result instanceof Error ? Promise.reject(result) : Promise.resolve(result)
+}
+
+/**
+ * Answer one request. A matching route resolves with the response body or rejects with
+ * the axios-shaped `Error` the handler refused with (`notFound` / `forbidden` /
+ * `badRequest` / `conflict`) — `settle` is where that `Error` becomes the rejection.
  *
  * @param {string} method - one of the keys of `FALLBACKS`
  * @param {string} url
@@ -1936,7 +1953,7 @@ function dispatch(method, url, data) {
   const route = ROUTES.find(
     (entry) => entry.method === method && entry.pattern.test(url) && !entry.unless?.test(url),
   )
-  return route ? route.handler({ url, data }) : Promise.resolve(FALLBACKS[method]())
+  return route ? settle(route.handler({ url, data })) : Promise.resolve(FALLBACKS[method]())
 }
 
 /**
