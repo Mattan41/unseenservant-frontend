@@ -536,6 +536,70 @@ export const useCampaignStore = defineStore('campaign', () => {
   }
 
   // ==========================================================================
+  // Add-ons (the optional capabilities of a campaign — the planner is the first)
+  // ==========================================================================
+
+  /**
+   * Switch a campaign add-on on. Owner only; the backend answers with the whole
+   * campaign, which is adopted here so the view's navigation — filtered on
+   * `campaign.addons` — is rebuilt from that one response.
+   * @param {number|string} campaignId
+   * @param {string} addonId
+   * @returns {Promise<object|null>} CampaignResponseDTO, or null when it failed
+   */
+  async function enableAddon(campaignId, addonId) {
+    return setAddon(campaignId, addonId, true)
+  }
+
+  /**
+   * Switch a campaign add-on off. Its data is kept, so switching it back on
+   * returns it.
+   * @param {number|string} campaignId
+   * @param {string} addonId
+   * @returns {Promise<object|null>} CampaignResponseDTO, or null when it failed
+   */
+  async function disableAddon(campaignId, addonId) {
+    return setAddon(campaignId, addonId, false)
+  }
+
+  async function setAddon(campaignId, addonId, enabled) {
+    const notificationStore = useNotificationStore()
+
+    try {
+      const updated = enabled
+        ? await CampaignService.enableAddon(campaignId, addonId)
+        : await CampaignService.disableAddon(campaignId, addonId)
+
+      adoptCampaign(updated)
+      notificationStore.addNotification(
+        enabled ? 'Add-on added to the campaign.' : 'Add-on removed from the campaign.',
+        'success',
+      )
+      return updated
+    } catch (error) {
+      console.error('Failed to change the campaign add-ons:', error)
+      if (!error.handled) {
+        notificationStore.addNotification(
+          extractErrorMessage(error, 'Failed to change the campaign add-ons.'),
+          'error',
+        )
+      }
+      return null
+    }
+  }
+
+  /** Keep both cached copies of a campaign in step with what the server returned. */
+  function adoptCampaign(updated) {
+    if (!updated) return
+
+    campaigns.value = campaigns.value.some((campaign) => campaign.id == updated.id)
+      ? campaigns.value.map((campaign) => (campaign.id == updated.id ? updated : campaign))
+      : [...campaigns.value, updated]
+
+    if (currentCampaign.value?.id == updated.id) currentCampaign.value = updated
+  }
+
+  // ==========================================================================
   // Return all public state, getters, and actions
   // ==========================================================================
   return {
@@ -575,5 +639,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     importCharacterToCampaign,
     removeCharacterFromCampaign,
     clearCampaignCharacters,
+    enableAddon,
+    disableAddon,
   }
 })

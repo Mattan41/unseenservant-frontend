@@ -700,6 +700,98 @@ Nothing written yet — the read creates nothing:
 
 ---
 
+## Campaign add-ons
+
+Optional capabilities a campaign owner switches on. The first one is the **planner**.
+Every campaign answer carries the enabled keys (`CampaignResponseDTO.addons`), and
+the campaign view filters its navigation on them — a section belonging to an add-on
+that is off simply is not in the menu.
+
+**GET /api/campaigns/{id}/addons**
+- Requires: ROLE_USER, campaign visible to the caller (participant or owner)
+- Response: `["planner"]` — the enabled keys as the API spells them; `[]` when there are none
+- Status: 200, 401, 403, 404
+
+**POST /api/campaigns/{id}/addons/{addonKey}** / **DELETE /api/campaigns/{id}/addons/{addonKey}**
+- Requires: ROLE_USER, campaign **owner** only (a non-owner participant gets 403)
+- Idempotent both ways; an unknown key is 400; the add-on's own data is kept, so switching it back on returns it
+- Response: `CampaignResponseDTO` — the whole campaign, which is what the client adopts to rebuild its menu
+- Status: 200, 400, 401, 403, 404
+
+**Guest Demo serves none of this**: it has no backend, and an unrouted request
+answers the generic fallback (`{ data: null }`) rather than an error. A demo campaign
+therefore carries `addons` in `demoData.js`, and the Add-ons block in Campaign
+Settings renders read-only for a guest session (`.guest-notice`). The `demo` profile
+seeds the planner as already added, so the switch is exercised there.
+
+---
+
+## Planner
+
+The first add-on: a plan, its candidate dates and one answer per member and date.
+**Auth:** yes, and the add-on must be on for the campaign — while it is off every
+planner endpoint answers 400. Every mutation answers with the whole plan.
+
+| Endpoint | Who |
+|---|---|
+| `GET /api/planner/campaign/{campaignId}/plans` | participant (add-on on) |
+| `POST /api/planner/campaign/{campaignId}/plans` | any participant |
+| `GET /api/planner/plans/{planId}` | participant |
+| `PATCH /api/planner/plans/{planId}` | any participant, while open (stale `version` → 409) |
+| `PATCH /api/planner/plans/{planId}/status` | any participant; `DECIDED` needs one of the plan's own dates |
+| `DELETE /api/planner/plans/{planId}` | its creator or the campaign owner, else 403 |
+| `POST /api/planner/plans/{planId}/dates` | any participant, while open; one day twice is 409 |
+| `PATCH` / `DELETE /api/planner/dates/{dateId}` | the member who offered it, the plan's creator, or the owner |
+| `PUT` / `DELETE /api/planner/dates/{dateId}/attendance` | any member of the roster |
+| `PUT` / `DELETE /api/planner/plans/{planId}/members/me` | the caller's own seat (rejoin is refused after an owner removal) |
+| `DELETE /api/planner/plans/{planId}/members/{memberId}` | the campaign owner |
+| `PUT /api/planner/plans/{planId}/members/{memberId}` | the campaign owner — the way back after their removal |
+
+Two things are worth pinning down on the wire:
+
+- **The roster is implicit.** `members` lists every campaign participant, each flagged
+  `excluded` (out of the plan) and `removedByOwner` (only the owner puts them back).
+  Nothing has to be inserted when a plan is created or a participant joins later.
+- **An unanswered date counts against it.** A member with no answer has no entry in
+  `attendances`; the percentage is `yes ÷ roster size`, so green means everybody
+  still in the plan said yes. The colour is computed on the client.
+
+### PlannerPlanDTO
+
+```json
+{
+  "id": 4,
+  "campaignId": 1,
+  "title": "Session 12 — when do we play next?",
+  "description": "Pick a day and I will book the table.",
+  "status": "OPEN",
+  "decidedDateId": null,
+  "createdByUserId": 7,
+  "version": 3,
+  "createdAt": "2026-11-01T19:02:11",
+  "updatedAt": "2026-11-04T08:15:00",
+  "dates": [
+    {
+      "id": 9,
+      "date": "2026-11-07",
+      "startTime": "18:00:00",
+      "endTime": "22:00:00",
+      "note": "Saturday evening at my place.",
+      "createdByUserId": 7,
+      "version": 0,
+      "attendances": [
+        { "userId": 7, "state": "YES" },
+        { "userId": 8, "state": "MAYBE" }
+      ]
+    }
+  ],
+  "members": [
+    { "userId": 7, "nickname": "The Hero", "role": "GM", "excluded": false, "removedByOwner": false },
+    { "userId": 9, "nickname": "The Rogue", "role": "PLAYER", "excluded": true, "removedByOwner": false }
+  ]
+}
+```
+
 ## Notes for Teams
 
 **Frontend:** This contract defines what you can expect. If backend deviates, flag it immediately.

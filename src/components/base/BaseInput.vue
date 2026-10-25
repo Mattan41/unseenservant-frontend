@@ -76,6 +76,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Renders the native `required` attribute on the input (not the wrapper). */
+  required: {
+    type: Boolean,
+    default: false,
+  },
   min: {
     type: [String, Number],
     default: undefined,
@@ -138,6 +143,7 @@ function onInput(event) {
       :placeholder="placeholder"
       :disabled="disabled"
       :readonly="readonly"
+      :required="required || undefined"
       :min="min"
       :max="max"
       :step="step"

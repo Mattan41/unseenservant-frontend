@@ -37,6 +37,9 @@ import {
   getCampaignPermissions,
 } from '@/features/campaign/campaignPermissions.js'
 import CampaignSystemRouter from '@/features/campaign/dispatchers/CampaignSystemRouter.vue'
+import PlannerSection from '@/features/planner/components/PlannerSection.vue'
+import CampaignAddonsSection from '@/features/campaign/components/CampaignAddonsSection.vue'
+import { PLANNER_ADDON, isAddonEnabled } from '@/features/campaign/campaignAddons.js'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { OFFWORLDERS_SHIP_DEFAULT_IMAGE } from '@/systems/offworlders/shipConstants.js'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
@@ -96,6 +99,9 @@ const SECTIONS = [
   { key: 'journal', label: 'My journal', icon: 'journal', participantOnly: true },
   { key: 'ship', label: 'Ship', icon: 'ship', system: OFFWORLDERS_SYSTEM_TYPE },
   { key: 'spells', label: 'Spell Search', icon: 'spells', system: DND5E_SYSTEM_TYPE },
+  // An add-on's section: it appears only while the campaign's owner has that add-on
+  // switched on (see `campaignAddons.js`, and Campaign Settings → Add-ons).
+  { key: 'planner', label: 'Planner', icon: 'planner', addon: PLANNER_ADDON },
   { key: 'campaign-settings', label: 'Campaign Settings', icon: 'settings' },
 ]
 
@@ -113,6 +119,8 @@ const navItems = computed(() =>
     // A journal belongs to a participant — someone who is only the campaign's
     // owner, without a seat at the table, has none (the backend refuses it too).
     if (section.participantOnly && !permissions.value.isParticipant) return false
+    // An add-on's section exists only while that add-on is switched on.
+    if (section.addon && !isAddonEnabled(campaign.value, section.addon)) return false
     return true
   }),
 )
@@ -128,6 +136,38 @@ function readSectionFromRoute() {
 }
 
 const activeSection = ref(readSectionFromRoute())
+
+/**
+ * The planner's open plan, which lives in the URL as well (`?plan=<id>`): the
+ * section is not a route of its own, so a refresh or a shared link has to be able
+ * to reopen the same plan. `null` means "the list".
+ */
+function readPlanFromRoute() {
+  const requested = route.query.plan
+  return requested === undefined || requested === null || requested === '' ? null : String(requested)
+}
+
+const activePlanId = ref(readPlanFromRoute())
+
+function selectPlan(planId) {
+  activePlanId.value = planId
+  const query = { ...route.query }
+  if (planId === null) delete query.plan
+  else query.plan = planId
+  router.replace({ query })
+}
+
+watch(
+  () => route.query.plan,
+  () => {
+    activePlanId.value = readPlanFromRoute()
+  },
+)
+
+// A plan belongs to one campaign, so moving to another one closes it. Guarded on a
+// change of id (not the first load) so a deep link straight into a plan survives —
+// the campaign watcher at the end of this file does the clearing.
+
 
 /**
  * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
@@ -169,6 +209,17 @@ watch(navItems, (items) => {
     if (route.query.section) {
       const query = { ...route.query }
       delete query.section
+      router.replace({ query })
+    }
+  }
+
+  // Switching the planner off (or leaving the table) takes its open plan with it:
+  // `?plan=` is meaningless once the section is gone.
+  if (!items.some((section) => section.key === 'planner') && activePlanId.value) {
+    activePlanId.value = null
+    if (route.query.plan) {
+      const query = { ...route.query }
+      delete query.plan
       router.replace({ query })
     }
   }
@@ -366,6 +417,19 @@ onMounted(async () => {
   await loadCampaignData(route.params.id)
 })
 
+/**
+ * Switch a campaign add-on on or off (owner only). The backend answers with the
+ * whole campaign, so the navigation — filtered on `campaign.addons` — is rebuilt
+ * from that one response rather than guessed at here.
+ */
+async function toggleAddon({ addonId, enabled }) {
+  const updated = enabled
+    ? await campaignStore.enableAddon(campaign.value.id, addonId)
+    : await campaignStore.disableAddon(campaign.value.id, addonId)
+
+  if (updated) campaign.value = updated
+}
+
 onUnmounted(() => {
   if (route.params.id) {
     const id = route.params.id
@@ -380,9 +444,21 @@ onUnmounted(() => {
 watch(
   () => route.params.id,
   async (newId, oldId) => {
-    if (newId && newId !== oldId) {
-      await loadCampaignData(newId)
+    if (!newId || newId === oldId) return
+
+    // A plan belongs to one campaign, so leaving for another one closes it: the
+    // `?plan=` id would mean nothing there. `oldId` guards the first load, so a
+    // deep link straight into a plan survives.
+    if (oldId) {
+      activePlanId.value = null
+      if (route.query.plan) {
+        const query = { ...route.query }
+        delete query.plan
+        router.replace({ query })
+      }
     }
+
+    await loadCampaignData(newId)
   },
 )
 </script>
@@ -772,6 +848,16 @@ watch(
         />
       </BaseSection>
 
+      <!-- Planner: the campaign's first add-on. Its section is in the navigation
+           only while the add-on is on, and the open plan is in the URL. -->
+      <BaseSection v-else-if="activeSection === 'planner'" title="Planner">
+        <PlannerSection
+          :campaign="campaign"
+          :plan-id="activePlanId"
+          @select-plan="selectPlan"
+        />
+      </BaseSection>
+
       <!-- Campaign Settings: personal nickname for everyone, campaign details
            for the GM, and participant management + danger zone for the owner. -->
       <BaseSection v-else-if="activeSection === 'campaign-settings'" title="Campaign Settings">
@@ -794,6 +880,13 @@ watch(
             v-if="permissions.canManageParticipants"
             :campaign-id="String(campaign.id)"
             @participants-updated="handleParticipantsUpdated"
+          />
+
+          <!-- Owner: optional add-ons for the campaign (the planner is the first) -->
+          <CampaignAddonsSection
+            v-if="permissions.canManageAddons"
+            :campaign="campaign"
+            @toggle="toggleAddon"
           />
 
           <!-- Owner: danger zone (transfer ownership + delete) -->

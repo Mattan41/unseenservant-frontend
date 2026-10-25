@@ -107,6 +107,18 @@
   @apply m-0 w-full p-0 text-left text-base font-normal text-(--text-default) cursor-pointer focus:ring-2 focus:ring-primary-600;
 }
 
+/* Planner answer button (PlannerDateRow.vue): one pill per answer — "Can attend",
+   "Not sure", "Cannot". `variant` comes from
+   `plannerUtils.js:answerVariant`, so which one is pressed is decided there and
+   never by a class chain in the template. */
+.base-btn-answer {
+  @apply bg-transparent border border-(--border-input) text-(--text-default) hover:bg-(--surface-raised) focus:ring-primary-600;
+}
+
+.base-btn-answer-selected {
+  @apply bg-primary-700 border border-primary-800 text-primary-100 hover:bg-primary-800 focus:ring-primary-700;
+}
+
 /* The tile's glyph is a hint, not a compact control's icon: bigger than the
    `h-4 w-4` `.base-btn-icon` sets for ordinary buttons. */
 .base-btn-tile .base-btn-icon {

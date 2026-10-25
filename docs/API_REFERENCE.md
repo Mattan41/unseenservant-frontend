@@ -22,13 +22,15 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### src/api/lib/guest-axios.js — LocalStorage Mock Adapter
 
 - Provides an axios-like interface that reads and writes to localStorage.
-- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages.
+- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages, guest_journals, guest_journal_pages, guest_planner_plans, guest_planner_dates, guest_planner_attendances, guest_planner_exclusions.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
-- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — ship crew before ship images — and a new endpoint is one new entry, not another branch in a method.
+- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — ship crew before ship images, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
   - Characters: CRUD operations, campaign assignment
   - Campaigns: CRUD operations, participant management
+  - Planner: plans, dates and answers (/api/planner/**), with the backend's rules — the campaign's `planner` add-on gates the endpoints, the roster is the participants minus the plan's exclusions, and a decided plan freezes until it is reopened
+  - **Campaign add-ons: not served.** `/api/campaigns/{id}/addons` has no guest route; an unrouted request resolves to the generic fallback (`{ data: null }`), not an error — so the Add-ons block in Campaign Settings is read-only for a guest session and a demo campaign carries its `addons` in the seed data (see ARCHITECTURE.MD → Guest Mode Limitations)
   - Image uploads: Returns placeholder URLs
   - Admin: **not served** — Guest Demo has no admin surface (see ARCHITECTURE.MD → Guest Mode Limitations)
 
@@ -959,6 +961,118 @@ page's identity.
 
 ---
 
+## Feature: Planner
+
+The planner is the campaign's first **add-on**: the owner switches it on in
+Campaign Settings → Add-ons, and its section then appears in the campaign menu for
+everybody in the campaign. The endpoints are the backend's
+(`/api/planner/**`) — what a client needs to know is here.
+
+A **plan** is a question the group is answering ("Session 12 — when do we play
+next?"), with **candidate dates** and one **answer per member and date**. Any
+participant may start a plan, offer dates, answer, decide and reopen; the campaign
+owner may take somebody else out of a plan and put them back — their answers survive
+either way — and a plan's creator or the owner may delete it.
+
+**The colour marker** is the element itself, computed on the client and never stored:
+a date row (and a plan card's best-day line) takes the background of its level. There
+is no badge for it — the day is tinted instead of carrying a chip. The four
+`.availability-surface-*` classes read the mode-aware `--availability-*-surface` /
+`-border` roles, so the hue is the same in light and dark while the lightness
+follows the mode.
+
+| Level | Class | When |
+|---|---|---|
+| full | `.availability-surface-full` (green) | every member still in the plan answered **yes** |
+| high | `.availability-surface-high` (orange) | ≥ 70 % |
+| medium | `.availability-surface-medium` (yellow) | ≥ 40 % |
+| low | `.availability-surface-low` (red) | below that |
+
+The percentage is `yes ÷ roster size`, where the roster is the campaign's
+participants minus those who left the plan — so **a member who has not answered
+counts against a date**, and green really does mean "everybody still in can come".
+`MAYBE` is shown in the roll-call and never counted as a yes. `plannerUtils.js`
+holds both the maths and the class names (`availabilitySurfaceClass`,
+`answerBadgeClass`, `answerVariant`), so no component decides a colour.
+
+`DECIDED` versus `OPEN`: a decided plan carries the date it settled on, refuses new
+dates, answers and roster changes, and is editable again the moment somebody
+reopens it. Reopening clears the chosen date.
+
+**One date is edited at a time**, and the editor opens inside that date's own row
+(`PlannerDateRow`'s `editor` slot, the form itself in `PlannerDateForm.vue`), which is
+what makes it plain which day is being changed — every other date stays exactly as it
+looks when nothing is being edited. Starting on another date — or cancelling one that
+has been changed — opens `PlannerUnsavedChangesDialog` first, offering **Discard
+changes**, **Save changes** and **Continue editing**; `plannerUtils.js:isDateFormDirty`
+is what decides whether there is anything to lose. The "offer another date" form below
+the list keeps its own draft, so adding a date never disturbs the editor that is open.
+
+### plannerStore — State Shape
+
+```javascript
+{
+  campaignId: number|string|null,  // the campaign whose plans are loaded
+  plans: Array,                    // PlannerPlanDTO[], adopted whole from every answer
+  currentPlanId: number|string|null, // the plan on screen (mirrors `?plan=`)
+  isLoading: boolean,
+  isSaving: boolean,
+  hasConflict: boolean,            // a 409 was answered: somebody else got there first
+  error: string|null,
+}
+```
+
+Derived: `openPlans`, `decidedPlans`, `currentPlan`.
+
+### GET /api/planner/campaign/{campaignId}/plans
+
+- **Service**: `PlannerService.fetchPlans(campaignId)`
+- **Store Action**: `plannerStore.fetchPlans(campaignId)`
+- **Guest Mode**: Mocked — reads `guest_planner_*`, participant-only, and only for a campaign whose `planner` add-on is on
+- **Response**: `[ PlannerPlanDTO ]` — open plans first, then the decided ones
+- **Status Codes**: 200, 400 (add-on off), 401, 403, 404
+
+### The rest of the surface
+
+Every mutation answers with the **whole plan**, which the store adopts — one
+response always describes the new state:
+
+| Call | Store action | Notes |
+|---|---|---|
+| POST `/api/planner/campaign/{id}/plans` | `createPlan({ title, description })` | 201; opens the new plan |
+| PATCH `/api/planner/plans/{planId}` | `updatePlan(plan, { title, description })` | carries `version` (409 when stale) |
+| PATCH `/api/planner/plans/{planId}/status` | `decidePlan(plan, dateId)` / `reopenPlan(plan)` | deciding needs one of the plan's own dates; both refetch the list, because the status decides its order |
+| DELETE `/api/planner/plans/{planId}` | `deletePlan(plan)` | 204; the store drops it and closes it |
+| POST `/api/planner/plans/{planId}/dates` | `addDate(plan, date)` | 201; the same day twice in one plan is 409 |
+| PATCH `/api/planner/dates/{dateId}` | `updateDate(date, change)` | carries the date's `version` |
+| DELETE `/api/planner/dates/{dateId}` | `deleteDate(date)` | |
+| PUT `/api/planner/dates/{dateId}/attendance` | `setAttendance(date, state)` | `YES`/`NO`/`MAYBE`, one row per member and date |
+| DELETE `/api/planner/dates/{dateId}/attendance` | `clearAttendance(date)` | back to "not answered" |
+| PUT `/api/planner/plans/{planId}/members/me` | `rejoinPlan(plan)` | refused when the owner removed them |
+| DELETE `/api/planner/plans/{planId}/members/me` | `leavePlan(plan)` | one exclusion row; answers are kept |
+| DELETE `/api/planner/plans/{planId}/members/{memberId}` | `removeMember(plan, memberId)` | campaign owner only |
+| PUT `/api/planner/plans/{planId}/members/{memberId}` | `addMember(plan, memberId)` | campaign owner only; the way back for a member the owner removed, and a no-op when they are not out |
+
+A 409 from any of them sets `hasConflict` and shows the conflict sentence instead of
+retrying: the caller's copy is simply old.
+
+### URL state
+
+The section is not a route: `?section=planner` shows the planner and `?plan=<id>`
+opens one plan, so a refresh or a shared link reopens the same plan. Switching
+campaigns (or switching the add-on off) drops the `plan` parameter, because a plan
+belongs to exactly one campaign.
+
+### Guest Demo
+
+The planner is mocked per browser (`guest_planner_plans`, `guest_planner_dates`,
+`guest_planner_attendances`, `guest_planner_exclusions`) with the backend's rules.
+The Strahd campaign ships with the add-on on, four candidate dates that show all
+four markers, and one decided plan with a member who left. Managing the add-on
+itself is **not** mocked — see ARCHITECTURE.MD → Guest Mode Limitations.
+
+---
+
 ## Feature: Admin
 
 The administrator surface lives under `/api/admin/**` and is reached through
@@ -1113,3 +1227,13 @@ They are **not** the same switch, and the Admin section says so in its copy:
   and the demo user is an ordinary `USER`. `guest_whitelist` no longer exists on
   the client, so the live backend's 400/404 differences for an unknown row or
   account have no guest counterpart.
+- **Campaign add-ons are pre-set, and cannot be managed.** `/api/campaigns/{id}/addons`
+  is not served and nothing mocks it — an unrouted request resolves to the generic
+  fallback (`{ data: null }`), not an error — so the Add-ons block in Campaign
+  Settings renders read-only for a guest session (behind the same `.guest-notice` the
+  image uploads use). A demo campaign's `addons` come from `demoData.js`, passed
+  through by the adapter untouched. Managing add-ons is what Demo Mode
+  (`npm run demo` + the backend's `demo` profile) is for.
+- **The planner is mocked, per browser.** `/api/planner/**` is served from
+  `guest_planner_*` with the backend's rules, and the Strahd campaign ships with the
+  planner switched on. See `## Feature: Planner` → Guest Demo.

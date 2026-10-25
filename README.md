@@ -20,6 +20,13 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
   reachable without an account, so it can be set before logging in.
 - Image uploads (campaign, character and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`)
 - Private journals per campaign participant: a book of numbered markdown pages, one per participant per campaign, readable only by its owner (10,000 characters per page by default, at most 500 pages)
+- Campaign **add-ons** — optional parts an owner switches on in Campaign Settings →
+  Add-ons, each one adding a section to the campaign menu. The first is the
+  **planner**: anybody in the campaign starts a plan, everybody offers the days they
+  could meet and marks whether they can attend, and each day is marked at a glance
+  (green only when everybody still in the plan can come, then orange / yellow / red).
+  A plan is either open or decided, and reopening it makes it editable again; the
+  campaign owner can take a participant out of a plan, or put them back
 
 ## Campaign roles & permissions
 
@@ -77,7 +84,7 @@ VITE_API_BASE_URL=http://localhost:8080
 3. start frontend with `npm run demo`. 
 This uses form login with test users (User1-User5, admin — all passwords: `password`). 
 
-* **Guest Demo Mode:** No backend required. You can run the frontend completely decoupled by clicking **"Guest Demo"** on the login screen to run the app using a local `localStorage` adapter seeded with mock data (Note: image uploads are not supported in this mode).
+* **Guest Demo Mode:** No backend required. You can run the frontend completely decoupled by clicking **"Guest Demo"** on the login screen to run the app using a local `localStorage` adapter seeded with mock data (Note: image uploads are not supported in this mode, and campaign add-ons are pre-set rather than manageable — the planner itself works, with demo plans seeded on the Strahd campaign; run Demo Mode to manage add-ons).
 
 **2. Install and run**
 
