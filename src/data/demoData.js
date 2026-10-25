@@ -455,6 +455,10 @@ Punctuality: Please arrive on time and notify the group if you’ll be late or a
 - **Have Fun:** Remember, the goal is collective storytelling and enjoyment. Support your fellow players and embrace the horror-adventure together!`,
     imageUrl: 'https://www.dndbeyond.com/attachments/8/220/cos-cover-4k.jpg',
     primarySystem: 'DND5E',
+    // The one demo campaign that ships with the planner switched on. Guest Demo
+    // serves no add-on endpoint, so this is the whole story of "which add-ons a demo
+    // campaign has" (see docs/ARCHITECTURE.MD → Guest Mode Limitations).
+    addons: ['planner'],
     privateDescription:
       'Strahd is not merely toying with the party: he believes one of them carries the reincarnated soul of **Tatyana**.\n\nThe amber sarcophagi in the catacombs each hold a dark vestige that will bargain for freedom.',
     ownerId: 'guest_demo',
@@ -637,6 +641,168 @@ export const guestMessages = [
 ]
 
 /**
+ * The campaign planner's demo data: two plans on the Strahd campaign, which is the
+ * one that ships with the `planner` add-on switched on.
+ *
+ * The four candidate dates of the open plan are chosen so all four availability
+ * levels appear: everybody can (green), three of four can (orange), half can (yellow — the
+ * third member is a *maybe*, which is never counted as a yes), and one of four can
+ * (red). The roster is the campaign's participants minus the exclusion rows, so
+ * nothing here lists who is in the plan.
+ *
+ * The decided plan shows the other half of the feature: a settled day, a member who
+ * left (their answers were kept), and a chosen date everybody in the roster could
+ * make.
+ */
+const daysAgo = (days) => new Date(Date.now() - 86400000 * days).toISOString()
+
+export const guestPlannerPlans = [
+  {
+    id: 'guest_plan_1',
+    campaignId: 'guest_campaign_1',
+    title: 'Session 12 — when do we play next?',
+    description:
+      'Barovia will wait. We will not: pick a day and I will book the table.\n\nI can host, but only after 18:00 on a weekday.',
+    status: 'OPEN',
+    decidedDateId: null,
+    createdByUserId: 'guest_player_1',
+    version: 0,
+    createdAt: daysAgo(3),
+    updatedAt: daysAgo(1),
+  },
+  {
+    id: 'guest_plan_2',
+    campaignId: 'guest_campaign_1',
+    title: 'Session 11 — recap night',
+    description: 'Catching up on what we did before the crypt.',
+    status: 'DECIDED',
+    decidedDateId: 'guest_plan_2_date_2',
+    createdByUserId: 'guest_demo',
+    version: 2,
+    createdAt: daysAgo(30),
+    updatedAt: daysAgo(21),
+  },
+]
+
+export const guestPlannerDates = [
+  {
+    id: 'guest_plan_1_date_1',
+    planId: 'guest_plan_1',
+    date: '2026-11-07',
+    startTime: '18:00',
+    endTime: '22:00',
+    note: 'Saturday evening at my place.',
+    createdByUserId: 'guest_player_1',
+    version: 0,
+    createdAt: daysAgo(3),
+    updatedAt: daysAgo(3),
+  },
+  {
+    id: 'guest_plan_1_date_2',
+    planId: 'guest_plan_1',
+    date: '2026-11-14',
+    startTime: '19:00',
+    endTime: '23:00',
+    note: 'Same table, one week later.',
+    createdByUserId: 'guest_player_2',
+    version: 0,
+    createdAt: daysAgo(3),
+    updatedAt: daysAgo(3),
+  },
+  {
+    id: 'guest_plan_1_date_3',
+    planId: 'guest_plan_1',
+    date: '2026-11-21',
+    startTime: null,
+    endTime: null,
+    note: 'Sunday afternoon, bring dice.',
+    createdByUserId: 'guest_player_3',
+    version: 0,
+    createdAt: daysAgo(2),
+    updatedAt: daysAgo(2),
+  },
+  {
+    id: 'guest_plan_1_date_4',
+    planId: 'guest_plan_1',
+    date: '2026-12-05',
+    startTime: '18:30',
+    endTime: '22:30',
+    note: 'Last chance before the holidays.',
+    createdByUserId: 'guest_demo',
+    version: 0,
+    createdAt: daysAgo(1),
+    updatedAt: daysAgo(1),
+  },
+  {
+    id: 'guest_plan_2_date_1',
+    planId: 'guest_plan_2',
+    date: '2026-10-17',
+    startTime: '18:00',
+    endTime: '22:00',
+    note: null,
+    createdByUserId: 'guest_demo',
+    version: 0,
+    createdAt: daysAgo(30),
+    updatedAt: daysAgo(30),
+  },
+  {
+    id: 'guest_plan_2_date_2',
+    planId: 'guest_plan_2',
+    date: '2026-10-24',
+    startTime: '19:00',
+    endTime: '23:00',
+    note: 'Everybody could make this one.',
+    createdByUserId: 'guest_demo',
+    version: 0,
+    createdAt: daysAgo(30),
+    updatedAt: daysAgo(21),
+  },
+]
+
+export const guestPlannerAttendances = [
+  // 7 November: everybody can — the green marker.
+  { id: 'guest_att_1', planDateId: 'guest_plan_1_date_1', userId: 'guest_demo', state: 'YES' },
+  { id: 'guest_att_2', planDateId: 'guest_plan_1_date_1', userId: 'guest_player_1', state: 'YES' },
+  { id: 'guest_att_3', planDateId: 'guest_plan_1_date_1', userId: 'guest_player_2', state: 'YES' },
+  { id: 'guest_att_4', planDateId: 'guest_plan_1_date_1', userId: 'guest_player_3', state: 'YES' },
+
+  // 14 November: three of four — orange.
+  { id: 'guest_att_5', planDateId: 'guest_plan_1_date_2', userId: 'guest_demo', state: 'YES' },
+  { id: 'guest_att_6', planDateId: 'guest_plan_1_date_2', userId: 'guest_player_1', state: 'YES' },
+  { id: 'guest_att_7', planDateId: 'guest_plan_1_date_2', userId: 'guest_player_2', state: 'NO' },
+  { id: 'guest_att_8', planDateId: 'guest_plan_1_date_2', userId: 'guest_player_3', state: 'YES' },
+
+  // 21 November: two of four, one of them a maybe — yellow.
+  { id: 'guest_att_9', planDateId: 'guest_plan_1_date_3', userId: 'guest_demo', state: 'YES' },
+  { id: 'guest_att_10', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_1', state: 'MAYBE' },
+  { id: 'guest_att_11', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_2', state: 'NO' },
+  { id: 'guest_att_12', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_3', state: 'YES' },
+
+  // 5 December: one of four, and one has not answered at all — red.
+  { id: 'guest_att_13', planDateId: 'guest_plan_1_date_4', userId: 'guest_demo', state: 'NO' },
+  { id: 'guest_att_14', planDateId: 'guest_plan_1_date_4', userId: 'guest_player_2', state: 'NO' },
+  { id: 'guest_att_15', planDateId: 'guest_plan_1_date_4', userId: 'guest_player_3', state: 'YES' },
+
+  // The decided plan: the day it settled on, and the one it did not.
+  { id: 'guest_att_16', planDateId: 'guest_plan_2_date_1', userId: 'guest_player_3', state: 'NO' },
+  { id: 'guest_att_17', planDateId: 'guest_plan_2_date_2', userId: 'guest_demo', state: 'YES' },
+  { id: 'guest_att_18', planDateId: 'guest_plan_2_date_2', userId: 'guest_player_1', state: 'YES' },
+  { id: 'guest_att_19', planDateId: 'guest_plan_2_date_2', userId: 'guest_player_2', state: 'YES' },
+]
+
+/** A member who left a plan. Their answers stay, so rejoining restores them. */
+export const guestPlannerExclusions = [
+  {
+    id: 'guest_plan_2_exclusion_1',
+    planId: 'guest_plan_2',
+    userId: 'guest_player_3',
+    removedByOwner: false,
+    removedBy: 'User3',
+    createdAt: daysAgo(25),
+  },
+]
+
+/**
  * Every localStorage key the guest/demo mode owns. Kept in one place so the
  * seed and clear helpers can never drift (e.g. silently forget `guest_ships`).
  */
@@ -650,6 +816,10 @@ const GUEST_STORAGE_KEYS = [
   'guest_messages',
   'guest_journals',
   'guest_journal_pages',
+  'guest_planner_plans',
+  'guest_planner_dates',
+  'guest_planner_attendances',
+  'guest_planner_exclusions',
 ]
 
 /**
@@ -669,6 +839,12 @@ export function seedGuestStorage() {
   // empty: nothing to write means nothing stored, exactly like the backend.
   localStorage.setItem('guest_journals', JSON.stringify([]))
   localStorage.setItem('guest_journal_pages', JSON.stringify([]))
+  // The planner's demo data is meant to be looked at: a campaign with the add-on
+  // switched on, an open plan showing all four availability levels, and a decided one.
+  localStorage.setItem('guest_planner_plans', JSON.stringify(guestPlannerPlans))
+  localStorage.setItem('guest_planner_dates', JSON.stringify(guestPlannerDates))
+  localStorage.setItem('guest_planner_attendances', JSON.stringify(guestPlannerAttendances))
+  localStorage.setItem('guest_planner_exclusions', JSON.stringify(guestPlannerExclusions))
 }
 
 /** Remove every guest/demo key (used when leaving guest mode). */

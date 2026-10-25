@@ -19,6 +19,10 @@ const GUEST_KEYS = [
   'guest_messages',
   'guest_journals',
   'guest_journal_pages',
+  'guest_planner_plans',
+  'guest_planner_dates',
+  'guest_planner_attendances',
+  'guest_planner_exclusions',
 ]
 
 describe('demo data integrity', () => {

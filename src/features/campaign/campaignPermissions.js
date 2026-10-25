@@ -91,6 +91,10 @@ export function isCampaignGm(campaign, userId) {
 /**
  * Resolve the full capability set for a user against a campaign.
  *
+ * The add-on keys are here too: `canManageAddons` is the ownership axis (the owner
+ * switches an optional capability on), while `canPlan` is the shared axis (every
+ * member of the campaign may use what the add-on adds).
+ *
  * @param {object|null} campaign - CampaignResponseDTO (or `null` while loading)
  * @param {number|string|null} currentUserId
  * @returns {{
@@ -125,6 +129,10 @@ export function getCampaignPermissions(campaign, currentUserId) {
     canManageParticipants: isOwner,
     canChangeParticipantRoles: isOwner,
     canEditOthersNicknames: isOwner,
+    // Optional capabilities of the campaign (the planner is the first add-on):
+    // switched on and off by the owner alone, while what they add is shared with
+    // everybody at the table.
+    canManageAddons: isOwner,
 
     // Table-role axis — world-building (GM only).
     canEditCampaignDetails: isGm,
@@ -140,6 +148,10 @@ export function getCampaignPermissions(campaign, currentUserId) {
     // Shared at the table — every participant may view and edit the ship.
     canViewShip: isMember,
     canEditShip: isMember,
+
+    // Shared at the table — every participant may use a campaign's add-ons (start
+    // a plan, offer dates, vote). Only the owner switches them on (above).
+    canPlan: isMember,
   }
 }
 

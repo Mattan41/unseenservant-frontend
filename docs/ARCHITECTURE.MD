@@ -48,11 +48,19 @@ src/
 │   ├── campaign/
 │   │   ├── CampaignService.js
 │   │   ├── campaignStore.js
+│   │   ├── campaignAddons.js     # Add-on registry (label, icon, description) + isAddonEnabled()
 │   │   ├── campaignSystems.js   # Campaign primary-system options/labels + isOffworlders/isDnd5e
 │   │   ├── campaignUtils.js
 │   │   ├── components/
 │   │   ├── dispatchers/        # CampaignSystemRouter.vue (Ship / spell search per primary system)
 │   │   └── views/
+│   ├── planner/                # The campaign planner — the first add-on
+│   │   ├── PlannerService.js
+│   │   ├── plannerStore.js     # plans, adopted whole from every answer
+│   │   ├── plannerConstants.js # statuses, answer states, the limits and the thresholds
+│   │   ├── plannerUtils.js     # the attendance maths, and the colour that follows from it
+│   │   └── components/         # PlannerSection.vue (container) + list, detail, date row,
+│   │   │                       #   date form, unsaved-changes dialog, roster
 │   ├── message/
 │   │   ├── MessageService.js
 │   │   ├── messageStore.js
@@ -83,6 +91,7 @@ src/
 │   ├── imageUpload.js        # Frontend mirror of the backend's 5MB upload limit (validateImageSize).
 │   ├── useImagePicker.js     # Composable: pick → reposition → preview, shared by the campaign/character image editors.
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
+│   ├── timestampUtils.js     # Backend timestamps are UTC: parseUtcTimestamp + the display formatters.
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
 │   ├── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
 │   ├── bodyScrollLock.js     # Counted body scroll lock shared by the modal and drawer overlays.
@@ -148,6 +157,21 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
 
 ### Guest Mode Limitations
 
+- **Add-ons are pre-set, and cannot be managed.** `/api/campaigns/{id}/addons` is
+  not served in Guest Demo and nothing mocks it — an unrouted request resolves to
+  the generic fallback (`{ data: null }`) rather than an error, which is exactly why
+  the Add-ons block in Campaign Settings renders the demo campaigns' add-ons
+  **read-only** for a guest session, behind the same `.guest-notice` the image
+  uploads use. What a demo campaign has comes from `demoData.js` (`addons` on the
+  campaign object, passed through untouched by the adapter), and managing add-ons is
+  what Demo Mode (`npm run demo` + the backend's `demo` profile) is for.
+- **The planner is mocked, per browser.** `/api/planner/**` is served from
+  `guest_planner_plans`, `guest_planner_dates`, `guest_planner_attendances` and
+  `guest_planner_exclusions`, with the same rules as the backend: the add-on gates
+  the endpoints, the roster is the campaign's participants minus the plan's
+  exclusions, one answer per member and date, and a decided plan freezes until it is
+  reopened. The Strahd campaign ships with the planner on, an open plan showing all
+  four availability levels, and one decided plan.
 - **No user administration.** `/api/admin/**` is not served at all, so the
   Settings → Admin section is unreachable for the whole session: `SettingsView`
   filters it out when `authStore.isGuest` is true (and a `?section=admin` deep

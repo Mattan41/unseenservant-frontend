@@ -13,6 +13,7 @@
 import { useAuthStore } from '@/features/auth/authStore'
 import { getCampaignPermissions, isCampaignGm } from '@/features/campaign/campaignPermissions.js'
 import { MAX_PAGES as JOURNAL_MAX_PAGES, MAX_PAGE_CHARS as JOURNAL_MAX_PAGE_CHARS } from '@/features/journal/journalLimits.js'
+import { MAX_NOTE_LENGTH as PLANNER_MAX_NOTE, MAX_TITLE_LENGTH as PLANNER_MAX_TITLE } from '@/features/planner/plannerConstants.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -25,6 +26,10 @@ const KEYS = {
   CREW: 'guest_ship_crew',
   JOURNALS: 'guest_journals',
   JOURNAL_PAGES: 'guest_journal_pages',
+  PLANS: 'guest_planner_plans',
+  PLAN_DATES: 'guest_planner_dates',
+  PLAN_ATTENDANCES: 'guest_planner_attendances',
+  PLAN_EXCLUSIONS: 'guest_planner_exclusions',
 }
 
 // ============================================================================
@@ -135,6 +140,143 @@ function applyShipImageUpload(campaignId, gallery) {
   ships[index] = ship
   setData(KEYS.SHIPS, ships)
   return ship
+}
+
+/** The add-on key the planner is stored under (mirrors the backend's `AddonKey`). */
+const PLANNER_KEY = 'planner'
+
+/** One campaign by id, or null. */
+function guestCampaign(campaignId) {
+  return getData(KEYS.CAMPAIGNS, []).find((c) => String(c.id) === String(campaignId)) || null
+}
+
+/**
+ * Whether a campaign has an add-on switched on.
+ *
+ * Guest mode deliberately serves **no** add-on endpoint: what a demo campaign has is
+ * what its seed data says (`demoData.js`), and the Add-ons block in Campaign
+ * Settings is read-only for a guest session (see docs/ARCHITECTURE.MD → Guest Mode
+ * Limitations).
+ */
+function guestAddonEnabled(campaignId, addonKey) {
+  const campaign = guestCampaign(campaignId)
+  return Array.isArray(campaign?.addons) && campaign.addons.includes(addonKey)
+}
+
+/** The plans stored for one campaign. */
+function guestPlans(campaignId) {
+  return getData(KEYS.PLANS, []).filter((plan) => String(plan.campaignId) === String(campaignId))
+}
+
+function guestPlanDates(planId) {
+  return getData(KEYS.PLAN_DATES, []).filter((date) => String(date.planId) === String(planId))
+}
+
+function guestPlanExclusions(planId) {
+  return getData(KEYS.PLAN_EXCLUSIONS, []).filter((row) => String(row.planId) === String(planId))
+}
+
+/** Insert or replace one stored row, keyed on its id. */
+function savePlannerRow(key, row) {
+  const rows = getData(key, [])
+  const index = rows.findIndex((entry) => String(entry.id) === String(row.id))
+  setData(key, index === -1 ? [...rows, row] : rows.map((entry, i) => (i === index ? row : entry)))
+  return row
+}
+
+/** Delete one stored row. */
+function removePlannerRow(key, id) {
+  setData(key, getData(key, []).filter((entry) => String(entry.id) !== String(id)))
+}
+
+/**
+ * Every campaign participant as a roster row, flagged when this plan has them out.
+ * The roster is implicit in guest mode exactly as on the backend: participants
+ * minus the plan's exclusion rows.
+ */
+function guestPlanMembers(campaignId, exclusions) {
+  return (guestCampaign(campaignId)?.participants || [])
+    .map((participant) => {
+      const exclusion = exclusions.find((row) => String(row.userId) === String(participant.id))
+      return {
+        userId: participant.id,
+        nickname: participant.nickname,
+        role: participant.role,
+        excluded: Boolean(exclusion),
+        removedByOwner: Boolean(exclusion?.removedByOwner),
+      }
+    })
+    .sort((a, b) => String(a.nickname).localeCompare(String(b.nickname), undefined, { sensitivity: 'base' }))
+}
+
+/** A whole plan, the way the backend's PlannerPlanDTO describes one. */
+function guestPlanDTO(plan) {
+  if (!plan) return null
+
+  const attendances = getData(KEYS.PLAN_ATTENDANCES, [])
+  const dates = guestPlanDates(plan.id).sort((a, b) => String(a.date).localeCompare(String(b.date)))
+
+  return {
+    id: plan.id,
+    campaignId: plan.campaignId,
+    title: plan.title,
+    description: plan.description || '',
+    status: plan.status,
+    decidedDateId: plan.decidedDateId ?? null,
+    createdByUserId: plan.createdByUserId,
+    version: Number(plan.version || 0),
+    createdAt: plan.createdAt,
+    updatedAt: plan.updatedAt,
+    dates: dates.map((date) => ({
+      id: date.id,
+      date: date.date,
+      startTime: date.startTime ?? null,
+      endTime: date.endTime ?? null,
+      note: date.note ?? null,
+      createdByUserId: date.createdByUserId,
+      version: Number(date.version || 0),
+      attendances: attendances
+        .filter((entry) => String(entry.planDateId) === String(date.id))
+        .map((entry) => ({ userId: entry.userId, state: entry.state })),
+    })),
+    members: guestPlanMembers(plan.campaignId, guestPlanExclusions(plan.id)),
+  }
+}
+
+/**
+ * Resolve a plan for the current guest, or the refusal to answer with. Mirrors the
+ * backend's order: unknown id → 404, add-on off → 400, outsider → 403.
+ */
+function resolveGuestPlan(planId, { ownerOnly = false } = {}) {
+  const plan = getData(KEYS.PLANS, []).find((entry) => String(entry.id) === String(planId))
+  if (!plan) return { error: notFound('Plan not found with id: ' + planId) }
+  if (!guestAddonEnabled(plan.campaignId, PLANNER_KEY)) {
+    return { error: badRequest('The planner is not enabled for this campaign') }
+  }
+  if (!isGuestParticipant(plan.campaignId)) {
+    return { error: forbidden('User is not a participant in this campaign') }
+  }
+  if (ownerOnly && !guestCampaignPermissions(plan.campaignId).isOwner) {
+    return { error: forbidden('Only the campaign owner can move another member in or out of a plan') }
+  }
+  return { plan }
+}
+
+/** Resolve one candidate date, and the plan it belongs to. */
+function resolveGuestDate(dateId) {
+  const date = getData(KEYS.PLAN_DATES, []).find((entry) => String(entry.id) === String(dateId))
+  if (!date) return { error: notFound('Plan date not found with id: ' + dateId) }
+
+  const resolved = resolveGuestPlan(date.planId)
+  return resolved.error ? resolved : { plan: resolved.plan, date }
+}
+
+/** A plan the caller may change: open, and settled plans freeze until reopened. */
+function requireOpenPlan(plan) {
+  if (plan.status !== 'OPEN') {
+    return badRequest('This plan is decided. Reopen it before changing dates, answers or the roster.')
+  }
+  return null
 }
 
 /** Remove a gallery image (by URL) from a campaign's ship. */
@@ -272,13 +414,13 @@ function guestCampaignPermissions(campaignId) {
 }
 
 /**
- * Build an axios-shaped rejection for guest mode.
+ * Build an axios-shaped error for guest mode.
  *
  * Guest mode has no HTTP layer, but every caller expects an axios error: a real
  * `Error` whose `response.data.message` and `response.status` are set (the
  * stores branch on `err.response.status`, `extractErrorMessage` reads
  * `response.data`). Wrapping the object in `new Error(...)` keeps that shape
- * while the rejection reason is a proper `Error`.
+ * while the reason a caller finally sees is a proper `Error`.
  *
  * @param {string} message Human-readable error message.
  * @param {number} status HTTP status code to mirror.
@@ -294,24 +436,30 @@ function guestError(message, status) {
   })
 }
 
-/** Reject a guest request with the same 403 shape axios surfaces in full mode. */
+// A refusal is a plain `Error`, never a rejected promise. Handlers return it like any
+// other value (`return notFound(...)`, `if (frozen) return frozen`) and `dispatch` is
+// the single place that turns it into a rejection. Keeping promises out of the handlers
+// is what makes those tests say what they mean: a promise is always truthy, so
+// `if (frozen)` would quietly stop meaning "the plan is decided".
+
+/** The 403 an outsider gets, shaped like the one axios surfaces in full mode. */
 function forbidden(message) {
-  return Promise.reject(guestError(message, 403))
+  return guestError(message, 403)
 }
 
-/** Reject a guest request with the same 400 shape the backend's validation uses. */
+/** The 400 the backend's validation uses. */
 function badRequest(message) {
-  return Promise.reject(guestError(message, 400))
+  return guestError(message, 400)
 }
 
-/** Reject a guest request with the same 404 shape the backend uses. */
+/** The 404 the backend uses. */
 function notFound(message) {
-  return Promise.reject(guestError(message, 404))
+  return guestError(message, 404)
 }
 
-/** Reject a guest request with the same 409 shape the backend uses. */
+/** The 409 the backend uses for a stale version. */
 function conflict(message) {
-  return Promise.reject(guestError(message, 409))
+  return guestError(message, 409)
 }
 
 /**
@@ -343,9 +491,12 @@ function withVisibleBackstories(characters) {
 // same guards, the same status codes and the same messages. Which handler runs
 // for a URL is decided by the ROUTES table further down, never by the handler.
 
-/** Wrap a payload in the axios-shaped response every caller expects. */
+/**
+ * The successful answer: the axios-shaped body every caller expects, as a plain
+ * value — `settle` is what makes it a promise.
+ */
 function ok(data) {
-  return Promise.resolve({ data })
+  return { data }
 }
 
 // --- GET --------------------------------------------------------------------
@@ -434,7 +585,7 @@ function handleShip({ url }) {
   const match = url.match(/campaigns\/([^/]+)\/ship/)
   const campaignId = match?.[1] || null
   const ship = campaignId ? findShip(campaignId) : null
-  if (!ship) return Promise.reject(guestError('Ship not found for campaign: ' + campaignId, 404))
+  if (!ship) return notFound('Ship not found for campaign: ' + campaignId)
 
   return ok(ship)
 }
@@ -659,9 +810,7 @@ function saveShip({ url, data }) {
     data.version !== null &&
     Number(data.version) !== Number(current.version)
   if (isStale) {
-    return Promise.reject(
-      guestError('The ship was updated by someone else. Reload and try again.', 409),
-    )
+    return conflict('The ship was updated by someone else. Reload and try again.')
   }
 
   ships[index] = {
@@ -1000,7 +1149,7 @@ function deleteMessage({ url }) {
 
   const currentUserId = getData(KEYS.USER, null)?.id || 'guest_demo'
   if (String(messages[index].userId) !== String(currentUserId)) {
-    return Promise.reject(guestError('You do not have permission to delete this message.', 403))
+    return forbidden('You do not have permission to delete this message.')
   }
 
   messages.splice(index, 1)
@@ -1094,22 +1243,21 @@ function shiftJournalPositions(journalId, fromPosition, delta) {
 /**
  * The request's page, resolved through the same rules the backend applies.
  *
- * `error` is a plain `Error`, not a rejection: the caller is what turns it into
- * one (`return Promise.reject(resolved.error)`), so nothing here is tested as if
- * it were a promise.
+ * `error` is a plain `Error`, like every refusal in this file: the handler returns
+ * it and `dispatch` rejects with it.
  */
 function resolveJournalPage(url, userId) {
   const pageId = extractId(url)
   const page = getData(KEYS.JOURNAL_PAGES, []).find((entry) => String(entry.id) === String(pageId))
-  if (!page) return { error: guestError('Journal page not found with id: ' + pageId, 404) }
+  if (!page) return { error: notFound('Journal page not found with id: ' + pageId) }
 
   const journal = getData(KEYS.JOURNALS, []).find((entry) => String(entry.id) === String(page.journalId))
   if (!journal || String(journal.userId) !== String(userId)) {
     // Another participant's page is not addressable at all.
-    return { error: guestError('Journal page not found with id: ' + pageId, 404) }
+    return { error: notFound('Journal page not found with id: ' + pageId) }
   }
   if (!isGuestParticipant(journal.campaignId)) {
-    return { error: guestError('You are not a participant in this campaign.', 403) }
+    return { error: forbidden('You are not a participant in this campaign.') }
   }
   return { page, journal }
 }
@@ -1185,7 +1333,7 @@ function createJournalPage({ url, data }) {
 /** PATCH api/journals/pages/{pageId} — rewrite one page. */
 function updateJournalPage({ url, data }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return Promise.reject(resolved.error)
+  if (resolved.error) return resolved.error
   const { page, journal } = resolved
 
   const content = typeof data?.content === 'string' ? data.content : ''
@@ -1240,7 +1388,7 @@ function updateJournalPage({ url, data }) {
 /** DELETE api/journals/pages/{pageId} — delete one page. */
 function deleteJournalPage({ url }) {
   const resolved = resolveJournalPage(url, currentGuestUserId())
-  if (resolved.error) return Promise.reject(resolved.error)
+  if (resolved.error) return resolved.error
   const { page, journal } = resolved
 
   setData(
@@ -1250,6 +1398,427 @@ function deleteJournalPage({ url }) {
   shiftJournalPositions(journal.id, page.position, -1)
 
   return ok(journalDTO(journal.campaignId, currentGuestUserId()))
+}
+
+// --- Planner (the campaign planner add-on) ----------------------------------
+
+/** The id after `marker` in a planner URL — `plans`, `dates` or `campaign`. */
+function plannerId(url, marker) {
+  return url.match(new RegExp(`${marker}/([^/]+)`))?.[1] || null
+}
+
+/** GET api/planner/campaign/{id}/plans — a campaign's plans, open ones first. */
+function handlePlannerPlans({ url }) {
+  const campaignId = plannerId(url, 'campaign')
+  if (!campaignId || !guestCampaign(campaignId)) {
+    return notFound('Campaign not found with id: ' + campaignId)
+  }
+  if (!guestAddonEnabled(campaignId, PLANNER_KEY)) {
+    return badRequest('The planner is not enabled for this campaign')
+  }
+  if (!isGuestParticipant(campaignId)) {
+    return forbidden('User is not a participant in this campaign')
+  }
+
+  const ordered = guestPlans(campaignId).sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'OPEN' ? -1 : 1
+    return String(b.createdAt).localeCompare(String(a.createdAt))
+  })
+
+  return ok(ordered.map(guestPlanDTO))
+}
+
+/** GET api/planner/plans/{id} — one plan, whole. */
+function handlePlannerPlan({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  return resolved.error ? resolved.error : ok(guestPlanDTO(resolved.plan))
+}
+
+/** POST api/planner/campaign/{id}/plans — start a plan (any participant may). */
+function createPlannerPlan({ url, data }) {
+  const campaignId = plannerId(url, 'campaign')
+  if (!campaignId || !guestCampaign(campaignId)) {
+    return notFound('Campaign not found with id: ' + campaignId)
+  }
+  if (!guestAddonEnabled(campaignId, PLANNER_KEY)) {
+    return badRequest('The planner is not enabled for this campaign')
+  }
+  if (!isGuestParticipant(campaignId)) {
+    return forbidden('User is not a participant in this campaign')
+  }
+
+  const title = String(data?.title || '').trim()
+  if (!title) return badRequest('A plan needs a title')
+  if (title.length > PLANNER_MAX_TITLE) {
+    return badRequest('A plan title may be at most ' + PLANNER_MAX_TITLE + ' characters')
+  }
+
+  const now = new Date().toISOString()
+  const plan = {
+    id: generateId(),
+    campaignId,
+    title,
+    description: data?.description || '',
+    status: 'OPEN',
+    decidedDateId: null,
+    createdByUserId: currentGuestUserId(),
+    version: 0,
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  return ok(guestPlanDTO(savePlannerRow(KEYS.PLANS, plan)))
+}
+
+/** PATCH api/planner/plans/{id} — the title and description. */
+function updatePlannerPlan({ url, data }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+  if (data?.version === undefined || data?.version === null) {
+    return badRequest('A version is required to change a plan')
+  }
+  if (Number(data.version) !== Number(resolved.plan.version)) {
+    return conflict('This plan was updated by someone else. Reload and try again.')
+  }
+
+  const title = String(data?.title || '').trim()
+  if (!title) return badRequest('A plan needs a title')
+
+  const updated = savePlannerRow(KEYS.PLANS, {
+    ...resolved.plan,
+    title,
+    description: data?.description || '',
+    version: Number(resolved.plan.version) + 1,
+    updatedAt: new Date().toISOString(),
+  })
+
+  return ok(guestPlanDTO(updated))
+}
+
+/** PATCH api/planner/plans/{id}/status — decide on one date, or reopen. */
+function updatePlannerStatus({ url, data }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  if (data?.version === undefined || data?.version === null) {
+    return badRequest('A version is required to change a plan')
+  }
+  if (Number(data.version) !== Number(resolved.plan.version)) {
+    return conflict('This plan was updated by someone else. Reload and try again.')
+  }
+
+  const status = String(data?.status || '').toUpperCase()
+  if (status !== 'OPEN' && status !== 'DECIDED') {
+    return badRequest('Unknown plan status: ' + data?.status)
+  }
+
+  let decidedDateId = null
+  if (status === 'DECIDED') {
+    const frozen = requireOpenPlan(resolved.plan)
+    if (frozen) return frozen
+
+    const chosen = guestPlanDates(resolved.plan.id).find(
+      (date) => String(date.id) === String(data?.decidedDateId),
+    )
+    if (!data?.decidedDateId) return badRequest('A decided plan needs one of its own dates')
+    if (!chosen) return badRequest('Date ' + data.decidedDateId + ' is not a date of this plan')
+    decidedDateId = chosen.id
+  }
+
+  const updated = savePlannerRow(KEYS.PLANS, {
+    ...resolved.plan,
+    status,
+    decidedDateId,
+    version: Number(resolved.plan.version) + 1,
+    updatedAt: new Date().toISOString(),
+  })
+
+  return ok(guestPlanDTO(updated))
+}
+
+/** DELETE api/planner/plans/{id} — the plan, its dates and their answers. */
+function deletePlannerPlan({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  const isCreator = String(resolved.plan.createdByUserId) === String(currentGuestUserId())
+  if (!isCreator && !guestCampaignPermissions(resolved.plan.campaignId).isOwner) {
+    return forbidden("Only the plan's creator or the campaign owner can delete a plan")
+  }
+
+  const dateIds = guestPlanDates(resolved.plan.id).map((date) => date.id)
+  dateIds.forEach((dateId) => removePlannerRow(KEYS.PLAN_DATES, dateId))
+  setData(
+    KEYS.PLAN_ATTENDANCES,
+    getData(KEYS.PLAN_ATTENDANCES, []).filter(
+      (entry) => !dateIds.some((dateId) => String(dateId) === String(entry.planDateId)),
+    ),
+  )
+  removePlannerRow(KEYS.PLANS, resolved.plan.id)
+
+  return ok(null)
+}
+
+/** POST api/planner/plans/{id}/dates — offer a date. */
+function addPlannerDate({ url, data }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+  if (!data?.date) return badRequest('A date is required')
+  if (data?.endTime && !data?.startTime) return badRequest('An end time needs a start time')
+  if (data?.endTime && data?.startTime && data.endTime <= data.startTime) {
+    return badRequest('An end time has to be after the start time')
+  }
+  if (data?.note && data.note.length > PLANNER_MAX_NOTE) {
+    return badRequest('A date note may be at most ' + PLANNER_MAX_NOTE + ' characters')
+  }
+  if (guestPlanDates(resolved.plan.id).some((date) => date.date === data.date)) {
+    return conflict("Value '" + data.date + "' is already in use for date")
+  }
+
+  const now = new Date().toISOString()
+  savePlannerRow(KEYS.PLAN_DATES, {
+    id: generateId(),
+    planId: resolved.plan.id,
+    date: data.date,
+    startTime: data.startTime || null,
+    endTime: data.endTime || null,
+    note: data.note || null,
+    createdByUserId: currentGuestUserId(),
+    version: 0,
+    createdAt: now,
+    updatedAt: now,
+  })
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** PATCH api/planner/dates/{id} — correct a date. */
+function updatePlannerDate({ url, data }) {
+  const resolved = resolveGuestDate(plannerId(url, 'dates'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+  if (data?.version === undefined || data?.version === null) {
+    return badRequest('A version is required to change a date')
+  }
+  if (Number(data.version) !== Number(resolved.date.version)) {
+    return conflict('This date was updated by someone else. Reload and try again.')
+  }
+  if (!data?.date) return badRequest('A date is required')
+  if (data?.endTime && !data?.startTime) return badRequest('An end time needs a start time')
+
+  const clash = guestPlanDates(resolved.plan.id).some(
+    (date) => date.date === data.date && String(date.id) !== String(resolved.date.id),
+  )
+  if (clash) return conflict("Value '" + data.date + "' is already in use for date")
+
+  savePlannerRow(KEYS.PLAN_DATES, {
+    ...resolved.date,
+    date: data.date,
+    startTime: data.startTime || null,
+    endTime: data.endTime || null,
+    note: data.note || null,
+    version: Number(resolved.date.version) + 1,
+    updatedAt: new Date().toISOString(),
+  })
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** DELETE api/planner/dates/{id} — the date, and the answers given for it. */
+function deletePlannerDate({ url }) {
+  const resolved = resolveGuestDate(plannerId(url, 'dates'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  setData(
+    KEYS.PLAN_ATTENDANCES,
+    getData(KEYS.PLAN_ATTENDANCES, []).filter(
+      (entry) => String(entry.planDateId) !== String(resolved.date.id),
+    ),
+  )
+  removePlannerRow(KEYS.PLAN_DATES, resolved.date.id)
+
+  // A plan that had settled on this date keeps its decision but loses the date.
+  if (String(resolved.plan.decidedDateId) === String(resolved.date.id)) {
+    savePlannerRow(KEYS.PLANS, { ...resolved.plan, decidedDateId: null })
+  }
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** PUT api/planner/dates/{id}/attendance — the caller's answer. */
+function setPlannerAttendance({ url, data }) {
+  const resolved = resolveGuestDate(plannerId(url, 'dates'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const userId = currentGuestUserId()
+  const isExcluded = guestPlanExclusions(resolved.plan.id).some(
+    (row) => String(row.userId) === String(userId),
+  )
+  if (isExcluded) return forbidden('You are not in this plan. Rejoin it before answering.')
+
+  const state = String(data?.state || '').toUpperCase()
+  if (!['YES', 'NO', 'MAYBE'].includes(state)) {
+    return badRequest('Unknown attendance state: ' + data?.state)
+  }
+
+  const rows = getData(KEYS.PLAN_ATTENDANCES, [])
+  const existing = rows.find(
+    (entry) =>
+      String(entry.planDateId) === String(resolved.date.id) && String(entry.userId) === String(userId),
+  )
+  const now = new Date().toISOString()
+
+  setData(
+    KEYS.PLAN_ATTENDANCES,
+    existing
+      ? rows.map((entry) =>
+          String(entry.id) === String(existing.id) ? { ...entry, state, updatedAt: now } : entry,
+        )
+      : [
+          ...rows,
+          { id: generateId(), planDateId: resolved.date.id, userId, state, createdAt: now, updatedAt: now },
+        ],
+  )
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** DELETE api/planner/dates/{id}/attendance — withdraw the caller's answer. */
+function clearPlannerAttendance({ url }) {
+  const resolved = resolveGuestDate(plannerId(url, 'dates'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const userId = currentGuestUserId()
+  setData(
+    KEYS.PLAN_ATTENDANCES,
+    getData(KEYS.PLAN_ATTENDANCES, []).filter(
+      (entry) =>
+        !(
+          String(entry.planDateId) === String(resolved.date.id) &&
+          String(entry.userId) === String(userId)
+        ),
+    ),
+  )
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** PUT api/planner/plans/{id}/members/me — rejoin a plan the caller left. */
+function rejoinPlannerPlan({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const userId = currentGuestUserId()
+  const exclusion = guestPlanExclusions(resolved.plan.id).find(
+    (row) => String(row.userId) === String(userId),
+  )
+  if (exclusion?.removedByOwner) {
+    return forbidden('The campaign owner removed you from this plan; only they can put you back')
+  }
+  if (exclusion) removePlannerRow(KEYS.PLAN_EXCLUSIONS, exclusion.id)
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** DELETE api/planner/plans/{id}/members/me — leave the plan. */
+function leavePlannerPlan({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'))
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const userId = currentGuestUserId()
+  const already = guestPlanExclusions(resolved.plan.id).some(
+    (row) => String(row.userId) === String(userId),
+  )
+
+  if (!already) {
+    savePlannerRow(KEYS.PLAN_EXCLUSIONS, {
+      id: generateId(),
+      planId: resolved.plan.id,
+      userId,
+      removedByOwner: false,
+      removedBy: 'guest',
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** DELETE api/planner/plans/{id}/members/{userId} — the campaign owner's removal. */
+function removePlannerMember({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'), { ownerOnly: true })
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const memberId = plannerId(url, 'members')
+  const participants = guestCampaign(resolved.plan.campaignId)?.participants || []
+  if (!participants.some((participant) => String(participant.id) === String(memberId))) {
+    return forbidden('User is not a participant in this campaign')
+  }
+
+  const selfRemoval = String(memberId) === String(currentGuestUserId())
+  const existing = guestPlanExclusions(resolved.plan.id).find(
+    (row) => String(row.userId) === String(memberId),
+  )
+
+  savePlannerRow(KEYS.PLAN_EXCLUSIONS, {
+    id: existing?.id || generateId(),
+    planId: resolved.plan.id,
+    userId: memberId,
+    removedByOwner: !selfRemoval,
+    removedBy: 'guest',
+    createdAt: existing?.createdAt || new Date().toISOString(),
+  })
+
+  return ok(guestPlanDTO(resolved.plan))
+}
+
+/** PUT api/planner/plans/{id}/members/{userId} — the owner putting a member back. */
+function addPlannerMember({ url }) {
+  const resolved = resolveGuestPlan(plannerId(url, 'plans'), { ownerOnly: true })
+  if (resolved.error) return resolved.error
+
+  const frozen = requireOpenPlan(resolved.plan)
+  if (frozen) return frozen
+
+  const memberId = plannerId(url, 'members')
+  const participants = guestCampaign(resolved.plan.campaignId)?.participants || []
+  if (!participants.some((participant) => String(participant.id) === String(memberId))) {
+    return forbidden('User is not a participant in this campaign')
+  }
+
+  // Idempotent, like leaving and rejoining: not being out is not an error.
+  const existing = guestPlanExclusions(resolved.plan.id).find(
+    (row) => String(row.userId) === String(memberId),
+  )
+  if (existing) removePlannerRow(KEYS.PLAN_EXCLUSIONS, existing.id)
+
+  return ok(guestPlanDTO(resolved.plan))
 }
 
 // ============================================================================
@@ -1273,6 +1842,8 @@ const ROUTES = [
   // changes neither what the pattern matches nor what it captures.
   { method: 'get', pattern: /(?:users\/me|api\/me|users.*\/me$)/, handler: handleProfile },
   { method: 'get', pattern: /users\/search/, handler: handleUserSearch },
+  { method: 'get', pattern: /planner\/campaign\/[^/]+\/plans/, handler: handlePlannerPlans },
+  { method: 'get', pattern: /planner\/plans\//, handler: handlePlannerPlan },
   { method: 'get', pattern: /journals\/campaign\//, handler: handleJournal },
   { method: 'get', pattern: /characters.*\/spells/, handler: handleCharacterSpells },
   { method: 'get', pattern: /characters.*campaignId=/, handler: handleCharactersByCampaign },
@@ -1285,6 +1856,8 @@ const ROUTES = [
   { method: 'get', pattern: /messages/, handler: handleMessages },
 
   // --- POST -----------------------------------------------------------------
+  { method: 'post', pattern: /planner\/campaign\/[^/]+\/plans/, handler: createPlannerPlan },
+  { method: 'post', pattern: /planner\/plans\/.*\/dates/, handler: addPlannerDate },
   { method: 'post', pattern: /journals\/campaign\/.*\/pages/, handler: createJournalPage },
   { method: 'post', pattern: /campaigns.*\/ship\/crew\/me\/images/, handler: addCrewImage },
   { method: 'post', pattern: /campaigns.*\/ship\/image/, handler: addShipImage },
@@ -1297,11 +1870,17 @@ const ROUTES = [
   { method: 'post', pattern: /messages/, handler: createMessage },
 
   // --- PUT ------------------------------------------------------------------
+  { method: 'put', pattern: /planner\/dates\/.*\/attendance/, handler: setPlannerAttendance },
+  { method: 'put', pattern: /planner\/plans\/.*\/members\/me/, handler: rejoinPlannerPlan },
+  { method: 'put', pattern: /planner\/plans\/.*\/members\//, handler: addPlannerMember },
   { method: 'put', pattern: /campaigns.*\/ship\/crew\/me/, handler: saveMyCrewEntry },
   { method: 'put', pattern: /campaigns.*\/ship/, handler: saveShip },
   { method: 'put', pattern: /campaigns/, handler: mergeCampaign },
 
   // --- PATCH ----------------------------------------------------------------
+  { method: 'patch', pattern: /planner\/plans\/.*\/status/, handler: updatePlannerStatus },
+  { method: 'patch', pattern: /planner\/plans\//, handler: updatePlannerPlan },
+  { method: 'patch', pattern: /planner\/dates\//, handler: updatePlannerDate },
   { method: 'patch', pattern: /journals\/pages\//, handler: updateJournalPage },
   { method: 'patch', pattern: /users/, unless: /admin\/users/, handler: updateOwnProfile },
   { method: 'patch', pattern: /characters/, handler: patchCharacter },
@@ -1315,6 +1894,11 @@ const ROUTES = [
   { method: 'patch', pattern: /campaigns/, handler: updateCampaignDetails },
 
   // --- DELETE ---------------------------------------------------------------
+  { method: 'delete', pattern: /planner\/dates\/.*\/attendance/, handler: clearPlannerAttendance },
+  { method: 'delete', pattern: /planner\/plans\/.*\/members\/me/, handler: leavePlannerPlan },
+  { method: 'delete', pattern: /planner\/plans\/.*\/members\//, handler: removePlannerMember },
+  { method: 'delete', pattern: /planner\/dates\//, handler: deletePlannerDate },
+  { method: 'delete', pattern: /planner\/plans\//, handler: deletePlannerPlan },
   { method: 'delete', pattern: /journals\/pages\//, handler: deleteJournalPage },
   { method: 'delete', pattern: /characters.*\/spells\//, handler: removeSpell },
   { method: 'delete', pattern: /characters.*\/campaign/, handler: detachCharacter },
@@ -1343,8 +1927,19 @@ const FALLBACKS = {
 }
 
 /**
- * Answer one request. A matching route either resolves with the response body
- * or rejects with an axios-shaped error (`forbidden` / `badRequest`).
+ * The one place a refused request becomes a rejection. A handler answers with either the
+ * response body (`ok`) or the `Error` it refuses with (`notFound`, `forbidden`, …); this
+ * turns that pair into the settled promise axios' callers expect, so no handler has to
+ * build a promise of its own.
+ */
+function settle(result) {
+  return result instanceof Error ? Promise.reject(result) : Promise.resolve(result)
+}
+
+/**
+ * Answer one request. A matching route resolves with the response body or rejects with
+ * the axios-shaped `Error` the handler refused with (`notFound` / `forbidden` /
+ * `badRequest` / `conflict`) — `settle` is where that `Error` becomes the rejection.
  *
  * @param {string} method - one of the keys of `FALLBACKS`
  * @param {string} url
@@ -1358,7 +1953,7 @@ function dispatch(method, url, data) {
   const route = ROUTES.find(
     (entry) => entry.method === method && entry.pattern.test(url) && !entry.unless?.test(url),
   )
-  return route ? route.handler({ url, data }) : Promise.resolve(FALLBACKS[method]())
+  return route ? settle(route.handler({ url, data })) : Promise.resolve(FALLBACKS[method]())
 }
 
 /**

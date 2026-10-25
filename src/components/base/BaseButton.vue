@@ -4,7 +4,7 @@ import BaseIcon from '@/components/base/BaseIcon.vue'
 const props = defineProps({
   // Valid variants map to `.base-btn-<variant>` classes in
   // src/assets/base-button.css: default, ghost, add, update, remove,
-  // retry, icon, demo, form, link, tile, row.
+  // retry, icon, demo, form, link, tile, row, answer, answer-selected.
   variant: {
     type: String,
     default: 'default',

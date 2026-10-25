@@ -135,11 +135,13 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 | `--tone-success-*` | `green-100/400/700` | `#10301c`/`#2f7d4a`/`#86e0a2` | `.success-message`, `.info-box--success`, `.notification-success` |
 | `--tone-danger-*` | `red-100/400/700` | `#3a1618`/`#b4444a`/`#ff9ea1` | `.error-message`, `.info-box--danger`, `.notification-error`, `.danger-zone`, `.badge-danger` |
 | `--tone-notice-*` | `cyan-50/200/800` | `#0f3038`/`#2f7d8c`/`#8fdceb` | `.guest-notice` |
+| `--availability-{full,high,medium,low}-surface` / `-border` | `green-100/400`, `orange-100/400`, `yellow-100/400`, `red-100/400` | `#10301c`/`#2f7d4a`, `#3a1c07`/`#b45309`, `#3a2f09`/`#a16207`, `#3a1618`/`#b4444a` | the planner's ramp: `.availability-surface-*` |
 
 Deliberately **not** mode-aware (fixed on purpose): the hue `.badge-*` variants
 (blue/purple/indigo/pink/teal/yellow), the legacy solid `.button-*` variants,
 `.slide-over-backdrop` (`bg-black/50` scrim) and the environment banner tones
-(meant to be loud).
+(meant to be loud). The planner's availability ramp is *not* on this list — it is
+mode-aware on purpose; see `--availability-*` in §1.4.
 
 ---
 
@@ -205,11 +207,18 @@ submission is genuinely intended (create/save forms).
 | Surface | `background-color: var(--color-primary-50)` |
 | Focus | `focus:ring-2 focus:ring-primary-500 focus:border-transparent` |
 | Read-only | `:disabled` → transparent background, so view mode stays text-like |
+| Native parts | `color-scheme: light` (dark: `html[data-mode='dark'] .input-field` → `dark`) — the date/time picker glyph, the number spinners, the browser's own `mm/dd/yyyy` and the calendar popup are drawn from `color-scheme`, which follows the OS and **not** our `data-mode` |
 
 **Do not** set `style="background-color: var(--color-primary-50)"` (or any other
 per-element colour) on a field — add the `input-field` class instead. The light
 surface is what makes edit fields read as editable, while `:disabled` keeps
 read-only views looking like plain text.
+
+**Nor** set `color-scheme` at a call site (or hard-code a `filter` on
+`::-webkit-calendar-picker-indicator`): a `<input type="date">` or `type="time"`
+must be given `.input-field`, which already carries both modes of it. That is what
+keeps the picker visible when the app is dark but the OS is light (and the
+reverse).
 
 ### 2.3 Badges → `src/assets/main.css`
 
@@ -227,6 +236,15 @@ read-only views looking like plain text.
 | `.badge-muted` | `text-third-500 bg-third-100` | necromancy, fallback | implemented |
 | `.badge-danger` | `text-red-600 bg-red-50` | evocation | implemented |
 | `.badge-info` | `text-blue-600 bg-blue-50` | — | implemented |
+
+The planner's availability ramp is **not** a badge: `.availability-surface-full` /
+`-high` / `-medium` / `-low` paint the **background and border of the element** that
+carries a day (a date row, a plan card's best-day line), so the day itself is
+coloured instead of a chip being added to it. They consume the mode-aware
+`--availability-*-surface` / `-border` roles (§1.4) and set **no** text colour — the
+tint sits behind the element's own `text-default` and its buttons, so both keep
+their colours. Chosen by
+`src/features/planner/plannerUtils.js` → `availabilitySurfaceClass(level)`.
 
 School → badge mapping lives in `src/features/spell/spellUtils.js` →
 `getSchoolBadgeClass(school)` (returns the class name string). Components
@@ -270,6 +288,8 @@ all conditional styling in `*Utils.js` files.
 | `.app-menu-header` | Overlay header row (logo + close) | `flex items-center justify-between gap-2` | implemented |
 | `.app-menu-links` | Overlay link list | `flex flex-col gap-2` | implemented |
 | `.read-more-link` | "Read more/less" toggle link | `text-primary-600 hover:text-primary-800` | implemented |
+| `.planner-date--chosen` | The date a decided plan settled on (`PlannerDateRow.vue`): a heavier border rather than another colour, so it reads on top of the row's availability tint | `border-2 border-primary-600` | implemented |
+| `.planner-date--editing` | The row whose editor is open (`PlannerDateRow.vue`; one at a time, the rule lives in `PlannerPlanDetail.vue`) | `ring-2 ring-primary-600` | implemented |
 | `.character-tag` | Character attribute tag (race/class) | `inline-block bg-primary-50 text-primary-700 text-xs px-2 py-1 rounded-full` | implemented |
 | `.character-tag-level` | Character level tag | `inline-block bg-secondary-100 text-secondary-800 text-xs px-2 py-1 rounded-full` | implemented |
 | `.system-tag` | Game-system marker on a card (character or campaign) — same shape as `.character-tag`, neutral surface so it reads as "which game" rather than as another attribute (`characterSystemLabel` / `campaignSystemLabel` supply the text) | `inline-block bg-(--surface-raised) text-(--text-default) text-xs px-2 py-1 rounded-full` | implemented |
@@ -352,7 +372,7 @@ identity (name, system, image).
 | `<BaseButton icon="…">` prop | Leading icon on a text button | `icon` prop on `src/components/base/BaseButton.vue` renders a `BaseIcon` before the label (`.base-btn-with-icon` / `.base-btn-icon`: `inline-flex items-center gap-1`, `h-4 w-4`). Use it instead of hand-rolled `<CampaignNavIcon …>` + `inline-flex items-center gap-1` wrappers. Edit affordances should be `variant="update" icon="edit"` (`.base-btn-update`) so they read as the prominent action. | implemented |
 | `<BaseLinkButton>` component | Router link styled as a button | `src/components/base/BaseLinkButton.vue` (props: `to`, `variant`, `icon`; default slot). Renders a `<RouterLink>` with the same `.base-btn` / `.base-btn-<variant>` classes as `<BaseButton>` (plus `.base-link-btn`, which drops the action-bar margins so the wrapping element owns the spacing). Use it for navigation actions that should read as buttons (e.g. the character → campaign link) instead of a quiet `.element-link`. | implemented |
 | `<BaseNumberStepper>` component | Compact `−`/`+` control for nudging a number in place | `src/components/base/BaseNumberStepper.vue` (props: `modelValue`, `min`, `max` (`null` = no cap), `step`, `editable`, `disabled`, `ariaLabel`; emits `update:modelValue`). Renders `− value +` (`.number-stepper*` in `main.css`); when `editable` is false only the value renders, so non-owners see the figure without controls. Used for the Offworlders sheet's HP/Supply/Credits/XP and the ship's Hull/Drive fuel/Credits quick-edit. | implemented |
-| `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. `autocomplete` is rendered only when a call site sets it (an empty attribute is flagged by browsers). No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
+| `<BaseInput>` component | Labelled text/number field | `src/components/base/BaseInput.vue` (props: `modelValue`, `label`, `tooltip`, `tooltipDesktopOnly`, `labelClass`, `type`, `id`, `placeholder`, `hint`, `error`, `disabled`, `readonly`, `required`, `min`, `max`, `step`, `autocomplete`; emits `update:modelValue`). Owns the `.input-field` box, the hint/error line and the `aria-describedby`/`aria-invalid` wiring. `autocomplete` and `required` are rendered only when a call site sets them (an empty attribute is flagged by browsers), and `required` lands on the `<input>` itself rather than on the wrapper. `type="date"` / `type="time"` go through here like any other type — `.input-field` carries the `color-scheme` that keeps the native picker glyph visible in both modes. No outer spacing (pass `class="mb-4"`). `type="number"` emits numbers, so call sites use plain `v-model`. | implemented |
 | `<BaseStickyActions>` component | Floating edit action bar for long forms | `src/components/base/BaseStickyActions.vue` (props: `dirty`, `saving`, `saveLabel`, `cancelLabel`, `dirtyLabel`; emits `cancel` / `save`). Renders the `.edit-bar` tag — sticky, right-aligned, Cancel + Save, plus an "Unsaved changes" hint while `dirty`. Buttons are `type="button"`, so it is safe inside a `<form>` (Enter-to-submit still goes through the form's submit handler). Used by `ShipSheet.vue`, `EditCharacter.vue` and `CampaignView.vue`; pair with `useUnsavedChanges` for the navigation guard. | implemented |
 | `<SlideOverDrawer>` component | Edge-anchored slide-over overlay (edge sibling of `BaseModal`) | `src/components/base/SlideOverDrawer.vue` (props: `modelValue`, `side` (`left`/`right`), `full`, `label`, `panelClass`, `zIndex`; emits `update:modelValue`/`close`). Teleports to body, closes on Escape and on a click on its labelled backdrop button, locks body scroll through the shared `src/utils/bodyScrollLock.js` lock. Used by `HeaderComponent` (full-screen menu) and `ContextSidebar` (section drawer). | implemented |
 | `<ContextSidebar>` component | Contextual navigation shell (desktop rail + mobile drawer) | `src/components/base/ContextSidebar.vue` (props: `items` (`{ key, label, icon }`), `activeSection`, `label`, `contextId`, `open`; emits `select`/`update:open`). Shared by the campaign and settings shells; `CampaignSidebar` is a thin campaign-named wrapper. One place for the `.context-sidebar` rail, the `.context-nav-*` list and the `context-gradient` drawer. | implemented |

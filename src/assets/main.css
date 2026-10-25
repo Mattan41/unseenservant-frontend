@@ -157,6 +157,22 @@
   --tone-notice-border: #a5f3fc;
   --tone-notice-text: #155e75;
 
+  /* Planner availability ramp — the four levels a candidate date is marked with.
+     The hue is the signal and does not change; the lightness follows the mode,
+     like the callout tones above, because the tint sits *behind* the element's own
+     text (`text-default`, mode-aware) and a pale tint under near-white text is
+     unreadable in the dark. Surface and border only — deliberately no text role,
+     since the tinted element also holds buttons, and a text colour here would
+     repaint every `.base-btn-*` inside it. */
+  --availability-full-surface: #dcfce7;
+  --availability-full-border: #4ade80;
+  --availability-high-surface: #ffedd5;
+  --availability-high-border: #fb923c;
+  --availability-medium-surface: #fef9c3;
+  --availability-medium-border: #facc15;
+  --availability-low-surface: #fee2e2;
+  --availability-low-border: #f87171;
+
   /* Default palette (silver · light) as a pre-JS fallback. `main.js` writes
      data-theme/data-mode before mount; until then no palette block matches and
      --primary-* would be undefined, leaving the canvas transparent. These
@@ -223,6 +239,15 @@ html[data-mode='dark'] {
   --tone-notice-surface: #0f3038;
   --tone-notice-border: #2f7d8c;
   --tone-notice-text: #8fdceb;
+
+  --availability-full-surface: #10301c;
+  --availability-full-border: #2f7d4a;
+  --availability-high-surface: #3a1c07;
+  --availability-high-border: #b45309;
+  --availability-medium-surface: #3a2f09;
+  --availability-medium-border: #a16207;
+  --availability-low-surface: #3a1618;
+  --availability-low-border: #b4444a;
 }
 
 /* --------------------------------------------------------------------------
@@ -417,6 +442,42 @@ body {
   @apply text-blue-600 bg-blue-50;
 }
 
+/* Planner availability ramp (PlannerDateRow.vue, PlannerPlanList.vue). One class
+   per level, chosen by `plannerUtils.js:availabilitySurfaceClass` — a component
+   never decides a colour itself, exactly as the spell-school badge never does.
+   Background and border only, from the mode-aware roles in the role layer: the
+   planner marks a day by tinting the element that carries it, so the text on top
+   keeps the theme's colour and the buttons inside keep their variants. */
+.availability-surface-full {
+  @apply bg-(--availability-full-surface) border border-(--availability-full-border);
+}
+
+.availability-surface-high {
+  @apply bg-(--availability-high-surface) border border-(--availability-high-border);
+}
+
+.availability-surface-medium {
+  @apply bg-(--availability-medium-surface) border border-(--availability-medium-border);
+}
+
+.availability-surface-low {
+  @apply bg-(--availability-low-surface) border border-(--availability-low-border);
+}
+
+/* The date a decided plan settled on (PlannerDateRow.vue). A heavier border rather
+   than another colour, so it reads on top of the availability tint the row already
+   carries. */
+.planner-date--chosen {
+  @apply border-2 border-primary-600;
+}
+
+/* The row whose editor is open (PlannerDateRow.vue): a ring, so which date is being
+   edited is obvious even when the form below it is not the part you are looking at.
+   Only one date is ever open — that rule lives in `PlannerPlanDetail.vue`. */
+.planner-date--editing {
+  @apply ring-2 ring-primary-600;
+}
+
 /* Number stepper (BaseNumberStepper.vue): compact -/+ control for nudging a
    numeric value in place (HP, Supply, Credits, ship Hull / Drive Fuel). */
 .number-stepper {
@@ -453,10 +514,23 @@ body {
    Used by `input`, `select` and `textarea`. Editable fields get a light
    surface so they read as fields; disabled (read-only) fields fall back to a
    transparent background so view mode stays text-like. Do not re-add
-   `style="background-color: var(--color-primary-50)"` at call sites. */
+   `style="background-color: var(--color-primary-50)"` at call sites.
+
+   `color-scheme` is not about our own colours: the browser draws the native
+   parts of a field — the date/time picker glyph, the number spinners, its own
+   `mm/dd/yyyy` placeholder, the calendar popup — from this property, and that
+   follows the *OS*, not our `data-mode`. Left unset, an app in dark mode on a
+   light OS shows a dark glyph on a near-black field: an invisible picker. */
 .input-field {
   background-color: var(--color-primary-50);
+  color-scheme: light;
   @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+}
+
+/* The same fields with the app in dark mode: the native glyph and the calendar
+   popup flip with it, independent of what the OS prefers. */
+html[data-mode='dark'] .input-field {
+  color-scheme: dark;
 }
 
 .input-field:disabled {

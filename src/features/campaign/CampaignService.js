@@ -113,6 +113,41 @@ const CampaignService = {
     return response.data
   },
 
+  /**
+   * The add-ons a campaign has switched on, as the API spells them (`planner`).
+   * Usually not called on its own: every campaign answer already carries `addons`.
+   * @param {number|string} campaignId
+   * @returns {Promise<Array<string>>}
+   */
+  async fetchAddons(campaignId) {
+    const response = await apiClient.get(`api/campaigns/${campaignId}/addons`)
+    return response.data
+  },
+
+  /**
+   * Switch an add-on on (the campaign owner only). Answers with the whole campaign,
+   * so the caller can rebuild its navigation from one response.
+   * @param {number|string} campaignId
+   * @param {string} addonId
+   * @returns {Promise<object>} CampaignResponseDTO
+   */
+  async enableAddon(campaignId, addonId) {
+    const response = await apiClient.post(`api/campaigns/${campaignId}/addons/${addonId}`)
+    return response.data
+  },
+
+  /**
+   * Switch an add-on off (the campaign owner only). The add-on's own data is kept,
+   * so switching it back on returns it.
+   * @param {number|string} campaignId
+   * @param {string} addonId
+   * @returns {Promise<object>} CampaignResponseDTO
+   */
+  async disableAddon(campaignId, addonId) {
+    const response = await apiClient.delete(`api/campaigns/${campaignId}/addons/${addonId}`)
+    return response.data
+  },
+
   async fetchCharactersForCampaign(campaignId) {
     const response = await apiClient.get(`api/characters?campaignId=${campaignId}`)
     return response.data

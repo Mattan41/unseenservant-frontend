@@ -15,6 +15,7 @@ import {
   characterHealthLabel,
   characterSystemLabel,
 } from '@/features/character/dispatchers/systemRegistry.js'
+import { formatUtcDate } from '@/utils/timestampUtils.js'
 
 defineProps({
   /** The character to render. */
@@ -98,9 +99,7 @@ defineProps({
       style="background-color: var(--surface-muted); border-color: var(--border-subtle)"
     >
       <div class="text-xs text-muted truncate mr-2">
-        <span v-if="character.lastUpdated"
-          >Updated {{ new Date(character.lastUpdated).toLocaleDateString() }}</span
-        >
+        <span v-if="character.updatedAt">Updated {{ formatUtcDate(character.updatedAt) }}</span>
       </div>
       <span
         class="read-more-link font-medium text-sm transition-colors inline-flex items-center flex-shrink-0"

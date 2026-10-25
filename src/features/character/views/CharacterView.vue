@@ -16,6 +16,7 @@ import { buildCharacterExport, buildCharacterBackup } from '@/features/character
 import { characterSystemLabel } from '@/features/character/dispatchers/systemRegistry.js'
 import { fetchExportExtras } from '@/features/character/dispatchers/systemExport.js'
 import { downloadTextFile, dateStamp, slugifyFileName } from '@/utils/download.js'
+import { formatUtcDate } from '@/utils/timestampUtils.js'
 import { useViewRecency } from '@/utils/useViewRecency.js'
 
 const characterStore = useCharacterStore()
@@ -296,15 +297,11 @@ const exportCharacter = async (format) => {
             <h2 class="section-heading mb-4">Additional Information</h2>
             <p>
               <strong>Created:</strong>
-              {{ new Date(currentCharacter.createdAt).toLocaleDateString() }}
+              {{ formatUtcDate(currentCharacter.createdAt) }}
             </p>
             <p>
               <strong>Last Updated:</strong>
-              {{
-                currentCharacter.updatedAt
-                  ? new Date(currentCharacter.updatedAt).toLocaleDateString()
-                  : '-'
-              }}
+              {{ formatUtcDate(currentCharacter.updatedAt) || '-' }}
             </p>
           </div>
         </div>
