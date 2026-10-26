@@ -191,8 +191,9 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 > `.muted-surface` generally) and the dark neutrals as a flat near-black band. So
 > every theme derives the three from its own card at silver's step —
 > `L(surface) / L(card)` = 0.955 / 0.904 / 0.798 (light), 0.853 / 1.35 / 2.26
-> (dark) — at the card's hue, chroma 8% (the **SURFACE LADDER** section of
-> `main.css`). Silver's card is white, so its derived values are the shared greys
+> (dark) — at the card's hue, chroma 8%, in the **THEME LAYER** of `main.css`
+> (each theme+mode is one block: palette, then these three, then any warm-role
+> overrides). Silver's card is white, so its derived values are the shared greys
 > to within a hex step. Text on those surfaces stays well above AA (the tightest
 > is forest · light's `.chip` at 6.5:1), and `themePalette.test.js` checks both the
 > step and those ratios.
@@ -215,10 +216,9 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 > ladder's business above. Only the hue moves; rounding to integer hex shifts a
 > ratio by well under a percent, which is what the test's luminance band covers.
 >
-> The blocks live in the **WARM NEUTRALS** section of `main.css`
-> (`html[data-theme='crimson'|'golden'][data-mode='light'|'dark']`), and
-> `themePalette.test.js` fails if an override is not warmer, is not a real shared
-> role, moves the luminance ladder, or loses that contrast.
+> The overrides live in the same theme blocks as everything else for that
+> `crimson`/`golden` + mode, and `themePalette.test.js` fails if one is not
+> warmer, is not a real shared role, or moves the shared luminance.
 
 #### Amber + callout tone roles (mode-aware)
 

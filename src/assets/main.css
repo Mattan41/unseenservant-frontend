@@ -71,14 +71,14 @@
    WHERE TO ADD THINGS
      • A new semantic role variable → the `:root` role layer below.
        Components should reference roles by meaning, not palette shades.
-     • A neutral that must follow a theme's hue (warm or cool surfaces and text)
-       → the WARM NEUTRALS block below, which re-points the shared roles for one
-       theme + mode; keep the shared luminance so no contrast ratio changes.
-     • A new brand palette value    → the matching
-       `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
-     • A new theme (e.g. silver)    → add
-       `html[data-theme='newtheme'][data-mode='light']` AND `[data-mode='dark']`
-       blocks and point the runtime (src/utils/environment.js) at it.
+     • A new brand palette value    → that theme's block in the THEME LAYER below
+       (its --primary-* ramp, its --color-surface, and the three inset surfaces
+       derived from that card).
+     • A per-theme neutral (a warm theme's text, borders, fills) → also that
+       theme's block: keep the shared role's luminance so no contrast ratio moves,
+       and only the hue changes.
+     • A new theme (e.g. silver)    → copy one block per mode, add the id to
+       src/utils/environment.js, and let themePalette.test.js check it.
      • A new mode (beyond light|dark) → add `[data-mode='X']` variants and a
        matching option in environment.js. dark already exists: the OS
        preference is the default and the user can override it in Settings.
@@ -255,173 +255,41 @@ html[data-mode='dark'] {
 }
 
 /* --------------------------------------------------------------------------
-   SURFACE LADDER — the three inset surfaces, derived from each theme's card.
-   `--surface-muted` ("a quieter panel": `.muted-surface`, the Offworlders sheet
-   sections, `.profile-section`, the campaign summary strip), `--surface-inset`
-   (one step further in: `.profile-value`, `.field-tabs`, `.rich-text code`) and
-   `--surface-raised` (a chip on top: `.chip`, `.attribute-tile`).
-   The shared values are absolute, so they only relate correctly to silver's card
-   (#ffffff / #1a1a1a, what they were tuned against). On a tinted card they
-   invert: forest · light's near-white inset reads as a bright band on a green
-   card, and the dark neutrals read as a flat near-black band on a warm or green
-   one. So each theme's three surfaces are derived from its own card, keeping the
-   step silver defines — L(surface) / L(card) = 0.955 / 0.904 / 0.798 (light) and
-   0.853 / 1.35 / 2.26 (dark) — at the card's hue, chroma 8%.
-   Silver's card is white, so its derived values are the shared greys to within a
-   hex step; only the tint is dropped. Every text-on-surface ratio stays well
-   above AA (the tightest is forest · light's `.chip` at 6.5:1) and the assertion
-   in themePalette.test.js checks the step against silver's own, so the ladder
-   cannot drift silently.
-   -------------------------------------------------------------------------- */
+   THEME LAYER — one block per theme + mode, holding everything that block owns.
+   Each block carries, in this order:
 
-html[data-theme='silver'][data-mode='light'] {
-  --surface-muted: #fafafa;
-  --surface-inset: #f4f4f4;
-  --surface-raised: #e7e7e7;
-}
+   1. IDENTITY PALETTE — `--color-surface`, `--surface-section`, `--primary` and
+      the raw `--primary-50…900` ramp. The light blocks darken as the ramp climbs
+      (50 palest → 900 darkest): `--primary-900` is body text, `--primary-700`
+      paints headings and the default button, `--primary-100/300` the page and
+      header gradient. The dark blocks invert that (50 darkest → 900 lightest).
+      `--surface-section` is the light block's `--primary-500` value, and a shade
+      below `--color-surface` in the dark blocks, so `.section-primary` stays
+      inset in both modes.
 
-html[data-theme='silver'][data-mode='dark'] {
-  --surface-muted: #171717;
-  --surface-inset: #1f1f1f;
-  --surface-raised: #2a2a2a;
-}
+   2. INSET SURFACES — `--surface-muted` ("a quieter panel": `.muted-surface`,
+      the Offworlders sheet sections, `.profile-section`, the campaign summary
+      strip), `--surface-inset` (one step further in: `.profile-value`,
+      `.field-tabs`, `.rich-text code`) and `--surface-raised` (a chip on top:
+      `.chip`, `.attribute-tile`). Each is derived from THIS block's own
+      `--color-surface`, keeping the step silver defines —
+      L(surface) / L(card) = 0.955 / 0.904 / 0.798 (light) and 0.853 / 1.35 /
+      2.26 (dark) — at the card's hue, chroma 8%. Absolute values only relate to
+      silver's white/black card: on a tinted one the near-white inset of
+      forest · light reads as a bright band, and the dark neutrals as a flat
+      near-black one.
 
-html[data-theme='crimson'][data-mode='light'] {
-  --surface-muted: #f4f3f3;
-  --surface-inset: #f0eded;
-  --surface-raised: #e4e0e0;
-}
+   3. WARM NEUTRAL ROLES — only the warm themes re-point the shared text, border
+      and fill roles, because that family is blue-grey (`--text-default` is
+      #374151, red-minus-blue -26) while crimson's canvas is +12/+13 and golden's
+      +35/+20 (light/dark). Each value keeps the shared role's luminance and takes
+      the theme's hue at a low chroma (7% for text, 10% for borders and fills), so
+      it stays a grey and no contrast ratio moves.
 
-html[data-theme='crimson'][data-mode='dark'] {
-  --surface-muted: #171314;
-  --surface-inset: #1f1b1b;
-  --surface-raised: #2a2425;
-}
-
-html[data-theme='forest'][data-mode='light'] {
-  --surface-muted: #dae0dc;
-  --surface-inset: #d5dbd7;
-  --surface-raised: #c7cfca;
-}
-
-html[data-theme='forest'][data-mode='dark'] {
-  --surface-muted: #171a18;
-  --surface-inset: #1e2420;
-  --surface-raised: #28302b;
-}
-
-html[data-theme='golden'][data-mode='light'] {
-  --surface-muted: #f4f3f2;
-  --surface-inset: #eeedeb;
-  --surface-raised: #e2e0dd;
-}
-
-html[data-theme='golden'][data-mode='dark'] {
-  --surface-muted: #1f1e1a;
-  --surface-inset: #282622;
-  --surface-raised: #36332e;
-}
-
-/* --------------------------------------------------------------------------
-   WARM NEUTRALS — per-theme re-pointing of the shared neutral roles.
-   The role layer above is ONE fixed family (Tailwind's blue-grey `third` ramp),
-   shared by every theme. On a warm canvas it reads cold: `--text-default` is
-   #374151, red-minus-blue -26, and `--surface-muted` is -2 (light) / -13 (dark),
-   while crimson's canvas is +12/+13 and golden's is +35/+20 (light/dark).
-   Silver's canvas is neutral and forest's is already blue-leaning, so only the
-   two warm themes re-point these roles — every mode, and the text roles as well
-   as the surfaces.
-   Each value keeps the SHARED role's luminance exactly and takes its hue from
-   the theme's own canvas at a low chroma (7% for text, 8% for surfaces, 10% for
-   borders and fills), so it stays a grey rather than becoming a colour. Because
-   the luminance is untouched, every text-on-surface ratio is untouched too:
-   body text on `--surface-muted` stays 12.35:1, and `--text-muted` on the canvas
-   stays 4.16:1 (crimson) / 4.20:1 (golden) — the same numbers the shared roles
-   give. Only the hue moves.
-   The selector is [theme][mode] (0-2-0) against [mode] (0-1-0), so it wins on
-   specificity wherever these blocks sit.
-   -------------------------------------------------------------------------- */
-
-html[data-theme='crimson'][data-mode='light'] {
-  --text-subtle: #aca0a1;
-  --text-muted: #7e6e6f;
-  --text-secondary: #5e5153;
-  --text-default: #483e3f;
-  --text-heading: #2d2727;
-  --text-strong: #1b1718;
-  --text-faint: #d9d3d4;
-  --border-subtle: #f6f3f4;
-  --border-section: #eae6e6;
-  --border-input: #dbd2d3;
-  --neutral-fill: #dbd2d3;
-  --neutral-fill-hover: #b09ea0;
-  --neutral-strong: #b09ea0;
-  --neutral-strong-hover: #846c6e;
-  --btn-ghost-ring: #dbd2d3;
-  --popover-surface: #2f2727;
-}
-
-html[data-theme='golden'][data-mode='light'] {
-  --text-subtle: #a6a298;
-  --text-muted: #757266;
-  --text-secondary: #57554c;
-  --text-default: #43413a;
-  --text-heading: #2a2824;
-  --text-strong: #191816;
-  --text-faint: #d6d4d0;
-  --border-subtle: #f4f4f2;
-  --border-section: #e8e6e3;
-  --border-input: #d7d5ce;
-  --neutral-fill: #d7d5ce;
-  --neutral-fill-hover: #a7a394;
-  --neutral-strong: #a7a394;
-  --neutral-strong-hover: #777161;
-  --btn-ghost-ring: #d7d5ce;
-  --popover-surface: #2a2923;
-}
-
-html[data-theme='crimson'][data-mode='dark'] {
-  --text-subtle: #928185;
-  --text-muted: #a99da0;
-  --text-secondary: #c2b8bb;
-  --text-default: #dbd5d7;
-  --text-heading: #eae7e7;
-  --text-strong: #f6f5f5;
-  --text-faint: #5d5154;
-  --border-subtle: #431e27;
-  --border-section: #562732;
-  --border-input: #6f3240;
-  --neutral-fill: #562732;
-  --neutral-fill-hover: #6f3240;
-  --neutral-strong: #6f3240;
-  --neutral-strong-hover: #7c3848;
-  --btn-ghost-ring: #6f3240;
-  --popover-surface: #ebe6e8;
-  --popover-text: #1c1718;
-}
-
-html[data-theme='golden'][data-mode='dark'] {
-  --text-subtle: #8a8579;
-  --text-muted: #a39f96;
-  --text-secondary: #bdbab4;
-  --text-default: #d8d6d2;
-  --text-heading: #e9e7e5;
-  --text-strong: #f5f4f3;
-  --text-faint: #57544c;
-  --border-subtle: #322813;
-  --border-section: #403418;
-  --border-input: #53431f;
-  --neutral-fill: #403418;
-  --neutral-fill-hover: #53431f;
-  --neutral-strong: #53431f;
-  --neutral-strong-hover: #655226;
-  --btn-ghost-ring: #53431f;
-  --popover-surface: #e9e7e4;
-  --popover-text: #191814;
-}
-
-/* --------------------------------------------------------------------------
-   PALETTE LAYER — raw values per theme + mode.
+   Adding a theme: copy a block, give it its palette and derived surfaces, add the
+   warm roles only if its canvas is warm, and add the id to AVAILABLE_THEMES in
+   src/utils/environment.js. `themePalette.test.js` checks the shape, the ramp,
+   the surface step and the contrast floors, so none of it can drift silently.
    -------------------------------------------------------------------------- */
 
 /* crimson · light — the rose-red alternative. The shades darken as they climb
@@ -450,6 +318,27 @@ html[data-theme='crimson'][data-mode='light'] {
   --primary-700: #8a1f2f;
   --primary-800: #6d1424;
   --primary-900: #3d0a13;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #f4f3f3;
+  --surface-inset: #f0eded;
+  --surface-raised: #e4e0e0;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #aca0a1;
+  --text-muted: #7e6e6f;
+  --text-secondary: #5e5153;
+  --text-default: #483e3f;
+  --text-heading: #2d2727;
+  --text-strong: #1b1718;
+  --text-faint: #d9d3d4;
+  --border-subtle: #f6f3f4;
+  --border-section: #eae6e6;
+  --border-input: #dbd2d3;
+  --neutral-fill: #dbd2d3;
+  --neutral-fill-hover: #b09ea0;
+  --neutral-strong: #b09ea0;
+  --neutral-strong-hover: #846c6e;
+  --btn-ghost-ring: #dbd2d3;
+  --popover-surface: #2f2727;
 }
 
 /* crimson · dark — the dark half of the crimson pair. The primary shades invert
@@ -471,6 +360,28 @@ html[data-theme='crimson'][data-mode='dark'] {
   --primary-700: #eaa9b3;
   --primary-800: #f2c6cc;
   --primary-900: #fae4e8;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171314;
+  --surface-inset: #1f1b1b;
+  --surface-raised: #2a2425;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #928185;
+  --text-muted: #a99da0;
+  --text-secondary: #c2b8bb;
+  --text-default: #dbd5d7;
+  --text-heading: #eae7e7;
+  --text-strong: #f6f5f5;
+  --text-faint: #5d5154;
+  --border-subtle: #431e27;
+  --border-section: #562732;
+  --border-input: #6f3240;
+  --neutral-fill: #562732;
+  --neutral-fill-hover: #6f3240;
+  --neutral-strong: #6f3240;
+  --neutral-strong-hover: #7c3848;
+  --btn-ghost-ring: #6f3240;
+  --popover-surface: #ebe6e8;
+  --popover-text: #1c1718;
 }
 
 /* forest · light — alternative theme (NOT the default). Retained from the
@@ -489,6 +400,10 @@ html[data-theme='forest'][data-mode='light'] {
   --primary-700: #41564a;
   --primary-800: #2c3a32;
   --primary-900: #171e1a;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #dae0dc;
+  --surface-inset: #d5dbd7;
+  --surface-raised: #c7cfca;
 }
 
 /* forest · dark — the dark half of the forest pair. The primary shades invert
@@ -508,6 +423,10 @@ html[data-theme='forest'][data-mode='dark'] {
   --primary-700: #a9c9b4;
   --primary-800: #c7dccd;
   --primary-900: #e8f1ea;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171a18;
+  --surface-inset: #1e2420;
+  --surface-raised: #28302b;
 }
 
 /* golden · light — the antique-gold alternative, same climb as the other light
@@ -533,6 +452,27 @@ html[data-theme='golden'][data-mode='light'] {
   --primary-700: #6b4b08;
   --primary-800: #5c4207;
   --primary-900: #2f2205;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #f4f3f2;
+  --surface-inset: #eeedeb;
+  --surface-raised: #e2e0dd;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #a6a298;
+  --text-muted: #757266;
+  --text-secondary: #57554c;
+  --text-default: #43413a;
+  --text-heading: #2a2824;
+  --text-strong: #191816;
+  --text-faint: #d6d4d0;
+  --border-subtle: #f4f4f2;
+  --border-section: #e8e6e3;
+  --border-input: #d7d5ce;
+  --neutral-fill: #d7d5ce;
+  --neutral-fill-hover: #a7a394;
+  --neutral-strong: #a7a394;
+  --neutral-strong-hover: #777161;
+  --btn-ghost-ring: #d7d5ce;
+  --popover-surface: #2a2923;
 }
 
 /* golden · dark — the dark half of the golden pair (inversion rule as above).
@@ -553,10 +493,33 @@ html[data-theme='golden'][data-mode='dark'] {
   --primary-700: #e8cf95;
   --primary-800: #f2e2bd;
   --primary-900: #faf1da;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #1f1e1a;
+  --surface-inset: #282622;
+  --surface-raised: #36332e;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #8a8579;
+  --text-muted: #a39f96;
+  --text-secondary: #bdbab4;
+  --text-default: #d8d6d2;
+  --text-heading: #e9e7e5;
+  --text-strong: #f5f4f3;
+  --text-faint: #57544c;
+  --border-subtle: #322813;
+  --border-section: #403418;
+  --border-input: #53431f;
+  --neutral-fill: #403418;
+  --neutral-fill-hover: #53431f;
+  --neutral-strong: #53431f;
+  --neutral-strong-hover: #655226;
+  --btn-ghost-ring: #53431f;
+  --popover-surface: #e9e7e4;
+  --popover-text: #191814;
 }
 
 /* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from
-   the former html[data-env='prod'] palette. */
+   the former html[data-env='prod'] palette, and mirrored on `:root` above as the
+   pre-JS fallback. */
 html[data-theme='silver'][data-mode='light'] {
   --color-surface: #ffffff;
   --surface-section: #c0c0c0;
@@ -571,6 +534,10 @@ html[data-theme='silver'][data-mode='light'] {
   --primary-700: #5c5c5c;
   --primary-800: #3d3d3d;
   --primary-900: #2b2b2b;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #fafafa;
+  --surface-inset: #f4f4f4;
+  --surface-raised: #e7e7e7;
 }
 
 /* silver · dark — the dark half of the silver pair (same inversion rule as
@@ -589,6 +556,10 @@ html[data-theme='silver'][data-mode='dark'] {
   --primary-700: #cccccc;
   --primary-800: #e0e0e0;
   --primary-900: #f5f5f5;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171717;
+  --surface-inset: #1f1f1f;
+  --surface-raised: #2a2a2a;
 }
 
 /* Page canvas. The `<main>` element paints the primary gradient (App.vue), so
