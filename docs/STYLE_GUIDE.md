@@ -15,36 +15,95 @@
 Set on `<html data-theme="silver" data-mode="light">`. Source:
 `src/assets/main.css`. Values live in the **palette layer** — one block per
 theme+mode (`html[data-theme='silver'][data-mode='light']` and its dark
-counterpart). Every theme ships a light and a dark block (a pair). The active
-theme/mode is applied at runtime by `src/utils/environment.js`: the mode follows
-`prefers-color-scheme` unless the user overrides it in Settings → General.
-`data-env` does **not** touch these palettes: the only colours it drives are the
-environment banner's own `--env-banner-*` roles (§1.4 and §2).
+counterpart). Every theme ships a light and a dark block (a pair); the four are
+**silver** (the active default), **crimson**, **forest** and **golden**, and
+`AVAILABLE_THEMES` (`src/utils/environment.js`) lists them in the order the
+Settings → General switcher renders them. The active theme/mode is applied at
+runtime by `src/utils/environment.js`: the mode follows `prefers-color-scheme`
+unless the user overrides it in Settings → General. `data-env` does **not** touch
+these palettes: the only colours it drives are the environment banner's own
+`--env-banner-*` roles (§1.4 and §2).
 
-| Token | silver · light (active default) | forest · light (alternative) | silver · dark | forest · dark | Status |
-|-------|---------------------------------|------------------------------|---------------|---------------|--------|
-| `--color-primary-50` | #f9f9f9 | #bccac1 | #0a0a0a | #0a130d | implemented |
-| `--color-primary-100` | #f2f2f2 | #a9bdb1 | #111111 | #101c15 | implemented |
-| `--color-primary-200` | #e5e5e5 | #96b0a1 | #171717 | #16271d | implemented |
-| `--color-primary-300` | #d8d8d8 | #83a391 | #1f1f1f | #1d3327 | implemented |
-| `--color-primary-400` | #c5c5c5 | #749584 | #3f3f3f | #2d4d3b | implemented |
-| `--color-primary-500` | #c0c0c0 | #6b8e7b | #7a7a7a | #4f7a5f | implemented |
-| `--color-primary-600` | #a0a0a0 | #567263 | #a6a6a6 | #79a487 | implemented |
-| `--color-primary-700` | #5c5c5c | #41564a | #cccccc | #a9c9b4 | implemented |
-| `--color-primary-800` | #3d3d3d | #2c3a32 | #e0e0e0 | #c7dccd | implemented |
-| `--color-primary-900` | #2b2b2b | #171e1a | #f5f5f5 | #e8f1ea | implemented |
+`--color-primary-*` · **light** — the shades darken as they climb (50 palest →
+900 darkest):
 
-> The dark shades **invert** the ramp (50 darkest → 900 lightest) because
-> `--primary-900` is used as body text and `--primary-100/300` paints the page
-> and header gradient.
+| Token | silver (default) | crimson | forest | golden |
+|-------|------------------|---------|--------|--------|
+| `--color-primary-50` | #f9f9f9 | #fdf6f7 | #bccac1 | #fdf9ec |
+| `--color-primary-100` | #f2f2f2 | #f8ebec | #a9bdb1 | #f8efd5 |
+| `--color-primary-200` | #e5e5e5 | #f0d8da | #96b0a1 | #f0e2b4 |
+| `--color-primary-300` | #d8d8d8 | #e9c7cb | #83a391 | #e3cd85 |
+| `--color-primary-400` | #c5c5c5 | #cd8f97 | #749584 | #cfa94f |
+| `--color-primary-500` | #c0c0c0 | #c97684 | #6b8e7b | #b8892a |
+| `--color-primary-600` | #a0a0a0 | #a33b4a | #567263 | #8f6510 |
+| `--color-primary-700` | #5c5c5c | #8a1f2f | #41564a | #6b4b08 |
+| `--color-primary-800` | #3d3d3d | #6d1424 | #2c3a32 | #5c4207 |
+| `--color-primary-900` | #2b2b2b | #3d0a13 | #171e1a | #2f2205 |
+
+`--color-primary-*` · **dark** — the ramp inverted (50 darkest → 900 lightest)
+because `--primary-900` is used as body text and `--primary-100/300` paints the
+page and header gradient:
+
+| Token | silver | crimson | forest | golden |
+|-------|--------|---------|--------|--------|
+| `--color-primary-50` | #0a0a0a | #160809 | #0a130d | #171206 |
+| `--color-primary-100` | #111111 | #1f0e12 | #101c15 | #201a0c |
+| `--color-primary-200` | #171717 | #2a1318 | #16271d | #2b2311 |
+| `--color-primary-300` | #1f1f1f | #3a1a21 | #1d3327 | #3b3017 |
+| `--color-primary-400` | #3f3f3f | #6b2a35 | #2d4d3b | #6d581f |
+| `--color-primary-500` | #7a7a7a | #b44a58 | #4f7a5f | #8f6f1f |
+| `--color-primary-600` | #a6a6a6 | #d97f8c | #79a487 | #d7b366 |
+| `--color-primary-700` | #cccccc | #eaa9b3 | #a9c9b4 | #e8cf95 |
+| `--color-primary-800` | #e0e0e0 | #f2c6cc | #c7dccd | #f2e2bd |
+| `--color-primary-900` | #f5f5f5 | #fae4e8 | #e8f1ea | #faf1da |
+
+All four themes, both modes: implemented.
+
+`--primary-600` is not a straight ramp step in the light themes: it also paints
+badge and link text on light surfaces, where there is little contrast headroom
+(`silver · light` reaches 2.48:1 on `.badge-primary`, `forest · light` 3.10:1),
+so `crimson` and `golden` sit it darker on purpose (6.00:1 and 4.94:1). In
+`golden · dark`, `--primary-500` is darker than the identity alone invites because
+that value is also `.base-btn-form`'s surface, where the label is white: 4.71:1
+instead of the 2.89:1 a brighter #b8933a would give. `golden · light`'s
+`--primary-700` is deeper for the same kind of reason: it is the discovery tile's
+label on the `.section-primary` panel, and a mid-gold panel leaves it 1.99:1 on a
+straight ramp (2.47:1 as shipped).
+
+That tile pair is the one place all four themes fail: `--primary-700` on
+`--surface-section` measures 3.68:1 (silver — the best of them), 2.76:1
+(crimson), 2.47:1 (golden) and 2.18:1 (forest). It is a dashed *affordance* in an
+empty panel rather than body copy, and the panel is the theme's `--primary-500`,
+so it is pinned in the test as a regression guard at 2:1 rather than as an AA
+promise.
+
+> **Verifying a palette.** Contrast is measured on the rendered app, not inferred
+> from these tables: a WCAG sweep walks every element with visible text, resolves
+> the effective background (ancestor walk, alpha compositing, worst gradient
+> stop), and reports each element below 4.5:1 — or 3:1 for large text — for every
+> theme × mode. `lighthouse_audit` in snapshot mode is the independent check.
+> `src/assets/__tests__/themePalette.test.js` then pins the floors that sweep
+> established, so a later palette edit cannot sink a pair silently.
+
+> **The fixed amber accent is the one pair no theme can fix.** `--secondary-text`
+> and `--secondary-text-strong` (`.welcome-name`) sit on the theme's own canvas,
+> and amber on a light canvas measures 2.49:1 (silver), 2.40:1 (crimson), 2.43:1
+> (golden) and 1.41:1 (forest). Golden is the loudest case of that collision —
+> the accent and the identity palette are neighbouring hues — but silver fails it
+> too, so it is a property of the fixed role, not of the new palettes. Fixing it
+> means per-theme `--secondary-*` overrides, which the model does not have.
 
 `--color-primary` (unscaled) maps to `--primary` which resolves to the
 active theme's `--primary-500` value via the `@theme` block.
 
 `--color-surface` and `--surface-section` are per-theme and per-mode:
-`#ffffff`/`#c0c0c0` (silver · light), `#d8e7dd`/`#6b8e7b` (forest · light),
-`#1a1a1a`/`#0f0f0f` (silver · dark), `#131f18`/`#0b140f` (forest · dark).
-`--surface-section` backs `.section-primary` (the Characters/Campaigns panel).
+`#ffffff`/`#c0c0c0` (silver · light), `#fdf7f8`/`#c97684` (crimson · light),
+`#d8e7dd`/`#6b8e7b` (forest · light), `#fdf8e8`/`#b8892a` (golden · light),
+`#1a1a1a`/`#0f0f0f` (silver · dark), `#241115`/`#150a0d` (crimson · dark),
+`#131f18`/`#0b140f` (forest · dark), `#262011`/`#171207` (golden · dark).
+`--surface-section` backs `.section-primary` (the Characters/Campaigns panel): in
+the light blocks it is the theme's `--primary-500`, and in the dark blocks a shade
+below `--color-surface`, so the panel reads as inset in either mode.
 All themes and modes are reachable from the running app: the switchers live in
 **Settings → General**
 (`src/features/settings/components/GeneralSettingsSection.vue`) and persist the
@@ -60,7 +119,7 @@ choices in `localStorage.theme` / `localStorage.mode` via
 
 > **Three-axis model.** `<html>` carries `data-env`
 > (local|dev|test|staging|prod|demo — banner text and tone only),
-> `data-theme` (silver|forest — identity palette) and `data-mode`
+> `data-theme` (crimson|forest|golden|silver — identity palette) and `data-mode`
 > (light|dark — surface/neutral palette). The canonical explanation and the
 > "where to add things" guide live in the header comment of the palette
 > section in `src/assets/main.css`.
@@ -120,6 +179,18 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 | `--surface-muted` | `third-50` | `#12181f` | `.muted-surface`, `.profile-section`, `.spell-row-hover` |
 | `--surface-inset` | `third-100` | `#18202a` | `.profile-value`, `.field-tabs`, `.edit-bar`, `.rich-text code/pre/th`, `.markdown-help-source` |
 | `--surface-raised` | `third-200` | `#222b36` | `.chip`, `.attribute-tile`, `.spell-history-hover` |
+
+> **Warm themes re-point the dark neutrals.** The family above is fixed and
+> shared, and it is blue-grey — red-minus-blue is −13 on `--surface-muted`
+> (`#12181f`) and −20 on `--surface-raised`. On a warm canvas that reads cold:
+> `crimson · dark`'s canvas is +13 and `golden · dark`'s is +20, while silver's is
+> 0 and forest's is −5, so only the two warm themes override. Each value keeps the
+> shared role's luminance and takes its hue from the theme's own canvas, so no
+> text-on-surface ratio moves (body text on `--surface-muted` stays 12.35:1). The
+> blocks live in the **WARM DARK NEUTRALS** section of `main.css`
+> (`html[data-theme='crimson'|'golden'][data-mode='dark']`), and
+> `themePalette.test.js` fails if an override is not warmer, is not a real shared
+> role, or moves the luminance ladder.
 | `--neutral-fill` / `--neutral-fill-hover` | `third-300` / `third-400` | `#2e3642` / `#3d4653` | `.base-btn-ghost` (with `--btn-ghost-*`), `.button-secondary` |
 | `--neutral-strong` / `--neutral-strong-hover` | `third-400` / `third-500` | `#3d4653` / `#4b5563` | `.header-nav-link-secondary` |
 | `--popover-surface` / `--popover-text` | `third-800` / `primary-50` | `#e4e8ee` / `#12181f` | `.info-popover` (inverted surface) |

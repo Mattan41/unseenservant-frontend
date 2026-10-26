@@ -51,7 +51,8 @@
                    test | staging |   banner's text (App.vue) and its colours
                    prod | demo        (the --env-banner-* roles below). No other
                                       effect on colour.
-     data-theme — forest | silver   → identity / brand palette (--primary-*).
+     data-theme — crimson | forest | → identity / brand palette (--primary-*).
+                  golden | silver
      data-mode  — light | dark      → surface / neutral palette. Each theme
                                       carries BOTH modes as a pair of blocks in
                                       the palette layer below (--primary-*,
@@ -70,6 +71,9 @@
    WHERE TO ADD THINGS
      • A new semantic role variable → the `:root` role layer below.
        Components should reference roles by meaning, not palette shades.
+     • A neutral that must follow a theme's hue (warm or cool surfaces) → the
+       WARM DARK NEUTRALS block below, which re-points the shared dark roles for
+       one theme; keep the shared luminance so no contrast ratio changes.
      • A new brand palette value    → the matching
        `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
      • A new theme (e.g. silver)    → add
@@ -82,8 +86,8 @@
        ENVIRONMENT BANNER section below, a message in App.vue, and the value
        to src/utils/environment.js.
 
-   Active default: silver · light. forest · light is retained as an
-   alternative, and every theme ships a light and a dark block. The mode
+   Active default: silver · light. crimson, forest and golden are the
+   alternatives, and every theme ships a light and a dark block. The mode
    follows the OS (`prefers-color-scheme`) unless the user overrides it in
    Settings → General; `src/utils/environment.js` owns that state.
    ========================================================================== */
@@ -251,8 +255,101 @@ html[data-mode='dark'] {
 }
 
 /* --------------------------------------------------------------------------
+   WARM DARK NEUTRALS — per-theme re-pointing of the shared dark roles.
+   The neutral roles above come from one fixed family (Tailwind's blue-grey
+   `third` ramp), so they are shared by every theme. On a warm canvas that reads
+   cold: the shared `--surface-muted` is #12181f, whose red-minus-blue is -13,
+   while crimson · dark's canvas is +13 and golden · dark's is +20. Silver's
+   canvas is neutral (0) and forest's is already blue-leaning (-5), so only the
+   two warm themes re-point them.
+   Each value keeps the SHARED role's luminance exactly and takes its hue from
+   the theme's own canvas (the canvas colour scaled until it reaches that
+   luminance), so the ladder is preserved and every text-on-surface ratio is
+   identical to the shared one — body text on the muted surface stays 12.35:1.
+   The selector is [theme][mode] (0-2-0) against [mode] (0-1-0), so it wins on
+   specificity wherever these blocks sit.
+   -------------------------------------------------------------------------- */
+
+html[data-theme='crimson'][data-mode='dark'] {
+  --surface-muted: #261116;
+  --surface-inset: #33171d;
+  --surface-raised: #441f27;
+  --border-subtle: #431e27;
+  --border-section: #562732;
+  --border-input: #6f3240;
+  --neutral-fill: #562732;
+  --neutral-fill-hover: #6f3240;
+  --neutral-strong: #6f3240;
+  --neutral-strong-hover: #7c3848;
+  --btn-ghost-ring: #6f3240;
+}
+
+html[data-theme='golden'][data-mode='dark'] {
+  --surface-muted: #1c170b;
+  --surface-inset: #261f0e;
+  --surface-raised: #332913;
+  --border-subtle: #322813;
+  --border-section: #403418;
+  --border-input: #53431f;
+  --neutral-fill: #403418;
+  --neutral-fill-hover: #53431f;
+  --neutral-strong: #53431f;
+  --neutral-strong-hover: #655226;
+  --btn-ghost-ring: #53431f;
+}
+
+/* --------------------------------------------------------------------------
    PALETTE LAYER — raw values per theme + mode.
    -------------------------------------------------------------------------- */
+
+/* crimson · light — the rose-red alternative. The shades darken as they climb
+   (50 palest → 900 darkest) because --primary-900 is body text, --primary-700
+   paints headings and the default button, and --primary-100/300 paints the page
+   and header gradient. Tuned against the pairs the app actually renders: 900 on
+   100 (body) 14.5:1, 100 on 700 (default button) 7.8:1, 600 on 50 (badge) 6.0:1,
+   900 on 200 (context nav item) 12.4:1 — all AA. --surface-section tracks
+   primary-500 as in every other theme; its 3.15:1 under --text-default is above
+   the floor the existing themes set (forest · light sits at 2.84).
+   --primary-300 is the page/header gradient's mid stop, where the fixed neutral
+   roles land: it is lighter than a straight ramp suggests so --text-secondary
+   (5.06:1) clears AA on the gradient, the one place silver · light manages it and
+   forest · light fails it (2.74:1). */
+html[data-theme='crimson'][data-mode='light'] {
+  --color-surface: #fdf7f8;
+  --surface-section: #c97684;
+  --primary: #c97684;
+  --primary-50: #fdf6f7;
+  --primary-100: #f8ebec;
+  --primary-200: #f0d8da;
+  --primary-300: #e9c7cb;
+  --primary-400: #cd8f97;
+  --primary-500: #c97684;
+  --primary-600: #a33b4a;
+  --primary-700: #8a1f2f;
+  --primary-800: #6d1424;
+  --primary-900: #3d0a13;
+}
+
+/* crimson · dark — the dark half of the crimson pair. The primary shades invert
+   (50 darkest → 900 lightest) because --primary-900 is body text and
+   --primary-100/300 paints the page and header gradient. Body text 15.3:1,
+   default button 9.6:1, badge 6.9:1, and white on --primary-500 (the form CTA)
+   5.2:1 — the one pair where crimson · dark beats every existing dark theme. */
+html[data-theme='crimson'][data-mode='dark'] {
+  --color-surface: #241115;
+  --surface-section: #150a0d;
+  --primary: #b44a58;
+  --primary-50: #160809;
+  --primary-100: #1f0e12;
+  --primary-200: #2a1318;
+  --primary-300: #3a1a21;
+  --primary-400: #6b2a35;
+  --primary-500: #b44a58;
+  --primary-600: #d97f8c;
+  --primary-700: #eaa9b3;
+  --primary-800: #f2c6cc;
+  --primary-900: #fae4e8;
+}
 
 /* forest · light — alternative theme (NOT the default). Retained from the
    former html[data-env='dev'] green palette. */
@@ -289,6 +386,51 @@ html[data-theme='forest'][data-mode='dark'] {
   --primary-700: #a9c9b4;
   --primary-800: #c7dccd;
   --primary-900: #e8f1ea;
+}
+
+/* golden · light — the antique-gold alternative, same climb as the other light
+   themes (50 palest → 900 darkest). Body text 13.5:1, default button and
+   headings 6.8:1, badge 4.9:1, links 4.5:1 on the canvas. Two shades are
+   deliberately deeper than a straight ramp would put them, because both also
+   paint text on light surfaces where there is little headroom: --primary-600
+   carries badge and link text (silver · light manages 2.5:1 there, forest ·
+   light 2.7:1), and --primary-700 is the discovery tile's label on the
+   .section-primary panel, which no theme clears AA on (silver · light is the best
+   of the four at 3.68:1, and a mid-gold panel would leave this pair at 1.99:1). */
+html[data-theme='golden'][data-mode='light'] {
+  --color-surface: #fdf8e8;
+  --surface-section: #b8892a;
+  --primary: #b8892a;
+  --primary-50: #fdf9ec;
+  --primary-100: #f8efd5;
+  --primary-200: #f0e2b4;
+  --primary-300: #e3cd85;
+  --primary-400: #cfa94f;
+  --primary-500: #b8892a;
+  --primary-600: #8f6510;
+  --primary-700: #6b4b08;
+  --primary-800: #5c4207;
+  --primary-900: #2f2205;
+}
+
+/* golden · dark — the dark half of the golden pair (inversion rule as above).
+   --primary-500 is darker here than the identity alone invites, because it is
+   also the form CTA's surface: white text on this value is 4.7:1 (AA), where the
+   brighter #b8933a the ramp suggests would sit at 2.9:1. */
+html[data-theme='golden'][data-mode='dark'] {
+  --color-surface: #262011;
+  --surface-section: #171207;
+  --primary: #8f6f1f;
+  --primary-50: #171206;
+  --primary-100: #201a0c;
+  --primary-200: #2b2311;
+  --primary-300: #3b3017;
+  --primary-400: #6d581f;
+  --primary-500: #8f6f1f;
+  --primary-600: #d7b366;
+  --primary-700: #e8cf95;
+  --primary-800: #f2e2bd;
+  --primary-900: #faf1da;
 }
 
 /* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from

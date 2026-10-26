@@ -9,7 +9,8 @@ import { ref } from 'vue'
  *                : where this bundle is served. It selects the environment
  *                  banner's text here and its colours in main.css
  *                  (`html[data-env='X']` → --env-banner-*).
- *   data-theme — 'silver'        : identity / brand palette (forest alternative)
+ *   data-theme — 'silver'        : identity / brand palette (crimson, forest and
+ *                golden are alternatives)
  *   data-mode  — 'light' | 'dark': surface / neutral palette. Resolved from a
  *                'system' | 'light' | 'dark' preference that follows the OS by
  *                default and can be overridden in Settings → General.
@@ -68,10 +69,16 @@ export const DEFAULT_THEME = 'silver'
 /** localStorage key holding the user's chosen theme. */
 export const THEME_STORAGE_KEY = 'theme'
 
-/** Themes the app can render — must match the html[data-theme] blocks in main.css. */
+/**
+ * Themes the app can render — must match the html[data-theme] blocks in main.css.
+ * Silver first (it is the default), then the alternatives alphabetically; the
+ * settings switcher renders them in this order.
+ */
 export const AVAILABLE_THEMES = [
   { id: 'silver', label: 'Silver' },
+  { id: 'crimson', label: 'Crimson' },
   { id: 'forest', label: 'Forest' },
+  { id: 'golden', label: 'Golden' },
 ]
 
 /**
