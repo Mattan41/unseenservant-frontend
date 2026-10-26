@@ -23,7 +23,6 @@ const KEYS = {
   CAMPAIGNS: 'guest_campaigns',
   MESSAGES: 'guest_messages',
   SHIPS: 'guest_ships',
-  CREW: 'guest_ship_crew',
   JOURNALS: 'guest_journals',
   JOURNAL_PAGES: 'guest_journal_pages',
   PLANS: 'guest_planner_plans',
@@ -119,6 +118,9 @@ function ensureDefaultShip(campaignId) {
 
 /** Guest mode can't really store uploads, so images resolve to a stock placeholder. */
 const SHIP_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe'
+
+/** Guest mode's stand-in for an uploaded character-gallery image. */
+const CHARACTER_IMAGE_FALLBACK = '/defaultCharacter.svg'
 
 /**
  * Apply a (mocked) ship image upload: set the profile image, or append to the
@@ -294,55 +296,6 @@ function removeShipGalleryImage(campaignId, imageUrl) {
   return ship
 }
 
-/**
- * Ship crew manifest helpers. One entry per participant, keyed by campaign +
- * user (stored as `guest_ship_crew`); entries persist when a participant leaves
- * and re-activate on rejoin, mirroring the backend.
- */
-function shipCrewRows(campaignId) {
-  return getData(KEYS.CREW, []).filter((row) => String(row.campaignId) === String(campaignId))
-}
-
-function saveShipCrewRow(campaignId, userId, patch) {
-  const rows = getData(KEYS.CREW, [])
-  const index = rows.findIndex(
-    (row) => String(row.campaignId) === String(campaignId) && String(row.userId) === String(userId),
-  )
-  const base =
-    index === -1
-      ? {
-          campaignId: String(campaignId),
-          userId: String(userId),
-          notes: '',
-          imageUrls: [],
-          characters: [],
-        }
-      : rows[index]
-  const next = { ...base, ...patch }
-  if (index === -1) rows.push(next)
-  else rows[index] = next
-  setData(KEYS.CREW, rows)
-  return next
-}
-
-/** Crew DTOs for the campaign's current participants, in roster order. */
-function crewDTOs(campaignId) {
-  const campaigns = getData(KEYS.CAMPAIGNS, [])
-  const campaign = campaigns.find((c) => String(c.id) === String(campaignId))
-  const rows = shipCrewRows(campaignId)
-  return (campaign?.participants || []).map((participant) => {
-    const row = rows.find((entry) => String(entry.userId) === String(participant.id))
-    return {
-      userId: participant.id,
-      nickname: participant.nickname,
-      role: participant.role || 'PLAYER',
-      notes: row?.notes || '',
-      imageUrls: row?.imageUrls || [],
-      characters: row?.characters || [],
-    }
-  })
-}
-
 /** True when the signed-in guest is a participant of the campaign. */
 function isGuestParticipant(campaignId) {
   const campaigns = getData(KEYS.CAMPAIGNS, [])
@@ -352,21 +305,6 @@ function isGuestParticipant(campaignId) {
     (campaign.participants || []).some(
       (participant) => String(participant.id) === String(currentGuestUserId()),
     )
-  )
-}
-
-/** The signed-in guest's crew DTO after a change. */
-function myCrewDTO(campaignId) {
-  const userId = currentGuestUserId()
-  return (
-    crewDTOs(campaignId).find((member) => String(member.userId) === String(userId)) || {
-      userId,
-      nickname: '',
-      role: 'PLAYER',
-      notes: '',
-      imageUrls: [],
-      characters: [],
-    }
   )
 }
 
@@ -569,17 +507,6 @@ function handleCharacters({ url }) {
   return ok(withVisibleBackstory(character || null))
 }
 
-/** GET api/campaigns/{id}/ship/crew — the crew manifest (participants only). */
-function handleShipCrew({ url }) {
-  const match = url.match(/campaigns\/([^/]+)\/ship\/crew/)
-  const campaignId = match?.[1] || null
-  if (!campaignId || !isGuestParticipant(campaignId)) {
-    return forbidden('You are not a participant in this campaign.')
-  }
-
-  return ok(crewDTOs(campaignId))
-}
-
 /** GET api/campaigns/{id}/ship — the campaign's ship, 404 when it has none. */
 function handleShip({ url }) {
   const match = url.match(/campaigns\/([^/]+)\/ship/)
@@ -631,22 +558,6 @@ function messagesCampaignId(url) {
 
 // --- POST -------------------------------------------------------------------
 
-/** POST api/campaigns/{id}/ship/crew/me/images — mock a crew image upload. */
-function addCrewImage({ url }) {
-  const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me\/images/)
-  const campaignId = match?.[1] || null
-  if (!campaignId || !isGuestParticipant(campaignId)) {
-    return forbidden('You are not a participant in this campaign.')
-  }
-
-  const userId = currentGuestUserId()
-  const existing = shipCrewRows(campaignId).find((row) => String(row.userId) === String(userId))
-  saveShipCrewRow(campaignId, userId, {
-    imageUrls: [...(existing?.imageUrls || []), SHIP_IMAGE_FALLBACK],
-  })
-  return ok(myCrewDTO(campaignId))
-}
-
 /** POST api/campaigns/{id}/ship/image — mock the ship profile image upload. */
 function addShipImage({ url }) {
   const match = url.match(/campaigns\/([^/]+)\/ship\/image/)
@@ -677,6 +588,27 @@ function uploadCampaignImage({ url }) {
 /** POST api/characters/{id}/image — mock the avatar upload. */
 function uploadCharacterImage() {
   return ok({ avatarUrl: '/defaultCharacter.svg' })
+}
+
+/**
+ * POST api/characters/{id}/images — mock a gallery upload.
+ *
+ * The stock placeholder is appended to the character's gallery and the updated
+ * character is returned, as the backend answers with the whole DTO. In an
+ * Offworlders campaign those images are what the ship's crew card shows.
+ */
+function addCharacterGalleryImage({ url }) {
+  const id = extractId(url)
+  const characters = getData(KEYS.CHARACTERS, [])
+  const index = characters.findIndex((character) => String(character.id) === String(id))
+  if (index === -1) return notFound('Character not found with id: ' + id)
+
+  characters[index] = {
+    ...characters[index],
+    imageUrls: [...(characters[index].imageUrls || []), CHARACTER_IMAGE_FALLBACK],
+  }
+  setData(KEYS.CHARACTERS, characters)
+  return ok(withVisibleBackstory(characters[index]))
 }
 
 /**
@@ -767,21 +699,6 @@ function createMessage({ data }) {
 }
 
 // --- PUT --------------------------------------------------------------------
-
-/** PUT api/campaigns/{id}/ship/crew/me — save my own crew entry. */
-function saveMyCrewEntry({ url, data }) {
-  const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me/)
-  const campaignId = match?.[1] || null
-  if (!campaignId || !isGuestParticipant(campaignId)) {
-    return forbidden('You are not a participant in this campaign.')
-  }
-
-  saveShipCrewRow(campaignId, currentGuestUserId(), {
-    notes: data.notes ?? '',
-    characters: Array.isArray(data.characters) ? data.characters : [],
-  })
-  return ok(myCrewDTO(campaignId))
-}
 
 /** PUT api/campaigns/{id}/ship — upsert a ship (optimistic concurrency). */
 function saveShip({ url, data }) {
@@ -1069,6 +986,27 @@ function detachCharacter({ url }) {
   return ok({ success: true })
 }
 
+/**
+ * DELETE api/characters/{id}/images?url=… — drop an image from the gallery.
+ *
+ * The stored picture is left in place, exactly as the backend leaves the file:
+ * only the URL goes.
+ */
+function removeCharacterGalleryImage({ url }) {
+  const id = extractId(url)
+  const imageUrl = new URLSearchParams(url.split('?')[1] || '').get('url')
+  const characters = getData(KEYS.CHARACTERS, [])
+  const index = characters.findIndex((character) => String(character.id) === String(id))
+  if (index === -1) return notFound('Character not found with id: ' + id)
+
+  characters[index] = {
+    ...characters[index],
+    imageUrls: (characters[index].imageUrls || []).filter((entry) => entry !== imageUrl),
+  }
+  setData(KEYS.CHARACTERS, characters)
+  return ok(withVisibleBackstory(characters[index]))
+}
+
 /** DELETE api/characters/{id} — delete a character outright. */
 function deleteCharacter({ url }) {
   const id = extractId(url)
@@ -1080,23 +1018,6 @@ function deleteCharacter({ url }) {
     characters.filter((character) => String(character.id) !== String(id)),
   )
   return ok({ deleted: true })
-}
-
-/** DELETE api/campaigns/{id}/ship/crew/me/images?url=… — drop a crew image. */
-function removeCrewImage({ url }) {
-  const match = url.match(/campaigns\/([^/]+)\/ship\/crew\/me\/images/)
-  const campaignId = match?.[1] || null
-  if (!campaignId || !isGuestParticipant(campaignId)) {
-    return forbidden('You are not a participant in this campaign.')
-  }
-
-  const imageUrl = new URLSearchParams(url.split('?')[1] || '').get('url')
-  const userId = currentGuestUserId()
-  const existing = shipCrewRows(campaignId).find((row) => String(row.userId) === String(userId))
-  saveShipCrewRow(campaignId, userId, {
-    imageUrls: (existing?.imageUrls || []).filter((entry) => entry !== imageUrl),
-  })
-  return ok(myCrewDTO(campaignId))
 }
 
 /** DELETE api/campaigns/{id}/ship/images?url=… — drop a gallery image. */
@@ -1826,11 +1747,12 @@ function addPlannerMember({ url }) {
 // ============================================================================
 // Entries are tested in order and the first match wins, exactly like the
 // if-chains this replaced, so the order is load-bearing:
-//   • `campaigns/*/ship/crew/...` before `campaigns/*/ship*`
-//   • DELETE `characters/*/spells/*`, then `characters/*/campaign`, then
-//     `characters/*`
+//   • DELETE `characters/*/spells/*`, then `characters/*/images`, then
+//     `characters/*/campaign`, then `characters/*`
 //   • POST `ship/image` before POST `ship/images` — the first pattern also
 //     matches the second URL, which is why the gallery upload never runs
+//   • POST `characters/*/images` before POST `characters/*/image` for the same
+//     reason: `/image` also matches the gallery URL
 // Adding an endpoint means adding one entry here: no new branch anywhere else.
 // `unless` keeps a route away from URLs it would otherwise swallow (the admin
 // user list is not served at all — see the module header).
@@ -1850,7 +1772,6 @@ const ROUTES = [
   { method: 'get', pattern: /characters.*without-campaign/, handler: handleDetachedCharacters },
   { method: 'get', pattern: /characters.*\/me/, handler: handleOwnCharacters },
   { method: 'get', pattern: /characters/, handler: handleCharacters },
-  { method: 'get', pattern: /campaigns.*\/ship\/crew/, handler: handleShipCrew },
   { method: 'get', pattern: /campaigns.*\/ship/, handler: handleShip },
   { method: 'get', pattern: /campaigns/, handler: handleCampaigns },
   { method: 'get', pattern: /messages/, handler: handleMessages },
@@ -1859,10 +1780,10 @@ const ROUTES = [
   { method: 'post', pattern: /planner\/campaign\/[^/]+\/plans/, handler: createPlannerPlan },
   { method: 'post', pattern: /planner\/plans\/.*\/dates/, handler: addPlannerDate },
   { method: 'post', pattern: /journals\/campaign\/.*\/pages/, handler: createJournalPage },
-  { method: 'post', pattern: /campaigns.*\/ship\/crew\/me\/images/, handler: addCrewImage },
   { method: 'post', pattern: /campaigns.*\/ship\/image/, handler: addShipImage },
   { method: 'post', pattern: /campaigns.*\/ship\/images/, handler: addShipGalleryImage },
   { method: 'post', pattern: /campaigns.*\/image/, handler: uploadCampaignImage },
+  { method: 'post', pattern: /characters.*\/images/, handler: addCharacterGalleryImage },
   { method: 'post', pattern: /characters.*\/image/, handler: uploadCharacterImage },
   { method: 'post', pattern: /characters.*\/spells/, handler: saveSpell },
   { method: 'post', pattern: /characters/, handler: createCharacter },
@@ -1873,7 +1794,6 @@ const ROUTES = [
   { method: 'put', pattern: /planner\/dates\/.*\/attendance/, handler: setPlannerAttendance },
   { method: 'put', pattern: /planner\/plans\/.*\/members\/me/, handler: rejoinPlannerPlan },
   { method: 'put', pattern: /planner\/plans\/.*\/members\//, handler: addPlannerMember },
-  { method: 'put', pattern: /campaigns.*\/ship\/crew\/me/, handler: saveMyCrewEntry },
   { method: 'put', pattern: /campaigns.*\/ship/, handler: saveShip },
   { method: 'put', pattern: /campaigns/, handler: mergeCampaign },
 
@@ -1901,9 +1821,9 @@ const ROUTES = [
   { method: 'delete', pattern: /planner\/plans\//, handler: deletePlannerPlan },
   { method: 'delete', pattern: /journals\/pages\//, handler: deleteJournalPage },
   { method: 'delete', pattern: /characters.*\/spells\//, handler: removeSpell },
+  { method: 'delete', pattern: /characters.*\/images/, handler: removeCharacterGalleryImage },
   { method: 'delete', pattern: /characters.*\/campaign/, handler: detachCharacter },
   { method: 'delete', pattern: /characters/, handler: deleteCharacter },
-  { method: 'delete', pattern: /campaigns.*\/ship\/crew\/me\/images/, handler: removeCrewImage },
   { method: 'delete', pattern: /campaigns.*\/ship\/images/, handler: removeGalleryImage },
   { method: 'delete', pattern: /campaigns/, handler: deleteCampaign },
   { method: 'delete', pattern: /messages/, handler: deleteMessage },

@@ -20,7 +20,7 @@ describe('CampaignImage', () => {
   })
 
   it("keeps a caller's placeholder above the system's own", () => {
-    // The ship art and the crew gallery are not campaigns, so they pass their own.
+    // The ship's art is not a campaign image, so the ship gallery passes its own.
     const wrapper = mountImage({
       src: '',
       systemType: 'OFFWORLDERS',

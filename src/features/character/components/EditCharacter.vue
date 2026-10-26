@@ -12,6 +12,7 @@ import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import SystemFormRouter from '@/features/character/dispatchers/SystemFormRouter.vue'
 import { useImagePicker } from '@/utils/useImagePicker.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import { validateImageSize } from '@/utils/imageUpload.js'
 import {
   DEFAULT_SYSTEM_TYPE,
   SYSTEM_FORM_OPTIONS,
@@ -59,6 +60,15 @@ const character = ref({
   ...createEmptyCharacterBlocks(),
 })
 
+// The character's gallery, kept beside `character` rather than inside it: the
+// images are uploaded and removed one at a time through their own endpoints (as
+// the ship's gallery is), so they are not part of the form payload and must not
+// make the form look dirty.
+const galleryImages = ref([])
+const galleryInput = ref(null)
+const galleryRepositionFile = ref(null)
+const galleryBusy = ref(false)
+
 const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
 
 // Warn before leaving the edit form with unsaved changes. The snapshot is taken
@@ -94,6 +104,7 @@ onMounted(async () => {
         avatarUrl: fetchedCharacter.avatarUrl,
         ...normalizeCharacterBlocks(fetchedCharacter),
       }
+      galleryImages.value = [...(fetchedCharacter.imageUrls || [])]
       characterSnapshot.value = JSON.stringify(character.value)
     } else {
       notificationStore.addNotification('Character not found', 'error', 4000)
@@ -158,6 +169,66 @@ const submitCharacter = async () => {
     isSubmitting.value = false
   }
 }
+
+/**
+ * Gallery images. Unlike the portrait above — which is uploaded with the form on
+ * Save — each of these is stored the moment it is picked, so the flow is: pick,
+ * reposition, upload. The backend answers with the whole character, and the
+ * store hands back the gallery it now holds.
+ */
+function triggerGalleryInput() {
+  galleryInput.value?.click()
+}
+
+function onGalleryFileChange(event) {
+  const file = event.target.files[0]
+  // Reset so selecting the same file again still fires a change event.
+  event.target.value = ''
+  if (!file) return
+
+  const sizeError = validateImageSize(file)
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
+  }
+
+  galleryRepositionFile.value = file
+}
+
+async function applyGalleryImage(file) {
+  // The reposition modal re-encodes to JPEG, which can push a borderline file
+  // over the limit, so it is checked again before anything is uploaded.
+  const sizeError = validateImageSize(file)
+  galleryRepositionFile.value = null
+  if (sizeError) {
+    notificationStore.addNotification(sizeError, 'error')
+    return
+  }
+
+  galleryBusy.value = true
+  try {
+    galleryImages.value = await characterStore.addCharacterImage(characterId.value, file)
+  } catch {
+    // The store surfaces the error.
+  } finally {
+    galleryBusy.value = false
+  }
+}
+
+function cancelGalleryReposition() {
+  galleryRepositionFile.value = null
+}
+
+async function removeGalleryImage(url) {
+  galleryBusy.value = true
+  try {
+    galleryImages.value = await characterStore.removeCharacterImage(characterId.value, url)
+  } catch {
+    // The store surfaces the error.
+  } finally {
+    galleryBusy.value = false
+  }
+}
 </script>
 
 <template>
@@ -215,6 +286,65 @@ const submitCharacter = async () => {
           </div>
         </div>
 
+        <!-- Images Section: the character's gallery. These are the pictures that
+             appear on the character's crew card under an Offworlders ship. -->
+        <div class="mb-6">
+          <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
+            <h5 class="text-lg font-semibold" style="color: var(--color-primary-600)">Images</h5>
+            <BaseButton
+              variant="add"
+              type="button"
+              :disabled="galleryBusy"
+              @click="triggerGalleryInput"
+            >
+              Add image
+            </BaseButton>
+          </div>
+
+          <p class="text-xs text-muted mb-3">
+            Drawings, handouts and other art. In an Offworlders campaign these images — and the
+            character's Notes — are shown under the ship, on this character's crew card.
+          </p>
+
+          <div v-if="isGuestMode" class="guest-notice mb-3">
+            ⚠️ Image upload is not supported in guest mode — a placeholder image is stored instead.
+          </div>
+
+          <div v-if="galleryImages.length" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div v-for="url in galleryImages" :key="url" class="flex flex-col gap-1">
+              <CharacterImage
+                :src="url"
+                :alt="`${character.name || 'Character'} artwork`"
+                :system-type="character.systemType"
+                class="w-full h-24 rounded border border-section object-cover"
+              />
+              <BaseButton
+                variant="remove"
+                type="button"
+                :disabled="galleryBusy"
+                confirm-message="Remove this image from the character?"
+                @click="removeGalleryImage(url)"
+              >
+                Remove
+              </BaseButton>
+            </div>
+          </div>
+          <p v-else class="text-sm text-muted italic">No images yet.</p>
+
+          <input
+            id="character-gallery-input"
+            ref="galleryInput"
+            type="file"
+            accept=".jpg,.jpeg,.png,.gif,.webp"
+            class="hidden"
+            aria-label="Add an image to the character"
+            @change="onGalleryFileChange"
+          />
+          <div v-if="!isGuestMode" class="text-xs text-muted mt-1">
+            Supported formats: *.jpg, *.png, *.gif, *.webp. Max size: 5 MB.
+          </div>
+        </div>
+
         <!-- Basic Information Section -->
         <div class="mb-6">
           <h4 class="text-lg font-semibold mb-3" style="color: var(--color-primary-600)">
@@ -256,6 +386,7 @@ const submitCharacter = async () => {
             v-model="character.notes"
             class="mb-4"
             label="Notes"
+            hint="Shown with the character — and under the ship, on the crew card, in an Offworlders campaign."
             :rows="2"
           />
 
@@ -318,6 +449,15 @@ const submitCharacter = async () => {
       :file="repositionFile"
       @confirm="applyRepositionedImage"
       @cancel="cancelReposition"
+    />
+
+    <!-- Gallery images are uploaded on their own, so they get their own
+         reposition step rather than sharing the portrait's. -->
+    <ImageRepositionModal
+      v-if="galleryRepositionFile"
+      :file="galleryRepositionFile"
+      @confirm="applyGalleryImage"
+      @cancel="cancelGalleryReposition"
     />
   </div>
 </template>

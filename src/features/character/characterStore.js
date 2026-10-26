@@ -216,6 +216,64 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  /**
+   * The character's gallery after a response replaced it — the list entry and
+   * `currentCharacter` in one step, keyed on the id the API returned.
+   */
+  function replaceCharacter(updatedCharacter) {
+    const index = characters.value.findIndex((char) => char.id === updatedCharacter.id)
+    if (index !== -1) {
+      characters.value[index] = updatedCharacter
+    }
+
+    if (currentCharacter.value?.id === updatedCharacter.id) {
+      currentCharacter.value = updatedCharacter
+    }
+  }
+
+  /**
+   * Add an image to the character's gallery — the images shown beside the notes
+   * on the character's card in an Offworlders campaign's ship view.
+   * @param {number|string} characterId
+   * @param {File} imageFile
+   * @returns {Promise<string[]>} The character's gallery after the upload
+   */
+  async function addCharacterImage(characterId, imageFile) {
+    const notificationStore = useNotificationStore()
+
+    try {
+      const updatedCharacter = await CharacterService.addCharacterImage(characterId, imageFile)
+      replaceCharacter(updatedCharacter)
+      notificationStore.addNotification('Image added to the character.', 'success')
+      return updatedCharacter.imageUrls || []
+    } catch (error) {
+      console.error('Failed to add the character image:', error)
+      notificationStore.addNotification('Failed to add the character image.', 'error')
+      throw error
+    }
+  }
+
+  /**
+   * Remove a gallery image from the character by its stored URL.
+   * @param {number|string} characterId
+   * @param {string} url
+   * @returns {Promise<string[]>} The character's gallery after the removal
+   */
+  async function removeCharacterImage(characterId, url) {
+    const notificationStore = useNotificationStore()
+
+    try {
+      const updatedCharacter = await CharacterService.removeCharacterImage(characterId, url)
+      replaceCharacter(updatedCharacter)
+      notificationStore.addNotification('Image removed from the character.', 'success')
+      return updatedCharacter.imageUrls || []
+    } catch (error) {
+      console.error('Failed to remove the character image:', error)
+      notificationStore.addNotification('Failed to remove the character image.', 'error')
+      throw error
+    }
+  }
+
   async function deleteCharacter(characterId) {
     const notificationStore = useNotificationStore()
     isLoading.value = true
@@ -258,6 +316,8 @@ export const useCharacterStore = defineStore('character', () => {
     updateCharacter,
     updateCharacterField,
     uploadCharacterImage,
+    addCharacterImage,
+    removeCharacterImage,
     deleteCharacter,
   }
 })

@@ -18,7 +18,7 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 - Settings for everyone — colour theme and profile — plus an administrator
   surface for accounts and the email whitelist. The theme (Settings → General) is
   reachable without an account, so it can be set before logging in.
-- Image uploads (campaign, character and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`)
+- Image uploads (campaign, character portrait and gallery, and ship) are capped at 5MB per file by the backend (`app.upload.max-file-size`). A character's gallery and its notes are what the ship's crew manifest shows in an Offworlders campaign — the crew is the campaign's characters, so there is no separate crew entry to fill in
 - Private journals per campaign participant: a book of numbered markdown pages, one per participant per campaign, readable only by its owner (10,000 characters per page by default, at most 500 pages)
 - Campaign **add-ons** — optional parts an owner switches on in Campaign Settings →
   Add-ons, each one adding a section to the campaign menu. The first is the

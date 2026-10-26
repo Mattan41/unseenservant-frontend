@@ -220,30 +220,6 @@ describe('guest-axios GET routes', () => {
     })
   })
 
-  it('returns the crew manifest to a participant, and refuses anybody else', async () => {
-    const stored = read('guest_ship_crew')
-
-    const { data } = await guestAxios.get('api/campaigns/guest_campaign_4/ship/crew')
-
-    expect(data.map((member) => member.userId)).toEqual([
-      'guest_demo',
-      'guest_player_1',
-      'guest_player_2',
-    ])
-    expect(data[1].notes).toBe(stored[0].notes)
-    expect(data[1].characters).toEqual(stored[0].characters)
-    // A participant with no saved row still gets the full DTO shape.
-    expect(data[0]).toMatchObject({ notes: '', imageUrls: [], characters: [] })
-
-    seedForeignCampaign()
-    await expect(guestAxios.get('api/campaigns/guest_campaign_9/ship/crew')).rejects.toMatchObject({
-      response: {
-        status: 403,
-        data: { message: 'You are not a participant in this campaign.' },
-      },
-    })
-  })
-
   it('answers every api/messages URL with the profile, the pre-existing prefix quirk', async () => {
     // The profile branch tests `url.includes('api/me')`, which `api/messages`
     // satisfies as well, so the messages branches below are shadowed. Kept
@@ -358,18 +334,23 @@ describe('guest-axios POST routes', () => {
     )
   })
 
-  it('appends a crew image for a participant, and refuses anybody else', async () => {
-    const { data } = await guestAxios.post('api/campaigns/guest_campaign_4/ship/crew/me/images', {})
-    expect(data.userId).toBe('guest_demo')
-    expect(data.imageUrls).toHaveLength(1)
+  it('appends a gallery image to a character, 404ing for an unknown one', async () => {
+    // The crew's ship view reads the campaign's characters, so a crew image is
+    // the character's gallery image.
+    const before = characters().find((character) => character.id === 'guest_char_8')
 
-    seedForeignCampaign()
-    await expect(
-      guestAxios.post('api/campaigns/guest_campaign_9/ship/crew/me/images', {}),
-    ).rejects.toMatchObject({
+    const { data } = await guestAxios.post('api/characters/guest_char_8/images', {})
+
+    expect(data.id).toBe('guest_char_8')
+    expect(data.imageUrls).toHaveLength(before.imageUrls.length + 1)
+    expect(characters().find((character) => character.id === 'guest_char_8').imageUrls).toHaveLength(
+      before.imageUrls.length + 1,
+    )
+
+    await expect(guestAxios.post('api/characters/guest_char_404/images', {})).rejects.toMatchObject({
       response: {
-        status: 403,
-        data: { message: 'You are not a participant in this campaign.' },
+        status: 404,
+        data: { message: 'Character not found with id: guest_char_404' },
       },
     })
   })
@@ -402,29 +383,6 @@ describe('guest-axios POST routes', () => {
 
 describe('guest-axios PUT routes', () => {
   beforeEach(startGuestSession)
-
-  it('saves my own crew entry, and refuses a campaign I am not in', async () => {
-    const { data } = await guestAxios.put('api/campaigns/guest_campaign_4/ship/crew/me', {
-      notes: 'At the helm',
-      characters: [{ name: 'Vex', roleOnShip: 'Pilot' }],
-    })
-
-    expect(data).toMatchObject({
-      userId: 'guest_demo',
-      notes: 'At the helm',
-      characters: [{ name: 'Vex', roleOnShip: 'Pilot' }],
-    })
-
-    seedForeignCampaign()
-    await expect(
-      guestAxios.put('api/campaigns/guest_campaign_9/ship/crew/me', { notes: 'nope' }),
-    ).rejects.toMatchObject({
-      response: {
-        status: 403,
-        data: { message: 'You are not a participant in this campaign.' },
-      },
-    })
-  })
 
   it('updates a ship, creates a missing one, and 409s on a stale version', async () => {
     const { data: updated } = await guestAxios.put('api/campaigns/guest_campaign_4/ship', {
@@ -677,16 +635,17 @@ describe('guest-axios DELETE routes', () => {
     expect(characters().some((character) => character.id === 'guest_char_6')).toBe(false)
   })
 
-  it('removes a crew image, then a ship gallery image', async () => {
-    // Upload a crew image first, so there is something to remove.
-    const { data: crew } = await guestAxios.post(
-      'api/campaigns/guest_campaign_4/ship/crew/me/images',
-      {},
+  it('removes a gallery image from a character, then a ship gallery image', async () => {
+    // Upload one first, so there is something to remove. Kestrel is seeded with a
+    // gallery image of her own, which the removal must leave alone.
+    const { data: withUpload } = await guestAxios.post('api/characters/guest_char_8/images', {})
+    const added = withUpload.imageUrls.at(-1)
+
+    const { data: afterCharacter } = await guestAxios.delete(
+      `api/characters/guest_char_8/images?url=${encodeURIComponent(added)}`,
     )
-    const { data: afterCrew } = await guestAxios.delete(
-      `api/campaigns/guest_campaign_4/ship/crew/me/images?url=${encodeURIComponent(crew.imageUrls[0])}`,
-    )
-    expect(afterCrew.imageUrls).toEqual([])
+    expect(afterCharacter.imageUrls).not.toContain(added)
+    expect(afterCharacter.imageUrls).toContain('/default-scifi-campaign.svg')
 
     // The gallery image is seeded directly, because POST cannot add one.
     const galleryUrl = 'https://example.test/gallery.png'

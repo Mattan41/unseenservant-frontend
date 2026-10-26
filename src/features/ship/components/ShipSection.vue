@@ -4,12 +4,14 @@
  * `MessageBoard`). Owns the section's store interaction: refreshing on mount and
  * handling saving/image events. Loading and clearing are owned by CampaignView,
  * which shares the ship store with the Overview summary card.
+ *
+ * The crew is the campaign's characters, so it comes from the campaign store
+ * rather than the ship store — the ship sheet only presents it.
  */
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
-import { useUserStore } from '@/features/user/userStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -26,9 +28,17 @@ const props = defineProps({
 
 const shipStore = useShipStore()
 const campaignStore = useCampaignStore()
-const userStore = useUserStore()
 const notificationStore = useNotificationStore()
-const { ship, crew, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+const { ship, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+
+/** The campaign, for the crew cards' player names and roles. */
+const campaign = computed(() => campaignStore.getCampaignById(props.campaignId) || null)
+
+/** The crew: the campaign's characters, in the store's fixed party order. */
+const crewCharacters = computed(() => campaignStore.getCharactersByCampaignId(props.campaignId))
+
+/** The campaign's participants, so a crew card can name each character's player. */
+const participants = computed(() => campaign.value?.participants || [])
 
 // The ship is Offworlders-only, and its images are exempt from export.
 const SHIP_EXPORT_FORMATS = [
@@ -42,7 +52,7 @@ const SHIP_EXPORT_FORMATS = [
  */
 function exportShip(format) {
   if (!ship.value) return
-  const campaignName = campaignStore.getCampaignById(props.campaignId)?.name || ''
+  const campaignName = campaign.value?.name || ''
   const content = buildShipExport(ship.value, { format, campaignName })
   const base = `${slugifyFileName(ship.value.name, 'ship')}-${dateStamp()}`
   downloadTextFile({
@@ -54,7 +64,12 @@ function exportShip(format) {
 }
 
 async function loadShip() {
-  await Promise.all([shipStore.fetchShip(props.campaignId), shipStore.fetchCrew(props.campaignId)])
+  // The crew is the campaign's characters; the store keeps them cached, so a
+  // revisit re-reads them from there.
+  await Promise.all([
+    shipStore.fetchShip(props.campaignId),
+    campaignStore.fetchCharactersForCampaign(props.campaignId),
+  ])
 }
 
 async function handleSave(shipData) {
@@ -98,31 +113,6 @@ async function handleAdjustVital({ field, value }) {
   }
 }
 
-// Crew manifest: the signed-in user's entry (notes, characters, images).
-async function handleSaveCrew(entry) {
-  try {
-    await shipStore.saveMyCrewEntry(props.campaignId, entry)
-  } catch {
-    // Error is surfaced by the store.
-  }
-}
-
-async function handleAddCrewImage(file) {
-  try {
-    await shipStore.addCrewImage(props.campaignId, file)
-  } catch {
-    // Error is surfaced by the store.
-  }
-}
-
-async function handleRemoveCrewImage(url) {
-  try {
-    await shipStore.removeCrewImage(props.campaignId, url)
-  } catch {
-    // Error is surfaced by the store.
-  }
-}
-
 /** An image over the upload limit: show the sentence the sheet produced. */
 function handleSizeError(message) {
   notificationStore.addNotification(message, 'error')
@@ -154,17 +144,14 @@ onMounted(loadShip)
         :ship="ship"
         :saving="isSaving"
         :conflict="hasConflict"
-        :crew="crew"
-        :current-user-id="userStore.userId"
+        :characters="crewCharacters"
+        :participants="participants"
         @save="handleSave"
         @reload="loadShip"
         @upload-profile="handleUploadProfile"
         @add-gallery="handleAddGallery"
         @remove-gallery="handleRemoveGallery"
         @adjust-vital="handleAdjustVital"
-        @save-crew="handleSaveCrew"
-        @add-crew-image="handleAddCrewImage"
-        @remove-crew-image="handleRemoveCrewImage"
         @size-error="handleSizeError"
       />
     </div>

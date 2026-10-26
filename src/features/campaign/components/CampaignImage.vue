@@ -5,7 +5,9 @@
  * The placeholder is the campaign's primary system's art
  * (`campaignDefaultImage`) — an Offworlders campaign shows the sci-fi art, 5e
  * and system-less campaigns the generic one. A caller that is not showing a
- * campaign (the ship art, a crew gallery) passes its own `defaultSrc`.
+ * campaign (the ship's profile image and gallery) passes its own `defaultSrc`;
+ * a character's own pictures use `CharacterImage`, whose placeholder follows the
+ * character's system.
  */
 import { computed } from 'vue'
 import { campaignDefaultImage } from '@/features/campaign/campaignSystems.js'
