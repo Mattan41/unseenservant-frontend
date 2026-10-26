@@ -122,3 +122,61 @@ describe('mode', () => {
     expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
   })
 })
+
+describe('theme', () => {
+  const THEMES = ['silver', 'crimson', 'forest', 'golden']
+
+  it('defaults to silver and offers each theme exactly once', async () => {
+    const environment = await loadEnvironment('local')
+
+    expect(environment.DEFAULT_THEME).toBe('silver')
+    expect(environment.theme.value).toBe('silver')
+
+    const ids = environment.AVAILABLE_THEMES.map((option) => option.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect([...ids].sort()).toEqual([...THEMES].sort())
+    expect(ids[0]).toBe(environment.DEFAULT_THEME)
+  })
+
+  it('switches the ref, <html data-theme> and the persisted preference together', async () => {
+    const environment = await loadEnvironment('local')
+
+    environment.setTheme('crimson')
+
+    expect(environment.theme.value).toBe('crimson')
+    expect(document.documentElement.getAttribute('data-theme')).toBe('crimson')
+    expect(localStorage.getItem('theme')).toBe('crimson')
+  })
+
+  it('ignores an unknown theme id', async () => {
+    const environment = await loadEnvironment('local')
+
+    environment.setTheme('neon')
+
+    expect(environment.theme.value).toBe('silver')
+    expect(localStorage.getItem('theme')).toBeNull()
+  })
+
+  it('reads a stored preference instead of the default', async () => {
+    localStorage.setItem('theme', 'golden')
+    const environment = await loadEnvironment('local')
+
+    expect(environment.theme.value).toBe('golden')
+  })
+
+  it('falls back to the default when the stored id is not a theme', async () => {
+    localStorage.setItem('theme', 'neon')
+    const environment = await loadEnvironment('local')
+
+    expect(environment.theme.value).toBe('silver')
+  })
+
+  it('writes the stored theme to <html data-theme>', async () => {
+    localStorage.setItem('theme', 'forest')
+    const environment = await loadEnvironment('local')
+
+    environment.applyEnvironmentAttributes()
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('forest')
+  })
+})

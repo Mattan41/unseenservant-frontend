@@ -51,7 +51,8 @@
                    test | staging |   banner's text (App.vue) and its colours
                    prod | demo        (the --env-banner-* roles below). No other
                                       effect on colour.
-     data-theme — forest | silver   → identity / brand palette (--primary-*).
+     data-theme — crimson | forest | → identity / brand palette (--primary-*).
+                  golden | silver
      data-mode  — light | dark      → surface / neutral palette. Each theme
                                       carries BOTH modes as a pair of blocks in
                                       the palette layer below (--primary-*,
@@ -70,11 +71,14 @@
    WHERE TO ADD THINGS
      • A new semantic role variable → the `:root` role layer below.
        Components should reference roles by meaning, not palette shades.
-     • A new brand palette value    → the matching
-       `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
-     • A new theme (e.g. silver)    → add
-       `html[data-theme='newtheme'][data-mode='light']` AND `[data-mode='dark']`
-       blocks and point the runtime (src/utils/environment.js) at it.
+     • A new brand palette value    → that theme's block in the THEME LAYER below
+       (its --primary-* ramp, its --color-surface, and the three inset surfaces
+       derived from that card).
+     • A per-theme neutral (a warm theme's text, borders, fills) → also that
+       theme's block: keep the shared role's luminance so no contrast ratio moves,
+       and only the hue changes.
+     • A new theme (e.g. silver)    → copy one block per mode, add the id to
+       src/utils/environment.js, and let themePalette.test.js check it.
      • A new mode (beyond light|dark) → add `[data-mode='X']` variants and a
        matching option in environment.js. dark already exists: the OS
        preference is the default and the user can override it in Settings.
@@ -82,8 +86,8 @@
        ENVIRONMENT BANNER section below, a message in App.vue, and the value
        to src/utils/environment.js.
 
-   Active default: silver · light. forest · light is retained as an
-   alternative, and every theme ships a light and a dark block. The mode
+   Active default: silver · light. crimson, forest and golden are the
+   alternatives, and every theme ships a light and a dark block. The mode
    follows the OS (`prefers-color-scheme`) unless the user overrides it in
    Settings → General; `src/utils/environment.js` owns that state.
    ========================================================================== */
@@ -251,8 +255,134 @@ html[data-mode='dark'] {
 }
 
 /* --------------------------------------------------------------------------
-   PALETTE LAYER — raw values per theme + mode.
+   THEME LAYER — one block per theme + mode, holding everything that block owns.
+   Each block carries, in this order:
+
+   1. IDENTITY PALETTE — `--color-surface`, `--surface-section`, `--primary` and
+      the raw `--primary-50…900` ramp. The light blocks darken as the ramp climbs
+      (50 palest → 900 darkest): `--primary-900` is body text, `--primary-700`
+      paints headings and the default button, `--primary-100/300` the page and
+      header gradient. The dark blocks invert that (50 darkest → 900 lightest).
+      `--surface-section` is the light block's `--primary-500` value, and a shade
+      below `--color-surface` in the dark blocks, so `.section-primary` stays
+      inset in both modes.
+
+   2. INSET SURFACES — `--surface-muted` ("a quieter panel": `.muted-surface`,
+      the Offworlders sheet sections, `.profile-section`, the campaign summary
+      strip), `--surface-inset` (one step further in: `.profile-value`,
+      `.field-tabs`, `.rich-text code`) and `--surface-raised` (a chip on top:
+      `.chip`, `.attribute-tile`). Each is derived from THIS block's own
+      `--color-surface`, keeping the step silver defines —
+      L(surface) / L(card) = 0.955 / 0.904 / 0.798 (light) and 0.853 / 1.35 /
+      2.26 (dark) — at the card's hue, chroma 8%. Absolute values only relate to
+      silver's white/black card: on a tinted one the near-white inset of
+      forest · light reads as a bright band, and the dark neutrals as a flat
+      near-black one.
+
+   3. WARM NEUTRAL ROLES — only the warm themes re-point the shared text, border
+      and fill roles, because that family is blue-grey (`--text-default` is
+      #374151, red-minus-blue -26) while crimson's canvas is +12/+13 and golden's
+      +35/+20 (light/dark). Each value keeps the shared role's luminance and takes
+      the theme's hue at a low chroma (7% for text, 10% for borders and fills), so
+      it stays a grey and no contrast ratio moves.
+
+   Adding a theme: copy a block, give it its palette and derived surfaces, add the
+   warm roles only if its canvas is warm, and add the id to AVAILABLE_THEMES in
+   src/utils/environment.js. `themePalette.test.js` checks the shape, the ramp,
+   the surface step and the contrast floors, so none of it can drift silently.
    -------------------------------------------------------------------------- */
+
+/* crimson · light — the rose-red alternative. The shades darken as they climb
+   (50 palest → 900 darkest) because --primary-900 is body text, --primary-700
+   paints headings and the default button, and --primary-100/300 paints the page
+   and header gradient. Tuned against the pairs the app actually renders: 900 on
+   100 (body) 14.5:1, 100 on 700 (default button) 7.8:1, 600 on 50 (badge) 6.0:1,
+   900 on 200 (context nav item) 12.4:1 — all AA. --surface-section tracks
+   primary-500 as in every other theme; its 3.15:1 under --text-default is above
+   the floor the existing themes set (forest · light sits at 2.84).
+   --primary-300 is the page/header gradient's mid stop, where the fixed neutral
+   roles land: it is lighter than a straight ramp suggests so --text-secondary
+   (5.06:1) clears AA on the gradient, the one place silver · light manages it and
+   forest · light fails it (2.74:1). */
+html[data-theme='crimson'][data-mode='light'] {
+  --color-surface: #fdf7f8;
+  --surface-section: #c97684;
+  --primary: #c97684;
+  --primary-50: #fdf6f7;
+  --primary-100: #f8ebec;
+  --primary-200: #f0d8da;
+  --primary-300: #e9c7cb;
+  --primary-400: #cd8f97;
+  --primary-500: #c97684;
+  --primary-600: #a33b4a;
+  --primary-700: #8a1f2f;
+  --primary-800: #6d1424;
+  --primary-900: #3d0a13;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #f4f3f3;
+  --surface-inset: #f0eded;
+  --surface-raised: #e4e0e0;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #aca0a1;
+  --text-muted: #7e6e6f;
+  --text-secondary: #5e5153;
+  --text-default: #483e3f;
+  --text-heading: #2d2727;
+  --text-strong: #1b1718;
+  --text-faint: #d9d3d4;
+  --border-subtle: #f6f3f4;
+  --border-section: #eae6e6;
+  --border-input: #dbd2d3;
+  --neutral-fill: #dbd2d3;
+  --neutral-fill-hover: #b09ea0;
+  --neutral-strong: #b09ea0;
+  --neutral-strong-hover: #846c6e;
+  --btn-ghost-ring: #dbd2d3;
+  --popover-surface: #2f2727;
+}
+
+/* crimson · dark — the dark half of the crimson pair. The primary shades invert
+   (50 darkest → 900 lightest) because --primary-900 is body text and
+   --primary-100/300 paints the page and header gradient. Body text 15.3:1,
+   default button 9.6:1, badge 6.9:1, and white on --primary-500 (the form CTA)
+   5.2:1 — the one pair where crimson · dark beats every existing dark theme. */
+html[data-theme='crimson'][data-mode='dark'] {
+  --color-surface: #241115;
+  --surface-section: #150a0d;
+  --primary: #b44a58;
+  --primary-50: #160809;
+  --primary-100: #1f0e12;
+  --primary-200: #2a1318;
+  --primary-300: #3a1a21;
+  --primary-400: #6b2a35;
+  --primary-500: #b44a58;
+  --primary-600: #d97f8c;
+  --primary-700: #eaa9b3;
+  --primary-800: #f2c6cc;
+  --primary-900: #fae4e8;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171314;
+  --surface-inset: #1f1b1b;
+  --surface-raised: #2a2425;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #928185;
+  --text-muted: #a99da0;
+  --text-secondary: #c2b8bb;
+  --text-default: #dbd5d7;
+  --text-heading: #eae7e7;
+  --text-strong: #f6f5f5;
+  --text-faint: #5d5154;
+  --border-subtle: #431e27;
+  --border-section: #562732;
+  --border-input: #6f3240;
+  --neutral-fill: #562732;
+  --neutral-fill-hover: #6f3240;
+  --neutral-strong: #6f3240;
+  --neutral-strong-hover: #7c3848;
+  --btn-ghost-ring: #6f3240;
+  --popover-surface: #ebe6e8;
+  --popover-text: #1c1718;
+}
 
 /* forest · light — alternative theme (NOT the default). Retained from the
    former html[data-env='dev'] green palette. */
@@ -270,6 +400,10 @@ html[data-theme='forest'][data-mode='light'] {
   --primary-700: #41564a;
   --primary-800: #2c3a32;
   --primary-900: #171e1a;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #dae0dc;
+  --surface-inset: #d5dbd7;
+  --surface-raised: #c7cfca;
 }
 
 /* forest · dark — the dark half of the forest pair. The primary shades invert
@@ -289,10 +423,103 @@ html[data-theme='forest'][data-mode='dark'] {
   --primary-700: #a9c9b4;
   --primary-800: #c7dccd;
   --primary-900: #e8f1ea;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171a18;
+  --surface-inset: #1e2420;
+  --surface-raised: #28302b;
+}
+
+/* golden · light — the antique-gold alternative, same climb as the other light
+   themes (50 palest → 900 darkest). Body text 13.5:1, default button and
+   headings 6.8:1, badge 4.9:1, links 4.5:1 on the canvas. Two shades are
+   deliberately deeper than a straight ramp would put them, because both also
+   paint text on light surfaces where there is little headroom: --primary-600
+   carries badge and link text (silver · light manages 2.5:1 there, forest ·
+   light 2.7:1), and --primary-700 is the discovery tile's label on the
+   .section-primary panel, which no theme clears AA on (silver · light is the best
+   of the four at 3.68:1, and a mid-gold panel would leave this pair at 1.99:1). */
+html[data-theme='golden'][data-mode='light'] {
+  --color-surface: #fdf8e8;
+  --surface-section: #b8892a;
+  --primary: #b8892a;
+  --primary-50: #fdf9ec;
+  --primary-100: #f8efd5;
+  --primary-200: #f0e2b4;
+  --primary-300: #e3cd85;
+  --primary-400: #cfa94f;
+  --primary-500: #b8892a;
+  --primary-600: #8f6510;
+  --primary-700: #6b4b08;
+  --primary-800: #5c4207;
+  --primary-900: #2f2205;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #f4f3f2;
+  --surface-inset: #eeedeb;
+  --surface-raised: #e2e0dd;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #a6a298;
+  --text-muted: #757266;
+  --text-secondary: #57554c;
+  --text-default: #43413a;
+  --text-heading: #2a2824;
+  --text-strong: #191816;
+  --text-faint: #d6d4d0;
+  --border-subtle: #f4f4f2;
+  --border-section: #e8e6e3;
+  --border-input: #d7d5ce;
+  --neutral-fill: #d7d5ce;
+  --neutral-fill-hover: #a7a394;
+  --neutral-strong: #a7a394;
+  --neutral-strong-hover: #777161;
+  --btn-ghost-ring: #d7d5ce;
+  --popover-surface: #2a2923;
+}
+
+/* golden · dark — the dark half of the golden pair (inversion rule as above).
+   --primary-500 is darker here than the identity alone invites, because it is
+   also the form CTA's surface: white text on this value is 4.7:1 (AA), where the
+   brighter #b8933a the ramp suggests would sit at 2.9:1. */
+html[data-theme='golden'][data-mode='dark'] {
+  --color-surface: #262011;
+  --surface-section: #171207;
+  --primary: #8f6f1f;
+  --primary-50: #171206;
+  --primary-100: #201a0c;
+  --primary-200: #2b2311;
+  --primary-300: #3b3017;
+  --primary-400: #6d581f;
+  --primary-500: #8f6f1f;
+  --primary-600: #d7b366;
+  --primary-700: #e8cf95;
+  --primary-800: #f2e2bd;
+  --primary-900: #faf1da;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #1f1e1a;
+  --surface-inset: #282622;
+  --surface-raised: #36332e;
+  /* neutral roles, re-pointed to this theme's hue */
+  --text-subtle: #8a8579;
+  --text-muted: #a39f96;
+  --text-secondary: #bdbab4;
+  --text-default: #d8d6d2;
+  --text-heading: #e9e7e5;
+  --text-strong: #f5f4f3;
+  --text-faint: #57544c;
+  --border-subtle: #322813;
+  --border-section: #403418;
+  --border-input: #53431f;
+  --neutral-fill: #403418;
+  --neutral-fill-hover: #53431f;
+  --neutral-strong: #53431f;
+  --neutral-strong-hover: #655226;
+  --btn-ghost-ring: #53431f;
+  --popover-surface: #e9e7e4;
+  --popover-text: #191814;
 }
 
 /* silver · light — the ACTIVE default theme/mode. Values migrated 1:1 from
-   the former html[data-env='prod'] palette. */
+   the former html[data-env='prod'] palette, and mirrored on `:root` above as the
+   pre-JS fallback. */
 html[data-theme='silver'][data-mode='light'] {
   --color-surface: #ffffff;
   --surface-section: #c0c0c0;
@@ -307,6 +534,10 @@ html[data-theme='silver'][data-mode='light'] {
   --primary-700: #5c5c5c;
   --primary-800: #3d3d3d;
   --primary-900: #2b2b2b;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #fafafa;
+  --surface-inset: #f4f4f4;
+  --surface-raised: #e7e7e7;
 }
 
 /* silver · dark — the dark half of the silver pair (same inversion rule as
@@ -325,6 +556,10 @@ html[data-theme='silver'][data-mode='dark'] {
   --primary-700: #cccccc;
   --primary-800: #e0e0e0;
   --primary-900: #f5f5f5;
+  /* inset surfaces, derived from this block's card */
+  --surface-muted: #171717;
+  --surface-inset: #1f1f1f;
+  --surface-raised: #2a2a2a;
 }
 
 /* Page canvas. The `<main>` element paints the primary gradient (App.vue), so
