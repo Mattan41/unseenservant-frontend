@@ -255,6 +255,74 @@ html[data-mode='dark'] {
 }
 
 /* --------------------------------------------------------------------------
+   SURFACE LADDER — the three inset surfaces, derived from each theme's card.
+   `--surface-muted` ("a quieter panel": `.muted-surface`, the Offworlders sheet
+   sections, `.profile-section`, the campaign summary strip), `--surface-inset`
+   (one step further in: `.profile-value`, `.field-tabs`, `.rich-text code`) and
+   `--surface-raised` (a chip on top: `.chip`, `.attribute-tile`).
+   The shared values are absolute, so they only relate correctly to silver's card
+   (#ffffff / #1a1a1a, what they were tuned against). On a tinted card they
+   invert: forest · light's near-white inset reads as a bright band on a green
+   card, and the dark neutrals read as a flat near-black band on a warm or green
+   one. So each theme's three surfaces are derived from its own card, keeping the
+   step silver defines — L(surface) / L(card) = 0.955 / 0.904 / 0.798 (light) and
+   0.853 / 1.35 / 2.26 (dark) — at the card's hue, chroma 8%.
+   Silver's card is white, so its derived values are the shared greys to within a
+   hex step; only the tint is dropped. Every text-on-surface ratio stays well
+   above AA (the tightest is forest · light's `.chip` at 6.5:1) and the assertion
+   in themePalette.test.js checks the step against silver's own, so the ladder
+   cannot drift silently.
+   -------------------------------------------------------------------------- */
+
+html[data-theme='silver'][data-mode='light'] {
+  --surface-muted: #fafafa;
+  --surface-inset: #f4f4f4;
+  --surface-raised: #e7e7e7;
+}
+
+html[data-theme='silver'][data-mode='dark'] {
+  --surface-muted: #171717;
+  --surface-inset: #1f1f1f;
+  --surface-raised: #2a2a2a;
+}
+
+html[data-theme='crimson'][data-mode='light'] {
+  --surface-muted: #f4f3f3;
+  --surface-inset: #f0eded;
+  --surface-raised: #e4e0e0;
+}
+
+html[data-theme='crimson'][data-mode='dark'] {
+  --surface-muted: #171314;
+  --surface-inset: #1f1b1b;
+  --surface-raised: #2a2425;
+}
+
+html[data-theme='forest'][data-mode='light'] {
+  --surface-muted: #dae0dc;
+  --surface-inset: #d5dbd7;
+  --surface-raised: #c7cfca;
+}
+
+html[data-theme='forest'][data-mode='dark'] {
+  --surface-muted: #171a18;
+  --surface-inset: #1e2420;
+  --surface-raised: #28302b;
+}
+
+html[data-theme='golden'][data-mode='light'] {
+  --surface-muted: #f4f3f2;
+  --surface-inset: #eeedeb;
+  --surface-raised: #e2e0dd;
+}
+
+html[data-theme='golden'][data-mode='dark'] {
+  --surface-muted: #1f1e1a;
+  --surface-inset: #282622;
+  --surface-raised: #36332e;
+}
+
+/* --------------------------------------------------------------------------
    WARM NEUTRALS — per-theme re-pointing of the shared neutral roles.
    The role layer above is ONE fixed family (Tailwind's blue-grey `third` ramp),
    shared by every theme. On a warm canvas it reads cold: `--text-default` is
@@ -282,9 +350,6 @@ html[data-theme='crimson'][data-mode='light'] {
   --text-heading: #2d2727;
   --text-strong: #1b1718;
   --text-faint: #d9d3d4;
-  --surface-muted: #fafafa;
-  --surface-inset: #f5f3f4;
-  --surface-raised: #eae6e6;
   --border-subtle: #f6f3f4;
   --border-section: #eae6e6;
   --border-input: #dbd2d3;
@@ -304,9 +369,6 @@ html[data-theme='golden'][data-mode='light'] {
   --text-heading: #2a2824;
   --text-strong: #191816;
   --text-faint: #d6d4d0;
-  --surface-muted: #faf9f9;
-  --surface-inset: #f4f4f3;
-  --surface-raised: #e8e7e3;
   --border-subtle: #f4f4f2;
   --border-section: #e8e6e3;
   --border-input: #d7d5ce;
@@ -326,9 +388,6 @@ html[data-theme='crimson'][data-mode='dark'] {
   --text-heading: #eae7e7;
   --text-strong: #f6f5f5;
   --text-faint: #5d5154;
-  --surface-muted: #261116;
-  --surface-inset: #33171d;
-  --surface-raised: #441f27;
   --border-subtle: #431e27;
   --border-section: #562732;
   --border-input: #6f3240;
@@ -349,9 +408,6 @@ html[data-theme='golden'][data-mode='dark'] {
   --text-heading: #e9e7e5;
   --text-strong: #f5f4f3;
   --text-faint: #57544c;
-  --surface-muted: #1c170b;
-  --surface-inset: #261f0e;
-  --surface-raised: #332913;
   --border-subtle: #322813;
   --border-section: #403418;
   --border-input: #53431f;

@@ -183,6 +183,20 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 | `--neutral-strong` / `--neutral-strong-hover` | `third-400` / `third-500` | `#3d4653` / `#4b5563` | `.header-nav-link-secondary` |
 | `--popover-surface` / `--popover-text` | `third-800` / `primary-50` | `#e4e8ee` / `#12181f` | `.info-popover` (inverted surface) |
 
+> **The inset surfaces are derived per theme.** `--surface-muted`,
+> `--surface-inset` and `--surface-raised` are absolute in the shared layer, which
+> relates correctly only to silver's card (`#ffffff` / `#1a1a1a`) — what they were
+> tuned against. On a tinted card the step inverts: forest · light's near-white
+> inset reads as a **bright band** on a green card (the Offworlders sheet sections,
+> `.muted-surface` generally) and the dark neutrals as a flat near-black band. So
+> every theme derives the three from its own card at silver's step —
+> `L(surface) / L(card)` = 0.955 / 0.904 / 0.798 (light), 0.853 / 1.35 / 2.26
+> (dark) — at the card's hue, chroma 8% (the **SURFACE LADDER** section of
+> `main.css`). Silver's card is white, so its derived values are the shared greys
+> to within a hex step. Text on those surfaces stays well above AA (the tightest
+> is forest · light's `.chip` at 6.5:1), and `themePalette.test.js` checks both the
+> step and those ratios.
+
 > **Warm themes re-point the neutrals.** The family above is fixed and shared, and
 > it is blue-grey: red-minus-blue is −26 on `--text-default` (`#374151`), −19 on
 > `--text-subtle`, −13 on `--surface-muted` (`#12181f`) and −20 on
@@ -195,11 +209,11 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 > Each value keeps the shared role's luminance exactly and takes its hue from the
 > theme's own canvas at a low chroma (7% for text, 8% for surfaces, 10% for borders
 > and fills), so it stays a grey rather than becoming a colour — and because the
-> luminance is untouched, so is every text-on-surface ratio: body text on
-> `--surface-muted` stays ~12.35:1 in the dark themes and `--text-muted` on the
-> canvas stays 4.16:1 (crimson) / 4.20:1 (golden). Only the hue moves. Rounding to
-> integer hex shifts a ratio by well under a percent (golden's body-on-muted pair
-> moves 9.87:1 → 9.73:1), which is what the test's tolerance covers.
+> luminance is untouched, so is every text-on-surface ratio the role takes part
+> in — `--text-muted` on the canvas stays 4.16:1 (crimson) / 4.20:1 (golden),
+> `--text-default` on a card stays ~9:1, and text on an inset surface is the
+> ladder's business above. Only the hue moves; rounding to integer hex shifts a
+> ratio by well under a percent, which is what the test's luminance band covers.
 >
 > The blocks live in the **WARM NEUTRALS** section of `main.css`
 > (`html[data-theme='crimson'|'golden'][data-mode='light'|'dark']`), and

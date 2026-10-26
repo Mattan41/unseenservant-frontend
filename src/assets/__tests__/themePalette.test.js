@@ -123,6 +123,20 @@ const CONTRAST_FLOORS = [
     exempt: ['forest light'],
   },
   {
+    pair: 'chip label on the raised surface',
+    fg: TEXT_DEFAULT,
+    bg: '--surface-raised',
+    floor: 4.5,
+    exempt: [],
+  },
+  {
+    pair: 'sheet section text on the muted surface',
+    fg: TEXT_DEFAULT,
+    bg: '--surface-muted',
+    floor: 4.5,
+    exempt: [],
+  },
+  {
     // The tile in an empty Characters/Campaigns panel: its label is --primary-700
     // on the panel itself. No theme clears AA here (silver is the best at 3.68:1),
     // so the floor is a regression guard rather than a promise.
@@ -256,17 +270,44 @@ describe('theme palettes', () => {
     expect(malformed).toEqual([])
   })
 
-  it('re-points a warm theme’s neutrals to its own hue without moving the contrast ladder', () => {
+  it('keeps every theme’s inset surfaces on silver’s own step from that theme’s card', () => {
+    // L(surface) / L(card) is the relationship the design relies on: "quieter" and
+    // "inset" have to sit below silver's white card, "raised" above the dark one.
+    // Silver is the reference because the shared roles were tuned against it.
+    const STEP_TOLERANCE = 0.2
+    const steps = (key) =>
+      ['--surface-muted', '--surface-inset', '--surface-raised'].map((token) => ({
+        token,
+        step: luminance(resolveColor(token, key)) / luminance(resolveColor('--color-surface', key)),
+      }))
+
+    const references = { light: steps('silver light'), dark: steps('silver dark') }
+    const violations = []
+
+    for (const key of THEME_MODES) {
+      const expected = references[key.endsWith('dark') ? 'dark' : 'light']
+      steps(key).forEach(({ token, step }, index) => {
+        const want = expected[index].step
+        if (Math.abs(step / want - 1) > STEP_TOLERANCE) {
+          violations.push(
+            `${key} ${token}: step ${step.toFixed(3)}, silver's is ${want.toFixed(3)}`,
+          )
+        }
+      })
+    }
+
+    expect(violations).toEqual([])
+  })
+
+  it('re-points a warm theme’s text, borders and fills to its own hue without moving their luminance', () => {
     const violations = []
 
     for (const key of THEME_MODES) {
       const block = PALETTE_BLOCKS.get(key)
-      // Only a theme that overrides the shared neutrals has this role in its block.
-      if (!block.has('--surface-muted')) continue
+      // A theme that overrides the neutral *text* roles is the one re-pointing the family.
+      if (!block.has('--text-default')) continue
 
       const shared = sharedRolesFor(key)
-      const textDefault = followReference(shared.get('--text-default'))
-      const sharedMuted = followReference(shared.get('--surface-muted'))
 
       for (const [token, value] of block) {
         if (PALETTE_TOKENS.includes(token)) continue
@@ -290,27 +331,20 @@ describe('theme palettes', () => {
         // the dark themes) lands at 0.85x: that hue cannot reach the luminance by
         // scaling the canvas colour, and the warmer value still gains contrast
         // (5.2:1 -> 5.8:1).
+        // Rounding a colour to integer hex moves its luminance by a fraction of a
+        // percent — proportionally more for dark values, where one channel step is
+        // worth more of L — hence the band rather than an exact match.
         const drift = luminance(value) / luminance(sharedHex)
         if (drift < 0.5 || drift > 1.5) {
           violations.push(`${key} ${token}: ${drift.toFixed(2)}x the shared luminance`)
         }
       }
-
-      // Rounding a colour to integer hex moves its luminance by a fraction of a
-      // percent — proportionally more for dark values, where one channel step is
-      // worth more of L — so the check allows a 2% relative wobble and catches a
-      // real loss of contrast.
-      const muted = block.get('--surface-muted')
-      const tolerance = contrastRatio(textDefault, sharedMuted) * 0.02
-      if (contrastRatio(textDefault, muted) < contrastRatio(textDefault, sharedMuted) - tolerance) {
-        violations.push(`${key}: body text lost contrast on --surface-muted`)
-      }
     }
 
     expect(violations).toEqual([])
-    // The two warm themes override, in both modes; silver and forest keep the
-    // shared roles untouched.
-    expect(THEME_MODES.filter((key) => PALETTE_BLOCKS.get(key).has('--surface-muted'))).toEqual([
+    // The two warm themes override the family, in both modes; silver and forest
+    // keep the shared hue (they only rescale their inset surfaces).
+    expect(THEME_MODES.filter((key) => PALETTE_BLOCKS.get(key).has('--text-default'))).toEqual([
       'crimson light',
       'crimson dark',
       'golden light',
