@@ -15,7 +15,6 @@ const GUEST_KEYS = [
   'guest_characters',
   'guest_campaigns',
   'guest_ships',
-  'guest_ship_crew',
   'guest_messages',
   'guest_journals',
   'guest_journal_pages',
@@ -51,6 +50,14 @@ describe('demo data integrity', () => {
     }
 
     expect(mismatched).toEqual([])
+  })
+
+  it('every character has a gallery array (the ship crew cards read it)', () => {
+    const missing = guestCharacters
+      .filter((character) => !Array.isArray(character.imageUrls))
+      .map((character) => character.name)
+
+    expect(missing).toEqual([])
   })
 
   it('every ship belongs to an OFFWORLDERS campaign', () => {

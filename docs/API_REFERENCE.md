@@ -22,9 +22,9 @@ The frontend uses a three-layer API architecture that transparently switches bet
 ### src/api/lib/guest-axios.js — LocalStorage Mock Adapter
 
 - Provides an axios-like interface that reads and writes to localStorage.
-- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_ship_crew, guest_messages, guest_journals, guest_journal_pages, guest_planner_plans, guest_planner_dates, guest_planner_attendances, guest_planner_exclusions.
+- **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_messages, guest_journals, guest_journal_pages, guest_planner_plans, guest_planner_dates, guest_planner_attendances, guest_planner_exclusions.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
-- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — ship crew before ship images, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
+- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — the character gallery before the character avatar, the ship's profile image before its gallery, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
 - **Errors are values until the boundary**: a handler returns either the response body (`ok({ … })`) or the `Error` it refuses with (`notFound` / `forbidden` / `badRequest` / `conflict`, all built by `guestError`). `dispatch` is the single place that settles those into a promise, rejecting when the value is an `Error` — so no handler builds a promise, and no refusal is ever tested as a boolean (a promise is always truthy: `if (frozen)` would read as "always decided" the day a handler returned one).
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
@@ -426,6 +426,31 @@ re-deriving a role check.
 
 ---
 
+### POST /api/characters/{id}/images
+
+- **Service**: CharacterService.addCharacterImage(characterId, imageFile)
+- **Store Action**: characterStore.addCharacterImage(characterId, imageFile)
+- **Guest Mode**: Mocked — appends a stock placeholder URL to the character's `imageUrls`
+- **Request**: multipart/form-data with field name file
+- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
+- **Response**: CharacterOutputDTO (with the image appended to `imageUrls`)
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Edited from Edit character (pick → reposition → upload, immediately). In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery.
+
+---
+
+### DELETE /api/characters/{id}/images?url={url}
+
+- **Service**: CharacterService.removeCharacterImage(characterId, url)
+- **Store Action**: characterStore.removeCharacterImage(characterId, url)
+- **Guest Mode**: Mocked — removes the matching URL from the character's `imageUrls`
+- **Query Params**: url (the stored image URL)
+- **Response**: CharacterOutputDTO (with the image removed)
+- **Status Codes**: 200, 401, 403, 404
+- **Notes**: The stored file itself is left on the backend, exactly as the ship gallery behaves.
+
+---
+
 ### DELETE /api/characters/{id}
 
 - **Service**: CharacterService.deleteCharacter(characterId)
@@ -705,50 +730,26 @@ Overview party preview read it, so the two cannot disagree.
 
 ---
 
-### GET /api/campaigns/{id}/ship/crew
+### The crew (no endpoint)
 
-- **Service**: ShipService.fetchCrew(campaignId)
-- **Store Action**: shipStore.fetchCrew(campaignId)
-- **Guest Mode**: Mocked — builds one entry per current participant from `guest_ship_crew`
-- **Response**: `[ ShipCrewMemberDTO ]` — `{ userId, nickname, role, notes, imageUrls, characters: [{ name, roleOnShip }] }`, one per **current** participant in roster order
-- **Status Codes**: 200, 401, 403, 404
-- **Notes**: Entries are keyed on the user, so a participant who leaves keeps their entry (it is simply not returned) and rejoining re-activates it.
+The ship view also shows a crew manifest, but there is nothing to fetch or save
+for it: **the crew is the campaign's characters.** `ShipSection.vue` reads them
+through `campaignStore.fetchCharactersForCampaign(campaignId)` /
+`getCharactersByCampaignId(campaignId)` (see `GET /api/characters?campaignId=`)
+and renders `ShipCharactersSection.vue`, one card per character — its portrait,
+its name, the player who brings it (`ownerId` matched against the campaign's
+participants), its `notes` and its `imageUrls`.
 
----
+Nothing is edited there. The notes come from `PATCH /api/characters/{id}`, the
+images from `POST`/`DELETE /api/characters/{id}/images`, both owner-only and both
+reached from Edit character — which also says so in the UI ("shown under the ship
+… on this character's crew card").
 
-### PUT /api/campaigns/{id}/ship/crew/me
-
-- **Service**: ShipService.saveMyCrewEntry(campaignId, entry)
-- **Store Action**: shipStore.saveMyCrewEntry(campaignId, entry)
-- **Guest Mode**: Mocked — upserts the signed-in guest's row in `guest_ship_crew`
-- **Request**: `{ notes?, characters? }` (`characters` is `[ { name, roleOnShip } ]`, role optional)
-- **Response**: ShipCrewMemberDTO
-- **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Each participant edits only their own entry.
-
----
-
-### POST /api/campaigns/{id}/ship/crew/me/images
-
-- **Service**: ShipService.addCrewImage(campaignId, imageFile)
-- **Store Action**: shipStore.addCrewImage(campaignId, imageFile)
-- **Guest Mode**: Mocked — appends a stock placeholder image URL
-- **Request**: multipart/form-data with field name file
-- **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
-- **Response**: ShipCrewMemberDTO (with the image appended to `imageUrls`)
-- **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Crew images are shown in the ship's single gallery; the lightbox steps through all of them.
-
----
-
-### DELETE /api/campaigns/{id}/ship/crew/me/images?url={url}
-
-- **Service**: ShipService.removeCrewImage(campaignId, url)
-- **Store Action**: shipStore.removeCrewImage(campaignId, url)
-- **Guest Mode**: Mocked — removes the matching URL
-- **Query Params**: url (the stored image URL)
-- **Response**: ShipCrewMemberDTO (with the image removed)
-- **Status Codes**: 200, 401, 403, 404
+A card's images open in the ship's lightbox, captioned with the character's name
+and stepping through **that character's** pictures; the ship's gallery holds only
+the ship's own images. The two sets are kept apart on purpose: the ship gallery is
+the ship's art and every image in it is the ship's to remove, while a character's
+art belongs to its owner and is removed in Edit character.
 
 ---
 

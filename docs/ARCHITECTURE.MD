@@ -68,7 +68,8 @@ src/
 │   ├── ship/
 │   │   ├── ShipService.js
 │   │   ├── shipStore.js
-│   │   └── components/       # ShipSection.vue + ShipSheet.vue (rendered within CampaignView)
+│   │   └── components/       # ShipSection.vue + ShipSheet.vue + ShipCharactersSection.vue
+│   │                          #   (the crew is the campaign's characters; rendered within CampaignView)
 │   ├── character/
 │   │   ├── CharacterService.js
 │   │   ├── characterStore.js
@@ -143,7 +144,7 @@ External (Open5e):    open5e-axios.js  → SpellService.js → Store
 ```
 - `api/axios.js`: Standard Axios instance for authenticated traffic. Automatically attaches JWT headers to requests and intercepts `401 Unauthorized` responses to clear local auth and trigger system notifications.
 - `api/apiClient.js`: Dynamic wrapper client. It acts as a gateway that checks `authStore.isGuest` and seamlessly switches all traffic between the live backend client (`axios.js`) and the mock client (`guest-axios.js`). Provides only generic `get`, `post`, `put`, `patch`, `delete` methods — no feature-specific routing or translation logic. All feature services import from this file.
-- `api/guest-axios.js`: Simulates backend behavior inside the browser: it answers the requests the app makes in standalone mode by reading and writing `localStorage`. Its endpoints live in one ordered **route table** (`ROUTES`: method + URL pattern → handler, first match wins), so the entries that have to precede others — ship crew before ship images — are ordered deliberately, and the five public methods are only a thin dispatcher on top. Adding an endpoint means adding one entry. The admin prefix is deliberately not served (see Guest Mode below).
+- `api/guest-axios.js`: Simulates backend behavior inside the browser: it answers the requests the app makes in standalone mode by reading and writing `localStorage`. Its endpoints live in one ordered **route table** (`ROUTES`: method + URL pattern → handler, first match wins), so the entries that have to precede others — the character gallery before the character avatar, the ship's profile image before its gallery — are ordered deliberately, and the five public methods are only a thin dispatcher on top. Adding an endpoint means adding one entry. The admin prefix is deliberately not served (see Guest Mode below).
 - `api/open5e-axios.js`: Dedicated Axios instance for Open5e API v2 calls. Public API with no authentication headers. Includes a response interceptor that classifies transport errors (timeout/unreachable), rate limiting (429), and server errors (5xx) into user-facing notifications. Used directly by `SpellService.js` for guest-mode spell operations.
 
 ## Authentication
@@ -182,8 +183,10 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
   pages appear with the first write, and the same ownership rules apply as on the
   backend (a page in another participant's journal answers 404). Unsaved page text
   is mirrored per user/campaign/page in `journal_draft:*` keys.
-- **No image uploads.** Campaign, character, ship and crew uploads answer stock
-  placeholder URLs instead of storing a file; the UI says so where it matters.
+- **No image uploads.** Campaign, character (portrait and gallery) and ship
+  uploads answer stock placeholder URLs instead of storing a file; the UI says so
+  where it matters. A crew card's images are the character's gallery, so there is
+  no separate crew upload to mock — Kestrel's seeded gallery stands in for one.
 - **Spell data comes from Open5e.** Guest mode has no spell table of its own —
   `dnd5eSpellService` calls the public Open5e API directly (`open5e-axios.js`)
   for search and single-spell fetches.

@@ -8,6 +8,8 @@ import { recordView, viewHistory } from '@/utils/viewHistory.js'
 vi.mock('@/features/character/CharacterService.js', () => ({
   default: {
     fetchAllCharactersForCurrentUser: vi.fn(),
+    addCharacterImage: vi.fn(),
+    removeCharacterImage: vi.fn(),
   },
 }))
 
@@ -77,6 +79,54 @@ describe('characterStore', () => {
       recordView('character', 3, USER.id)
 
       expect(ids(store.characters)).toEqual([1, 2, 3])
+    })
+  })
+
+  // The gallery is what a crew card shows under an Offworlders ship, so the
+  // action has to keep both the list entry and the open character in step.
+  describe('gallery images', () => {
+    const file = () => new File(['x'], 'art.png', { type: 'image/png' })
+
+    beforeEach(async () => {
+      const store = useCharacterStore()
+      await store.fetchAllCharactersForCurrentUser()
+      store.currentCharacter = store.characters[0]
+    })
+
+    it('stores the returned character and hands back its gallery', async () => {
+      const store = useCharacterStore()
+      CharacterService.addCharacterImage.mockResolvedValue({
+        id: 1,
+        name: 'Aragorn',
+        imageUrls: ['/images/art.png'],
+      })
+
+      const imageUrls = await store.addCharacterImage(1, file())
+
+      expect(imageUrls).toEqual(['/images/art.png'])
+      expect(store.characters[0].imageUrls).toEqual(['/images/art.png'])
+      expect(store.currentCharacter.imageUrls).toEqual(['/images/art.png'])
+    })
+
+    it('drops a removed image from the gallery', async () => {
+      const store = useCharacterStore()
+      CharacterService.removeCharacterImage.mockResolvedValue({
+        id: 1,
+        name: 'Aragorn',
+        imageUrls: [],
+      })
+
+      const imageUrls = await store.removeCharacterImage(1, '/images/art.png')
+
+      expect(imageUrls).toEqual([])
+      expect(store.currentCharacter.imageUrls).toEqual([])
+    })
+
+    it('rethrows a failed upload so the caller can keep its own state', async () => {
+      const store = useCharacterStore()
+      CharacterService.addCharacterImage.mockRejectedValue(new Error('upload failed'))
+
+      await expect(store.addCharacterImage(1, file())).rejects.toThrow('upload failed')
     })
   })
 })

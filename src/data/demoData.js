@@ -64,6 +64,7 @@ export const guestCharacters = [
     backstory: 'A wandering wizard who arrives *exactly* when he means to.',
     privateBackstory: 'Secretly searching for the missing pages of a forbidden tome.',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 10,
       characterClass: 'Wizard',
@@ -90,6 +91,7 @@ export const guestCharacters = [
     systemType: 'DND5E',
     notes: '',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 8,
       characterClass: 'Rogue',
@@ -116,6 +118,7 @@ export const guestCharacters = [
     systemType: 'DND5E',
     notes: '',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 3,
       characterClass: 'Rogue',
@@ -142,6 +145,7 @@ export const guestCharacters = [
     systemType: 'DND5E',
     notes: '',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 1,
       characterClass: 'Wizard',
@@ -195,6 +199,7 @@ export const guestCharacters = [
     systemType: 'DND5E',
     notes: '',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 5,
       characterClass: 'Fighter',
@@ -248,6 +253,7 @@ export const guestCharacters = [
     systemType: 'DND5E',
     notes: '',
     avatarUrl: '/defaultCharacter.svg',
+    imageUrls: [],
     dnd5e: {
       level: 5,
       characterClass: 'Ranger',
@@ -310,6 +316,7 @@ export const guestCharacters = [
     privateBackstory:
       'She is being hunted by a syndicate she double-crossed, and never files a flight plan.',
     avatarUrl: '/default-scifi-Character.svg',
+    imageUrls: [],
     offworlders: {
       characterClass: 'Outlaw',
       species: 'Human',
@@ -352,10 +359,16 @@ export const guestCharacters = [
     campaignId: 'guest_campaign_4',
     name: 'Kestrel',
     systemType: 'OFFWORLDERS',
-    notes: 'Ex-military. Talks little, shoots straight.',
+    // The note and the gallery image are what the backend's V4 migration moves
+    // onto a participant's character (a crew entry used to be a row of its own),
+    // so Guest Demo shows a crew card the way a migrated table looks. The image
+    // stands in for an upload: guest mode has nowhere to store a file.
+    notes:
+      'Ex-military. Talks little, shoots straight.\n\nHandles the dockside hand-offs and keeps the manifest clean.',
     appearance: 'Shaved head, faded unit tattoos.',
     backstory: 'Walked away from the war with a rifle and no plan.',
     avatarUrl: '/default-scifi-Character.svg',
+    imageUrls: ['/default-scifi-campaign.svg'],
     offworlders: {
       characterClass: 'Warrior',
       species: 'Human',
@@ -397,6 +410,7 @@ export const guestCharacters = [
     appearance: 'Wire-rimmed glasses, an ever-present medkit.',
     backstory: 'Bought a medical licence that does not actually exist.',
     avatarUrl: '/default-scifi-Character.svg',
+    imageUrls: [],
     offworlders: {
       characterClass: 'Geek',
       species: 'Human',
@@ -567,19 +581,6 @@ export const guestShips = [
     imageUrls: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  },
-]
-
-export const guestShipCrew = [
-  {
-    campaignId: 'guest_campaign_4',
-    userId: 'guest_player_1',
-    notes: 'Handles the dockside hand-offs and keeps the manifest clean.',
-    imageUrls: [],
-    characters: [
-      { name: 'Vex', roleOnShip: 'Pilot' },
-      { name: 'Doc', roleOnShip: 'Medic' },
-    ],
   },
 ]
 
@@ -812,7 +813,6 @@ const GUEST_STORAGE_KEYS = [
   'guest_characters',
   'guest_campaigns',
   'guest_ships',
-  'guest_ship_crew',
   'guest_messages',
   'guest_journals',
   'guest_journal_pages',
@@ -833,7 +833,6 @@ export function seedGuestStorage() {
   localStorage.setItem('guest_characters', JSON.stringify(guestCharacters))
   localStorage.setItem('guest_campaigns', JSON.stringify(guestCampaigns))
   localStorage.setItem('guest_ships', JSON.stringify(guestShips))
-  localStorage.setItem('guest_ship_crew', JSON.stringify(guestShipCrew))
   localStorage.setItem('guest_messages', JSON.stringify(guestMessages))
   // A journal is created by its owner's first write, so the demo seeds the keys
   // empty: nothing to write means nothing stored, exactly like the backend.

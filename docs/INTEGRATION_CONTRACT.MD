@@ -160,7 +160,8 @@ prefix is matched in `SecurityConfig`, and each controller repeats the rule with
 
 **GET /api/characters/{id}**
 - Requires: ROLE_USER
-- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, appearance, backstory, privateBackstory, dnd5e, offworlders, createdAt, updatedAt }`
+- Response: `CharacterOutputDTO { id, ownerId, campaignId, name, systemType, notes, avatarUrl, imageUrls, appearance, backstory, privateBackstory, dnd5e, offworlders, createdAt, updatedAt }`
+  - `imageUrls` is the character's gallery (empty, never null); the portrait is the separate `avatarUrl`
   - `privateBackstory` is `null` unless the requester is the character's owner or the campaign GM
   - `systemType` is `null` when the character was created without a game system (see POST) — nothing is defaulted in its place
   - `dnd5e` is a nullable nested block `{ level, characterClass, race, hitPoints, armorClass, stats }`, present only when `systemType === 'DND5E'`
@@ -180,6 +181,21 @@ prefix is matched in `SecurityConfig`, and each controller repeats the rule with
 - Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
 - Response: `CharacterOutputDTO` (with updated avatarUrl)
 - Status: 200, 400, 401, 403
+
+**POST /api/characters/{id}/images**
+- Requires: ROLE_USER, must be owner
+- Request: `multipart/form-data`, field: `file`
+- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
+- Appends the stored image to the character's gallery (`imageUrls`), beside the single `avatarUrl` portrait
+- In an Offworlders campaign the gallery and the character's `notes` are what the ship's crew card shows — the crew is the campaign's characters, so there is no separate crew entry to keep in step
+- Response: `CharacterOutputDTO` (with the image appended to `imageUrls`)
+- Status: 200, 400, 401, 403, 404
+
+**DELETE /api/characters/{id}/images?url={url}**
+- Requires: ROLE_USER, must be owner
+- Removes the matching URL from the character's gallery; the stored file itself is left in place
+- Response: `CharacterOutputDTO` (with the image removed)
+- Status: 200, 401, 403, 404
 
 **PATCH /api/characters/{id}/campaign**
 - Requires: ROLE_USER, must be owner
@@ -311,7 +327,7 @@ campaign participant may view and edit; there is **no delete**.
 - Requires: campaign participant
 - Request: multipart/form-data with field `file`
 - Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
-- Appends an image to the ship's gallery (`imageUrls`)
+- Appends an image to the ship's **own** gallery (`imageUrls`) — drawings, maps and handouts. A crew member's art is the character's gallery (`POST /api/characters/{id}/images`); the UI opens it in the same lightbox, captioned with the character's name and stepping through that character's pictures, but it is not part of this gallery
 - Response: `ShipDTO`
 - Status: 200, 400, 401, 403, 404
 
@@ -323,39 +339,19 @@ campaign participant may view and edit; there is **no delete**.
 
 ---
 
-## Campaign Ship Crew (Offworlders)
+### The crew (no endpoint of its own)
 
-The crew manifest: one entry per participant, each holding free-text notes,
-gallery images and the characters the participant has aboard (name + role on the
-ship, both free text, the role optional). Entries are keyed on the **user**, so a
-participant who leaves the campaign keeps their entry — it is simply no longer
-returned — and rejoining re-activates it unchanged. Any participant may read the
-manifest; each participant may edit only their own entry (`/me`).
+In an Offworlders campaign the ship view also shows a crew manifest, but it is not
+a resource of the ship: **the crew is the campaign's characters.** Each card is
+one character — its name, the participant who plays it (`ownerId` matched against
+the campaign's participants), the character's `notes` and its `imageUrls` gallery
+— read from `GET /api/characters?campaignId={id}`, editable from the character
+(`PATCH /api/characters/{id}`, `POST`/`DELETE /api/characters/{id}/images`) by its
+owner.
 
-**GET /api/campaigns/{id}/ship/crew**
-- Requires: campaign participant
-- Response: `[ ShipCrewMemberDTO ]` — one entry per **current** participant, in roster order (a participant without an entry yet comes back with empty fields)
-- Status: 200, 401, 403, 404
-
-**PUT /api/campaigns/{id}/ship/crew/me**
-- Requires: campaign participant
-- Request: `{ notes?, characters? }` where `characters` is `[ { name, roleOnShip } ]` (role optional); a null field is left unchanged
-- Response: `ShipCrewMemberDTO`
-- Status: 200, 400, 401, 403, 404
-
-**POST /api/campaigns/{id}/ship/crew/me/images**
-- Requires: campaign participant
-- Request: multipart/form-data with field `file`
-- Max file size: 5MB per file (configurable via `app.upload.max-file-size`; multipart limits are 8MB)
-- Appends an image to the caller's entry; crew images are shown in the ship's single gallery
-- Response: `ShipCrewMemberDTO`
-- Status: 200, 400, 401, 403, 404
-
-**DELETE /api/campaigns/{id}/ship/crew/me/images?url={url}**
-- Requires: campaign participant
-- Removes the matching image from the caller's entry
-- Response: `ShipCrewMemberDTO`
-- Status: 200, 401, 403, 404
+There is therefore no crew to save, no `/me` entry and no crew permissions: the
+ship's own surface is the ship (`PUT /api/campaigns/{id}/ship` and its images),
+and everything about a crew member belongs to the character.
 
 ---
 
@@ -565,6 +561,7 @@ for its 401/403, so one parser covers every status.
   "systemType": "DND5E",
   "notes": null,
   "avatarUrl": null,
+  "imageUrls": ["/images/character_14_gallery_ab12cd34.png"],
   "appearance": null,
   "backstory": null,
   "privateBackstory": null,
@@ -628,21 +625,6 @@ for its 401/403, so one parser covers every status.
   "imageUrl": null,
   "imageUrls": [],
   "version": 3
-}
-```
-
-### ShipCrewMemberDTO
-```json
-{
-  "userId": 3,
-  "nickname": "User3",
-  "role": "PLAYER",
-  "notes": "Runs the cargo manifest (and the bribes).",
-  "imageUrls": ["/images/ship_crew_2_3_ab12cd34.png"],
-  "characters": [
-    { "name": "Vex", "roleOnShip": "Pilot" },
-    { "name": "Doc", "roleOnShip": "Medic" }
-  ]
 }
 ```
 

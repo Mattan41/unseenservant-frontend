@@ -52,6 +52,29 @@ const CharacterService = {
     return response.data
   },
 
+  // add an image to a character's gallery (beside the single avatarUrl portrait;
+  // in an Offworlders campaign the gallery and the notes are what the ship's
+  // crew card shows)
+  async addCharacterImage(characterId, imageFile) {
+    const formData = new FormData()
+    formData.append('file', imageFile)
+
+    const response = await apiClient.post(`api/characters/${characterId}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
+
+  // remove a gallery image from a character by its stored URL
+  async removeCharacterImage(characterId, url) {
+    const response = await apiClient.delete(`api/characters/${characterId}/images`, {
+      params: { url },
+    })
+    return response.data
+  },
+
   // delete a character
   async deleteCharacter(characterId) {
     const response = await apiClient.delete(`api/characters/${characterId}`, {})

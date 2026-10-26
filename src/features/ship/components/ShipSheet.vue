@@ -3,8 +3,9 @@
  * Presentational Offworlders ship sheet (form/display only).
  *
  * Mirrors the printed ship sheet (p.26) but stays simple: name, vitals,
- * the upgrade checklist and a free-text notes/look area. Every participant may
- * edit; the parent owns saving (and the optimistic-concurrency reload flow).
+ * the upgrade checklist, a free-text notes/look area, the ship's own images and
+ * the crew — the campaign's characters, presented read-only, whose art opens in
+ * the same lightbox but is not part of the ship's gallery.
  *
  * Props in, events out — no store access: an image over the upload limit emits
  * `size-error` with the sentence to show, and the parent notifies.
@@ -17,7 +18,7 @@ import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import BaseNumberStepper from '@/components/base/BaseNumberStepper.vue'
-import ShipCrewSection from '@/features/ship/components/ShipCrewSection.vue'
+import ShipCharactersSection from '@/features/ship/components/ShipCharactersSection.vue'
 import CampaignNavIcon from '@/features/campaign/components/CampaignNavIcon.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import { buildShipPayload } from '@/features/ship/shipPayload.js'
@@ -50,15 +51,18 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  /** Crew manifest: one entry per current participant. */
-  crew: {
+  /**
+   * The campaign's characters — the crew manifest. Each card is one character,
+   * so nothing about a crew member lives here: the sheet only presents them.
+   */
+  characters: {
     type: Array,
     default: () => [],
   },
-  /** Id of the signed-in user; their crew entry is the editable one. */
-  currentUserId: {
-    type: [String, Number],
-    default: null,
+  /** The campaign's participants, for each character's player (nickname). */
+  participants: {
+    type: Array,
+    default: () => [],
   },
 })
 
@@ -69,9 +73,6 @@ const emit = defineEmits([
   'add-gallery',
   'remove-gallery',
   'adjust-vital',
-  'save-crew',
-  'add-crew-image',
-  'remove-crew-image',
   'size-error',
 ])
 
@@ -175,39 +176,48 @@ const visibleUpgrades = computed(() =>
 const profileInput = ref(null)
 const galleryInput = ref(null)
 const repositionFile = ref(null)
-const lightboxUrl = ref(null)
 
-// The gallery shows the ship's own images plus every crew entry's images, so the
-// lightbox arrows step through all of them. The profile image comes first.
+// The lightbox shows one set at a time — the set the picture was opened from:
+// the ship's own images, or one crew member's character images. The two are kept
+// apart on purpose. The ship's gallery is the ship's art ("drawings, maps,
+// handouts"), and every image in it is the ship's to remove; a character's art
+// belongs to its owner and is removed in Edit character, so it opens with its own
+// caption and steps through its own pictures instead of the ship's.
+const lightboxUrl = ref(null)
+const lightboxImages = ref([])
+const lightboxLabel = ref('')
+
+/** The ship's own images, profile image first — what the gallery grid renders. */
 const galleryImages = computed(() => {
   const shipUrls = [...(props.ship.imageUrls || [])]
-  const own = props.ship.imageUrl ? [props.ship.imageUrl, ...shipUrls] : shipUrls
-  const crewUrls = props.crew.flatMap((member) => member.imageUrls || [])
-  return [...own, ...crewUrls]
+  return props.ship.imageUrl ? [props.ship.imageUrl, ...shipUrls] : shipUrls
 })
 
-/** URLs that belong to a crew entry rather than the ship itself. */
-const crewImageUrls = computed(
-  () => new Set(props.crew.flatMap((member) => member.imageUrls || [])),
-)
+/** True while the open picture is one of the ship's own images. */
+const lightboxIsShipImage = computed(() => galleryImages.value.includes(lightboxUrl.value))
 
-/** True when `url` is one of a crew entry's images. */
-function isCrewImage(url) {
-  return crewImageUrls.value.has(url)
-}
-
-/** Lightbox caption: the ship's name, or the nickname of the crew entry's owner. */
-function imageOwnerLabel(url) {
-  if (isCrewImage(url)) {
-    const member = props.crew.find((entry) => (entry.imageUrls || []).includes(url))
-    return member?.nickname || 'Crew'
-  }
-  return props.ship.name || 'Ship'
-}
-
-/** Open a crew image in the shared lightbox. */
-function openLightbox(url) {
+/** Open one set of images, captioned with `label`. */
+function openLightbox(url, images = [], label = '') {
   lightboxUrl.value = url
+  // A lone picture (a character with one image) still needs a set to step in.
+  lightboxImages.value = images.length ? [...images] : [url]
+  lightboxLabel.value = label
+}
+
+/** Open a picture from the ship's own gallery. */
+function openShipImage(url) {
+  openLightbox(url, galleryImages.value, props.ship.name || 'Ship')
+}
+
+/** Open a crew card's pictures — that character's images, under its name. */
+function openCrewImage({ url, images = [], label = '' } = {}) {
+  openLightbox(url, images, label)
+}
+
+function closeLightbox() {
+  lightboxUrl.value = null
+  lightboxImages.value = []
+  lightboxLabel.value = ''
 }
 
 /** True when `url` is the ship's profile image (not a gallery image). */
@@ -217,7 +227,7 @@ function isProfileImage(url) {
 
 /** Close the lightbox and open the profile-image picker. */
 function changeProfileFromLightbox() {
-  lightboxUrl.value = null
+  closeLightbox()
   triggerProfileInput()
 }
 
@@ -278,12 +288,15 @@ function onGalleryFileChange(event) {
 function removeGalleryImage(url) {
   pendingImageOp = true
   emit('remove-gallery', url)
-  if (lightboxUrl.value === url) lightboxUrl.value = null
+  if (lightboxUrl.value === url) closeLightbox()
 }
 
-/** Step the lightbox to the previous/next image, wrapping around at the ends. */
+/**
+ * Step the lightbox to the previous/next image, wrapping around at the ends.
+ * The set is the one the picture was opened from (the ship's, or a crew card's).
+ */
 function stepLightbox(offset) {
-  const images = galleryImages.value
+  const images = lightboxImages.value
   const index = images.indexOf(lightboxUrl.value)
   if (index === -1) return
   lightboxUrl.value = images[(index + offset + images.length) % images.length]
@@ -583,7 +596,7 @@ useUnsavedChanges(
       <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
         <h4 class="font-semibold text-default">Images</h4>
         <div class="flex items-center gap-2">
-          <span class="text-xs text-muted">Drawings, maps, handouts — click to view</span>
+          <span class="text-xs text-muted">The ship's drawings, maps and handouts — click to view</span>
           <template v-if="editing">
             <BaseButton variant="add" @click="triggerGalleryInput">Add image</BaseButton>
           </template>
@@ -596,7 +609,7 @@ useUnsavedChanges(
           :key="url"
           type="button"
           class="relative block overflow-hidden rounded border border-section"
-          @click="lightboxUrl = url"
+          @click="openShipImage(url)"
         >
           <CampaignImage
             :src="url"
@@ -625,16 +638,14 @@ useUnsavedChanges(
       />
     </div>
 
-    <!-- Crew manifest: one card per participant; crew images feed the gallery above. -->
-    <ShipCrewSection
-      :crew="crew"
-      :current-user-id="currentUserId"
-      :saving="saving"
-      @save="(entry) => emit('save-crew', entry)"
-      @add-image="(file) => emit('add-crew-image', file)"
-      @remove-image="(url) => emit('remove-crew-image', url)"
-      @size-error="(msg) => emit('size-error', msg)"
-      @open-image="openLightbox"
+    <!-- Crew manifest: one card per character. Read-only — a crew member is a
+         character, so its notes and images are edited in Edit character, and a
+         card's images open in the lightbox above under the character's own
+         name. -->
+    <ShipCharactersSection
+      :characters="characters"
+      :participants="participants"
+      @open-image="openCrewImage"
     />
 
     <!-- Sticky edit actions: a compact floating tag keeps Cancel / Save
@@ -648,8 +659,8 @@ useUnsavedChanges(
       @save="submit"
     />
 
-    <!-- Image lightbox -->
-    <BaseModal v-if="lightboxUrl" @close="lightboxUrl = null">
+    <!-- Image lightbox: the ship's own images, or one crew card's, never both -->
+    <BaseModal v-if="lightboxUrl" @close="closeLightbox">
       <div class="bg-[var(--color-surface)] rounded-lg p-4 max-w-4xl w-full">
         <div class="relative flex items-center justify-center">
           <CampaignImage
@@ -659,7 +670,7 @@ useUnsavedChanges(
             class="max-h-[80vh] w-auto mx-auto rounded"
           />
           <!-- Discreet previous/next arrows (only when there is more than one image) -->
-          <template v-if="galleryImages.length > 1">
+          <template v-if="lightboxImages.length > 1">
             <button
               type="button"
               class="absolute left-2 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/25 text-white/60 transition-colors hover:bg-black/50 hover:text-white"
@@ -678,10 +689,12 @@ useUnsavedChanges(
             </button>
           </template>
         </div>
-        <p class="mt-3 text-center text-sm text-muted">{{ imageOwnerLabel(lightboxUrl) }}</p>
+        <p class="mt-3 text-center text-sm text-muted">{{ lightboxLabel }}</p>
         <div class="flex justify-end gap-2 mt-2">
+          <!-- Only the ship's own gallery is removable here: a character's art
+               belongs to its owner and is managed in Edit character. -->
           <BaseButton
-            v-if="editing && !isProfileImage(lightboxUrl) && !isCrewImage(lightboxUrl)"
+            v-if="editing && lightboxIsShipImage && !isProfileImage(lightboxUrl)"
             variant="remove"
             confirm-message="Remove this image?"
             @click="removeGalleryImage(lightboxUrl)"
@@ -695,7 +708,7 @@ useUnsavedChanges(
           >
             Change image
           </BaseButton>
-          <BaseButton variant="ghost" @click="lightboxUrl = null">Close</BaseButton>
+          <BaseButton variant="ghost" @click="closeLightbox">Close</BaseButton>
         </div>
       </div>
     </BaseModal>
