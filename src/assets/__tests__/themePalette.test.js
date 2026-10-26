@@ -29,10 +29,15 @@ const PALETTE_TOKENS = [
 
 const RAMP_STEPS = PALETTE_TOKENS.filter((token) => /^--primary-\d+$/.test(token))
 
-/** Fixed neutral roles — they do not change per theme, only per mode. */
-const TEXT_DEFAULT = { light: '#374151', dark: '#d2d7df' }
-const TEXT_MUTED = { light: '#6b7280', dark: '#97a0b0' }
-const TEXT_FAINT = { light: '#9ca3af', dark: '#7c8698' }
+/**
+ * Neutral roles are named as tokens rather than hex values, because a warm theme
+ * re-points them (crimson and golden do, in both modes). `resolveColor` reads the
+ * theme's own value and falls back to the shared one, so every floor below is
+ * checked against the colours that actually paint.
+ */
+const TEXT_DEFAULT = '--text-default'
+const TEXT_MUTED = '--text-muted'
+const TEXT_FAINT = '--text-subtle'
 
 /**
  * The pairs the app paints most, each with the floor it has to clear. `exempt`
@@ -189,9 +194,9 @@ function readPaletteBlocks(css) {
   return blocks
 }
 
-/** The shared dark roles — `html[data-mode='dark']`, inherited by every theme. */
-function readDarkRoles(css) {
-  const body = css.match(/html\[data-mode='dark'\]\s*\{([^}]*)\}/)?.[1] ?? ''
+/** Every declaration inside the first match of a block selector. */
+function readDeclarations(css, pattern) {
+  const body = css.match(pattern)?.[1] ?? ''
   const declarations = new Map()
   for (const [, token, value] of body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
     declarations.set(token, value.trim())
@@ -199,23 +204,35 @@ function readDarkRoles(css) {
   return declarations
 }
 
-/** The palette tokens declared on `:root` — the pre-JS fallback. */
+/** The palette tokens declared on `:root` — the pre-JS fallback and light roles. */
 function readRootPalette(css) {
-  const body = css.match(/:root\s*\{([^}]*)\}/)?.[1] ?? ''
-  const declarations = new Map()
-  for (const [, token, value] of body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
-    declarations.set(token, value.trim())
-  }
-  return declarations
+  return readDeclarations(css, /:root\s*\{([^}]*)\}/)
 }
 
 const PALETTE_BLOCKS = readPaletteBlocks(MAIN_CSS)
 const THEME_MODES = AVAILABLE_THEMES.flatMap(({ id }) => [`${id} light`, `${id} dark`])
 
-/** A token name, a literal hex, or a per-mode literal. */
-const resolveColor = (value, mode, block) => {
-  if (typeof value === 'string') return value.startsWith('--') ? block.get(value) : value
-  return value[mode]
+/** The fixed ramps from the `@theme` block, which the shared roles point at. */
+const THEME_SCALE = readDeclarations(MAIN_CSS, /@theme\s*\{([^}]*)\}/)
+/** The shared light roles; every theme inherits them unless it overrides them. */
+const LIGHT_ROLES = readRootPalette(MAIN_CSS)
+/** The shared dark roles (`html[data-mode='dark']`), inherited by every theme. */
+const DARK_ROLES = readDeclarations(MAIN_CSS, /html\[data-mode='dark'\]\s*\{([^}]*)\}/)
+
+const sharedRolesFor = (key) => (key.endsWith('dark') ? DARK_ROLES : LIGHT_ROLES)
+
+/** `--text-subtle: var(--color-third-400)` to `#9ca3af` — one level of indirection. */
+const followReference = (value) =>
+  THEME_SCALE.get(String(value).match(/^var\((--[a-z0-9-]+)\)$/)?.[1]) ?? value
+
+/**
+ * A role token resolved for one theme+mode: the theme's own value when it
+ * overrides the role, otherwise the shared one. A literal hex resolves to itself.
+ */
+const resolveColor = (value, key) => {
+  if (!value.startsWith('--')) return value
+  const own = PALETTE_BLOCKS.get(key).get(value)
+  return followReference(own ?? sharedRolesFor(key).get(value))
 }
 
 describe('theme palettes', () => {
@@ -239,52 +256,64 @@ describe('theme palettes', () => {
     expect(malformed).toEqual([])
   })
 
-  it('re-points a warm theme’s dark neutrals to its own hue without moving the ladder', () => {
-    const shared = readDarkRoles(MAIN_CSS)
-    const textDefault = shared.get('--text-default')
+  it('re-points a warm theme’s neutrals to its own hue without moving the contrast ladder', () => {
     const violations = []
 
-    for (const key of THEME_MODES.filter((mode) => mode.endsWith('dark'))) {
+    for (const key of THEME_MODES) {
       const block = PALETTE_BLOCKS.get(key)
       // Only a theme that overrides the shared neutrals has this role in its block.
       if (!block.has('--surface-muted')) continue
+
+      const shared = sharedRolesFor(key)
+      const textDefault = followReference(shared.get('--text-default'))
+      const sharedMuted = followReference(shared.get('--surface-muted'))
 
       for (const [token, value] of block) {
         if (PALETTE_TOKENS.includes(token)) continue
 
         const sharedValue = shared.get(token)
         if (!sharedValue) {
-          violations.push(`${key} ${token}: not a shared dark role`)
+          violations.push(`${key} ${token}: not a shared role`)
           continue
         }
-        if (warmth(value) <= warmth(sharedValue)) {
-          violations.push(`${key} ${token}: ${value} is not warmer than ${sharedValue}`)
+        const sharedHex = followReference(sharedValue)
+        if (!/^#[0-9a-f]{6}$/.test(sharedHex)) {
+          violations.push(`${key} ${token}: the shared ${sharedValue} did not resolve to a hex`)
+          continue
+        }
+        if (warmth(value) <= warmth(sharedHex)) {
+          violations.push(`${key} ${token}: ${value} is not warmer than ${sharedHex}`)
         }
         // The shared ladder is what keeps every text-on-surface ratio where it
         // was, so a value may differ in hue but not in lightness. The band is
-        // 0.5x-1.5x rather than tight because one role (--neutral-strong-hover)
-        // lands at 0.85x: the theme's hue cannot reach that luminance by scaling
-        // its canvas colour, and the warmer value still gains contrast (5.2 -> 5.8).
-        const drift = luminance(value) / luminance(sharedValue)
+        // 0.5x-1.5x rather than tight because one role (--neutral-strong-hover in
+        // the dark themes) lands at 0.85x: that hue cannot reach the luminance by
+        // scaling the canvas colour, and the warmer value still gains contrast
+        // (5.2:1 -> 5.8:1).
+        const drift = luminance(value) / luminance(sharedHex)
         if (drift < 0.5 || drift > 1.5) {
           violations.push(`${key} ${token}: ${drift.toFixed(2)}x the shared luminance`)
         }
       }
 
-      // Rounding to integer hex moves a ratio by hundredths, so the check is for a
-      // real loss of contrast, not for a rounding wobble.
+      // Rounding a colour to integer hex moves its luminance by a fraction of a
+      // percent — proportionally more for dark values, where one channel step is
+      // worth more of L — so the check allows a 2% relative wobble and catches a
+      // real loss of contrast.
       const muted = block.get('--surface-muted')
-      const sharedMuted = shared.get('--surface-muted')
-      const tolerance = 0.05
+      const tolerance = contrastRatio(textDefault, sharedMuted) * 0.02
       if (contrastRatio(textDefault, muted) < contrastRatio(textDefault, sharedMuted) - tolerance) {
         violations.push(`${key}: body text lost contrast on --surface-muted`)
       }
     }
 
     expect(violations).toEqual([])
-    // The two warm themes override; silver and forest keep the shared neutrals.
+    // The two warm themes override, in both modes; silver and forest keep the
+    // shared roles untouched.
     expect(THEME_MODES.filter((key) => PALETTE_BLOCKS.get(key).has('--surface-muted'))).toEqual([
+      'crimson light',
       'crimson dark',
+      'golden light',
       'golden dark',
     ])
   })
@@ -340,9 +369,7 @@ describe('theme palettes', () => {
     for (const key of THEME_MODES) {
       if (exempt.includes(key)) continue
 
-      const block = PALETTE_BLOCKS.get(key)
-      const mode = key.split(' ')[1]
-      const ratio = contrastRatio(resolveColor(fg, mode, block), resolveColor(bg, mode, block))
+      const ratio = contrastRatio(resolveColor(fg, key), resolveColor(bg, key))
 
       if (ratio < floor) below.push(`${key} at ${ratio.toFixed(2)}:1, floor ${floor}:1`)
     }

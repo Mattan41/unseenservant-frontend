@@ -71,9 +71,9 @@
    WHERE TO ADD THINGS
      • A new semantic role variable → the `:root` role layer below.
        Components should reference roles by meaning, not palette shades.
-     • A neutral that must follow a theme's hue (warm or cool surfaces) → the
-       WARM DARK NEUTRALS block below, which re-points the shared dark roles for
-       one theme; keep the shared luminance so no contrast ratio changes.
+     • A neutral that must follow a theme's hue (warm or cool surfaces and text)
+       → the WARM NEUTRALS block below, which re-points the shared roles for one
+       theme + mode; keep the shared luminance so no contrast ratio changes.
      • A new brand palette value    → the matching
        `html[data-theme='X'][data-mode='Y']` block (raw --primary-* values).
      • A new theme (e.g. silver)    → add
@@ -255,22 +255,77 @@ html[data-mode='dark'] {
 }
 
 /* --------------------------------------------------------------------------
-   WARM DARK NEUTRALS — per-theme re-pointing of the shared dark roles.
-   The neutral roles above come from one fixed family (Tailwind's blue-grey
-   `third` ramp), so they are shared by every theme. On a warm canvas that reads
-   cold: the shared `--surface-muted` is #12181f, whose red-minus-blue is -13,
-   while crimson · dark's canvas is +13 and golden · dark's is +20. Silver's
-   canvas is neutral (0) and forest's is already blue-leaning (-5), so only the
-   two warm themes re-point them.
+   WARM NEUTRALS — per-theme re-pointing of the shared neutral roles.
+   The role layer above is ONE fixed family (Tailwind's blue-grey `third` ramp),
+   shared by every theme. On a warm canvas it reads cold: `--text-default` is
+   #374151, red-minus-blue -26, and `--surface-muted` is -2 (light) / -13 (dark),
+   while crimson's canvas is +12/+13 and golden's is +35/+20 (light/dark).
+   Silver's canvas is neutral and forest's is already blue-leaning, so only the
+   two warm themes re-point these roles — every mode, and the text roles as well
+   as the surfaces.
    Each value keeps the SHARED role's luminance exactly and takes its hue from
-   the theme's own canvas (the canvas colour scaled until it reaches that
-   luminance), so the ladder is preserved and every text-on-surface ratio is
-   identical to the shared one — body text on the muted surface stays 12.35:1.
+   the theme's own canvas at a low chroma (7% for text, 8% for surfaces, 10% for
+   borders and fills), so it stays a grey rather than becoming a colour. Because
+   the luminance is untouched, every text-on-surface ratio is untouched too:
+   body text on `--surface-muted` stays 12.35:1, and `--text-muted` on the canvas
+   stays 4.16:1 (crimson) / 4.20:1 (golden) — the same numbers the shared roles
+   give. Only the hue moves.
    The selector is [theme][mode] (0-2-0) against [mode] (0-1-0), so it wins on
    specificity wherever these blocks sit.
    -------------------------------------------------------------------------- */
 
+html[data-theme='crimson'][data-mode='light'] {
+  --text-subtle: #aca0a1;
+  --text-muted: #7e6e6f;
+  --text-secondary: #5e5153;
+  --text-default: #483e3f;
+  --text-heading: #2d2727;
+  --text-strong: #1b1718;
+  --text-faint: #d9d3d4;
+  --surface-muted: #fafafa;
+  --surface-inset: #f5f3f4;
+  --surface-raised: #eae6e6;
+  --border-subtle: #f6f3f4;
+  --border-section: #eae6e6;
+  --border-input: #dbd2d3;
+  --neutral-fill: #dbd2d3;
+  --neutral-fill-hover: #b09ea0;
+  --neutral-strong: #b09ea0;
+  --neutral-strong-hover: #846c6e;
+  --btn-ghost-ring: #dbd2d3;
+  --popover-surface: #2f2727;
+}
+
+html[data-theme='golden'][data-mode='light'] {
+  --text-subtle: #a6a298;
+  --text-muted: #757266;
+  --text-secondary: #57554c;
+  --text-default: #43413a;
+  --text-heading: #2a2824;
+  --text-strong: #191816;
+  --text-faint: #d6d4d0;
+  --surface-muted: #faf9f9;
+  --surface-inset: #f4f4f3;
+  --surface-raised: #e8e7e3;
+  --border-subtle: #f4f4f2;
+  --border-section: #e8e6e3;
+  --border-input: #d7d5ce;
+  --neutral-fill: #d7d5ce;
+  --neutral-fill-hover: #a7a394;
+  --neutral-strong: #a7a394;
+  --neutral-strong-hover: #777161;
+  --btn-ghost-ring: #d7d5ce;
+  --popover-surface: #2a2923;
+}
+
 html[data-theme='crimson'][data-mode='dark'] {
+  --text-subtle: #928185;
+  --text-muted: #a99da0;
+  --text-secondary: #c2b8bb;
+  --text-default: #dbd5d7;
+  --text-heading: #eae7e7;
+  --text-strong: #f6f5f5;
+  --text-faint: #5d5154;
   --surface-muted: #261116;
   --surface-inset: #33171d;
   --surface-raised: #441f27;
@@ -282,9 +337,18 @@ html[data-theme='crimson'][data-mode='dark'] {
   --neutral-strong: #6f3240;
   --neutral-strong-hover: #7c3848;
   --btn-ghost-ring: #6f3240;
+  --popover-surface: #ebe6e8;
+  --popover-text: #1c1718;
 }
 
 html[data-theme='golden'][data-mode='dark'] {
+  --text-subtle: #8a8579;
+  --text-muted: #a39f96;
+  --text-secondary: #bdbab4;
+  --text-default: #d8d6d2;
+  --text-heading: #e9e7e5;
+  --text-strong: #f5f4f3;
+  --text-faint: #57544c;
   --surface-muted: #1c170b;
   --surface-inset: #261f0e;
   --surface-raised: #332913;
@@ -296,6 +360,8 @@ html[data-theme='golden'][data-mode='dark'] {
   --neutral-strong: #53431f;
   --neutral-strong-hover: #655226;
   --btn-ghost-ring: #53431f;
+  --popover-surface: #e9e7e4;
+  --popover-text: #191814;
 }
 
 /* --------------------------------------------------------------------------

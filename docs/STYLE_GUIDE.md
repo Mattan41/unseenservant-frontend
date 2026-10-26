@@ -179,21 +179,32 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 | `--surface-muted` | `third-50` | `#12181f` | `.muted-surface`, `.profile-section`, `.spell-row-hover` |
 | `--surface-inset` | `third-100` | `#18202a` | `.profile-value`, `.field-tabs`, `.edit-bar`, `.rich-text code/pre/th`, `.markdown-help-source` |
 | `--surface-raised` | `third-200` | `#222b36` | `.chip`, `.attribute-tile`, `.spell-history-hover` |
-
-> **Warm themes re-point the dark neutrals.** The family above is fixed and
-> shared, and it is blue-grey — red-minus-blue is −13 on `--surface-muted`
-> (`#12181f`) and −20 on `--surface-raised`. On a warm canvas that reads cold:
-> `crimson · dark`'s canvas is +13 and `golden · dark`'s is +20, while silver's is
-> 0 and forest's is −5, so only the two warm themes override. Each value keeps the
-> shared role's luminance and takes its hue from the theme's own canvas, so no
-> text-on-surface ratio moves (body text on `--surface-muted` stays 12.35:1). The
-> blocks live in the **WARM DARK NEUTRALS** section of `main.css`
-> (`html[data-theme='crimson'|'golden'][data-mode='dark']`), and
-> `themePalette.test.js` fails if an override is not warmer, is not a real shared
-> role, or moves the luminance ladder.
 | `--neutral-fill` / `--neutral-fill-hover` | `third-300` / `third-400` | `#2e3642` / `#3d4653` | `.base-btn-ghost` (with `--btn-ghost-*`), `.button-secondary` |
 | `--neutral-strong` / `--neutral-strong-hover` | `third-400` / `third-500` | `#3d4653` / `#4b5563` | `.header-nav-link-secondary` |
 | `--popover-surface` / `--popover-text` | `third-800` / `primary-50` | `#e4e8ee` / `#12181f` | `.info-popover` (inverted surface) |
+
+> **Warm themes re-point the neutrals.** The family above is fixed and shared, and
+> it is blue-grey: red-minus-blue is −26 on `--text-default` (`#374151`), −19 on
+> `--text-subtle`, −13 on `--surface-muted` (`#12181f`) and −20 on
+> `--surface-raised`. On a warm canvas that reads cold — crimson's canvas is
+> +12/+13 and golden's is +35/+20 (light/dark), while silver's is 0 and forest's is
+> −5 — so those two themes override the neutrals in **both modes**, text roles
+> included: `crimson · light`'s `--text-default` becomes `#483e3f` (+9 warmth) and
+> `golden · light`'s `#43413a`, at the same luminance.
+>
+> Each value keeps the shared role's luminance exactly and takes its hue from the
+> theme's own canvas at a low chroma (7% for text, 8% for surfaces, 10% for borders
+> and fills), so it stays a grey rather than becoming a colour — and because the
+> luminance is untouched, so is every text-on-surface ratio: body text on
+> `--surface-muted` stays ~12.35:1 in the dark themes and `--text-muted` on the
+> canvas stays 4.16:1 (crimson) / 4.20:1 (golden). Only the hue moves. Rounding to
+> integer hex shifts a ratio by well under a percent (golden's body-on-muted pair
+> moves 9.87:1 → 9.73:1), which is what the test's tolerance covers.
+>
+> The blocks live in the **WARM NEUTRALS** section of `main.css`
+> (`html[data-theme='crimson'|'golden'][data-mode='light'|'dark']`), and
+> `themePalette.test.js` fails if an override is not warmer, is not a real shared
+> role, moves the luminance ladder, or loses that contrast.
 
 #### Amber + callout tone roles (mode-aware)
 
