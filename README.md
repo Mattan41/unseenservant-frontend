@@ -64,11 +64,22 @@ additionally see **Settings → Admin**:
   by this list, and a row's role decides what a *first* login is granted; an
   account that already exists keeps its own role, which is changed under Users.
 
+and **Settings → Logs**:
+
+- **Audit log** — the trail the backend writes for account and administration
+  events: accounts created, sign-ins (and failed or throttled ones), provider
+  sign-ins refused, role changes (and refusals) and whitelist changes. Read-only
+  and newest first, filterable by event type. It is deliberately not a general
+  activity log: campaigns, messages and characters are not recorded. Rows are
+  pruned by the backend after a fixed period, and the names in them are copies
+  taken when the event happened. See the backend's `docs/ARCHITECTURE.md`
+  ("Audit trail").
+
 Both are enforced by the backend (`/api/admin/**`, ROLE_ADMIN) and gated in the
 UI. Guest Demo does not demo them: it serves no `/api/admin/**` route, the
-Settings → Admin section is hidden for the whole guest session (see
-`docs/ARCHITECTURE.MD` → Guest Mode Limitations), and the demo account is an
-ordinary user (`demoData.js`).
+Settings → Admin and Settings → Logs sections are hidden for the whole guest
+session (see `docs/ARCHITECTURE.MD` → Guest Mode Limitations), and the demo
+account is an ordinary user (`demoData.js`).
 
 ## Getting Started
 

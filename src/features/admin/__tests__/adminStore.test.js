@@ -12,6 +12,7 @@ vi.mock('@/features/admin/AdminService.js', () => ({
     addWhitelistEntry: vi.fn(),
     updateWhitelistEntry: vi.fn(),
     removeWhitelistEntry: vi.fn(),
+    fetchLogs: vi.fn(),
   },
 }))
 
@@ -134,6 +135,111 @@ describe('adminStore', () => {
       await expect(store.revokeWhitelistEntry(5)).resolves.toBe(true)
       expect(store.whitelist).toHaveLength(1)
       expect(store.whitelist[0].active).toBe(false)
+    })
+  })
+
+  describe('audit log', () => {
+    const ROW = { id: 41, type: 'ROLE_CHANGED', actorName: 'admin', targetName: 'User2' }
+
+    it('holds the newest page the backend sent', async () => {
+      const store = useAdminStore()
+      AdminService.fetchLogs.mockResolvedValue([ROW])
+
+      await store.fetchLogs()
+
+      expect(store.logs).toEqual([ROW])
+      expect(store.isLoadingLogs).toBe(false)
+    })
+
+    it('asks for the unfiltered list until a filter is set', async () => {
+      const store = useAdminStore()
+      AdminService.fetchLogs.mockResolvedValue([])
+
+      await store.fetchLogs()
+      expect(AdminService.fetchLogs).toHaveBeenLastCalledWith({ type: undefined, limit: 100 })
+
+      AdminService.fetchLogs.mockResolvedValue([ROW])
+      await store.setLogsFilter('ROLE_CHANGED')
+
+      expect(store.logsFilter).toBe('ROLE_CHANGED')
+      expect(AdminService.fetchLogs).toHaveBeenLastCalledWith({ type: 'ROLE_CHANGED', limit: 100 })
+    })
+
+    it('drops the filter when it is cleared', async () => {
+      const store = useAdminStore()
+      AdminService.fetchLogs.mockResolvedValue([])
+      store.logsFilter = 'ROLE_CHANGED'
+
+      await store.setLogsFilter('')
+
+      expect(store.logsFilter).toBe('')
+      expect(AdminService.fetchLogs).toHaveBeenLastCalledWith({ type: undefined, limit: 100 })
+    })
+
+    it('pages with the last row held as the cursor, appending what comes back', async () => {
+      const store = useAdminStore()
+      store.logs = [ROW]
+      const older = { ...ROW, id: 40, type: 'LOGIN_FAILED' }
+      AdminService.fetchLogs.mockResolvedValue([older])
+
+      await store.loadMoreLogs()
+
+      expect(AdminService.fetchLogs).toHaveBeenLastCalledWith({
+        type: undefined,
+        beforeId: ROW.id,
+        limit: 100,
+      })
+      expect(store.logs).toEqual([ROW, older])
+      expect(store.isLoadingMoreLogs).toBe(false)
+    })
+
+    it('does not page an empty list — there is no cursor', async () => {
+      const store = useAdminStore()
+      store.logs = []
+
+      await store.loadMoreLogs()
+
+      expect(AdminService.fetchLogs).not.toHaveBeenCalled()
+    })
+
+    it('only offers more when a page came back full', async () => {
+      const store = useAdminStore()
+      AdminService.fetchLogs.mockResolvedValue([ROW])
+      await store.fetchLogs()
+      expect(store.hasMoreLogs).toBe(false)
+
+      AdminService.fetchLogs.mockResolvedValue(
+        Array.from({ length: 100 }, (_, i) => ({ ...ROW, id: 1000 - i })),
+      )
+      await store.fetchLogs()
+      expect(store.hasMoreLogs).toBe(true)
+    })
+
+    it('stops offering more once a page comes back short', async () => {
+      const store = useAdminStore()
+      AdminService.fetchLogs.mockResolvedValue(
+        Array.from({ length: 100 }, (_, i) => ({ ...ROW, id: 1000 - i })),
+      )
+      await store.fetchLogs()
+      expect(store.hasMoreLogs).toBe(true)
+
+      // The last page of the trail: it answered with nothing.
+      AdminService.fetchLogs.mockResolvedValue([])
+      await store.loadMoreLogs()
+
+      expect(store.hasMoreLogs).toBe(false)
+      expect(store.logs).toHaveLength(100)
+    })
+
+    it('keeps what it has when a fetch fails', async () => {
+      const store = useAdminStore()
+      store.logs = [ROW]
+      AdminService.fetchLogs.mockRejectedValue({ response: { status: 500 } })
+
+      await store.fetchLogs()
+
+      expect(store.logs).toEqual([ROW])
+      expect(store.isLoadingLogs).toBe(false)
     })
   })
 })

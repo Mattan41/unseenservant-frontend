@@ -1078,7 +1078,8 @@ itself is **not** mocked — see ARCHITECTURE.MD → Guest Mode Limitations.
 ## Feature: Admin
 
 The administrator surface lives under `/api/admin/**` and is reached through
-**Settings → Admin**. The Settings sidebar only lists that section when
+**Settings → Admin** (accounts and the email whitelist) and **Settings → Logs**
+(the audit trail). The Settings sidebar only lists those sections when
 `userStore.isAdmin` is true **and** `authStore.isGuest` is false, but the UI gate
 is convenience, not the boundary: the backend protects the prefix twice over (the
 `/api/admin/**` request matcher and a class-level
@@ -1091,19 +1092,47 @@ is convenience, not the boundary: the backend protects the prefix twice over (th
 {
   users: UserDTO[],                // every account, with its role
   whitelist: WhitelistEntryDTO[],  // every row, active and revoked
+  logs: AuditEventDTO[],           // the audit trail, newest first
+  logsFilter: string,              // '' = every type, else one AuditEventType
   isLoadingUsers: boolean,
   isLoadingWhitelist: boolean,
+  isLoadingLogs: boolean,
+  isLoadingMoreLogs: boolean,
   savingId: number | string | null, // the row whose controls are busy
   adminCount: computed,             // accounts holding ADMIN
   currentUserId: computed,          // from userStore — that row cannot be edited
+  hasMoreLogs: computed,            // the last page came back full
   isSelf(user), canChangeRole(user) // the backend's two guards, mirrored for the UI
 }
 
 ```
 
-Loaded on demand when the section is opened (`adminStore.fetchAll()`), never at
-app start. `canChangeRole` mirrors the backend: you cannot change your own role,
-and the last administrator cannot be demoted.
+Loaded on demand when the section is opened (`adminStore.fetchAll()` for
+accounts + whitelist, `adminStore.fetchLogs()` for the trail), never at app start.
+`canChangeRole` mirrors the backend: you cannot change your own role, and the last
+administrator cannot be demoted.
+
+The trail is **read-only**: `adminStore` has no action that writes, edits or
+deletes a row, because the backend has no endpoint that does. Its filter and its
+paging go to the backend (`type`, `beforeId`, `limit`) rather than filtering a
+fetched page client-side — a client-side filter over the newest 100 rows would
+show a sparse, dishonest page.
+
+---
+
+### GET /api/admin/logs
+
+- **Service**: AdminService.fetchLogs({ type, beforeId, limit })
+- **Store Action**: adminStore.fetchLogs() (also via adminStore.setLogsFilter(type)), adminStore.loadMoreLogs()
+- **Guest Mode**: Not served — the admin surface is absent from guest mode
+- **Request**: query params `type?` (an `AuditEventType` name, case-insensitive), `beforeId?` (cursor: the id of the last row of the page before), `limit?` (clamped by the backend)
+- **Response**: Array of `AuditEventDTO { id, type, occurredAt, actorId, actorName, targetId, targetName, detail, clientIp }`, newest first
+- **Status Codes**: 200, 400 (unknown `type`), 401, 403
+- **Notes**:
+  - `occurredAt` is a UTC wall clock like every other timestamp — render it through `timestampUtils.js`.
+  - `actorName` / `targetName` are copies taken when the event was written, and `actorId` / `targetId` may name an account that no longer exists (the backend has no foreign key there on purpose): show them as text, never resolve them to a profile.
+  - `type` values are listed in `src/features/admin/auditUtils.js`, which also owns their labels and badge classes. An unrecognised type is shown raw rather than treated as an error, so a new backend event does not break the view.
+  - Rows are pruned by the backend after a retention period, so the oldest events disappear on their own.
 
 ---
 

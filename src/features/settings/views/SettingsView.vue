@@ -10,10 +10,11 @@
  *   general — client-side preferences (colour theme) and read-only environment info
  *   user    — the signed-in profile (display name, email, username, account type)
  *   admin   — administrators only (users + email whitelist); never in Guest Demo
+ *   logs    — administrators only (the audit trail); never in Guest Demo
  *
  * The nav items are computed here so the sidebar stays presentational, and the
- * admin section is filtered out for ordinary accounts and for every guest
- * session — guest mode serves no `/api/admin/**` route at all.
+ * administrator sections are filtered out for ordinary accounts and for every
+ * guest session — guest mode serves no `/api/admin/**` route at all.
  */
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -26,6 +27,7 @@ import GeneralSettingsSection from '@/features/settings/components/GeneralSettin
 import UserSettingsSection from '@/features/settings/components/UserSettingsSection.vue'
 import AdminUsersSection from '@/features/admin/components/AdminUsersSection.vue'
 import AdminWhitelistSection from '@/features/admin/components/AdminWhitelistSection.vue'
+import AdminLogsSection from '@/features/admin/components/AdminLogsSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -42,6 +44,7 @@ const SECTIONS = [
     requiresProfile: true,
   },
   { key: 'admin', label: 'Admin', icon: 'shield', title: 'Admin', requiresAdmin: true },
+  { key: 'logs', label: 'Logs', icon: 'logs', title: 'Audit Log', requiresAdmin: true },
 ]
 
 const DEFAULT_SECTION = 'general'
@@ -129,6 +132,7 @@ function selectSection(key) {
           <AdminUsersSection />
           <AdminWhitelistSection />
         </template>
+        <AdminLogsSection v-else-if="activeSection === 'logs'" />
       </BaseSection>
     </div>
   </div>

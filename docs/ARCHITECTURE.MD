@@ -82,11 +82,12 @@ src/
 │   ├── settings/
 │   │   ├── components/          # GeneralSettingsSection.vue (theme, mode, environment), UserSettingsSection.vue
 │   │   └── views/
-│   │       └── SettingsView.vue # /settings — the contextual shell (general | user | admin)
+│   │       └── SettingsView.vue # /settings — the contextual shell (general | user | admin | logs)
 │   └── admin/
 │       ├── AdminService.js
-│       ├── adminStore.js
-│       └── components/          # AdminUsersSection.vue, AdminWhitelistSection.vue
+│       ├── adminStore.js        # Accounts + whitelist, and the read-only audit log
+│       ├── auditUtils.js        # Event labels + badge classes (getEventLabel, getEventBadgeClass)
+│       └── components/          # AdminUsersSection.vue, AdminWhitelistSection.vue, AdminLogsSection.vue
 ├── utils/
 │   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
 │   ├── imageUpload.js        # Frontend mirror of the backend's 5MB upload limit (validateImageSize).
@@ -174,10 +175,11 @@ Standalone preview mode populated entirely via mock data from `src/data/demoData
   reopened. The Strahd campaign ships with the planner on, an open plan showing all
   four availability levels, and one decided plan.
 - **No user administration.** `/api/admin/**` is not served at all, so the
-  Settings → Admin section is unreachable for the whole session: `SettingsView`
-  filters it out when `authStore.isGuest` is true (and a `?section=admin` deep
-  link falls back to General), the demo user is an ordinary `USER`, and
-  `guest_whitelist` is gone, so nothing can be written to one.
+  Settings → Admin and Settings → Logs sections are unreachable for the whole
+  session: `SettingsView` filters them out when `authStore.isGuest` is true (and a
+  `?section=admin` or `?section=logs` deep link falls back to General), the demo
+  user is an ordinary `USER`, and `guest_whitelist` is gone, so nothing can be
+  written to one.
 - **The journal is per-browser and private.** `/api/journals/**` is served from
   `guest_journals` / `guest_journal_pages`, seeded empty: a journal row and its
   pages appear with the first write, and the same ownership rules apply as on the
