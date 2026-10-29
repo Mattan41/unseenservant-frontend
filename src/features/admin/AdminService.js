@@ -3,10 +3,11 @@ import apiClient from '@/api/apiClient'
 /**
  * Administrator endpoints (`/api/admin/**`, ROLE_ADMIN only).
  *
- * Two concerns live behind one prefix: the account list with its role changes,
- * and the email whitelist that gates OAuth logins. Every call is refused by the
- * backend for a non-administrator, so the UI gate is a convenience, not the
- * security boundary.
+ * Three concerns live behind one prefix: the account list with its role
+ * changes, the email whitelist that gates OAuth logins, and the audit trail
+ * those changes write to. Every call is refused by the backend for a
+ * non-administrator, so the UI gate is a convenience, not the security
+ * boundary.
  */
 const AdminService = {
   async fetchUsers() {
@@ -41,6 +42,22 @@ const AdminService = {
   /** Soft delete — the row is kept but stops admitting logins. */
   async removeWhitelistEntry(id) {
     await apiClient.delete(`api/admin/whitelist/${id}`, {})
+  },
+
+  /**
+   * The audit trail, newest first.
+   *
+   * @param {object} [params]
+   * @param {string} [params.type] Only this event type; omitted means all of them
+   * @param {number} [params.beforeId] Cursor: the id of the last row of the page before
+   * @param {number} [params.limit] Rows per page; the backend clamps it
+   * @returns {Promise<Array>} Array of AuditEventDTO
+   */
+  async fetchLogs({ type, beforeId, limit } = {}) {
+    const response = await apiClient.get(`api/admin/logs`, {
+      params: { type, beforeId, limit },
+    })
+    return response.data
   },
 }
 

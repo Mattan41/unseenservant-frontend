@@ -199,5 +199,13 @@ defineProps({
     <template v-else-if="name === 'check'">
       <polyline points="20 6 9 17 4 12" />
     </template>
+
+    <!-- Logs: a lined sheet (the audit trail, settings → Logs) -->
+    <template v-else-if="name === 'logs'">
+      <path d="M7 3h8l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+      <polyline points="14 3 14 8 19 8" />
+      <line x1="9" y1="12" x2="16" y2="12" />
+      <line x1="9" y1="16" x2="16" y2="16" />
+    </template>
   </svg>
 </template>

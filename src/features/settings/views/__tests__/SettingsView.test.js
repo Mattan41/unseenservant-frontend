@@ -6,14 +6,16 @@ import SettingsView from '@/features/settings/views/SettingsView.vue'
 import ContextSidebar from '@/components/base/ContextSidebar.vue'
 import AdminUsersSection from '@/features/admin/components/AdminUsersSection.vue'
 import AdminWhitelistSection from '@/features/admin/components/AdminWhitelistSection.vue'
+import AdminLogsSection from '@/features/admin/components/AdminLogsSection.vue'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 
 /**
- * Guest Demo serves no `/api/admin/**` route, so Settings → Admin must not be
- * reachable there — not through the sidebar, and not through a `?section=admin`
- * deep link either. The role check alone is not enough: a guest session started
- * before the admin mocks were removed still has `role: 'ADMIN'` in localStorage.
+ * Guest Demo serves no `/api/admin/**` route, so Settings → Admin and
+ * Settings → Logs must not be reachable there — not through the sidebar, and not
+ * through a `?section=admin` deep link either. The role check alone is not
+ * enough: a guest session started before the admin mocks were removed still has
+ * `role: 'ADMIN'` in localStorage.
  */
 async function mountSettings({ guest, role, section }) {
   setActivePinia(createPinia())
@@ -47,10 +49,10 @@ describe('settings sections', () => {
     expect(keys).toEqual(['general', 'user'])
   })
 
-  it('lists Admin for an administrator', async () => {
+  it('lists Admin and Logs for an administrator', async () => {
     const { keys } = await mountSettings({ guest: false, role: 'ADMIN' })
 
-    expect(keys).toEqual(['general', 'user', 'admin'])
+    expect(keys).toEqual(['general', 'user', 'admin', 'logs'])
   })
 
   it('keeps Admin out of a guest session, even with role ADMIN stored', async () => {
@@ -65,5 +67,13 @@ describe('settings sections', () => {
     expect(keys).not.toContain('admin')
     expect(wrapper.findComponent(AdminUsersSection).exists()).toBe(false)
     expect(wrapper.findComponent(AdminWhitelistSection).exists()).toBe(false)
+  })
+
+  it('falls back to General when a guest deep-links to the logs section', async () => {
+    const { wrapper } = await mountSettings({ guest: true, role: 'ADMIN', section: 'logs' })
+
+    // The view is unreachable for a whole guest session: it reads the audit trail
+    // through /api/admin/logs, which Guest Demo does not serve at all.
+    expect(wrapper.findComponent(AdminLogsSection).exists()).toBe(false)
   })
 })
