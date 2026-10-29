@@ -11,8 +11,9 @@ function closeButton(wrapper) {
   return wrapper.findAll('button').find((button) => button.text() === 'Close')
 }
 
+/** The preview dialog: `BaseModal` renders a native `<dialog>` element. */
 function dialog(wrapper) {
-  return wrapper.find('[role="dialog"]')
+  return wrapper.find('dialog')
 }
 
 const PAGE = {

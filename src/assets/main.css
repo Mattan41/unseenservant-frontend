@@ -1109,6 +1109,16 @@ html[data-env='demo'] {
   @apply h-9 w-9 p-1;
 }
 
+/* The modal shell (`BaseModal`) is a native `<dialog>`: a full-viewport box that
+   centres its slot, with the dimming on that box rather than on a separate scrim
+   element. The UA's own dialog box — fit-content size, auto margins, border and
+   canvas background — is reset here, and `z-*` from the `zIndex` prop still
+   orders dialogs stacked on each other (a modal dialog paints in the top layer,
+   so it needs no z-index to sit above ordinary content). */
+.base-modal {
+  @apply fixed inset-0 z-50 m-0 flex h-full w-full max-w-none max-h-none items-center justify-center overflow-visible border-0 bg-black/50 p-4;
+}
+
 /* Notification component colour types */
 .notification-success {
   @apply bg-(--tone-success-surface) border border-(--tone-success-border) text-(--tone-success-text);

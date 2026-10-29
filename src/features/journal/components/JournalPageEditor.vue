@@ -113,13 +113,13 @@ function onFocusOut() {
     </div>
 
     <!-- Reading a page: the same renderer every read-only view uses, so what the
-         preview shows is exactly what the markdown produces. -->
-    <BaseModal v-if="isPreviewOpen" @close="isPreviewOpen = false">
+         preview shows is exactly what the markdown produces. The label goes on
+         `<BaseModal>`, which is the element carrying the dialog role natively —
+         a `role` on the panel inside it would be redundant (and a Sonar
+         finding). -->
+    <BaseModal v-if="isPreviewOpen" aria-label="Page preview" @close="isPreviewOpen = false">
       <div
         class="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Page preview"
       >
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
           <h2 class="modal-title">Page preview</h2>

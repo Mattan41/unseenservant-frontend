@@ -12,7 +12,7 @@
 - Direct palette utilities are allowed only inside `src/assets/main.css` and `src/assets/base-button.css`.
 - Buttons: `<BaseButton>` / `<BaseLinkButton>` / `<IconButton>`. A new variant is a `.base-btn-{name}` rule in `base-button.css` plus a `BaseButton.vue` variant-map entry — never an inline class chain.
 - Icons come from `src/components/base/BaseIcon.vue`; add new icons there, not in feature folders.
-- Modals use `<BaseModal>` (centring, Escape and body-scroll lock are already handled). A dialog whose content can grow caps its own panel (`max-h-[90vh] overflow-y-auto`), and a dialog opened from inside a heading needs `<Teleport to="body">`.
+- Modals use `<BaseModal>` (centring, Escape and body-scroll lock are already handled). It renders a native `<dialog>`, so the panel must never carry `role="dialog"` / `aria-modal` (a Sonar finding, and redundant): name the dialog with `aria-label` / `aria-labelledby` on `<BaseModal>` itself, where the attributes land on the dialog element. A dialog whose content can grow caps its own panel (`max-h-[90vh] overflow-y-auto`), and a dialog opened from inside a heading needs `<Teleport to="body">`.
 - New shared class/variable goes where §4's table says: semantic classes with `@apply` in `main.css`, palette variables in the `@theme { }` block, role variables in `:root { }`. Direct palette variables in `main.css` mirror reality — `main.css` wins if the style guide disagrees.
 
 ## Component Architecture

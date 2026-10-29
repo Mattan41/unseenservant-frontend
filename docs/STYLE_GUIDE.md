@@ -235,7 +235,7 @@ Light values map onto `--color-third-*`; `html[data-mode='dark']` re-points them
 
 Deliberately **not** mode-aware (fixed on purpose): the hue `.badge-*` variants
 (blue/purple/indigo/pink/teal/yellow), the legacy solid `.button-*` variants,
-`.slide-over-backdrop` (`bg-black/50` scrim) and the environment banner tones
+`.slide-over-backdrop` and `.base-modal` (`bg-black/50` scrims) and the environment banner tones
 (meant to be loud). The planner's availability ramp is *not* on this list — it is
 mode-aware on purpose; see `--availability-*` in §1.4.
 
@@ -378,6 +378,7 @@ all conditional styling in `*Utils.js` files.
 | `.icon-btn-on-dark` | Icon button variant: on dark surfaces | `text-primary-100 hover:bg-primary-800 focus:ring-primary-500` | implemented |
 | `.icon-btn-chip` | Icon button variant: chip remove (small, no background, colour-only hover) | `p-0 text-third-700 hover:text-primary-800 leading-none focus:ring-0` | implemented |
 | `.slide-over-backdrop` | Slide-over dimming layer (`SlideOverDrawer.vue`), rendered as a native `<button>` so click-outside is keyboard-operable | `fixed inset-0 bg-black/50` | implemented |
+| `.base-modal` | The modal shell itself (`BaseModal.vue`): a native `<dialog>` used as a full-viewport, centred box with the dimming on it. The UA's own dialog box is reset here | `fixed inset-0 z-50 m-0 flex h-full w-full max-w-none max-h-none items-center justify-center overflow-visible border-0 bg-black/50 p-4` | implemented |
 | `.slide-over-panel` | Slide-over panel base | `fixed inset-y-0 flex flex-col overflow-y-auto` | implemented |
 | `.slide-over-panel--left` / `.slide-over-panel--right` | Slide-over anchor edge | `left-0` / `right-0` | implemented |
 | `.slide-over-panel--sidebar` | Slide-over width: sidebar panel | `w-72 max-w-[80vw] gap-4 p-4` | implemented |
@@ -464,7 +465,7 @@ identity (name, system, image).
 | `.input-field` | Form input focus ring | The `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent` chain (17 sites — may be done as a global `input:focus` rule instead) | implemented |
 | `.section-primary` | Primary section wrapper | `bg-primary-500 p-4 rounded-lg` (5 sites) | proposed |
 | `.notification-base` | Notification popup base | Replace 9 hex values in `NotificationComponent.vue` scoped style | proposed |
-| `<BaseModal>` component | Modal overlay + centering wrapper | The `fixed inset-0 flex items-center justify-center bg-black/50` overlay pattern. Extracted into `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close`). The dimming layer is a native `<button aria-label="Close dialog">` painted under the panel (`-z-10` inside the overlay's stacking context), so closing on outside-click is keyboard-operable too. Also closes on Escape and locks body scroll while mounted (`src/utils/bodyScrollLock.js` counts the open overlays, so a stacked dialog cannot unlock the body early). In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, and `ImportCharacterModal.vue`. Any new modal introduced in later phases should use it rather than re-implementing the overlay. `BaseModal` only centres its slot: a dialog whose content can grow must cap its own panel (`max-h-[90vh] overflow-y-auto`, as in `CreateCampaign.vue` / `SpellDetailModal.vue`), and any dialog opened from inside a heading must `<Teleport to="body">` — otherwise it inherits that heading's `text-transform: uppercase` and its page-sized type ramp. | implemented |
+| `<BaseModal>` component | Modal shell, built on the native `<dialog>` element | `src/components/base/BaseModal.vue` (props: `zIndex`; emits `close`). The element **is** the dialog: `showModal()` puts it in the top layer, makes the rest of the page inert, moves focus inside and restores it on close. The two dismissals that live on the element are declared as the pair `@click` (a click on the dimming area) and `@keydown.esc`, since a click handler without a keyboard twin is a Sonar finding — and Escape is the keyboard reading of "click the dimming area". The platform's own Escape handling (`cancel`) is suppressed, so closing stays the caller's decision and there is one close path (the caller's `v-if` state, reached from the panel's Close button, the dimming area, or Escape). No `role="dialog"` / `aria-modal` anywhere: the tag carries the semantics, which is what Sonar's "prefer the tag over the role" rule asks for. A call site names it by putting `aria-label` / `aria-labelledby` on `<BaseModal>` — the attributes land on the dialog element. Body scroll is still locked while mounted (`src/utils/bodyScrollLock.js` counts the open overlays, so a stacked dialog cannot unlock the body early), and the element that had focus when it opened is focused again when it goes away. The dialog box itself (full-viewport, centred slot, `bg-black/50` scrim) is the `.base-modal` class in `src/assets/main.css`. In use in `SpellDetailModal.vue`, `CreateCampaign.vue`, `ImportCharacterModal.vue`, `BaseClampedText.vue`, `JournalPageEditor.vue`, `ShipSheet.vue` and the Offworlders forms. Any new modal should use it rather than re-implementing the overlay. A dialog whose content can grow must cap its own panel (`max-h-[90vh] overflow-y-auto`, as in `CreateCampaign.vue` / `SpellDetailModal.vue`), and any dialog opened from inside a heading must `<Teleport to="body">` — otherwise it inherits that heading's `text-transform: uppercase` and its page-sized type ramp. | implemented |
 | `<BaseCard>` component | Content card that can act as one click target | `src/components/base/BaseCard.vue` (props: `clickable`; emits: `click`). A clickable card keeps the character/campaign card chrome (surface, `border-section`, hover lift, `cursor-pointer`) and gains `role="button"` + `tabindex="0"` + Enter/Space, so the whole card is keyboard-operable. Clicks and key events from a control in the slot stay with that control (`src/utils/interactiveEvent.js`), so call sites no longer need `@click.stop` wrappers around a card's own buttons. | implemented |
 | `<BaseIcon>` component | Shared monochrome line-icon library | Single source of truth for icon SVGs (`menu`, `close`, `info`, `help`, `alert`, `overview`, `lore`, `characters`, `participants`, `messages`, `settings`, `edit`, `plus`, `ship`, `spells`, `chevron-left`, `chevron-right`, `download`, `upload`, `shield`) in `src/components/base/BaseIcon.vue`. `CampaignNavIcon` delegates to it. Add new icons here, not in feature folders. | implemented |
 | `<IconButton>` component | Accessible icon-only button | `src/components/base/IconButton.vue` (props: `label` (required, → `aria-label`/`title`), `variant` (`plain`/`solid`/`on-dark`), `icon`; emits `click`). Use for compact controls with no visible text. | implemented |
@@ -538,8 +539,13 @@ switches theme. The only exceptions are:
 `LoginComponent.vue` Google sign-in button
 (`hover:border-blue-100`, `focus:border-blue-500`, `focus:ring-blue-200`).
 
-**(b) Modal backdrop dimming layer:** `bg-black/50` in `BaseModal.vue`,
-which is a fixed scrim, not a themed surface or text color.
+**(b) Fixed scrims:** `bg-black/50` (and its sibling opacities) used as a scrim
+over an image or behind a modal — `.base-modal` and `.slide-over-backdrop` in
+`src/assets/main.css`, and the image-overlay covers in
+`CampaignDetailsForm.vue` / `ShipSheet.vue`. A scrim is neither a themed surface
+nor a text colour, so it is fixed in every theme. (The modal one sits in
+`main.css` since the modals became native `<dialog>` elements, where palette
+utilities are the norm.)
 
 > **Important — our own palette utilities are also banned in templates:**
 > `text-primary-{shade}`, `bg-third-{shade}`, `border-secondary-{shade}`,
