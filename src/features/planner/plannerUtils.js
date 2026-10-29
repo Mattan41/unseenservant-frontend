@@ -85,8 +85,10 @@ export function attendanceSummary(date, roster) {
 export function availabilityLevel(summary) {
   if (summary.rosterSize === 0) return AVAILABILITY_LEVELS.LOW
   if (summary.yes >= summary.rosterSize) return AVAILABILITY_LEVELS.FULL
-  if (summary.yes >= summary.rosterSize * AVAILABILITY_THRESHOLDS.HIGH) return AVAILABILITY_LEVELS.HIGH
-  if (summary.yes >= summary.rosterSize * AVAILABILITY_THRESHOLDS.MEDIUM) return AVAILABILITY_LEVELS.MEDIUM
+  if (summary.yes >= summary.rosterSize * AVAILABILITY_THRESHOLDS.HIGH)
+    return AVAILABILITY_LEVELS.HIGH
+  if (summary.yes >= summary.rosterSize * AVAILABILITY_THRESHOLDS.MEDIUM)
+    return AVAILABILITY_LEVELS.MEDIUM
   return AVAILABILITY_LEVELS.LOW
 }
 

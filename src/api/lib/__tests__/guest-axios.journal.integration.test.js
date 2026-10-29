@@ -160,7 +160,13 @@ describe('guest-axios journal routes', () => {
     localStorage.setItem(
       'guest_journal_pages',
       JSON.stringify([
-        { id: 'guest_page_x', journalId: 'guest_journal_x', content: 'secret', position: 1, version: 0 },
+        {
+          id: 'guest_page_x',
+          journalId: 'guest_journal_x',
+          content: 'secret',
+          position: 1,
+          version: 0,
+        },
       ]),
     )
 

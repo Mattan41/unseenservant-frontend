@@ -36,8 +36,8 @@ const emit = defineEmits(['discard', 'save', 'continue'])
     <div class="w-full max-w-md rounded-lg bg-[var(--color-surface)] p-4 text-left shadow-lg">
       <h4 class="section-heading mb-2">Unsaved changes</h4>
       <p class="text-default text-sm">
-        Your changes to {{ subject }} are not saved yet. Save them, discard them, or
-        carry on editing — nothing is kept unless you save.
+        Your changes to {{ subject }} are not saved yet. Save them, discard them, or carry on
+        editing — nothing is kept unless you save.
       </p>
 
       <div class="mt-4 flex flex-wrap gap-1">

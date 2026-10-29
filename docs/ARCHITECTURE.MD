@@ -308,7 +308,10 @@ rendered on the client:
 - `src/components/base/MarkdownText.vue` — the only component that binds
   `v-html`; safe because raw HTML is escaped and link targets are validated.
 - `src/components/base/BaseMarkdownField.vue` — textarea + Write/Preview toggle
-  (preview never mutates the value, so dirty tracking is unaffected).
+  (preview never mutates the value, so dirty tracking is unaffected). The toggle
+  is optional: `showPreview: false` leaves the textarea as the whole field for a
+  surface that is written in rather than read in — the journal, which offers the
+  rendered page on demand instead (`JournalPageEditor`'s preview dialog).
 - `src/utils/htmlEntities.js` — decodes pre-escaped third-party text (Open5e
   spells) during normalisation, not at render time.
 - `src/components/base/MarkdownHelp.vue` — the collapsed "Formatting help"

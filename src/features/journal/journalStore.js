@@ -3,11 +3,7 @@ import { defineStore } from 'pinia'
 import JournalService from './JournalService.js'
 import { clearDraft, readDraft, writeDraft } from './journalDraft.js'
 import { MAX_PAGES } from './journalLimits.js'
-import {
-  clampPageNumber,
-  isOverLimit,
-  lastPageNumber as lastPageNumberOf,
-} from './journalUtils.js'
+import { clampPageNumber, isOverLimit, lastPageNumber as lastPageNumberOf } from './journalUtils.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { extractErrorMessage } from '@/utils/errorUtils.js'
@@ -42,6 +38,13 @@ function notify(message, type = 'error', duration = 3000) {
  * Saving is debounced and every navigation point flushes what is pending. The
  * text is additionally mirrored in localStorage on each keystroke
  * (`journalDraft.js`), because a closed tab cannot wait for a request.
+ *
+ * Two rules keep the editor steady while that happens. One save runs at a time
+ * (`saveInFlight`), so answers cannot land out of order and `flush()` really
+ * waits. And an answer never overwrites newer text: if the reader typed on while
+ * the request was in flight, their text stays on screen (and in the mirror) and
+ * the next quiet moment sends it — otherwise the cursor would jump to the end of
+ * the page and the keystrokes would be lost.
  */
 export const useJournalStore = defineStore('journal', () => {
   // ==========================================================================
@@ -59,6 +62,8 @@ export const useJournalStore = defineStore('journal', () => {
   const error = ref(null)
 
   let autosaveTimer = null
+  /** The request in flight, so `flush()` can wait for it instead of guessing. */
+  let saveInFlight = null
 
   // ==========================================================================
   // Derived
@@ -76,7 +81,13 @@ export const useJournalStore = defineStore('journal', () => {
   // ==========================================================================
 
   function emptyJournal() {
-    return { id: null, campaignId: campaignId.value, userId: currentUserId(), pageCount: 0, pages: [] }
+    return {
+      id: null,
+      campaignId: campaignId.value,
+      userId: currentUserId(),
+      pageCount: 0,
+      pages: [],
+    }
   }
 
   /** The mirror's key for a page: its id, or the name of the virtual page. */
@@ -95,12 +106,41 @@ export const useJournalStore = defineStore('journal', () => {
     }
   }
 
-  /** Adopt a journal payload (or an empty one) and land on a valid page. */
-  function adoptJournal(next) {
+  /** Save once the typing settles: the debounce timer is the only one here. */
+  function armAutosave() {
+    cancelAutosave()
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null
+      void saveNow()
+    }, AUTOSAVE_DELAY_MS)
+  }
+
+  /**
+   * The text the page on screen should show.
+   *
+   * `savedDraft` is what a save request went out with. When the reader has typed
+   * on since (`draft` no longer holds it), their text wins: the answer is older
+   * than the screen, and assigning it would move the caret to the end and drop
+   * the keystrokes. A caller that is not a save response passes `null`, because
+   * a page change must always replace the text.
+   *
+   * @param {string|null} savedDraft
+   * @returns {string}
+   */
+  function pageDraftText(savedDraft) {
+    if (savedDraft !== null && draft.value !== savedDraft) return draft.value
+    return currentPage.value?.content ?? ''
+  }
+
+  /**
+   * Adopt a journal payload (or an empty one), land on a valid page and seed the
+   * editor with that page's text (see `pageDraftText`).
+   */
+  function adoptJournal(next, { savedDraft = null } = {}) {
     journal.value =
       next && Array.isArray(next.pages) ? { ...next, pageCount: next.pages.length } : emptyJournal()
     currentPageNumber.value = clampPageNumber(currentPageNumber.value, pageCount.value)
-    draft.value = currentPage.value?.content ?? ''
+    draft.value = pageDraftText(savedDraft)
   }
 
   /**
@@ -187,11 +227,7 @@ export const useJournalStore = defineStore('journal', () => {
     saveState.value = 'dirty'
     writeDraft(...draftArgs(), draft.value)
 
-    cancelAutosave()
-    autosaveTimer = setTimeout(() => {
-      autosaveTimer = null
-      void saveNow()
-    }, AUTOSAVE_DELAY_MS)
+    armAutosave()
     return true
   }
 
@@ -201,8 +237,12 @@ export const useJournalStore = defineStore('journal', () => {
    * A `null` page means the page was blank and last, so writing it removed it —
    * it is the virtual trailing page again. `pageCount` can drop by more than one
    * there, because blank pages at the end collapse into the single virtual one.
+   *
+   * @param {object} result
+   * @param {string|null} [savedDraft] what the request went out with (see
+   *   `pageDraftText`), so text typed while it was in flight is not overwritten
    */
-  function applySavedPage(result) {
+  function applySavedPage(result, savedDraft = null) {
     const kept = pages.value
       .slice(0, Number(result.pageCount ?? pageCount.value))
       .map((page) => ({ ...page }))
@@ -214,20 +254,41 @@ export const useJournalStore = defineStore('journal', () => {
 
     journal.value = { ...(journal.value || emptyJournal()), pages: kept, pageCount: kept.length }
     currentPageNumber.value = clampPageNumber(currentPageNumber.value, kept.length)
-    draft.value = currentPage.value?.content ?? ''
+    draft.value = pageDraftText(savedDraft)
   }
 
   /**
-   * Save what is pending. Writing on the virtual last page creates it; writing
-   * on a stored page updates it under its version token, and a stale token is
-   * reported as a conflict instead of silently overwriting the other writer.
+   * Save what is pending.
+   *
+   * One request at a time: a caller that arrives while a save is in flight waits
+   * for it and then looks again, so two answers can never be applied out of
+   * order and `flush()` can promise that the text on screen has landed.
+   *
    * @returns {Promise<boolean>} whether the book is saved
    */
   async function saveNow() {
     cancelAutosave()
     if (!campaignId.value) return false
+
+    if (saveInFlight) await saveInFlight
     if (saveState.value !== 'dirty' && saveState.value !== 'error') return true
 
+    saveInFlight = performSave()
+    try {
+      return await saveInFlight
+    } finally {
+      saveInFlight = null
+    }
+  }
+
+  /**
+   * The single request a save consists of. Writing on the virtual last page
+   * creates it; writing on a stored page updates it under its version token, and
+   * a stale token is reported as a conflict instead of silently overwriting the
+   * other writer.
+   */
+  async function performSave() {
+    const savedCampaign = campaignId.value
     const savedPage = currentPage.value
     const savedKey = pageKey(savedPage)
     const content = draft.value
@@ -235,22 +296,40 @@ export const useJournalStore = defineStore('journal', () => {
     saveState.value = 'saving'
 
     try {
-      if (savedPage) {
-        applySavedPage(
-          await JournalService.updatePage(savedPage.id, { content, version: savedPage.version }),
-        )
-      } else {
-        adoptJournal(
-          await JournalService.createPage(campaignId.value, {
+      const answer = savedPage
+        ? await JournalService.updatePage(savedPage.id, { content, version: savedPage.version })
+        : await JournalService.createPage(savedCampaign, {
             afterPageId: pages.value.at(-1)?.id ?? null,
             content,
-          }),
-        )
+          })
+
+      // The reader left the campaign while the request was in flight, so this
+      // answer belongs to a book that is no longer on screen: fold nothing of it
+      // into the one that is. Nothing is pending here either, while the older
+      // book's text waits in its mirror for the next visit.
+      if (campaignId.value !== savedCampaign) {
+        saveState.value = 'idle'
+        return true
       }
 
-      clearDraft(currentUserId(), campaignId.value, savedKey)
-      hasConflict.value = false
-      saveState.value = 'saved'
+      if (savedPage) applySavedPage(answer, content)
+      else adoptJournal(answer, { savedDraft: content })
+
+      if (draft.value === content) {
+        clearDraft(currentUserId(), savedCampaign, savedKey)
+        hasConflict.value = false
+        saveState.value = 'saved'
+      } else {
+        // Typing carried on during the request. The newer text stays on screen,
+        // stays `dirty` and stays in the mirror — under the page's new key when
+        // creating the page moved it off the virtual one — and the next quiet
+        // moment sends it.
+        const args = draftArgs()
+        if (args[2] !== savedKey) clearDraft(currentUserId(), savedCampaign, savedKey)
+        writeDraft(...args, draft.value)
+        saveState.value = 'dirty'
+        armAutosave()
+      }
       return true
     } catch (err) {
       if (err?.response?.status === 409) {
@@ -273,10 +352,12 @@ export const useJournalStore = defineStore('journal', () => {
 
   /**
    * Finish a pending save before the page, the section or the route changes.
-   * Every navigation point calls this, so nothing is lost by moving around.
+   * Every navigation point calls this, so nothing is lost by moving around — and
+   * it really waits: a request already on its way is awaited first.
    * @returns {Promise<boolean>}
    */
   async function flush() {
+    if (saveInFlight) await saveInFlight
     if (saveState.value === 'dirty' || saveState.value === 'error') return saveNow()
     cancelAutosave()
     return true
@@ -323,6 +404,9 @@ export const useJournalStore = defineStore('journal', () => {
     const page = currentPage.value
     if (!journal.value || !page) return false
 
+    // An answer still on its way would otherwise be folded into a book that no
+    // longer has this page.
+    if (saveInFlight) await saveInFlight
     cancelAutosave()
     isSaving.value = true
 

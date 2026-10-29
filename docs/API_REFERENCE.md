@@ -870,10 +870,21 @@ journal never accumulates empty rows. Inserting a page after page 3 makes the ol
 page 4 the new page 5, because a page number is a position and not an identity
 (every page keeps its own stable id).
 
-Saving is autosaved with an 800 ms debounce (`AUTOSAVE_DELAY_MS`) and every
-navigation point flushes what is pending. The text is additionally mirrored in
-localStorage on each keystroke (`journalDraft.js`), which is what makes a closed
-tab lose nothing: the mirror is restored on the next visit.
+Saving is autosaved with an 800 ms debounce (`AUTOSAVE_DELAY_MS`), and what is
+pending is flushed at every navigation point, when the field loses focus, when
+the tab is hidden and on `Ctrl/Cmd+S` (`JournalBoard`). The text is additionally
+mirrored in localStorage on each keystroke (`journalDraft.js`), which is what
+makes a closed tab lose nothing: the mirror is restored on the next visit.
+
+Two rules keep the editor steady while that happens. One save runs at a time
+(`saveInFlight`), so `flush()` really waits for a request already on its way and
+two answers cannot land out of order. And an answer never becomes the screen when
+it is older than what is on it: if the reader typed on while the request was in
+flight, `draft` keeps their text, stays `dirty`, the mirror is kept (re-keyed to
+the page's new id when the write created the page) and the next quiet moment
+sends it. Assigning the server's text back instead would drop the cursor at the
+end of the page and lose those keystrokes — which is exactly what a debounced
+autosave must not do.
 
 ### journalStore — State Shape
 
@@ -881,7 +892,8 @@ tab lose nothing: the mirror is restored on the next visit.
 {
   journal: { id, campaignId, userId, pageCount, pages: JournalPageDTO[] } | null,
   currentPageNumber: number,   // 1..lastPageNumber
-  draft: string,               // the editor's text for the page on screen
+  draft: string,               // the editor's text for the page on screen — never
+                               // overwritten by a save answer that is older than it
   isLoading: boolean,
   isSaving: boolean,
   saveState: 'idle' | 'dirty' | 'saving' | 'saved' | 'error',

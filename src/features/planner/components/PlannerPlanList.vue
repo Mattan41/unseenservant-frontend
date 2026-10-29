@@ -64,9 +64,7 @@ function decidedDay(plan) {
   return chosen ? formatPlanDate(chosen.date) : ''
 }
 
-const hasAnyPlan = computed(
-  () => props.openPlans.length > 0 || props.decidedPlans.length > 0,
-)
+const hasAnyPlan = computed(() => props.openPlans.length > 0 || props.decidedPlans.length > 0)
 </script>
 
 <template>
@@ -75,8 +73,8 @@ const hasAnyPlan = computed(
 
     <template v-else>
       <p v-if="!hasAnyPlan" class="text-muted mb-4">
-        No plans yet. A plan is a question with dates attached — "when do we play
-        next?", "which weekend works?" — and everyone in the campaign answers it.
+        No plans yet. A plan is a question with dates attached — "when do we play next?", "which
+        weekend works?" — and everyone in the campaign answers it.
       </p>
 
       <BaseButton variant="tile" icon="planner" class="mb-4" @click="emit('create')">
@@ -85,7 +83,12 @@ const hasAnyPlan = computed(
 
       <h3 v-if="openPlans.length" class="section-heading mb-2">Open plans</h3>
       <div class="mb-4 grid gap-3 sm:grid-cols-2">
-        <BaseCard v-for="plan in openPlans" :key="plan.id" clickable @click="emit('select', plan.id)">
+        <BaseCard
+          v-for="plan in openPlans"
+          :key="plan.id"
+          clickable
+          @click="emit('select', plan.id)"
+        >
           <p class="text-heading font-semibold">{{ plan.title }}</p>
           <p class="text-muted text-xs">
             {{ planProgress(plan).dateCount }} date(s) offered ·
@@ -121,7 +124,8 @@ const hasAnyPlan = computed(
             {{ decidedDay(plan) || 'Decided without a date' }}
           </p>
           <p class="text-muted text-xs">
-            {{ planProgress(plan).dateCount }} date(s) · {{ planProgress(plan).rosterSize }} in the plan
+            {{ planProgress(plan).dateCount }} date(s) · {{ planProgress(plan).rosterSize }} in the
+            plan
             <span v-if="isDecided(plan)"> · reopen it to change anything</span>
           </p>
         </BaseCard>

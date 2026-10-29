@@ -37,7 +37,10 @@ const date = (id, answers, day = '2026-03-14') => ({
   note: null,
   createdByUserId: 1,
   version: 0,
-  attendances: Object.entries(answers).map(([userId, state]) => ({ userId: Number(userId), state })),
+  attendances: Object.entries(answers).map(([userId, state]) => ({
+    userId: Number(userId),
+    state,
+  })),
 })
 
 const FOUR = [member(1), member(2), member(3), member(4)]
@@ -60,10 +63,26 @@ describe('planner availability maths', () => {
 
   it('turns the four bands into the documented surfaces', () => {
     const cases = [
-      { answers: { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'YES' }, level: 'full', className: 'availability-surface-full' },
-      { answers: { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'NO' }, level: 'high', className: 'availability-surface-high' },
-      { answers: { 1: 'YES', 2: 'YES', 3: 'NO', 4: 'NO' }, level: 'medium', className: 'availability-surface-medium' },
-      { answers: { 1: 'YES', 2: 'NO', 3: 'NO', 4: 'NO' }, level: 'low', className: 'availability-surface-low' },
+      {
+        answers: { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'YES' },
+        level: 'full',
+        className: 'availability-surface-full',
+      },
+      {
+        answers: { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'NO' },
+        level: 'high',
+        className: 'availability-surface-high',
+      },
+      {
+        answers: { 1: 'YES', 2: 'YES', 3: 'NO', 4: 'NO' },
+        level: 'medium',
+        className: 'availability-surface-medium',
+      },
+      {
+        answers: { 1: 'YES', 2: 'NO', 3: 'NO', 4: 'NO' },
+        level: 'low',
+        className: 'availability-surface-low',
+      },
     ]
 
     cases.forEach(({ answers, level, className }) => {
@@ -82,7 +101,10 @@ describe('planner availability maths', () => {
 
   it('takes a member who left out of the roster AND out of the counts', () => {
     const withOneOut = [...FOUR.filter((row) => row.userId !== 4), member(4, true)]
-    const plan = { members: withOneOut, dates: [date(1, { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'YES' })] }
+    const plan = {
+      members: withOneOut,
+      dates: [date(1, { 1: 'YES', 2: 'YES', 3: 'YES', 4: 'YES' })],
+    }
 
     expect(rosterOf(plan)).toHaveLength(3)
     expect(excludedOf(plan)).toHaveLength(1)

@@ -40,7 +40,8 @@ const roster = computed(() => rosterOf({ members: props.members }))
 const excluded = computed(() => excludedOf({ members: props.members }))
 
 const me = computed(
-  () => props.members.find((member) => String(member.userId) === String(props.currentUserId)) || null,
+  () =>
+    props.members.find((member) => String(member.userId) === String(props.currentUserId)) || null,
 )
 
 /** The caller has a seat: their answers count. */
@@ -54,9 +55,8 @@ const removedByOwner = computed(() => Boolean(me.value?.excluded && me.value.rem
   <div>
     <h3 class="section-heading mb-2">Roster</h3>
     <p class="text-muted mb-2 text-sm">
-      Everybody in the campaign is in this plan. Leaving it costs you nothing but
-      your seat on the dates — your answers are kept, and the campaign owner can put
-      you back.
+      Everybody in the campaign is in this plan. Leaving it costs you nothing but your seat on the
+      dates — your answers are kept, and the campaign owner can put you back.
     </p>
 
     <ul class="flex flex-wrap gap-1">

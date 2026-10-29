@@ -49,8 +49,8 @@ function toggle(addon) {
   <div>
     <h3 class="section-heading mb-2">Add-ons</h3>
     <p class="text-muted mb-3 text-sm">
-      Optional parts of the campaign. They add a section to the campaign menu for
-      everybody in it; nothing is deleted when one is switched off.
+      Optional parts of the campaign. They add a section to the campaign menu for everybody in it;
+      nothing is deleted when one is switched off.
     </p>
 
     <ul class="space-y-2">
@@ -82,8 +82,8 @@ function toggle(addon) {
     </ul>
 
     <div v-if="readOnly" class="guest-notice mt-3">
-      Add-ons are pre-set in Guest Demo and cannot be changed here. Sign in — or run
-      the demo profile — to manage them.
+      Add-ons are pre-set in Guest Demo and cannot be changed here. Sign in — or run the demo
+      profile — to manage them.
     </div>
   </div>
 </template>

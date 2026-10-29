@@ -144,7 +144,9 @@ const activeSection = ref(readSectionFromRoute())
  */
 function readPlanFromRoute() {
   const requested = route.query.plan
-  return requested === undefined || requested === null || requested === '' ? null : String(requested)
+  return requested === undefined || requested === null || requested === ''
+    ? null
+    : String(requested)
 }
 
 const activePlanId = ref(readPlanFromRoute())
@@ -167,7 +169,6 @@ watch(
 // A plan belongs to one campaign, so moving to another one closes it. Guarded on a
 // change of id (not the first load) so a deep link straight into a plan survives —
 // the campaign watcher at the end of this file does the clearing.
-
 
 /**
  * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
@@ -851,11 +852,7 @@ watch(
       <!-- Planner: the campaign's first add-on. Its section is in the navigation
            only while the add-on is on, and the open plan is in the URL. -->
       <BaseSection v-else-if="activeSection === 'planner'" title="Planner">
-        <PlannerSection
-          :campaign="campaign"
-          :plan-id="activePlanId"
-          @select-plan="selectPlan"
-        />
+        <PlannerSection :campaign="campaign" :plan-id="activePlanId" @select-plan="selectPlan" />
       </BaseSection>
 
       <!-- Campaign Settings: personal nickname for everyone, campaign details
