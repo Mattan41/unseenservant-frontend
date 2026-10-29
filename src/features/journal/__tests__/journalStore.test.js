@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import JournalService from '@/features/journal/JournalService.js'
-import { writeDraft } from '@/features/journal/journalDraft.js'
+import { readDraft, writeDraft } from '@/features/journal/journalDraft.js'
 import { MAX_PAGE_CHARS } from '@/features/journal/journalLimits.js'
 import { AUTOSAVE_DELAY_MS, useJournalStore } from '@/features/journal/journalStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
@@ -34,6 +34,31 @@ const TWO_PAGES = {
   userId: USER.id,
   pageCount: 2,
   pages: [page(31, 1, 'one', 3), page(32, 2, 'two')],
+}
+
+/**
+ * Let the first PATCH hang until the test releases it, echoing back what was
+ * sent; later calls answer at once. Returns the release, which is what makes a
+ * keystroke land *while* the request is in flight.
+ */
+function hangFirstPatch() {
+  let release = null
+  let first = true
+
+  JournalService.updatePage.mockImplementation((id, body) => {
+    const answer = () => ({
+      page: page(id, 1, body.content, Number(body.version) + 1),
+      pageCount: 2,
+    })
+
+    if (!first) return Promise.resolve(answer())
+    first = false
+    return new Promise((resolve) => {
+      release = () => resolve(answer())
+    })
+  })
+
+  return () => release?.()
 }
 
 describe('journalStore', () => {
@@ -272,5 +297,92 @@ describe('journalStore', () => {
     expect(store.campaignId).toBeNull()
     expect(store.draft).toBe('')
     expect(store.saveState).toBe('idle')
+  })
+
+  it('keeps text typed while a save is in flight, and sends it next', async () => {
+    const store = useJournalStore()
+    await store.fetchJournal(CAMPAIGN_ID)
+    const release = hangFirstPatch()
+
+    store.setContent('one, and')
+    const saving = store.saveNow()
+    expect(JournalService.updatePage).toHaveBeenCalledWith(31, { content: 'one, and', version: 3 })
+
+    // The reader carries on typing while the request is in flight.
+    store.setContent('one, and more')
+    release()
+    await saving
+
+    // The answer is older than the screen, so it must not become the screen:
+    // assigning it would drop the caret at the end and lose those keystrokes.
+    expect(store.draft).toBe('one, and more')
+    expect(store.saveState).toBe('dirty')
+    expect(store.hasUnsavedChanges()).toBe(true)
+    expect(store.currentPage.content).toBe('one, and')
+    expect(readDraft(USER.id, CAMPAIGN_ID, '31')).toEqual({ content: 'one, and more' })
+
+    await store.flush()
+
+    expect(JournalService.updatePage).toHaveBeenLastCalledWith(31, {
+      content: 'one, and more',
+      version: 4,
+    })
+    expect(store.draft).toBe('one, and more')
+    expect(store.saveState).toBe('saved')
+    expect(readDraft(USER.id, CAMPAIGN_ID, '31')).toBeNull()
+  })
+
+  it('makes a navigation flush wait for the save in flight before the page turns', async () => {
+    const store = useJournalStore()
+    await store.fetchJournal(CAMPAIGN_ID)
+    const release = hangFirstPatch()
+
+    store.setContent('one, and')
+    const saving = store.saveNow()
+    store.setContent('one, and more')
+
+    const navigating = store.goToPage(2)
+    // Still on page 1: what is pending has not landed yet, so the page waits.
+    expect(store.currentPageNumber).toBe(1)
+
+    release()
+    await Promise.all([saving, navigating])
+
+    // The newer text went out before the page turned, so no keystroke is left to
+    // be written against the wrong page.
+    expect(JournalService.updatePage).toHaveBeenLastCalledWith(31, {
+      content: 'one, and more',
+      version: 4,
+    })
+    expect(store.currentPageNumber).toBe(2)
+    expect(store.draft).toBe('two')
+    expect(store.saveState).toBe('saved')
+  })
+
+  it('folds nothing from a save into another campaign’s book', async () => {
+    const store = useJournalStore()
+    await store.fetchJournal(CAMPAIGN_ID)
+    const release = hangFirstPatch()
+
+    store.setContent('one, and')
+    const saving = store.saveNow()
+
+    JournalService.fetchJournal.mockResolvedValue({
+      id: 9,
+      campaignId: 2,
+      userId: USER.id,
+      pageCount: 1,
+      pages: [page(41, 1, 'another book', 2)],
+    })
+    await store.fetchJournal(2)
+    release()
+    await saving
+
+    expect(store.journal.campaignId).toBe(2)
+    expect(store.draft).toBe('another book')
+    expect(store.pageCount).toBe(1)
+    expect(store.saveState).toBe('idle')
+    // The unsent text is not lost: the mirror holds it for the book it belongs to.
+    expect(readDraft(USER.id, CAMPAIGN_ID, '31')).toEqual({ content: 'one, and' })
   })
 })

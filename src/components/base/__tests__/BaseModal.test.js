@@ -10,6 +10,11 @@ function mountModal(options) {
   return wrapper
 }
 
+/** The dialog element itself — which *is* the modal, not a wrapper around one. */
+function dialogEl(wrapper) {
+  return wrapper.get('dialog')
+}
+
 afterEach(() => {
   while (mounted.length) mounted.pop().unmount()
 })
@@ -18,6 +23,15 @@ describe('BaseModal', () => {
   it('renders its slot content', () => {
     const wrapper = mountModal({ slots: { default: '<p>Hello</p>' } })
     expect(wrapper.text()).toContain('Hello')
+  })
+
+  it('is a native dialog, open while mounted', () => {
+    const wrapper = mountModal()
+
+    expect(dialogEl(wrapper).element.tagName).toBe('DIALOG')
+    // A browser opens it with `showModal()`; jsdom has no dialog implementation,
+    // so there the `open` attribute is what marks it open (see BaseModal).
+    expect(dialogEl(wrapper).attributes('open')).toBeDefined()
   })
 
   it('locks body scroll while mounted and releases it on unmount', () => {
@@ -29,29 +43,31 @@ describe('BaseModal', () => {
     expect(document.body.style.overflow).toBe('')
   })
 
-  it('emits close on Escape', async () => {
+  it('asks the caller to close on Escape', async () => {
     const wrapper = mountModal()
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    await nextTick()
+
+    await dialogEl(wrapper).trigger('keydown', { key: 'Escape' })
+
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
-  it('offers the dimming backdrop as a native button that closes the dialog', async () => {
+  it('keeps the platform from closing it behind the caller', () => {
     const wrapper = mountModal()
-    const backdrop = wrapper.get('button')
+    // The platform's own Escape handling arrives as `cancel`; it is suppressed,
+    // so the `close` event above is the only way out (the caller's state).
+    const cancel = new Event('cancel', { cancelable: true })
 
-    // A real button, so Enter/Space activation is native behaviour; nothing
-    // removes it from the tab order or from the accessibility tree either.
-    expect(backdrop.element.tagName).toBe('BUTTON')
-    expect(backdrop.attributes('type')).toBe('button')
-    expect(backdrop.attributes('aria-label')).toBe('Close dialog')
-    expect(backdrop.attributes('tabindex')).toBeUndefined()
-    expect(backdrop.attributes('aria-hidden')).toBeUndefined()
+    dialogEl(wrapper).element.dispatchEvent(cancel)
 
-    // `-z-10` is the class that keeps the scrim painted under the panel.
-    expect(backdrop.classes()).toContain('-z-10')
+    expect(cancel.defaultPrevented).toBe(true)
+    expect(wrapper.emitted('close')).toBeUndefined()
+  })
 
-    await backdrop.trigger('click')
+  it('closes when the click lands on the dimming area', async () => {
+    const wrapper = mountModal()
+
+    await dialogEl(wrapper).trigger('click')
+
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
@@ -59,5 +75,48 @@ describe('BaseModal', () => {
     const wrapper = mountModal({ slots: { default: '<div class="panel">panel</div>' } })
     await wrapper.get('.panel').trigger('click')
     expect(wrapper.emitted('close')).toBeUndefined()
+  })
+
+  it('puts the caller’s attributes on the dialog, which carries its name', () => {
+    const wrapper = mountModal({ attrs: { 'aria-label': 'Page preview' } })
+
+    expect(dialogEl(wrapper).attributes('aria-label')).toBe('Page preview')
+    // Not on a panel inside it: a role or a name there would be redundant.
+    expect(dialogEl(wrapper).attributes('role')).toBeUndefined()
+  })
+
+  it('keeps the caller’s stacking order, for dialogs stacked on each other', () => {
+    const wrapper = mountModal({ props: { zIndex: 'z-[100]' } })
+
+    expect(dialogEl(wrapper).classes()).toContain('base-modal')
+    expect(dialogEl(wrapper).classes()).toContain('z-[100]')
+  })
+
+  it('gives the keyboard back to whatever opened it', async () => {
+    const harness = mount(
+      {
+        components: { BaseModal },
+        template: `
+          <div>
+            <button class="opener" @click="open = true">Open</button>
+            <BaseModal v-if="open" @close="open = false"><p>Panel</p></BaseModal>
+          </div>`,
+        data: () => ({ open: false }),
+      },
+      { attachTo: document.body },
+    )
+    mounted.push(harness)
+
+    // jsdom does not focus a button on click, and has no `showModal()` to move
+    // focus into the dialog, so both are done by hand: the point is that the
+    // opener is remembered and focused again when the dialog goes away.
+    harness.get('.opener').element.focus()
+    await harness.get('.opener').trigger('click')
+    harness.get('dialog').element.focus()
+
+    harness.vm.open = false
+    await nextTick()
+
+    expect(document.activeElement).toBe(harness.get('.opener').element)
   })
 })

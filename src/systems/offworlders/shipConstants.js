@@ -187,5 +187,3 @@ export function normalizeShipData(data) {
       : [],
   }
 }
-
-

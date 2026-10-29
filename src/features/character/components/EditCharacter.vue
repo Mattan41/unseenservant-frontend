@@ -66,7 +66,6 @@ const character = ref({
 // make the form look dirty.
 const galleryImages = ref([])
 const galleryInput = ref(null)
-const galleryRepositionFile = ref(null)
 const galleryBusy = ref(false)
 
 const systemLabel = computed(() => SYSTEM_LABELS[character.value.systemType] ?? '')
@@ -171,35 +170,23 @@ const submitCharacter = async () => {
 }
 
 /**
- * Gallery images. Unlike the portrait above — which is uploaded with the form on
- * Save — each of these is stored the moment it is picked, so the flow is: pick,
- * reposition, upload. The backend answers with the whole character, and the
- * store hands back the gallery it now holds.
+ * Gallery images. Unlike the portrait above — which is repositioned and uploaded
+ * with the form on Save — a gallery image is stored exactly as it was picked: no
+ * crop step, no re-encode, uploaded the moment it is chosen. That is how the
+ * ship's gallery behaves too. The backend answers with the whole character, and
+ * the store hands back the gallery it now holds.
  */
 function triggerGalleryInput() {
   galleryInput.value?.click()
 }
 
-function onGalleryFileChange(event) {
+async function onGalleryFileChange(event) {
   const file = event.target.files[0]
   // Reset so selecting the same file again still fires a change event.
   event.target.value = ''
   if (!file) return
 
   const sizeError = validateImageSize(file)
-  if (sizeError) {
-    notificationStore.addNotification(sizeError, 'error')
-    return
-  }
-
-  galleryRepositionFile.value = file
-}
-
-async function applyGalleryImage(file) {
-  // The reposition modal re-encodes to JPEG, which can push a borderline file
-  // over the limit, so it is checked again before anything is uploaded.
-  const sizeError = validateImageSize(file)
-  galleryRepositionFile.value = null
   if (sizeError) {
     notificationStore.addNotification(sizeError, 'error')
     return
@@ -213,10 +200,6 @@ async function applyGalleryImage(file) {
   } finally {
     galleryBusy.value = false
   }
-}
-
-function cancelGalleryReposition() {
-  galleryRepositionFile.value = null
 }
 
 async function removeGalleryImage(url) {
@@ -451,13 +434,7 @@ async function removeGalleryImage(url) {
       @cancel="cancelReposition"
     />
 
-    <!-- Gallery images are uploaded on their own, so they get their own
-         reposition step rather than sharing the portrait's. -->
-    <ImageRepositionModal
-      v-if="galleryRepositionFile"
-      :file="galleryRepositionFile"
-      @confirm="applyGalleryImage"
-      @cancel="cancelGalleryReposition"
-    />
+    <!-- The gallery has no reposition step of its own: those images are uploaded
+         exactly as they were picked (see `onGalleryFileChange`). -->
   </div>
 </template>

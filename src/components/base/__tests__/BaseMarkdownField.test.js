@@ -65,6 +65,18 @@ describe('BaseMarkdownField', () => {
     expect(wrapper.text()).toContain('Nothing to preview yet.')
   })
 
+  it('renders no Write/Preview toggle when the preview is switched off', async () => {
+    const wrapper = mount(BaseMarkdownField, {
+      props: { modelValue: '**Aren**', label: 'Page text', showPreview: false },
+    })
+
+    // The textarea is the whole field: no tabs, no preview pane, label intact.
+    expect(tabs(wrapper)).toHaveLength(0)
+    expect(wrapper.find('.rich-text').exists()).toBe(false)
+    expect(wrapper.get('label').text()).toBe('Page text')
+    expect(wrapper.get('textarea').element.style.display).not.toBe('none')
+  })
+
   it('keeps the formatting cheat sheet collapsed until asked', async () => {
     const wrapper = mount(BaseMarkdownField, { props: { modelValue: 'text' } })
     // The raw `**bold** · *italic* · - list …` hint line is gone: the syntax

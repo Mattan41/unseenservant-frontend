@@ -109,13 +109,17 @@ function closeModal() {
     </BaseButton>
 
     <Teleport to="body">
-      <BaseModal v-if="isModal && isModalOpen" @close="closeModal">
+      <!-- The accessible name goes on `<BaseModal>`: that is the native `<dialog>`
+           element, so a `role` (or `aria-modal`) on the panel inside it would be
+           redundant — and a Sonar finding. -->
+      <BaseModal
+        v-if="isModal && isModalOpen"
+        :aria-labelledby="title ? titleId : undefined"
+        :aria-label="title ? undefined : moreLabel"
+        @close="closeModal"
+      >
         <div
           class="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="title ? titleId : undefined"
-          :aria-label="title ? undefined : moreLabel"
         >
           <div class="flex items-start justify-between gap-3 mb-4">
             <h3 v-if="title" :id="titleId" class="modal-title">{{ title }}</h3>

@@ -27,6 +27,14 @@ import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import JournalBoard from '@/features/journal/components/JournalBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import {
+  currentMarkers,
+  sectionAlerts as computeSectionAlerts,
+  LORE_SECTION_KEY,
+  MESSAGES_SECTION_KEY,
+  SHIP_SECTION_KEY,
+} from '@/features/campaign/campaignActivity.js'
+import { markSectionSeen, seenMarkers } from '@/utils/sectionSeen.js'
+import {
   formatParticipantRoster,
   getCharacterOwnerName,
   getParticipantDisplayName,
@@ -105,11 +113,51 @@ const SECTIONS = [
   { key: 'campaign-settings', label: 'Campaign Settings', icon: 'settings' },
 ]
 
+// ---------------------------------------------------------------------------
+// Section badges — "changed since you last opened this section"
+// ---------------------------------------------------------------------------
+
+// The markers are per user and per campaign, and live in localStorage rather
+// than in the API: the backend reports *what changed*, never *who has read it*
+// (see `utils/sectionSeen.js` for the whole argument).
+const sectionMarkers = computed(() => seenMarkers(userStore.userId, route.params.id))
+
+// True once this campaign's messages have arrived, which is what lets the
+// Messages marker be seeded from a real stamp instead of the clock.
+const messagesLoadedForCampaign = ref(false)
+
+// The change stamps the campaign is showing right now: what a section records as
+// "seen" when it is opened, and what a never-opened section is seeded with (see
+// `seedSectionMarkers`).
+const currentSectionMarkers = computed(() =>
+  currentMarkers({
+    campaign: campaign.value,
+    ship: shipStore.ship,
+    messages: messageStore.messages,
+  }),
+)
+
+/** Which sections deserve a badge, and why — see `campaignActivity.js`. */
+const sectionAlerts = computed(() =>
+  computeSectionAlerts({
+    campaign: campaign.value,
+    ship: shipStore.ship,
+    messages: messageStore.messages,
+    userId: userStore.userId,
+    markers: sectionMarkers.value,
+  }),
+)
+
 /**
  * Navigation items are computed by this smart view so the sidebar stays
- * presentational. Every participant sees the same sections; "Campaign
- * Settings" itself renders different blocks depending on table role and
+ * presentational. Every participant sees the same sections; "Campaign Settings"
+ * itself renders different blocks depending on table role and
  * ownership (see `campaignPermissions.js`).
+ *
+ * Each item also carries the badge the section has earned: a count of unread
+ * messages, or a dot for a section that changed without anything to count. The
+ * badge is computed here for the same reason — a presentational list must not
+ * know about stores (see `campaignActivity.js`).
  */
 const navItems = computed(() =>
   SECTIONS.filter((section) => {
@@ -122,6 +170,13 @@ const navItems = computed(() =>
     // An add-on's section exists only while that add-on is switched on.
     if (section.addon && !isAddonEnabled(campaign.value, section.addon)) return false
     return true
+  }).map((section) => {
+    const alert = sectionAlerts.value[section.key]
+    return {
+      ...section,
+      badge: alert?.count || null,
+      dot: Boolean(alert?.isNew),
+    }
   }),
 )
 
@@ -138,13 +193,80 @@ function readSectionFromRoute() {
 const activeSection = ref(readSectionFromRoute())
 
 /**
+ * Seeds the sections this user has never opened, from the stamps the campaign is
+ * showing. Without it, a first visit would badge every section that had ever
+ * been touched — which says nothing about what happened *since* the user
+ * arrived.
+ *
+ * Only a section whose data has actually arrived is seeded, and a section whose
+ * stamp the backend does not have (a campaign from before the stamps existed, a
+ * campaign with no ship) stays unseeded — and an unseeded section is never
+ * badged (see `campaignActivity.js`). It is a gap-filler, not a one-shot: each
+ * source that turns up later seeds whatever is still unmarked.
+ */
+function seedSectionMarkers() {
+  if (!userStore.userId || !campaign.value) return
+
+  const seen = sectionMarkers.value
+  const markers = currentSectionMarkers.value
+
+  if (!seen[LORE_SECTION_KEY]) {
+    markSectionSeen(userStore.userId, route.params.id, LORE_SECTION_KEY, markers[LORE_SECTION_KEY])
+  }
+  if (!seen[SHIP_SECTION_KEY] && shipStore.ship) {
+    markSectionSeen(userStore.userId, route.params.id, SHIP_SECTION_KEY, markers[SHIP_SECTION_KEY])
+  }
+  if (!seen[MESSAGES_SECTION_KEY] && messagesLoadedForCampaign.value) {
+    markSectionSeen(
+      userStore.userId,
+      route.params.id,
+      MESSAGES_SECTION_KEY,
+      markers[MESSAGES_SECTION_KEY],
+    )
+  }
+}
+
+// A cold deep link mounts before the profile — and so the user id the markers
+// are keyed by — has arrived, so the seeding cannot be a one-shot on mount.
+watch(
+  [() => userStore.userId, () => campaign.value, () => shipStore.ship, messagesLoadedForCampaign],
+  seedSectionMarkers,
+  { immediate: true },
+)
+
+/**
+ * Opening a section — or having it change while it is open — is what clears its
+ * badge: the stamp it is showing becomes the marker the badge is measured
+ * against. Watching the stamps as well as the section means a save of your own
+ * (which moves the campaign's `updatedAt`) does not light up the section you are
+ * sitting in.
+ *
+ * Sections without a badge — Overview, Characters — have no stamp, so marking
+ * them is a no-op.
+ */
+watch(
+  [activeSection, currentSectionMarkers],
+  ([section]) => {
+    markSectionSeen(
+      userStore.userId,
+      route.params.id,
+      section,
+      currentSectionMarkers.value[section],
+    )
+  },
+  { immediate: true },
+)
+
+/**
  * The planner's open plan, which lives in the URL as well (`?plan=<id>`): the
  * section is not a route of its own, so a refresh or a shared link has to be able
  * to reopen the same plan. `null` means "the list".
  */
 function readPlanFromRoute() {
   const requested = route.query.plan
-  return requested === undefined || requested === null || requested === '' ? null : String(requested)
+  return requested === undefined || requested === null || requested === ''
+    ? null
+    : String(requested)
 }
 
 const activePlanId = ref(readPlanFromRoute())
@@ -167,7 +289,6 @@ watch(
 // A plan belongs to one campaign, so moving to another one closes it. Guarded on a
 // change of id (not the first load) so a deep link straight into a plan survives —
 // the campaign watcher at the end of this file does the clearing.
-
 
 /**
  * The ship section heading doubles as the ship's name (e.g. "Ship: Korven"),
@@ -237,6 +358,25 @@ watch(
   },
 )
 
+/**
+ * The campaign's messages, loaded with the campaign rather than only by the
+ * Messages section: the navigation counts what is unread while the user is
+ * anywhere in the campaign, so that count cannot wait for the section to be
+ * opened. `MessageBoard` fetches again when it mounts, which is what keeps that
+ * section self-contained.
+ *
+ * A failure is surfaced by the store like any other fetch failure — unlike the
+ * campaign list's dots, these are real messages the section will show.
+ */
+async function loadCampaignMessages(campaignId) {
+  messagesLoadedForCampaign.value = false
+  try {
+    await messageStore.fetchMessagesForCampaign(campaignId)
+  } finally {
+    messagesLoadedForCampaign.value = true
+  }
+}
+
 const loadCampaignData = async (campaignId) => {
   const notificationStore = useNotificationStore()
 
@@ -247,6 +387,7 @@ const loadCampaignData = async (campaignId) => {
   // Reset local presentation state and stale messages for the new campaign
   resetPresentationState()
   messageStore.clearMessages()
+  messagesLoadedForCampaign.value = false
 
   // Fresh campaign: drop any ship state from a previously viewed campaign,
   // then load this campaign's ship (when Offworlders) so the Overview summary
@@ -259,6 +400,9 @@ const loadCampaignData = async (campaignId) => {
     if (isOffworlders(campaign.value?.primarySystem)) {
       await shipStore.fetchShip(campaignId)
     }
+    // Last, so that the Messages marker is seeded from the stamps this load
+    // actually brought in (see `loadCampaignMessages`).
+    await loadCampaignMessages(campaignId)
   } catch (error) {
     console.error('Failed to load campaign:', error)
     notificationStore.addNotification('Failed to load campaign: ' + error.message, 'error')
@@ -851,11 +995,7 @@ watch(
       <!-- Planner: the campaign's first add-on. Its section is in the navigation
            only while the add-on is on, and the open plan is in the URL. -->
       <BaseSection v-else-if="activeSection === 'planner'" title="Planner">
-        <PlannerSection
-          :campaign="campaign"
-          :plan-id="activePlanId"
-          @select-plan="selectPlan"
-        />
+        <PlannerSection :campaign="campaign" :plan-id="activePlanId" @select-plan="selectPlan" />
       </BaseSection>
 
       <!-- Campaign Settings: personal nickname for everyone, campaign details

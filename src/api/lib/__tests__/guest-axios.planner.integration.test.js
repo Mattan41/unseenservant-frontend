@@ -115,9 +115,8 @@ describe('guest planner', () => {
       removedByOwner: true,
     })
     expect(
-      read('guest_planner_exclusions').find(
-        (row) => row.planId === plan.id && row.userId === OTHER,
-      ).removedByOwner,
+      read('guest_planner_exclusions').find((row) => row.planId === plan.id && row.userId === OTHER)
+        .removedByOwner,
     ).toBe(true)
   })
 

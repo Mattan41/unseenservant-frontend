@@ -15,14 +15,8 @@ import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { usePlannerStore } from '@/features/planner/plannerStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
-import {
-  getCampaignPermissions,
-  sameId,
-} from '@/features/campaign/campaignPermissions.js'
-import {
-  MAX_DESCRIPTION_LENGTH,
-  MAX_TITLE_LENGTH,
-} from '@/features/planner/plannerConstants.js'
+import { getCampaignPermissions, sameId } from '@/features/campaign/campaignPermissions.js'
+import { MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/features/planner/plannerConstants.js'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseInput from '@/components/base/BaseInput.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
@@ -213,12 +207,7 @@ async function addMember(memberId) {
           :maxlength="MAX_DESCRIPTION_LENGTH"
         />
         <div class="flex flex-wrap gap-1">
-          <BaseButton
-            type="submit"
-            variant="add"
-            :loading="isSaving"
-            :disabled="!newTitle.trim()"
-          >
+          <BaseButton type="submit" variant="add" :loading="isSaving" :disabled="!newTitle.trim()">
             Start the plan
           </BaseButton>
           <BaseButton variant="ghost" @click="showCreateForm = false">Cancel</BaseButton>
@@ -235,4 +224,3 @@ async function addMember(memberId) {
     </template>
   </div>
 </template>
-

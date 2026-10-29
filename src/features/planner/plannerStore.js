@@ -249,7 +249,10 @@ export const usePlannerStore = defineStore('planner', () => {
   /** Remove another participant (campaign owner only). */
   async function removeMember(plan, memberId) {
     return adopt(
-      await run(() => PlannerService.removeMember(plan.id, memberId), 'Could not remove that member.'),
+      await run(
+        () => PlannerService.removeMember(plan.id, memberId),
+        'Could not remove that member.',
+      ),
     )
   }
 
@@ -260,7 +263,10 @@ export const usePlannerStore = defineStore('planner', () => {
    */
   async function addMember(plan, memberId) {
     return adopt(
-      await run(() => PlannerService.addMember(plan.id, memberId), 'Could not put that member back.'),
+      await run(
+        () => PlannerService.addMember(plan.id, memberId),
+        'Could not put that member back.',
+      ),
     )
   }
 

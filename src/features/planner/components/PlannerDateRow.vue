@@ -141,15 +141,15 @@ function onClickAnswer(state) {
 
       <span class="grow" />
 
-      <BaseButton
-        v-if="isOpen"
-        variant="add"
-        icon="check"
-        @click="emit('decide')"
-      >
+      <BaseButton v-if="isOpen" variant="add" icon="check" @click="emit('decide')">
         Decide on this day
       </BaseButton>
-      <BaseButton v-if="canEdit && isOpen && !isEditing" variant="ghost" icon="edit" @click="emit('edit')">
+      <BaseButton
+        v-if="canEdit && isOpen && !isEditing"
+        variant="ghost"
+        icon="edit"
+        @click="emit('edit')"
+      >
         Edit
       </BaseButton>
       <BaseButton v-if="canEdit && isOpen" variant="remove" @click="emit('remove')">

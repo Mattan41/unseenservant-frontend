@@ -59,8 +59,8 @@ const renderedEditors = (wrapper) =>
 
 /** Click "Edit" in one row, the way a person would. */
 async function clickEdit(wrapper, index) {
-  const button = rows(wrapper)[index]
-    .findAll('button')
+  const button = rows(wrapper)
+    [index].findAll('button')
     .find((candidate) => candidate.text() === 'Edit')
   await button.trigger('click')
 }

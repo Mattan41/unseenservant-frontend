@@ -111,5 +111,3 @@ describe('normalizeShipData', () => {
     expect(ship.imageUrls).toEqual(['/a.png'])
   })
 })
-
-

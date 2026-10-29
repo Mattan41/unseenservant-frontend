@@ -775,7 +775,12 @@ export const guestPlannerAttendances = [
 
   // 21 November: two of four, one of them a maybe — yellow.
   { id: 'guest_att_9', planDateId: 'guest_plan_1_date_3', userId: 'guest_demo', state: 'YES' },
-  { id: 'guest_att_10', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_1', state: 'MAYBE' },
+  {
+    id: 'guest_att_10',
+    planDateId: 'guest_plan_1_date_3',
+    userId: 'guest_player_1',
+    state: 'MAYBE',
+  },
   { id: 'guest_att_11', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_2', state: 'NO' },
   { id: 'guest_att_12', planDateId: 'guest_plan_1_date_3', userId: 'guest_player_3', state: 'YES' },
 

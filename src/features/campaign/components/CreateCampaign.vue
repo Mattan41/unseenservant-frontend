@@ -81,12 +81,16 @@ useUnsavedChanges(
          markup around the trigger, including the page-sized type ramp and
          `text-transform` those rules carry (see `.modal-title`). -->
     <Teleport to="body">
-      <BaseModal v-if="showCreateCampaignModal" @close="closeCreateCampaignModal">
+      <!-- `aria-labelledby` names the native `<dialog>` BaseModal renders; the
+           panel inside it carries no role of its own. -->
+      <BaseModal
+        v-if="showCreateCampaignModal"
+        aria-labelledby="create-campaign-title"
+        @close="closeCreateCampaignModal"
+      >
         <!-- Capped height so a long description preview scrolls inside the
              dialog instead of growing past the viewport. -->
         <div
-          role="dialog"
-          aria-labelledby="create-campaign-title"
           class="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg bg-[var(--color-surface)] p-6 shadow-xl"
         >
           <h2 id="create-campaign-title" class="modal-title mb-4">Create a new campaign</h2>

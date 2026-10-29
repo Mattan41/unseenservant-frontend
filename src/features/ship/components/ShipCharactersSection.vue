@@ -62,7 +62,9 @@ function openImage(character, url) {
   <div class="border-t border-section pt-4">
     <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
       <h4 class="font-semibold text-default">Crew</h4>
-      <span class="text-xs text-muted">Everyone aboard — notes and images, edited on the character</span>
+      <span class="text-xs text-muted"
+        >Everyone aboard — notes and images, edited on the character</span
+      >
     </div>
 
     <ul v-if="characters.length" class="flex flex-col gap-3">

@@ -22,10 +22,7 @@ import PlannerDateForm from '@/features/planner/components/PlannerDateForm.vue'
 import PlannerDateRow from '@/features/planner/components/PlannerDateRow.vue'
 import PlannerRosterPanel from '@/features/planner/components/PlannerRosterPanel.vue'
 import PlannerUnsavedChangesDialog from '@/features/planner/components/PlannerUnsavedChangesDialog.vue'
-import {
-  MAX_DESCRIPTION_LENGTH,
-  MAX_TITLE_LENGTH,
-} from '@/features/planner/plannerConstants.js'
+import { MAX_DESCRIPTION_LENGTH, MAX_TITLE_LENGTH } from '@/features/planner/plannerConstants.js'
 import {
   dateFormOf,
   datePayloadOf,
@@ -90,8 +87,8 @@ const emit = defineEmits([
 
 const isOpen = computed(() => !isDecided(props.plan))
 const roster = computed(() => rosterOf(props.plan))
-const isParticipant = computed(
-  () => roster.value.some((member) => String(member.userId) === String(props.currentUserId)),
+const isParticipant = computed(() =>
+  roster.value.some((member) => String(member.userId) === String(props.currentUserId)),
 )
 
 // Title / description editing
@@ -114,7 +111,9 @@ const offerDraft = ref(emptyDateForm())
 const pendingAction = ref(null)
 
 const chosenDate = computed(
-  () => (props.plan.dates || []).find((date) => String(date.id) === String(props.plan.decidedDateId)) || null,
+  () =>
+    (props.plan.dates || []).find((date) => String(date.id) === String(props.plan.decidedDateId)) ||
+    null,
 )
 
 const isEditingDate = computed(() => editedDate.value !== null)
@@ -260,8 +259,8 @@ function submitOffer() {
     </div>
 
     <div v-if="hasConflict" class="error-message mb-4">
-      Somebody else changed this plan first. Reopen the planner to see their version
-      before saving again.
+      Somebody else changed this plan first. Reopen the planner to see their version before saving
+      again.
     </div>
 
     <MarkdownText v-if="plan.description" :text="plan.description" class="mb-4" />
@@ -353,4 +352,3 @@ function submitOffer() {
     />
   </div>
 </template>
-

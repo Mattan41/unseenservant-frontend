@@ -12,8 +12,15 @@
 
 import { useAuthStore } from '@/features/auth/authStore'
 import { getCampaignPermissions, isCampaignGm } from '@/features/campaign/campaignPermissions.js'
-import { MAX_PAGES as JOURNAL_MAX_PAGES, MAX_PAGE_CHARS as JOURNAL_MAX_PAGE_CHARS } from '@/features/journal/journalLimits.js'
-import { MAX_NOTE_LENGTH as PLANNER_MAX_NOTE, MAX_TITLE_LENGTH as PLANNER_MAX_TITLE } from '@/features/planner/plannerConstants.js'
+import {
+  MAX_PAGES as JOURNAL_MAX_PAGES,
+  MAX_PAGE_CHARS as JOURNAL_MAX_PAGE_CHARS,
+} from '@/features/journal/journalLimits.js'
+import {
+  MAX_NOTE_LENGTH as PLANNER_MAX_NOTE,
+  MAX_TITLE_LENGTH as PLANNER_MAX_TITLE,
+} from '@/features/planner/plannerConstants.js'
+import { parseUtcTimestamp } from '@/utils/timestampUtils.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -188,7 +195,10 @@ function savePlannerRow(key, row) {
 
 /** Delete one stored row. */
 function removePlannerRow(key, id) {
-  setData(key, getData(key, []).filter((entry) => String(entry.id) !== String(id)))
+  setData(
+    key,
+    getData(key, []).filter((entry) => String(entry.id) !== String(id)),
+  )
 }
 
 /**
@@ -208,7 +218,9 @@ function guestPlanMembers(campaignId, exclusions) {
         removedByOwner: Boolean(exclusion?.removedByOwner),
       }
     })
-    .sort((a, b) => String(a.nickname).localeCompare(String(b.nickname), undefined, { sensitivity: 'base' }))
+    .sort((a, b) =>
+      String(a.nickname).localeCompare(String(b.nickname), undefined, { sensitivity: 'base' }),
+    )
 }
 
 /** A whole plan, the way the backend's PlannerPlanDTO describes one. */
@@ -259,7 +271,9 @@ function resolveGuestPlan(planId, { ownerOnly = false } = {}) {
     return { error: forbidden('User is not a participant in this campaign') }
   }
   if (ownerOnly && !guestCampaignPermissions(plan.campaignId).isOwner) {
-    return { error: forbidden('Only the campaign owner can move another member in or out of a plan') }
+    return {
+      error: forbidden('Only the campaign owner can move another member in or out of a plan'),
+    }
   }
   return { plan }
 }
@@ -276,7 +290,9 @@ function resolveGuestDate(dateId) {
 /** A plan the caller may change: open, and settled plans freeze until reopened. */
 function requireOpenPlan(plan) {
   if (plan.status !== 'OPEN') {
-    return badRequest('This plan is decided. Reopen it before changing dates, answers or the roster.')
+    return badRequest(
+      'This plan is decided. Reopen it before changing dates, answers or the roster.',
+    )
   }
   return null
 }
@@ -515,6 +531,55 @@ function handleShip({ url }) {
   if (!ship) return notFound('Ship not found for campaign: ' + campaignId)
 
   return ok(ship)
+}
+
+/**
+ * GET api/campaigns/activity — the change stamps the campaign list and a
+ * campaign's section badges are computed from: one row per campaign,
+ * `{ campaignId, campaignUpdatedAt, lastMessageAt, shipUpdatedAt }`.
+ *
+ * Guest Demo runs for a single account (the demo user) and `api/campaigns`
+ * already answers every seeded campaign to it, so "the caller's campaigns" is
+ * simply all of them — the same set `handleCampaigns` serves. Nothing here is
+ * per-user, matching the real endpoint: the read state lives on the client
+ * (`utils/sectionSeen.js`), which is why this handler needs no user.
+ *
+ * The stamps come from the same seeded objects the campaign, ship and message
+ * endpoints answer, so a guest who posts, rewrites the lore or saves the ship
+ * sees the badges move exactly as a signed-in user does.
+ */
+function handleCampaignActivity() {
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const messages = getData(KEYS.MESSAGES, [])
+  const ships = getData(KEYS.SHIPS, [])
+
+  return ok(
+    campaigns.map((campaign) => ({
+      campaignId: campaign.id,
+      campaignUpdatedAt: campaign.updatedAt ?? null,
+      lastMessageAt: newestMessageStamp(campaign.id, messages),
+      shipUpdatedAt:
+        ships.find((ship) => String(ship.campaignId) === String(campaign.id))?.updatedAt ?? null,
+    })),
+  )
+}
+
+/**
+ * The newest `createdAt` among one campaign's stored messages, or `null` when it
+ * has none. Normalised to UTC ISO-8601 through the shared parser, so the answer
+ * reads the same whether the stamp was written zone-less (as the backend does)
+ * or by `toISOString()` (as Guest Demo does).
+ */
+function newestMessageStamp(campaignId, messages) {
+  let newest = null
+
+  for (const message of messages) {
+    if (String(message.campaignId) !== String(campaignId)) continue
+    const writtenAt = parseUtcTimestamp(message.createdAt)
+    if (writtenAt && (!newest || writtenAt.getTime() > newest.getTime())) newest = writtenAt
+  }
+
+  return newest ? newest.toISOString() : null
 }
 
 /** GET api/campaigns and api/campaigns/{id}. */
@@ -1099,7 +1164,8 @@ function findJournal(campaignId, userId) {
   return (
     getData(KEYS.JOURNALS, []).find(
       (journal) =>
-        String(journal.campaignId) === String(campaignId) && String(journal.userId) === String(userId),
+        String(journal.campaignId) === String(campaignId) &&
+        String(journal.userId) === String(userId),
     ) || null
   )
 }
@@ -1138,7 +1204,13 @@ function journalPageDTO(page) {
 function journalDTO(campaignId, userId) {
   const journal = findJournal(campaignId, userId)
   if (!journal) {
-    return { id: null, campaignId: String(campaignId), userId: String(userId), pageCount: 0, pages: [] }
+    return {
+      id: null,
+      campaignId: String(campaignId),
+      userId: String(userId),
+      pageCount: 0,
+      pages: [],
+    }
   }
 
   const pages = journalPagesFor(journal.id).map(journalPageDTO)
@@ -1172,7 +1244,9 @@ function resolveJournalPage(url, userId) {
   const page = getData(KEYS.JOURNAL_PAGES, []).find((entry) => String(entry.id) === String(pageId))
   if (!page) return { error: notFound('Journal page not found with id: ' + pageId) }
 
-  const journal = getData(KEYS.JOURNALS, []).find((entry) => String(entry.id) === String(page.journalId))
+  const journal = getData(KEYS.JOURNALS, []).find(
+    (entry) => String(entry.id) === String(page.journalId),
+  )
   if (!journal || String(journal.userId) !== String(userId)) {
     // Another participant's page is not addressable at all.
     return { error: notFound('Journal page not found with id: ' + pageId) }
@@ -1295,7 +1369,12 @@ function updateJournalPage({ url, data }) {
 
   const updated = all.map((entry) =>
     String(entry.id) === String(page.id)
-      ? { ...entry, content, version: Number(entry.version) + 1, updatedAt: new Date().toISOString() }
+      ? {
+          ...entry,
+          content,
+          version: Number(entry.version) + 1,
+          updatedAt: new Date().toISOString(),
+        }
       : entry,
   )
   setData(KEYS.JOURNAL_PAGES, updated)
@@ -1599,7 +1678,8 @@ function setPlannerAttendance({ url, data }) {
   const rows = getData(KEYS.PLAN_ATTENDANCES, [])
   const existing = rows.find(
     (entry) =>
-      String(entry.planDateId) === String(resolved.date.id) && String(entry.userId) === String(userId),
+      String(entry.planDateId) === String(resolved.date.id) &&
+      String(entry.userId) === String(userId),
   )
   const now = new Date().toISOString()
 
@@ -1611,7 +1691,14 @@ function setPlannerAttendance({ url, data }) {
         )
       : [
           ...rows,
-          { id: generateId(), planDateId: resolved.date.id, userId, state, createdAt: now, updatedAt: now },
+          {
+            id: generateId(),
+            planDateId: resolved.date.id,
+            userId,
+            state,
+            createdAt: now,
+            updatedAt: now,
+          },
         ],
   )
 
@@ -1772,6 +1859,7 @@ const ROUTES = [
   { method: 'get', pattern: /characters.*without-campaign/, handler: handleDetachedCharacters },
   { method: 'get', pattern: /characters.*\/me/, handler: handleOwnCharacters },
   { method: 'get', pattern: /characters/, handler: handleCharacters },
+  { method: 'get', pattern: /campaigns\/activity/, handler: handleCampaignActivity },
   { method: 'get', pattern: /campaigns.*\/ship/, handler: handleShip },
   { method: 'get', pattern: /campaigns/, handler: handleCampaigns },
   { method: 'get', pattern: /messages/, handler: handleMessages },

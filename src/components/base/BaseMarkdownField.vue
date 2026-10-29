@@ -10,7 +10,9 @@
  *
  * Preview is local presentation state only: it never changes `modelValue`, so
  * the surrounding form's dirty tracking (and its unsaved-changes guard) is
- * unaffected by switching tabs.
+ * unaffected by switching tabs. Pass `:show-preview="false"` where the field is
+ * written in rather than read in (the journal) — the textarea is then the whole
+ * field and no tabs are rendered.
  *
  * The syntax is not spelled out under every field; a collapsed `<MarkdownHelp>`
  * disclosure carries the cheat sheet instead, so compact forms stay quiet.
@@ -80,6 +82,16 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /**
+   * Whether to offer the Write/Preview toggle at all. Turn it off for a field
+   * that is written in rather than read in (the journal): the tabs are one more
+   * row of chrome on every visit, while the rendered text is a deliberate
+   * "show me" action. The value is untouched either way.
+   */
+  showPreview: {
+    type: Boolean,
+    default: true,
+  },
   writeLabel: {
     type: String,
     default: 'Write',
@@ -112,7 +124,7 @@ function onInput(event) {
 
 <template>
   <div>
-    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+    <div v-if="label || showPreview" class="flex flex-wrap items-center justify-between gap-2 mb-1">
       <label v-if="label" :for="fieldId" class="block text-sm font-medium text-default">
         <BaseTooltip v-if="tooltip" :text="tooltip" :desktop-only="tooltipDesktopOnly">
           {{ label }}
@@ -121,8 +133,9 @@ function onInput(event) {
       </label>
 
       <!-- Write/Preview toggle buttons (aria-pressed, so no tab-key contract to
-           implement). They only switch the view — the value is untouched. -->
-      <div class="field-tabs">
+           implement). They only switch the view — the value is untouched. Hidden
+           whole when the call site writes without reading (`showPreview`). -->
+      <div v-if="showPreview" class="field-tabs">
         <button
           type="button"
           class="field-tab"
@@ -159,7 +172,11 @@ function onInput(event) {
       @input="onInput"
     ></textarea>
 
-    <div v-if="isPreview" class="markdown-preview" :class="error ? 'input-field--error' : null">
+    <div
+      v-if="showPreview && isPreview"
+      class="markdown-preview"
+      :class="error ? 'input-field--error' : null"
+    >
       <MarkdownText v-if="hasContent" :text="modelValue" />
       <p v-else class="text-sm text-muted italic">{{ emptyPreview }}</p>
     </div>

@@ -596,7 +596,9 @@ useUnsavedChanges(
       <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
         <h4 class="font-semibold text-default">Images</h4>
         <div class="flex items-center gap-2">
-          <span class="text-xs text-muted">The ship's drawings, maps and handouts — click to view</span>
+          <span class="text-xs text-muted"
+            >The ship's drawings, maps and handouts — click to view</span
+          >
           <template v-if="editing">
             <BaseButton variant="add" @click="triggerGalleryInput">Add image</BaseButton>
           </template>

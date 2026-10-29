@@ -343,16 +343,18 @@ describe('guest-axios POST routes', () => {
 
     expect(data.id).toBe('guest_char_8')
     expect(data.imageUrls).toHaveLength(before.imageUrls.length + 1)
-    expect(characters().find((character) => character.id === 'guest_char_8').imageUrls).toHaveLength(
-      before.imageUrls.length + 1,
-    )
+    expect(
+      characters().find((character) => character.id === 'guest_char_8').imageUrls,
+    ).toHaveLength(before.imageUrls.length + 1)
 
-    await expect(guestAxios.post('api/characters/guest_char_404/images', {})).rejects.toMatchObject({
-      response: {
-        status: 404,
-        data: { message: 'Character not found with id: guest_char_404' },
+    await expect(guestAxios.post('api/characters/guest_char_404/images', {})).rejects.toMatchObject(
+      {
+        response: {
+          status: 404,
+          data: { message: 'Character not found with id: guest_char_404' },
+        },
       },
-    })
+    )
   })
 
   it('saves a spell once and returns the stored spell on a repeat', async () => {

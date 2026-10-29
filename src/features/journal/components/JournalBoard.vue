@@ -7,7 +7,9 @@
  * The book always has a page to write on: the one after the last stored page is
  * a blank, virtual page, so the first keystroke on it creates the page and the
  * server never stores empty rows. Everything is autosaved with a debounce, and
- * every navigation point flushes what is pending.
+ * what is pending is flushed at every navigation point — plus when the field
+ * loses focus, when the tab is hidden and on `Ctrl/Cmd+S`, so the debounce is
+ * never what the reader is waiting for.
  *
  * Privacy is the backend's job — only the owner may read a journal, and the
  * campaign owner and a GM are refused too. The note below says so; it is not
@@ -16,7 +18,10 @@
 import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useJournalStore } from '@/features/journal/journalStore.js'
-import { counterVisible as counterVisibleFor, resolveJump } from '@/features/journal/journalUtils.js'
+import {
+  counterVisible as counterVisibleFor,
+  resolveJump,
+} from '@/features/journal/journalUtils.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -55,7 +60,38 @@ useUnsavedChanges(
   'You have unsaved changes in your journal. Leave without saving?',
 )
 
-onMounted(() => journalStore.fetchJournal(props.campaignId))
+/**
+ * Flush what is pending without waiting for the debounce: when the field loses
+ * focus (announced by the editor, since `blur` alone does not bubble) the reader
+ * has stopped typing on purpose.
+ */
+function onBlur() {
+  void journalStore.flush()
+}
+
+/**
+ * `Ctrl/Cmd+S` saves at once, the way a habit expects — and it stops the browser
+ * from offering to save the page itself. Bound on the document, so it works from
+ * the field, the pager's jump box and anywhere else in the section; the section
+ * is what puts the board on screen, so the listener exists only while the
+ * journal does. The save state in the field row is the feedback.
+ */
+function onSaveShortcut(event) {
+  if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 's') return
+  event.preventDefault()
+  void journalStore.flush()
+}
+
+/** A hidden tab may never come back: send what is pending while it still can. */
+function onVisibilityChange() {
+  if (document.visibilityState === 'hidden') void journalStore.flush()
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onSaveShortcut)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  journalStore.fetchJournal(props.campaignId)
+})
 
 watch(
   () => props.campaignId,
@@ -65,7 +101,11 @@ watch(
 )
 
 // Leaving the campaign drops the book (and any timer with it).
-onUnmounted(() => journalStore.clearJournal())
+onUnmounted(() => {
+  document.removeEventListener('keydown', onSaveShortcut)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  journalStore.clearJournal()
+})
 
 /**
  * A typed page number. `resolveJump` decides: nothing typed stays put, `0` and
@@ -103,10 +143,13 @@ function onRejected(message) {
 
     <template v-else>
       <p class="text-sm text-muted">
-        Only you can read this journal. Changes are saved automatically.
+        Only you can read this journal. Changes are saved automatically — Ctrl/Cmd+S saves at once.
       </p>
 
-      <div v-if="hasConflict" class="error-message flex flex-wrap items-center justify-between gap-2">
+      <div
+        v-if="hasConflict"
+        class="error-message flex flex-wrap items-center justify-between gap-2"
+      >
         <span>This page was changed by someone else. Reload to see the latest before writing.</span>
         <BaseButton variant="retry" @click="journalStore.reload()">Reload</BaseButton>
       </div>
@@ -133,6 +176,7 @@ function onRejected(message) {
         :counter-visible="counterVisible"
         @update:model-value="onContent"
         @rejected="onRejected"
+        @blur="onBlur"
       />
     </template>
   </div>
