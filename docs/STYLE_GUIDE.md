@@ -365,6 +365,9 @@ all conditional styling in `*Utils.js` files.
 | `.context-nav-item--active` | Active/selected section modifier | `bg-primary-700 text-primary-100 hover:bg-primary-700` | implemented |
 | `.context-nav-item-label` | Item label (always visible) | `inline` | implemented |
 | `.context-nav-icon` | Monochrome nav icon sizing | `w-5 h-5 flex-shrink-0` | implemented |
+| `.context-nav-badge` | Unread/changed marker pinned to a section button (`ContextNavList`), pushed right of the label | `ml-auto inline-flex min-w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 px-1.5 py-0.5 text-xs font-semibold text-primary-100` | implemented |
+| `.context-nav-badge--dot` | The dot reading of the same marker: "changed", with nothing to count | `h-2.5 min-w-0 w-2.5 p-0` | implemented |
+| `.activity-badge` | "New activity" marker on a campaign card (`CampaignList`) — same marker, a word instead of a number | `inline-flex items-center rounded-full bg-primary-700 px-2 py-0.5 text-xs font-semibold text-primary-100` | implemented |
 | `.danger-zone` | Owner-only destructive grouping (Campaign Settings section) | `border border-red-300 rounded-lg p-4` | implemented |
 | `.danger-zone-title` | Danger Zone heading | `text-lg font-semibold mb-3 text-red-700` | implemented |
 | `.empty-cta` | Empty-state call-to-action container | `flex flex-col items-center gap-3 rounded-lg border border-third-200 p-6 text-center` | implemented |

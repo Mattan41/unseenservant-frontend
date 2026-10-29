@@ -24,7 +24,7 @@ The frontend uses a three-layer API architecture that transparently switches bet
 - Provides an axios-like interface that reads and writes to localStorage.
 - **Storage Keys**: guest_user, guest_users, guest_characters, guest_campaigns, guest_ships, guest_messages, guest_journals, guest_journal_pages, guest_planner_plans, guest_planner_dates, guest_planner_attendances, guest_planner_exclusions.
 - **Auto-Normalization**: Handles fallback between snake_case and camelCase key naming.
-- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — the character gallery before the character avatar, the ship's profile image before its gallery, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
+- **Routing**: one ordered table (`ROUTES`: method + URL pattern → handler, first match wins). The entries that must precede others are ordered deliberately — the character gallery before the character avatar, the ship's profile image before its gallery, the campaign activity row before the looser campaign patterns, and the planner's own paths before the looser campaign patterns — and a new endpoint is one new entry, not another branch in a method.
 - **Errors are values until the boundary**: a handler returns either the response body (`ok({ … })`) or the `Error` it refuses with (`notFound` / `forbidden` / `badRequest` / `conflict`, all built by `guestError`). `dispatch` is the single place that settles those into a promise, rejecting when the value is an `Error` — so no handler builds a promise, and no refusal is ever tested as a boolean (a promise is always truthy: `if (frozen)` would read as "always decided" the day a handler returned one).
 - **Mock Endpoints**:
   - User profile: /api/users/me, /api/users/search
@@ -59,6 +59,56 @@ keeps it per user in a single localStorage key:
 - **Ids are stored as strings**, so a backend id (`4`) and a guest-mode id (`guest_campaign_1`) can live in the same map; entries are capped at 100 per user and kind (oldest dropped). A missing id or user id records nothing — the profile loads asynchronously, so the view is recorded once it arrives.
 - **Never-viewed items keep the backend order** and follow the viewed ones.
 - **Guest Demo** needs no adapter: `guest_demo` is just another user key, and `authStore.exitGuestMode` clears that user's history so the demo session leaves nothing behind.
+
+---
+
+## Section badges — what changed, and what the user has seen
+
+A campaign's navigation marks a section that has changed since the user last
+opened it: a count on **Messages**, a dot on **World Lore & Background** and on
+**Ship**, and a "New activity" marker on the campaign cards. The two halves of
+that decision come from opposite sides, and only one of them is the backend's:
+
+- **What changed** is the API's: `updatedAt`/`createdAt` on the campaign and ship
+  read models, the newest message's `createdAt`, and `GET /api/campaigns/activity`
+  (one row per campaign, no per-user data at all).
+- **What this user has seen** is the client's, in a single localStorage key —
+  the backend holds no per-user read state:
+
+- **Key**: `section_seen` — `{ [userId]: { [campaignId]: { at: epochMs, seen: { [sectionKey]: marker } } } }`,
+  written by `src/utils/sectionSeen.js` (`markSectionSeen`, read back through
+  `seenMarkers`). A marker is the newest change stamp that user has seen for that
+  section; `at` is when that campaign was last marked, which is what prunes the
+  map (100 campaigns per user, oldest dropped).
+- **Read by**: the pure `src/features/campaign/campaignActivity.js`
+  (`sectionAlerts`, `campaignHasActivity`), which `CampaignView` computes the rail
+  badges from and `CampaignList` the card markers.
+- **A section with no marker is not badged.** `CampaignView` seeds the sections
+  the user has never opened from the stamps the campaign is showing, so entering
+  a campaign for the first time is quiet rather than shouting at every section
+  that had ever been touched. Seeding is a gap-filler (it re-runs as each source
+  arrives), and a section whose stamp the backend does not have stays unseeded.
+- **A marker is written when a section becomes the active one**, and again when
+  its stamp changes while it is active — so the badge clears exactly when the
+  section is opened, and a save of your own does not light up the section you are
+  sitting in.
+- **Your own messages never count**: a message is only unread if somebody else
+  wrote it after the marker.
+- **Nothing polls.** The badges are evaluated from whatever the view has loaded,
+  so a message that arrives while the user sits on Overview appears at the next
+  load or section change. The activity endpoint is what makes a later poll cheap
+  (one request for every campaign), but no interval exists today.
+- **Ids are stored as strings**, so `guest_demo` / `guest_campaign_1` and real ids
+  share the map without colliding, and `authStore.exitGuestMode` clears the guest
+  user's markers alongside their view history.
+- **In Guest Demo the dots work and the count cannot.** The dots are computed from
+  the campaign, ship and activity answers, which the adapter serves from the same
+  seeded objects — verified in the browser. The Messages *count* needs the message
+  list, and in Guest Demo that list is empty: the adapter's profile route tests
+  `url.includes('api/me')`, which `api/messages…` satisfies as well, so the message
+  branches are shadowed. That is a pre-existing quirk, pinned deliberately by
+  `guest-axios.integration.test.js` ("the pre-existing prefix quirk") — not
+  something this feature introduced, and not something it silently works around.
 
 ---
 
@@ -435,7 +485,7 @@ re-deriving a role check.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with the image appended to `imageUrls`)
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Edited from Edit character (pick → reposition → upload, immediately). In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery.
+- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Edited from Edit character, where the picked file is uploaded **as it is** — no crop step, no re-encode (the portrait is the only image that goes through pick → reposition). In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery.
 
 ---
 
@@ -494,11 +544,13 @@ re-deriving a role check.
   campaigns: Array<CampaignResponseDTO>,
   currentCampaign: CampaignResponseDTO | null,
   campaignCharacters: { [campaignId]: Array<CharacterOutputDTO> },
+  campaignActivity: { [campaignId]: CampaignActivityDTO },
   isLoading: boolean,
   loadingCharacters: boolean,
   error: string | null,
   sortedCampaigns: computed        // getter: most recently viewed first (see
-                                   // "View history" below)
+                                   // "View history" above)
+  activityFor(campaignId): CampaignActivityDTO | null   // getter
 }
 
 ```
@@ -510,6 +562,10 @@ characters in the **fixed party order** — the viewer's own characters first,
 then a GM's, then the rest alphabetically
 (`campaignUtils.js:sortPartyCharacters`); both the Characters section and the
 Overview party preview read it, so the two cannot disagree.
+
+`campaignActivity` is only ever filled by `fetchCampaignActivity()` (the campaign
+list's markers — see `GET /api/campaigns/activity`), and `activityFor(id)` is the
+lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 
 ---
 
@@ -547,12 +603,23 @@ Overview party preview read it, so the two cannot disagree.
 
 ---
 
+### GET /api/campaigns/activity
+
+- **Service**: CampaignService.fetchCampaignActivity()
+- **Store Action**: campaignStore.fetchCampaignActivity()
+- **Guest Mode**: Mocked — computed from `guest_campaigns`, `guest_messages` and `guest_ships`, so a guest who posts, edits the lore or saves the ship moves the markers as a signed-in user would (the campaign list's markers and the lore/ship dots; the Messages *count* cannot appear in Guest Demo, see the note at the end of *Section badges*)
+- **Response**: Array of CampaignActivityDTO — `{ campaignId, campaignUpdatedAt, lastMessageAt, shipUpdatedAt }`, every stamp nullable (`null` = nothing there yet: no ship, no messages)
+- **Status Codes**: 200, 401
+- **Notes**: One request answers every campaign the caller is in (the same set `GET /api/campaigns/me` returns), which is what the campaign list's "New activity" markers are computed from — never one request per campaign. Nothing in the response is per-user: the read state lives in localStorage (`section_seen`, see *Section badges* above), and the client compares the two. `campaignUpdatedAt` moves on any campaign write, so the World Lore & Background marker means "this campaign changed", not strictly "the lore text changed". A failure is silent in the store: the markers simply do not appear, because a decorative badge is not something the user can act on. The campaign's own rail does **not** use this endpoint — it reads `updatedAt` off the campaign and ship it already has.
+
+---
+
 ### GET /api/campaigns/{id}
 
 - **Service**: CampaignService.fetchCampaign(id)
 - **Store Action**: campaignStore.fetchCampaign(id)
 - **Guest Mode**: Mocked — finds campaign by ID in guest_campaigns
-- **Response**: CampaignResponseDTO `{ id, name, description, worldLore, privateDescription, imageUrl, primarySystem, ownerId, participants }`
+- **Response**: CampaignResponseDTO `{ id, name, description, worldLore, privateDescription, imageUrl, primarySystem, ownerId, participants, addons, createdAt, updatedAt }`
 - **Notes**: `privateDescription` is `null` unless the requester is the campaign owner or a campaign GM; `worldLore` is always included.
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires authorized participant per contract definition.
@@ -675,7 +742,7 @@ Overview party preview read it, so the two cannot disagree.
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version, updatedAt }`
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
 
@@ -796,7 +863,7 @@ art belongs to its owner and is removed in Edit character.
 - **Guest Mode**: Mocked — filters guest_messages localStorage list by campaignId
 - **Response**: Array of MessageDTO `{ id, campaignId, userId, messageBody, createdAt, updatedAt }`
 - **Status Codes**: 200, 401, 403, 404
-- **Notes**: Messages are visible only to campaign participants. Fetched on mount in the MessageBoard component.
+- **Notes**: Messages are visible only to campaign participants. Fetched on mount in the MessageBoard component **and** by `CampaignView` when it loads a campaign, because the navigation counts what is unread before the Messages section is ever opened; a failure there is surfaced like any other fetch failure. Reaching for the store twice is deliberate — MessageBoard stays self-contained.
 
 ---
 

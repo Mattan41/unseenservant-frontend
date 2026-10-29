@@ -914,6 +914,29 @@ html[data-env='demo'] {
   @apply w-5 h-5 flex-shrink-0;
 }
 
+/* The unread / changed marker on a section button (`ContextNavList`). It is a
+   flex sibling of the label rather than an absolutely-positioned corner: a long
+   label wraps in the narrow rail, and a corner badge would sit on top of it.
+   The colours are the item's own active pair — `bg-primary-700` on
+   `text-primary-100` — so the badge reads identically in every theme and mode,
+   like the deliberately fixed `.badge-*` hues. */
+.context-nav-badge {
+  @apply ml-auto inline-flex min-w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary-700 px-1.5 py-0.5 text-xs font-semibold text-primary-100;
+}
+
+/* The dot reading of the same marker: "changed", with nothing to count. */
+.context-nav-badge--dot {
+  @apply h-2.5 min-w-0 w-2.5 p-0;
+}
+
+/* The "something changed" marker in the campaign list (`CampaignList`) — the same
+   reading as the section badge on a campaign's own rail, in a word rather than a
+   number because there is nothing countable to show at that level. Same fixed
+   pair as `.context-nav-badge`, so the two markers look like one idea. */
+.activity-badge {
+  @apply inline-flex items-center rounded-full bg-primary-700 px-2 py-0.5 text-xs font-semibold text-primary-100;
+}
+
 /* Owner-only destructive/settings grouping (Campaign Settings section) */
 .danger-zone {
   @apply border border-(--tone-danger-border) rounded-lg p-4;

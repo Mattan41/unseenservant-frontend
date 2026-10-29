@@ -11,6 +11,17 @@ const CampaignService = {
     return response.data
   },
 
+  /**
+   * The change stamps of every campaign the user is in — `{ campaignId,
+   * campaignUpdatedAt, lastMessageAt, shipUpdatedAt }` each. What the campaign
+   * list's "something changed" dots are computed from (see `campaignActivity.js`);
+   * deliberately one request for the whole list, never one per campaign.
+   */
+  async fetchCampaignActivity() {
+    const response = await apiClient.get('api/campaigns/activity')
+    return response.data
+  },
+
   async createCampaign({
     name,
     description,

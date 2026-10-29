@@ -51,6 +51,7 @@ src/
 │   │   ├── campaignAddons.js     # Add-on registry (label, icon, description) + isAddonEnabled()
 │   │   ├── campaignSystems.js   # Campaign primary-system options/labels + isOffworlders/isDnd5e
 │   │   ├── campaignUtils.js
+│   │   ├── campaignActivity.js  # The section-badge decision: change stamps vs. the user's own "last opened" markers
 │   │   ├── components/
 │   │   ├── dispatchers/        # CampaignSystemRouter.vue (Ship / spell search per primary system)
 │   │   └── views/
@@ -95,6 +96,7 @@ src/
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
 │   ├── timestampUtils.js     # Backend timestamps are UTC: parseUtcTimestamp + the display formatters.
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).
+│   ├── sectionSeen.js        # Per-user "last opened" section markers in localStorage (section_seen key).
 │   ├── useViewRecency.js     # Composable: records that the user viewed a campaign/character.
 │   ├── bodyScrollLock.js     # Counted body scroll lock shared by the modal and drawer overlays.
 │   └── interactiveEvent.js   # Event guards for an interactive container that nests controls (cards, rows).
@@ -286,6 +288,13 @@ while an anonymous visitor gets the example strips described above.
   `campaignUtils.js:sortPartyCharacters`). Views record a view through
   `utils/useViewRecency.js`; a store fetch deliberately never does, because
   fetches also run for side reads.
+- **Section badges are derived the same way**: what a campaign section shows as
+  unread or changed is computed (`features/campaign/campaignActivity.js`) from the
+  API's change stamps — `updatedAt` on the campaign and ship, the newest message's
+  `createdAt`, and `GET /api/campaigns/activity` — against the per-user
+  "last opened" markers in `utils/sectionSeen.js`. The read state is client-only
+  because the backend keeps none; a section with no marker is seeded rather than
+  badged, and nothing polls (see docs/API_REFERENCE.md → "Section badges").
 
 ### Routing & Navigation
 - Protected routes are explicitly flagged using `meta: { requiresAuth: true }`.

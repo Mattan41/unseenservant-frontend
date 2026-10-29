@@ -1,13 +1,33 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useUserStore } from '@/features/user/userStore.js'
+import { campaignHasActivity } from '@/features/campaign/campaignActivity.js'
+import { seenMarkers } from '@/utils/sectionSeen.js'
 import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import { campaignSystemLabel } from '@/features/campaign/campaignSystems.js'
 import { toPlainText } from '@/utils/markdown.js'
 
 const campaignStore = useCampaignStore()
+const userStore = useUserStore()
 const expandedDescriptions = ref({})
+
+/**
+ * Whether a campaign card should say "New activity": something changed in it
+ * since this user last opened its sections (see `campaignActivity.js`). Read in
+ * the template, so the markers of every card are re-evaluated when the activity
+ * arrives — which costs one request for the whole list, not one per card.
+ *
+ * @param {number|string} campaignId
+ * @returns {boolean}
+ */
+function hasActivity(campaignId) {
+  return campaignHasActivity(
+    campaignStore.activityFor(campaignId),
+    seenMarkers(userStore.userId, campaignId),
+  )
+}
 
 // The rendered order is the store's derived, per-user one: most recently viewed
 // campaign first (see `campaignStore.sortedCampaigns` and `viewHistory.js`).
@@ -34,6 +54,9 @@ const toggleDescription = (campaignId) => {
 
 onMounted(async () => {
   await campaignStore.fetchAllCampaignsForCurrentUser()
+  // The change stamps behind each card's marker. A failure leaves the cards
+  // unmarked rather than showing an error — see the store action.
+  await campaignStore.fetchCampaignActivity()
 })
 </script>
 <template>
@@ -77,6 +100,11 @@ onMounted(async () => {
             <span v-if="campaignSystemLabel(campaign.primarySystem)" class="system-tag">
               {{ campaignSystemLabel(campaign.primarySystem) }}
             </span>
+            <!-- Something changed since this user last looked (see
+                 `campaignActivity.js`). A dot would be easy to miss on a card
+                 this size, so the list says it in a word; the numbers wait until
+                 the campaign's own menu, where the sections are. -->
+            <span v-if="hasActivity(campaign.id)" class="activity-badge">New activity</span>
           </div>
 
           <CampaignImage

@@ -24,6 +24,11 @@ export const useCampaignStore = defineStore('campaign', () => {
   const isLoading = ref(false)
   const loadingCharacters = ref(false)
 
+  // The change stamps behind the section badges (`campaignActivity.js`), keyed by
+  // campaign id. Only the campaign list loads these: the campaign's own menu
+  // reads the lore and ship stamps off the campaign and ship it already has.
+  const campaignActivity = ref({})
+
   // ==========================================================================
   // Getters (computed)
   // ==========================================================================
@@ -112,6 +117,18 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
   })
 
+  /**
+   * One campaign's activity row, or `null` when it has none — `{ campaignId,
+   * campaignUpdatedAt, lastMessageAt, shipUpdatedAt }`. Read inside a computed,
+   * so the list's dots re-evaluate when the activity arrives.
+   *
+   * @param {number|string} campaignId
+   * @returns {object|null}
+   */
+  const activityFor = computed(() => {
+    return (campaignId) => campaignActivity.value[String(campaignId)] || null
+  })
+
   // ==========================================================================
   // Actions
   // ==========================================================================
@@ -191,6 +208,26 @@ export const useCampaignStore = defineStore('campaign', () => {
       }
     } finally {
       isLoading.value = false
+    }
+  }
+
+  /**
+   * Load the change stamps of every campaign the user is in, for the campaign
+   * list's "something changed" dots (see `campaignActivity.js`).
+   *
+   * A failure here is deliberately silent — no toast. This is decoration on top
+   * of a list that has already rendered, and a badge that cannot be computed is
+   * not something the user can act on; the dots simply do not appear.
+   */
+  async function fetchCampaignActivity() {
+    try {
+      const rows = await CampaignService.fetchCampaignActivity()
+      campaignActivity.value = Object.fromEntries(
+        (rows || []).map((row) => [String(row.campaignId), row]),
+      )
+    } catch (error) {
+      console.debug('Could not load the campaign activity:', error)
+      campaignActivity.value = {}
     }
   }
 
@@ -607,6 +644,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     campaigns,
     currentCampaign,
     campaignCharacters,
+    campaignActivity,
     isLoading,
     loadingCharacters,
 
@@ -619,11 +657,13 @@ export const useCampaignStore = defineStore('campaign', () => {
     getCampaignTitle,
     getCampaignImageUrl,
     getCharactersByCampaignId,
+    activityFor,
 
     // Actions
     createCampaign,
     fetchAllCampaigns,
     fetchAllCampaignsForCurrentUser,
+    fetchCampaignActivity,
     fetchCampaign,
     refreshCampaign,
     updateCampaignInfo,

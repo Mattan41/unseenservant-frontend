@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { seedGuestStorage, clearGuestStorage } from '@/data/demoData.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { clearViewHistory } from '@/utils/viewHistory.js'
+import { clearSectionSeen } from '@/utils/sectionSeen.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('auth_token'))
@@ -106,9 +107,13 @@ export const useAuthStore = defineStore('auth', () => {
     // Clear user state when leaving guest session. The view history goes with
     // it, so the demo session leaves nothing behind in localStorage — but only
     // when the guest's id is known: `clearViewHistory()` without one clears
-    // every user's history, real accounts included.
+    // every user's history, real accounts included. The section-seen markers are
+    // per user in the same way, and are cleared on the same terms.
     const userStore = useUserStore()
-    if (userStore.userId) clearViewHistory(userStore.userId)
+    if (userStore.userId) {
+      clearViewHistory(userStore.userId)
+      clearSectionSeen(userStore.userId)
+    }
     userStore.clearUser()
 
     console.log('[AuthStore] Exited guest mode and cleared storage')

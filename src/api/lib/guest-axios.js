@@ -20,6 +20,7 @@ import {
   MAX_NOTE_LENGTH as PLANNER_MAX_NOTE,
   MAX_TITLE_LENGTH as PLANNER_MAX_TITLE,
 } from '@/features/planner/plannerConstants.js'
+import { parseUtcTimestamp } from '@/utils/timestampUtils.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -530,6 +531,55 @@ function handleShip({ url }) {
   if (!ship) return notFound('Ship not found for campaign: ' + campaignId)
 
   return ok(ship)
+}
+
+/**
+ * GET api/campaigns/activity — the change stamps the campaign list and a
+ * campaign's section badges are computed from: one row per campaign,
+ * `{ campaignId, campaignUpdatedAt, lastMessageAt, shipUpdatedAt }`.
+ *
+ * Guest Demo runs for a single account (the demo user) and `api/campaigns`
+ * already answers every seeded campaign to it, so "the caller's campaigns" is
+ * simply all of them — the same set `handleCampaigns` serves. Nothing here is
+ * per-user, matching the real endpoint: the read state lives on the client
+ * (`utils/sectionSeen.js`), which is why this handler needs no user.
+ *
+ * The stamps come from the same seeded objects the campaign, ship and message
+ * endpoints answer, so a guest who posts, rewrites the lore or saves the ship
+ * sees the badges move exactly as a signed-in user does.
+ */
+function handleCampaignActivity() {
+  const campaigns = getData(KEYS.CAMPAIGNS, [])
+  const messages = getData(KEYS.MESSAGES, [])
+  const ships = getData(KEYS.SHIPS, [])
+
+  return ok(
+    campaigns.map((campaign) => ({
+      campaignId: campaign.id,
+      campaignUpdatedAt: campaign.updatedAt ?? null,
+      lastMessageAt: newestMessageStamp(campaign.id, messages),
+      shipUpdatedAt:
+        ships.find((ship) => String(ship.campaignId) === String(campaign.id))?.updatedAt ?? null,
+    })),
+  )
+}
+
+/**
+ * The newest `createdAt` among one campaign's stored messages, or `null` when it
+ * has none. Normalised to UTC ISO-8601 through the shared parser, so the answer
+ * reads the same whether the stamp was written zone-less (as the backend does)
+ * or by `toISOString()` (as Guest Demo does).
+ */
+function newestMessageStamp(campaignId, messages) {
+  let newest = null
+
+  for (const message of messages) {
+    if (String(message.campaignId) !== String(campaignId)) continue
+    const writtenAt = parseUtcTimestamp(message.createdAt)
+    if (writtenAt && (!newest || writtenAt.getTime() > newest.getTime())) newest = writtenAt
+  }
+
+  return newest ? newest.toISOString() : null
 }
 
 /** GET api/campaigns and api/campaigns/{id}. */
@@ -1809,6 +1859,7 @@ const ROUTES = [
   { method: 'get', pattern: /characters.*without-campaign/, handler: handleDetachedCharacters },
   { method: 'get', pattern: /characters.*\/me/, handler: handleOwnCharacters },
   { method: 'get', pattern: /characters/, handler: handleCharacters },
+  { method: 'get', pattern: /campaigns\/activity/, handler: handleCampaignActivity },
   { method: 'get', pattern: /campaigns.*\/ship/, handler: handleShip },
   { method: 'get', pattern: /campaigns/, handler: handleCampaigns },
   { method: 'get', pattern: /messages/, handler: handleMessages },
