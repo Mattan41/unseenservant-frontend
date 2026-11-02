@@ -8,10 +8,16 @@ import CreateCampaign from '@/features/campaign/components/CreateCampaign.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import { campaignSystemLabel } from '@/features/campaign/campaignSystems.js'
 import { toPlainText } from '@/utils/markdown.js'
+import { useCampaignActivityPoll } from '@/features/campaign/useCampaignActivityPoll.js'
 
 const campaignStore = useCampaignStore()
 const userStore = useUserStore()
 const expandedDescriptions = ref({})
+
+// The change stamps behind each card's marker, kept live while the list is open.
+// The shared poll — also used by a campaign's own view — refreshes them: one
+// request for the whole list, and one timer no matter how many views use it.
+useCampaignActivityPoll()
 
 /**
  * Whether a campaign card should say "New activity": something changed in it
@@ -54,9 +60,6 @@ const toggleDescription = (campaignId) => {
 
 onMounted(async () => {
   await campaignStore.fetchAllCampaignsForCurrentUser()
-  // The change stamps behind each card's marker. A failure leaves the cards
-  // unmarked rather than showing an error — see the store action.
-  await campaignStore.fetchCampaignActivity()
 })
 </script>
 <template>

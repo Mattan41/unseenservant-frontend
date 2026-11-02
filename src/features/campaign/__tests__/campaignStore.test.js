@@ -11,6 +11,7 @@ vi.mock('@/features/campaign/CampaignService.js', () => ({
   default: {
     fetchAllCampaignsForCurrentUser: vi.fn(),
     fetchCampaign: vi.fn(),
+    updateCampaignInfo: vi.fn(),
   },
 }))
 
@@ -163,6 +164,45 @@ describe('campaignStore', () => {
       expect(store.isUserGM(2, USER.id)).toBe(true)
       expect(store.isUserGM(2, 9)).toBe(false)
       expect(store.isUserGM(99, USER.id)).toBe(false)
+    })
+  })
+
+  describe('updateCampaignInfo', () => {
+    it('adopts the campaign the server returns, so its new updatedAt reaches the badges', async () => {
+      const store = useCampaignStore()
+      await store.fetchAllCampaignsForCurrentUser()
+      const saved = {
+        id: 2,
+        name: 'Bravo',
+        participants: [{ id: 7, nickname: 'Me', role: 'GM' }],
+        updatedAt: '2026-10-31T12:00:00',
+      }
+      CampaignService.updateCampaignInfo.mockResolvedValue(saved)
+
+      const result = await store.updateCampaignInfo(2, { name: 'Bravo', worldLore: 'new' })
+
+      expect(CampaignService.updateCampaignInfo).toHaveBeenCalledWith(2, {
+        name: 'Bravo',
+        worldLore: 'new',
+      })
+      expect(result).toBe(saved)
+      // The cached list entry now carries the server's stamp rather than the
+      // request that was sent (which has no updatedAt at all).
+      expect(store.getCampaignById(2).updatedAt).toBe('2026-10-31T12:00:00')
+    })
+
+    it('adopts into the campaign being viewed as well', async () => {
+      const store = useCampaignStore()
+      await store.fetchAllCampaignsForCurrentUser()
+      store.currentCampaign = { ...store.campaigns.find((campaign) => campaign.id === 2) }
+      const saved = { id: 2, name: 'Bravo', participants: [], updatedAt: '2026-10-31T12:00:00' }
+      CampaignService.updateCampaignInfo.mockResolvedValue(saved)
+
+      await store.updateCampaignInfo(2, { name: 'Bravo' })
+
+      // Pinia hands back a reactive proxy, so compare the value it carries.
+      expect(store.currentCampaign.updatedAt).toBe('2026-10-31T12:00:00')
+      expect(store.currentCampaign.name).toBe('Bravo')
     })
   })
 })

@@ -23,9 +23,12 @@ Originally built as my thesis project at IT-Högskolan (2025), now maintained as
 - A campaign's menu marks what changed since **you** last looked: unread messages
   are counted on **Messages**, and **World Lore & Background** and **Ship** wear a
   dot; the campaign list says "New activity" on a card that moved. It is a
-  "changed since you last opened it" marker rather than a push notification —
-  nothing polls, so it is worked out from what the view has loaded, and the read
-  state stays in your browser (there is no per-user read state on the server)
+  "changed since you last opened it" marker, and it stays live while a page is
+  open: the campaign list and a campaign's own view share one poll of
+  `GET /api/campaigns/activity` (one small request for every campaign, only while
+  the tab is visible), which reloads an area only when its stamp actually moved.
+  Your own writes never badge you. The read state stays in your browser (there is
+  no per-user read state on the server)
 - Campaign **add-ons** — optional parts an owner switches on in Campaign Settings →
   Add-ons, each one adding a section to the campaign menu. The first is the
   **planner**: anybody in the campaign starts a plan, everybody offers the days they

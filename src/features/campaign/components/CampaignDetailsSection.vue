@@ -17,6 +17,8 @@ import { useNotificationStore } from '@/stores/notificationStore.js'
 import { getCampaignPermissions } from '@/features/campaign/campaignPermissions.js'
 import { campaignDefaultImage } from '@/features/campaign/campaignSystems.js'
 import CampaignDetailsForm from '@/features/campaign/components/CampaignDetailsForm.vue'
+import { LORE_SECTION_KEY } from '@/features/campaign/campaignActivity.js'
+import { markSectionSeen } from '@/utils/sectionSeen.js'
 
 const props = defineProps({
   campaignId: {
@@ -71,7 +73,7 @@ const saveDetails = async (updated) => {
   try {
     // The PUT replaces every campaign detail, so the two lore blocks (which this
     // form does not own) are sent back verbatim, or saving here would clear them.
-    await campaignStore.updateCampaignInfo(campaign.value.id, {
+    const saved = await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: updated.title,
       description: updated.description,
       worldLore: campaign.value.worldLore,
@@ -79,14 +81,21 @@ const saveDetails = async (updated) => {
       primarySystem: updated.primarySystem,
     })
 
+    // Saving here moves the campaign's `updatedAt`, which doubles as the World
+    // Lore badge's stamp. The write is the user's own, so it must not badge the
+    // section on the next load — mark it seen at the stamp the server returned.
+    let newestStamp = saved?.updatedAt
+
     if (updated.imageFile) {
       const response = await campaignStore.uploadCampaignImage(campaign.value.id, updated.imageFile)
       campaign.value.imageUrl = response.imageUrl
+      newestStamp = response?.updatedAt || newestStamp
     }
 
     campaign.value.name = updated.title
     campaign.value.description = updated.description
     campaign.value.primarySystem = updated.primarySystem
+    markSectionSeen(userStore.userId, props.campaignId, LORE_SECTION_KEY, newestStamp)
     emit('updated')
     notificationStore.addNotification('Campaign updated successfully!', 'success', 3000)
   } catch (error) {
