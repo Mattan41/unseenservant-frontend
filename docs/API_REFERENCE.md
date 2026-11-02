@@ -92,12 +92,29 @@ that decision come from opposite sides, and only one of them is the backend's:
   its stamp changes while it is active — so the badge clears exactly when the
   section is opened, and a save of your own does not light up the section you are
   sitting in.
+- **Your own writes never badge you.** `campaignStore.updateCampaignInfo` adopts
+  the returned `CampaignResponseDTO` (with its new `updatedAt`) instead of
+  spreading the request back, and `CampaignView.saveLore` /
+  `CampaignDetailsSection.saveDetails` mark the lore section seen at that stamp —
+  so editing the world lore or the campaign details cannot badge World Lore &
+  Background on the next load.
+- **A shared poll keeps the badges live** while the list or a campaign is open:
+  `features/campaign/useCampaignActivityPoll.js` calls
+  `campaignStore.fetchCampaignActivity()` on a slow interval (45 s), only while
+  the tab is visible, and ref-counted so the list and a campaign's own view run a
+  single timer between them. It refreshes the "what changed" half only; the badge
+  logic re-evaluates when the stamps land in the store. `CampaignView` reacts by
+  reloading *only* the area whose stamp moved (`lastMessageAt` → messages,
+  `campaignUpdatedAt` → the campaign, `shipUpdatedAt` → the ship), so a quiet
+  interval costs one small request and the heavier reads happen only on a real
+  change.
 - **Your own messages never count**: a message is only unread if somebody else
   wrote it after the marker.
-- **Nothing polls.** The badges are evaluated from whatever the view has loaded,
-  so a message that arrives while the user sits on Overview appears at the next
-  load or section change. The activity endpoint is what makes a later poll cheap
-  (one request for every campaign), but no interval exists today.
+- **Nothing else polls, and nothing is pushed.** The badges are evaluated from
+  whatever the view has loaded, refreshed only by the shared 45 s poll above; a
+  message that arrives while the user sits on Overview still has to wait for that
+  tick (or a section change) to appear. The activity endpoint is what keeps the
+  poll cheap — one request for every campaign — and no push channel exists today.
 - **Ids are stored as strings**, so `guest_demo` / `guest_campaign_1` and real ids
   share the map without colliding, and `authStore.exitGuestMode` clears the guest
   user's markers alongside their view history.
@@ -634,7 +651,7 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Request**: `{ name, description, worldLore, privateDescription, primarySystem }` where `primarySystem` is `DND5E` | `OFFWORLDERS` | null, `worldLore` is the public setting material and `privateDescription` is the GM-only notes (labelled "GM notes" in the UI)
 - **Response**: CampaignResponseDTO
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Updates local state immediately after successful API callback. Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent); changing away from `OFFWORLDERS` keeps the ship.
+- **Notes**: The store adopts the returned `CampaignResponseDTO` rather than spreading the request back over its cached copy, so the campaign's new `updatedAt` reaches the section-badge logic — this is what stops a user's own save from badging them (see *Section badges*). Setting `primarySystem` to `OFFWORLDERS` creates the campaign's default ship the first time (idempotent); changing away from `OFFWORLDERS` keeps the ship.
 
 ---
 

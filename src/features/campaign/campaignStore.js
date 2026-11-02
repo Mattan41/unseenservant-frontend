@@ -303,18 +303,17 @@ export const useCampaignStore = defineStore('campaign', () => {
   async function updateCampaignInfo(campaignId, campaignData) {
     const notificationStore = useNotificationStore()
     try {
-      await CampaignService.updateCampaignInfo(campaignId, campaignData)
+      const saved = await CampaignService.updateCampaignInfo(campaignId, campaignData)
 
-      const index = campaigns.value.findIndex((c) => c.id == campaignId)
-      if (index !== -1) {
-        campaigns.value[index] = { ...campaigns.value[index], ...campaignData }
-      }
+      // The backend answers with the whole campaign, whose `updatedAt` has just
+      // moved. Adopting that response — rather than spreading the request back
+      // over the cached copy — is what keeps the change stamps the section
+      // badges are measured against current. Spreading the request left
+      // `updatedAt` stale, so the user's own save badged the section on the next
+      // load (see `campaignActivity.js` and `CampaignView.saveLore`).
+      adoptCampaign(saved)
 
-      if (currentCampaign.value?.id == campaignId) {
-        currentCampaign.value = { ...currentCampaign.value, ...campaignData }
-      }
-
-      return true
+      return saved
     } catch (error) {
       console.error('Failed to update campaign info:', error)
       if (!error.handled) {

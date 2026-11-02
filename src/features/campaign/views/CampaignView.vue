@@ -27,6 +27,7 @@ import MessageBoard from '@/features/message/components/MessageBoard.vue'
 import JournalBoard from '@/features/journal/components/JournalBoard.vue'
 import { useMessageStore } from '@/features/message/messageStore.js'
 import {
+  changedSince,
   currentMarkers,
   sectionAlerts as computeSectionAlerts,
   LORE_SECTION_KEY,
@@ -54,6 +55,7 @@ import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
 import { confirmDiscardUnsavedChanges, useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import { useViewRecency } from '@/utils/useViewRecency.js'
+import { useCampaignActivityPoll } from '@/features/campaign/useCampaignActivityPoll.js'
 import {
   CAMPAIGN_SYSTEM_LABELS,
   DND5E_SYSTEM_TYPE,
@@ -413,6 +415,46 @@ const loadCampaignData = async (campaignId) => {
   }
 }
 
+/**
+ * Section badges, kept live while the campaign is open.
+ *
+ * The shared poll refreshes the activity stamps (`GET /api/campaigns/activity`,
+ * one row per campaign); this reacts by reloading only the area whose stamp
+ * actually moved — the message list, the campaign, or the ship. A quiet interval
+ * therefore costs a single small request, and the heavier reads happen only when
+ * something has genuinely changed. The badge logic itself is untouched: it
+ * re-evaluates from whatever these reloads put back into the stores.
+ */
+watch(
+  () => campaignStore.activityFor(campaign.value?.id),
+  async (activity) => {
+    if (!campaign.value || !activity) return
+
+    try {
+      if (changedSince(activity.lastMessageAt, currentSectionMarkers.value[MESSAGES_SECTION_KEY])) {
+        await loadCampaignMessages(campaign.value.id)
+      }
+
+      if (changedSince(activity.campaignUpdatedAt, currentSectionMarkers.value[LORE_SECTION_KEY])) {
+        campaign.value = await campaignStore.refreshCampaign(campaign.value.id)
+      }
+
+      if (
+        isOffworlders(campaign.value?.primarySystem) &&
+        changedSince(activity.shipUpdatedAt, currentSectionMarkers.value[SHIP_SECTION_KEY])
+      ) {
+        await shipStore.fetchShip(campaign.value.id)
+      }
+    } catch (error) {
+      console.error('Failed to refresh the campaign activity:', error)
+    }
+  },
+)
+
+// A campaign's own rail wants the same live badges the list has: join the shared
+// poll, so the two views run a single timer between them.
+useCampaignActivityPoll()
+
 const campaignCharacters = computed(() => {
   const id = route.params.id
   const safeId = Number.isNaN(Number(id)) ? id : Number.parseInt(id)
@@ -479,17 +521,20 @@ const saveLore = async () => {
     // The PUT replaces every campaign detail, so the fields this form does not
     // own are sent back verbatim — they would otherwise be cleared. Campaign
     // Settings does the mirror image of this for the two lore fields.
-    await campaignStore.updateCampaignInfo(campaign.value.id, {
+    const saved = await campaignStore.updateCampaignInfo(campaign.value.id, {
       name: campaign.value.name,
       description: campaign.value.description,
       worldLore: loreDraft.value,
       privateDescription: gmNotesDraft.value,
       primarySystem: campaign.value.primarySystem,
     })
-    // The store replaces its own copy of the campaign, so mirror the saved
-    // values onto the object this view renders from.
-    campaign.value.worldLore = loreDraft.value
-    campaign.value.privateDescription = gmNotesDraft.value
+    // The store adopted the server's copy, so render from it too — including the
+    // campaign's new `updatedAt`, the stamp the lore badge is measured against.
+    // Without that, the user's own save would badge the section on the next load.
+    if (saved) campaign.value = saved
+    // And mark it seen explicitly, so the write never badges the author even if
+    // the active section changed while the save was in flight.
+    markSectionSeen(userStore.userId, route.params.id, LORE_SECTION_KEY, saved?.updatedAt)
     isEditingLore.value = false
     notificationStore.addNotification('World lore updated successfully!', 'success', 3000)
   } catch (error) {

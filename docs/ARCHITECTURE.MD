@@ -294,7 +294,10 @@ while an anonymous visitor gets the example strips described above.
   `createdAt`, and `GET /api/campaigns/activity` — against the per-user
   "last opened" markers in `utils/sectionSeen.js`. The read state is client-only
   because the backend keeps none; a section with no marker is seeded rather than
-  badged, and nothing polls (see docs/API_REFERENCE.md → "Section badges").
+  badged, and a user's own write marks the section seen so it never badges them.
+  A shared, ref-counted poll (`features/campaign/useCampaignActivityPoll.js`)
+  keeps the stamps live while the list or a campaign is open (see
+  docs/API_REFERENCE.md → "Section badges").
 
 ### Routing & Navigation
 - Protected routes are explicitly flagged using `meta: { requiresAuth: true }`.

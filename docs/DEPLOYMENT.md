@@ -4,9 +4,7 @@ Two environments run this image (production on the OptiPlex, staging on the
 Raspberry Pi 5), two origins are served from Cloudflare's edge by a Worker
 (`test.unseenservant.se` in front of staging, `dev.unseenservant.se` in front of
 production), and a third mode runs with no backend at all. The host-side runbook
-lives in the infrastructure repository (`Mattan41/projects-notes`:
-`unseen-servant/README.md` for the runbook and `unseen-servant/infra/` for the
-compose files and the host-side nginx copies).
+is kept outside this repository.
 
 ## Images and tags
 
