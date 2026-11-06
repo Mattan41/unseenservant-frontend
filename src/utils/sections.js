@@ -15,12 +15,11 @@
  * `notes` is deliberately not part of this model: it stays a separate markdown
  * field and is never folded into the list.
  */
+import { randomToken } from '@/utils/randomId.js'
 
 /** A fresh, opaque section id. */
 export function newSectionId() {
-  const cryptoApi = globalThis.crypto
-  if (typeof cryptoApi?.randomUUID === 'function') return cryptoApi.randomUUID()
-  return `section_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  return `section_${randomToken()}`
 }
 
 function toText(value) {

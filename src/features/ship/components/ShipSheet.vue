@@ -142,14 +142,14 @@ function resetDraft() {
 // so saving after one still conflicts rather than overwriting the other person's
 // change. Anything else — this sheet's own save, a quick-edit, the first load —
 // reloads the draft and leaves edit mode.
-const KEEPS_DRAFT = ['fetch', 'image', 'section']
-const MOVES_VERSION = ['image', 'section']
+const KEEPS_DRAFT = new Set(['fetch', 'image', 'section'])
+const MOVES_VERSION = new Set(['image', 'section'])
 
 watch(
   () => props.ship,
   () => {
-    if (editing.value && KEEPS_DRAFT.includes(props.updateSource)) {
-      if (MOVES_VERSION.includes(props.updateSource)) draftVersion.value = props.ship.version ?? null
+    if (editing.value && KEEPS_DRAFT.has(props.updateSource)) {
+      if (MOVES_VERSION.has(props.updateSource)) draftVersion.value = props.ship.version ?? null
       return
     }
     resetDraft()

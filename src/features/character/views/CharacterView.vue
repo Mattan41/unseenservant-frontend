@@ -374,7 +374,6 @@ const exportCharacter = async (format) => {
                 v-if="isOwner && !isGuestMode"
                 type="button"
                 class="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 text-sm text-white opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                aria-label="Change character image"
                 @click="triggerAvatarInput"
               >
                 Change image

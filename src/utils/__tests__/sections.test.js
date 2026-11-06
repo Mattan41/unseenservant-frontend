@@ -10,6 +10,10 @@ describe('newSectionId', () => {
   it('returns a distinct id every time', () => {
     expect(newSectionId()).not.toBe(newSectionId())
   })
+
+  it('prefixes the id, so a stored section is recognisable', () => {
+    expect(newSectionId()).toMatch(/^section_/)
+  })
 })
 
 describe('normalizeSections', () => {
@@ -24,9 +28,9 @@ describe('normalizeSections', () => {
   })
 
   it('drops anything that is not a section', () => {
-    expect(normalizeSections([null, 'nope', 42, { id: 'a', title: 'Cargo', body: '' }])).toHaveLength(
-      1,
-    )
+    expect(
+      normalizeSections([null, 'nope', 42, { id: 'a', title: 'Cargo', body: '' }]),
+    ).toHaveLength(1)
   })
 
   it('answers an empty list for a ship or character that has none', () => {

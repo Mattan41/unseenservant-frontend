@@ -90,6 +90,16 @@ describe('CharacterView — images from view mode', () => {
     expect(buttonByText(wrapper, 'Change image')).toBeTruthy()
   })
 
+  it('names the avatar overlay by its visible text', async () => {
+    const wrapper = await mountView({ owner: true })
+
+    const overlays = wrapper.findAll('button').filter((button) => button.text() === 'Change image')
+    expect(overlays.length).toBeGreaterThan(0)
+    for (const button of overlays) {
+      expect(button.attributes('aria-label') ?? button.text()).toBe('Change image')
+    }
+  })
+
   it('hides the avatar affordance from a non-owner', async () => {
     const wrapper = await mountView({ owner: false })
 
@@ -134,14 +144,20 @@ describe('CharacterView — sections', () => {
   })
 
   it('shows the sections to any viewer', async () => {
-    const wrapper = await mountView({ owner: false, character: { ...CHARACTER, sections: SECTIONS } })
+    const wrapper = await mountView({
+      owner: false,
+      character: { ...CHARACTER, sections: SECTIONS },
+    })
 
     const titles = wrapper.findAll('li h5').map((heading) => heading.text())
     expect(titles).toEqual(['Cargo', 'Leads'])
   })
 
   it('offers no add/edit/delete controls to a non-owner', async () => {
-    const wrapper = await mountView({ owner: false, character: { ...CHARACTER, sections: SECTIONS } })
+    const wrapper = await mountView({
+      owner: false,
+      character: { ...CHARACTER, sections: SECTIONS },
+    })
 
     expect(buttonByText(wrapper, 'Add note')).toBeFalsy()
     // Scoped to the section cards: the view's own "Edit" link is not a section
@@ -189,7 +205,10 @@ describe('CharacterView — sections', () => {
   })
 
   it('saves an edited section with its id kept', async () => {
-    const wrapper = await mountView({ owner: true, character: { ...CHARACTER, sections: SECTIONS } })
+    const wrapper = await mountView({
+      owner: true,
+      character: { ...CHARACTER, sections: SECTIONS },
+    })
     CharacterService.updateCharacterField.mockImplementation(async (id, field, value) => ({
       ...CHARACTER,
       id,

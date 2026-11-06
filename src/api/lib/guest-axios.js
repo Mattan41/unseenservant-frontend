@@ -21,6 +21,7 @@ import {
   MAX_TITLE_LENGTH as PLANNER_MAX_TITLE,
 } from '@/features/planner/plannerConstants.js'
 import { parseUtcTimestamp } from '@/utils/timestampUtils.js'
+import { randomToken } from '@/utils/randomId.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -82,7 +83,7 @@ function setData(key, data) {
 }
 
 function generateId() {
-  return `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  return `guest_${randomToken()}`
 }
 
 /** Default Offworlders ship (rulebook p.13): 15 Hull, 0 Armor, 1D6, 4 Fuel. */
