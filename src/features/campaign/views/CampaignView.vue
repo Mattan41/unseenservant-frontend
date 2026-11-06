@@ -803,6 +803,7 @@ watch(
                   <span class="character-tag">
                     Fuel {{ shipSummary.driveFuel }}/{{ shipSummary.maxDriveFuel }}
                   </span>
+                  <span class="character-tag">Credits {{ shipSummary.credits ?? 0 }}</span>
                 </div>
               </div>
             </div>
