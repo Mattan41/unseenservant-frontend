@@ -129,10 +129,6 @@ function remove(section) {
       </BaseButton>
     </div>
 
-    <p class="text-xs text-muted mb-3">
-      Small, individually titled notes — plain text, one entry each.
-    </p>
-
     <ul v-if="hasSections" class="space-y-3">
       <li v-for="section in sections" :key="section.id" class="muted-surface p-3">
         <!-- Inline editor: title + body, save/cancel like the other inline edits -->

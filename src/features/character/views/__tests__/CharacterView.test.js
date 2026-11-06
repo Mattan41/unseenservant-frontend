@@ -8,7 +8,7 @@ import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 
 vi.mock('@/features/character/CharacterService.js', () => ({
-  default: { fetchCharacter: vi.fn() },
+  default: { fetchCharacter: vi.fn(), updateCharacterField: vi.fn() },
 }))
 
 // The system sheet is a heavy subtree with nothing here under test.
@@ -62,6 +62,13 @@ const buttonByText = (wrapper, text) =>
   wrapper.findAll('button').find((button) => button.text() === text)
 
 /**
+ * A control inside a section card. Scoped to `li` because the view's own
+ * "Edit" link reads the same as a section's Edit button.
+ */
+const sectionButton = (wrapper, text) =>
+  wrapper.findAll('li button').find((button) => button.text() === text)
+
+/**
  * The view-mode image entry points: an owner changes the avatar and adds gallery
  * images without entering Edit, a non-owner gets neither, and the gallery opens
  * its own lightbox.
@@ -101,5 +108,80 @@ describe('CharacterView — images from view mode', () => {
     expect(buttonByText(wrapper, 'Change image')).toBeFalsy()
     expect(buttonByText(wrapper, 'Add image')).toBeFalsy()
     expect(wrapper.find('.guest-notice').exists()).toBe(true)
+  })
+})
+
+/**
+ * Sections belong to the character and save through the ordinary character
+ * PATCH. Only the owner may write; everyone who can see the character reads.
+ */
+describe('CharacterView — sections', () => {
+  const SECTIONS = [
+    { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+    { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+  ]
+
+  beforeEach(() => {
+    localStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('shows the sections to any viewer', async () => {
+    const wrapper = await mountView({ owner: false, character: { ...CHARACTER, sections: SECTIONS } })
+
+    const titles = wrapper.findAll('li h5').map((heading) => heading.text())
+    expect(titles).toEqual(['Cargo', 'Leads'])
+  })
+
+  it('offers no add/edit/delete controls to a non-owner', async () => {
+    const wrapper = await mountView({ owner: false, character: { ...CHARACTER, sections: SECTIONS } })
+
+    expect(buttonByText(wrapper, 'Add section')).toBeFalsy()
+    // Scoped to the section cards: the view's own "Edit" link is not a section
+    // control and must not be mistaken for one.
+    expect(sectionButton(wrapper, 'Edit')).toBeFalsy()
+    expect(sectionButton(wrapper, 'Delete')).toBeFalsy()
+  })
+
+  it('adds a section through the character store and shows it', async () => {
+    const wrapper = await mountView({ owner: true })
+    CharacterService.updateCharacterField.mockImplementation(async (id, field, value) => ({
+      ...CHARACTER,
+      id,
+      [field]: value,
+    }))
+
+    await buttonByText(wrapper, 'Add section').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Cargo')
+    await wrapper.find('#new-section-body').setValue('Two crates.')
+    await buttonByText(wrapper, 'Add section').trigger('click')
+    await flushPromises()
+
+    expect(CharacterService.updateCharacterField).toHaveBeenCalledTimes(1)
+    const [id, field, sections] = CharacterService.updateCharacterField.mock.calls[0]
+    expect(id).toBe(CHARACTER.id)
+    expect(field).toBe('sections')
+    expect(sections).toHaveLength(1)
+    expect(sections[0]).toMatchObject({ title: 'Cargo', body: 'Two crates.' })
+
+    expect(wrapper.findAll('li h5').map((heading) => heading.text())).toEqual(['Cargo'])
+  })
+
+  it('saves an edited section with its id kept', async () => {
+    const wrapper = await mountView({ owner: true, character: { ...CHARACTER, sections: SECTIONS } })
+    CharacterService.updateCharacterField.mockImplementation(async (id, field, value) => ({
+      ...CHARACTER,
+      id,
+      [field]: value,
+    }))
+
+    await sectionButton(wrapper, 'Edit').trigger('click')
+    await wrapper.find('#section-body-s1').setValue('Three crates now.')
+    await sectionButton(wrapper, 'Save').trigger('click')
+    await flushPromises()
+
+    const [, , sections] = CharacterService.updateCharacterField.mock.calls[0]
+    expect(sections[0]).toEqual({ id: 's1', title: 'Cargo', body: 'Three crates now.' })
+    expect(sections[1]).toEqual(SECTIONS[1])
   })
 })

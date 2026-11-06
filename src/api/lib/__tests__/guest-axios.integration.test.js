@@ -481,6 +481,21 @@ describe('guest-axios PATCH routes', () => {
     expect(linked.campaignId).toBe('guest_campaign_4')
   })
 
+  it('persists a character section, and a re-read still shows it', async () => {
+    const sections = [
+      { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+      { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+    ]
+
+    // The character store's section save is a one-field PATCH; the adapter
+    // merges it like any other field, so the rest of the character survives.
+    await guestAxios.patch('api/characters/guest_char_7', { sections })
+
+    const { data } = await guestAxios.get('api/characters/guest_char_7')
+    expect(data.sections).toEqual(sections)
+    expect(data.name).toBe('Vex')
+  })
+
   it('updates campaign details for a GM and refuses a plain player', async () => {
     const { data } = await guestAxios.patch('api/campaigns/guest_campaign_1', { name: 'Renamed' })
     expect(data.name).toBe('Renamed')

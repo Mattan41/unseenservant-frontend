@@ -49,9 +49,18 @@ describe('buildPayload', () => {
         'name',
         'notes',
         'privateBackstory',
+        // Sections belong to the character, so a restored backup has to carry
+        // them through the create form.
+        'sections',
         'systemType',
       ].sort(),
     )
+  })
+
+  it('carries the sections a restored backup brought in', () => {
+    const sections = [{ id: 's1', title: 'Cargo', body: 'Two crates.' }]
+
+    expect(buildPayload(DND5E_SYSTEM_TYPE, { ...CHARACTER, sections }).sections).toEqual(sections)
   })
 
   it('attaches only the active system block', () => {

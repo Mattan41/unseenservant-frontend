@@ -420,8 +420,9 @@ re-deriving a role check.
 - **Service**: CharacterService.createCharacter(data)
 - **Store Action**: characterStore.createCharacter(data)
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
-- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
+- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, sections?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
   - `backstory` / `privateBackstory` are free-text core-character fields (any system). `backstory` is public to the campaign; `privateBackstory` is returned only to the owner or the campaign GM. Writes are owner-only.
+  - `sections = [ { id, title, body } ]` — small, individually titled **plain-text** notes that sit beside `notes` (see "PATCH … — sections" below). They belong to the character, so they follow it across campaigns, exports and imports. `buildPayload` carries them so a restored backup keeps them; the create form does not edit them.
   - `systemType` is optional: `null` (which is what the form sends for "No system") creates a **system-less character** — only the generic core fields exist and neither nested block is stored. The server no longer defaults it to `DND5E`.
   - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
   - `offworlders = { characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }` (used when `systemType === 'OFFWORLDERS'`)
@@ -477,6 +478,18 @@ re-deriving a role check.
 - **Response**: CharacterOutputDTO
 - **Status Codes**: 200, 400, 401, 403, 404
 - **Notes**: Also supports updateCharacterField for single-field updates. The Offworlders sheet's owner-only inline +/- steppers (Health → `currentHealth`, Supply, Credits, XP) use it, sending the full `offworlders` block so guest mode's shallow merge cannot drop the other fields.
+
+---
+
+### PATCH /api/characters/{id} — sections
+
+- **Service**: CharacterService.updateCharacterField(characterId, 'sections', sections)
+- **Store Action**: characterStore.updateCharacterSections(characterId, sections)
+- **Guest Mode**: Mocked — the adapter merges `sections` into `guest_characters` like any other field
+- **Request**: `{ sections: [{ id, title, body }] }` — a one-field PATCH
+- **Response**: CharacterOutputDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: `sections` are small, individually titled plain-text notes that sit **beside** `notes`; `notes` is untouched and is never migrated into the list. They live on the character rather than on a campaign, so they follow it across campaigns, exports and imports — which is why they travel inside the character DTO and need no endpoint of their own. The array is a whole-list replacement and its order is the owner's order (no ordering column). `id` is generated client-side (`src/utils/sections.js`) and is opaque to the backend. Only the owner may write (the PATCH is owner-only); everyone who can see the character reads them. The UI is `BaseNoteSections.vue`, shared with the ship, with `:editable="isOwner"`.
 
 ---
 

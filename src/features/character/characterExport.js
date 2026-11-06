@@ -5,17 +5,21 @@
  *
  * Layout (see `src/utils/textExport.js`): title → generic identity (name +
  * system) → game-specific sections (from `systemRegistry.exportSectionsFor`) →
- * long-text footer (appearance, notes, backstory, private backstory). Every
- * long free-text field is markdown source: markdown export keeps it verbatim,
- * plain-text export flattens it.
+ * long-text footer (appearance, notes, the character's own sections, backstory,
+ * private backstory). Every long free-text field is markdown source: markdown
+ * export keeps it verbatim, plain-text export flattens it. A section's body is
+ * plain text, so it passes through untouched in both formats.
  *
  * The JSON backup is deliberately *portable*: runtime/relational fields
  * (`id`, `ownerId`, `campaignId`, `avatarUrl`, timestamps) are dropped so an
  * imported file always creates a fresh character owned by the current user. The
  * user attaches it to a campaign afterwards via the existing import flow. Images
- * are out of scope for every format.
+ * are out of scope for every format. Sections are *not* relational — they belong
+ * to the character — so the backup carries them and `characterFromBackup`
+ * restores them, exactly like notes and backstory.
  */
 import { renderDocument } from '@/utils/textExport.js'
+import { normalizeSections } from '@/utils/sections.js'
 import {
   SYSTEM_LABELS,
   exportSectionsFor,
@@ -32,6 +36,13 @@ function longTextSections(character) {
   const sections = []
   if (character.appearance) sections.push({ heading: 'Appearance', text: character.appearance })
   if (character.notes) sections.push({ heading: 'Notes', text: character.notes })
+  // The character's own sections sit beside the notes they were split out of:
+  // one heading each, plain text (a section is an entry, not a document). A
+  // section with no body carries nothing to export and is skipped.
+  for (const section of character.sections || []) {
+    if (!section?.body) continue
+    sections.push({ heading: section.title || 'Section', text: section.body })
+  }
   if (character.backstory) sections.push({ heading: 'Backstory', text: character.backstory })
   if (character.privateBackstory) {
     sections.push({ heading: 'Private backstory', text: character.privateBackstory })
@@ -72,6 +83,10 @@ export function buildCharacterBackup(character) {
     name: character.name || '',
     systemType: character.systemType || '',
     notes: character.notes || '',
+    // Sections belong to the character, so a backup that dropped them would
+    // lose part of it. They are portable like notes/backstory: no ids are
+    // relational, and the array order is the owner's order.
+    sections: normalizeSections(character.sections),
     appearance: character.appearance || '',
     backstory: character.backstory || '',
     privateBackstory: character.privateBackstory || '',
@@ -143,6 +158,9 @@ export function characterFromBackup(backup) {
     // create form); a backup that names a system keeps it.
     systemType: backup.systemType || '',
     notes: backup.notes || '',
+    // Restored as-is, in the order the backup stored them. A backup written
+    // before sections existed simply has none.
+    sections: normalizeSections(backup.sections),
     appearance: backup.appearance || '',
     backstory: backup.backstory || '',
     privateBackstory: backup.privateBackstory || '',

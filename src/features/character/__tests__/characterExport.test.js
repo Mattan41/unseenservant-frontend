@@ -72,6 +72,41 @@ describe('buildCharacterExport', () => {
     expect(md).toContain('Fireball (3rd level, Evocation)')
   })
 
+  it('gives each section its own heading, after the notes', () => {
+    const character = {
+      ...offworlders,
+      sections: [
+        { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+        { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+      ],
+    }
+
+    const md = buildCharacterExport(character, { format: 'md' })
+    expect(md).toContain('## Cargo')
+    expect(md).toContain('Two crates of medical supplies.')
+    expect(md).toContain('## Leads')
+    // The notes field is still its own section, not folded into the list.
+    expect(md).toContain('## Notes')
+    expect(md.indexOf('## Notes')).toBeLessThan(md.indexOf('## Cargo'))
+  })
+
+  it('renders each section as a title and its body in plain text', () => {
+    const character = {
+      ...offworlders,
+      sections: [{ id: 's1', title: 'Cargo', body: 'Two crates.' }],
+    }
+
+    const txt = buildCharacterExport(character, { format: 'txt' })
+    expect(txt).toContain('CARGO')
+    expect(txt).toContain('Two crates.')
+  })
+
+  it('skips a section that has no body', () => {
+    const character = { ...offworlders, sections: [{ id: 's1', title: 'Empty', body: '' }] }
+
+    expect(buildCharacterExport(character, { format: 'md' })).not.toContain('## Empty')
+  })
+
   it('flattens long-text markdown in txt but keeps it in md', () => {
     const character = {
       name: 'X',
@@ -103,9 +138,26 @@ describe('buildCharacterBackup', () => {
         'notes',
         'offworlders',
         'privateBackstory',
+        'sections',
         'systemType',
       ].sort(),
     )
+  })
+
+  it('carries the sections, in the order they were arranged', () => {
+    const withSections = {
+      ...offworlders,
+      sections: [
+        { id: 's1', title: 'Cargo', body: 'Two crates.' },
+        { id: 's2', title: 'Leads', body: 'A rumour.' },
+      ],
+    }
+
+    expect(buildCharacterBackup(withSections).character.sections).toEqual(withSections.sections)
+  })
+
+  it('answers an empty section list for a character that has none', () => {
+    expect(buildCharacterBackup(offworlders).character.sections).toEqual([])
   })
 })
 
@@ -169,5 +221,21 @@ describe('characterFromBackup', () => {
   it('keeps a backup that names no system system-less', () => {
     const form = characterFromBackup({ name: 'Nameless' })
     expect(form.systemType).toBe('')
+  })
+
+  it('restores the sections a backup carries, in order', () => {
+    const sections = [
+      { id: 's1', title: 'Cargo', body: 'Two crates.' },
+      { id: 's2', title: 'Leads', body: 'A rumour.' },
+    ]
+    const backup = parseCharacterBackup(
+      JSON.stringify(buildCharacterBackup({ ...offworlders, sections })),
+    )
+
+    expect(characterFromBackup(backup).sections).toEqual(sections)
+  })
+
+  it('restores no sections from a backup written before they existed', () => {
+    expect(characterFromBackup({ name: 'Nameless' }).sections).toEqual([])
   })
 })

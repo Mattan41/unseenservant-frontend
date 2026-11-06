@@ -14,6 +14,7 @@ import BaseLinkButton from '@/components/base/BaseLinkButton.vue'
 import BaseClampedText from '@/components/base/BaseClampedText.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import BaseNoteSections from '@/components/base/BaseNoteSections.vue'
 import ImageRepositionModal from '@/components/base/ImageRepositionModal.vue'
 import ExportMenu from '@/components/base/ExportMenu.vue'
 import { buildCharacterExport, buildCharacterBackup } from '@/features/character/characterExport.js'
@@ -25,6 +26,7 @@ import { useViewRecency } from '@/utils/useViewRecency.js'
 import { useImagePicker } from '@/utils/useImagePicker.js'
 import { useImageLightbox } from '@/utils/useImageLightbox.js'
 import { validateImageSize } from '@/utils/imageUpload.js'
+import { createSection, normalizeSections } from '@/utils/sections.js'
 
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
@@ -192,6 +194,45 @@ async function adjustOffworldersVital({ field, value }) {
   } finally {
     pendingVital.value = false
   }
+}
+
+// Sections: small, individually titled plain-text notes that sit beside the
+// character's notes. They belong to the character (they follow it across
+// campaigns, exports and imports), so they save through the ordinary character
+// PATCH — no new endpoint. Only the owner may write; everyone who can see the
+// character reads them.
+const characterSections = computed(() => normalizeSections(currentCharacter.value?.sections))
+const sectionsBusy = ref(false)
+
+async function saveSections(sections) {
+  const character = currentCharacter.value
+  if (!isOwner.value || !character) return
+  sectionsBusy.value = true
+  try {
+    // The character's own id (a number), as the other quick-edits use — the
+    // store matches it against the list entry and `currentCharacter`.
+    await characterStore.updateCharacterSections(character.id, sections)
+  } catch {
+    // The store surfaced the error.
+  } finally {
+    sectionsBusy.value = false
+  }
+}
+
+function addSection({ title, body }) {
+  return saveSections([...characterSections.value, createSection({ title, body })])
+}
+
+function updateSection({ id, title, body }) {
+  return saveSections(
+    characterSections.value.map((section) =>
+      section.id === id ? { ...section, title, body } : section,
+    ),
+  )
+}
+
+function removeSection(id) {
+  return saveSections(characterSections.value.filter((section) => section.id !== id))
 }
 
 // Formats offered by the export menu. JSON is a portable, lossless backup; md
@@ -378,6 +419,21 @@ const exportCharacter = async (format) => {
               title="Notes"
             />
             <p v-else class="text-sm text-muted italic">No notes.</p>
+          </div>
+
+          <!-- Sections: small, individually titled notes that sit beside the
+               notes above. They belong to the character, so they follow it
+               across campaigns, exports and imports. Owner-only to edit; every
+               viewer reads them. -->
+          <div class="text-default">
+            <BaseNoteSections
+              :sections="characterSections"
+              :editable="isOwner"
+              :saving="sectionsBusy"
+              @add="addSection"
+              @update="updateSection"
+              @remove="removeSection"
+            />
           </div>
 
           <!-- Appearance (generic, any system) -->

@@ -863,6 +863,9 @@ function patchCharacter({ url, data }) {
     const campaignId = data && typeof data === 'object' ? data.campaignId : data
     characters[index].campaignId = campaignId || null
   } else if (typeof data === 'object' && data !== null) {
+    // A plain merge, so a one-field PATCH (the character's `sections`, say)
+    // leaves every other field alone — the same contract as the backend's
+    // null-safe patch.
     characters[index] = { ...characters[index], ...data }
   }
 

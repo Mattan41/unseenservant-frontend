@@ -310,6 +310,18 @@ export const guestCharacters = [
 - Cargo: whatever pays, no questions asked
 - Debt: the Syndicate still wants her
 - Rule: never file a flight plan`,
+    sections: [
+      {
+        id: 'guest_char_section_1',
+        title: 'Debts',
+        body: 'The Syndicate still wants her — and they have started asking at the Dry Dock.',
+      },
+      {
+        id: 'guest_char_section_2',
+        title: 'Contacts',
+        body: 'Marek, a dockhand who owes her a favour.\nThe Voss family, if they ever make planetfall.',
+      },
+    ],
     appearance: 'Sharp-eyed, patched flight jacket. *Always* carries a spare power cell.',
     backstory:
       'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
