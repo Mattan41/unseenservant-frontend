@@ -577,6 +577,23 @@ export const guestShips = [
 - port airlock seal is *temporary* — get it welded
 - fuel gauge reads low after every jump
 - transponder has "three previous owners" it would rather forget`,
+    sections: [
+      {
+        id: 'guest_ship_section_1',
+        title: 'Cargo',
+        body: 'Two crates of medical supplies bound for the Fringe.\nOne sealed case nobody has opened.',
+      },
+      {
+        id: 'guest_ship_section_2',
+        title: 'Passengers',
+        body: 'The Voss family — three of them, all travelling under assumed names.',
+      },
+      {
+        id: 'guest_ship_section_3',
+        title: 'Leads',
+        body: 'A dockhand at the Dry Dock claims the Syndicate is paying for names.',
+      },
+    ],
     imageUrl: '',
     imageUrls: [],
     createdAt: new Date().toISOString(),

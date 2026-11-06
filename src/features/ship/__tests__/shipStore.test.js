@@ -74,3 +74,50 @@ describe('shipStore.lastUpdateSource', () => {
     expect(store.lastUpdateSource).toBe('')
   })
 })
+
+/**
+ * Sections save on their own, as a partial PUT: only `sections` and the version
+ * the store holds travel, so a section edit can never revert an in-progress
+ * sheet edit (and vice versa).
+ */
+describe('shipStore.saveShipSections', () => {
+  const SECTIONS = [
+    { id: 's1', title: 'Cargo', body: 'Two crates.' },
+    { id: 's2', title: 'Leads', body: 'A rumour.' },
+  ]
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('saves the whole list, in order, against the version the store holds', async () => {
+    ShipService.fetchShip.mockResolvedValue(SHIP)
+    ShipService.saveShip.mockResolvedValue({ ...SHIP, sections: SECTIONS, version: 5 })
+    const store = useShipStore()
+    await store.fetchShip(1)
+
+    await store.saveShipSections(1, SECTIONS)
+
+    expect(ShipService.saveShip).toHaveBeenCalledWith(1, { sections: SECTIONS, version: 4 })
+    expect(store.ship.sections).toEqual(SECTIONS)
+  })
+
+  it('marks the write as a section save, so the sheet keeps its draft', async () => {
+    ShipService.fetchShip.mockResolvedValue(SHIP)
+    ShipService.saveShip.mockResolvedValue({ ...SHIP, version: 5 })
+    const store = useShipStore()
+    await store.fetchShip(1)
+
+    await store.saveShipSections(1, SECTIONS)
+
+    expect(store.lastUpdateSource).toBe('section')
+  })
+
+  it('does nothing when there is no ship loaded', async () => {
+    const store = useShipStore()
+
+    await expect(store.saveShipSections(1, SECTIONS)).resolves.toBeNull()
+    expect(ShipService.saveShip).not.toHaveBeenCalled()
+  })
+})

@@ -114,6 +114,15 @@ async function handleAdjustVital({ field, value }) {
   }
 }
 
+// Sections save immediately too, as a whole list in the order the sheet sent it.
+async function handleSaveSections(sections) {
+  try {
+    await shipStore.saveShipSections(props.campaignId, sections)
+  } catch {
+    // Error is surfaced by the store (notification + conflict banner).
+  }
+}
+
 /** An image over the upload limit: show the sentence the sheet produced. */
 function handleSizeError(message) {
   notificationStore.addNotification(message, 'error')
@@ -148,6 +157,7 @@ onMounted(loadShip)
         @add-gallery="handleAddGallery"
         @remove-gallery="handleRemoveGallery"
         @adjust-vital="handleAdjustVital"
+        @save-sections="handleSaveSections"
         @size-error="handleSizeError"
       />
     </div>

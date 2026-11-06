@@ -14,6 +14,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import BaseNoteSections from '@/components/base/BaseNoteSections.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
@@ -35,6 +36,7 @@ import {
 import { useImageLightbox } from '@/utils/useImageLightbox.js'
 import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import { createSection } from '@/utils/sections.js'
 
 const props = defineProps({
   /** Normalized ship data block. */
@@ -54,9 +56,9 @@ const props = defineProps({
   },
   /**
    * What produced the current `ship` (`shipStore.lastUpdateSource`):
-   * `'' | 'fetch' | 'save' | 'adjust' | 'image'`. A background refresh
-   * (`'fetch'`) must not discard the user's unsaved edits; this sheet's own
-   * writes (`'save'` / `'image'`) may still move the draft on.
+   * `'' | 'fetch' | 'save' | 'adjust' | 'image' | 'section'`. A background
+   * refresh (`'fetch'`) must not discard the user's unsaved edits; this sheet's
+   * own writes (`'save'` / `'image'` / `'section'`) may still move the draft on.
    */
   updateSource: {
     type: String,
@@ -84,6 +86,7 @@ const emit = defineEmits([
   'add-gallery',
   'remove-gallery',
   'adjust-vital',
+  'save-sections',
   'size-error',
 ])
 
@@ -123,19 +126,22 @@ function resetDraft() {
 
 // How a replacement of `ship` is handled depends on what caused it (see the
 // `updateSource` prop, fed from `shipStore.lastUpdateSource`): while the user is
-// editing, neither a 'fetch' (a background refresh — the activity poll) nor an
-// 'image' (this sheet's own image op) may touch the draft, because those are
-// changes the user did not ask for and their edits have to survive them. An
-// image op did move the server's copy on, so the version the draft saves against
-// follows it; a background refresh deliberately does not, so saving after one
-// still conflicts rather than overwriting the other person's change. Anything
-// else — this sheet's own save, a quick-edit, the first load — reloads the draft
-// and leaves edit mode.
+// editing, neither a 'fetch' (a background refresh — the activity poll) nor a
+// write that is not the draft's own save ('image', 'section') may touch the
+// draft, because those are changes the user did not ask for and their edits have
+// to survive them. Those writes did move the server's copy on, so the version the
+// draft saves against follows them; a background refresh deliberately does not,
+// so saving after one still conflicts rather than overwriting the other person's
+// change. Anything else — this sheet's own save, a quick-edit, the first load —
+// reloads the draft and leaves edit mode.
+const KEEPS_DRAFT = ['fetch', 'image', 'section']
+const MOVES_VERSION = ['image', 'section']
+
 watch(
   () => props.ship,
   () => {
-    if (editing.value && (props.updateSource === 'fetch' || props.updateSource === 'image')) {
-      if (props.updateSource === 'image') draftVersion.value = props.ship.version ?? null
+    if (editing.value && KEEPS_DRAFT.includes(props.updateSource)) {
+      if (MOVES_VERSION.includes(props.updateSource)) draftVersion.value = props.ship.version ?? null
       return
     }
     resetDraft()
@@ -192,6 +198,29 @@ function submit() {
 // draft inputs own those fields.
 function adjustVital(field, value) {
   emit('adjust-vital', { field, value })
+}
+
+// Sections save on their own, like the steppers above: they are not part of the
+// draft, so a section edit and an in-progress sheet edit never overwrite each
+// other. The parent persists the whole list, in the order it is sent.
+function addSection({ title, body }) {
+  emit('save-sections', [...(props.ship.sections || []), createSection({ title, body })])
+}
+
+function updateSection({ id, title, body }) {
+  emit(
+    'save-sections',
+    (props.ship.sections || []).map((section) =>
+      section.id === id ? { ...section, title, body } : section,
+    ),
+  )
+}
+
+function removeSection(id) {
+  emit(
+    'save-sections',
+    (props.ship.sections || []).filter((section) => section.id !== id),
+  )
 }
 
 // In view mode only show the upgrades the ship actually has; the full catalog
@@ -588,6 +617,21 @@ useUnsavedChanges(
         <MarkdownText v-if="draft.notes" :text="draft.notes" />
         <p v-else class="text-sm text-muted italic">No notes recorded for this ship yet.</p>
       </template>
+    </div>
+
+    <!-- Sections: small, individually titled notes that sit beside the free-text
+         notes above — Cargo, Passengers, Leads, Log as separate entries instead
+         of one blob. Plain text, not markdown. They save on their own (any
+         participant may write), so they are not part of the sheet's draft. -->
+    <div class="border-t border-section pt-4">
+      <BaseNoteSections
+        :sections="ship.sections"
+        :editable="true"
+        :saving="saving"
+        @add="addSection"
+        @update="updateSection"
+        @remove="removeSection"
+      />
     </div>
 
     <!-- Images: drawings, maps, handouts -->

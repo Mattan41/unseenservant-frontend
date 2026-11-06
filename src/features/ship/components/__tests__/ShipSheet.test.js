@@ -144,3 +144,65 @@ describe('ShipSheet — view-mode profile image', () => {
     expect(wrapper.find('#ship-profile-image-input').exists()).toBe(true)
   })
 })
+
+/**
+ * Sections sit beside the notes field and save on their own: the sheet emits the
+ * whole list and the parent persists it, so a section edit never has to wait for
+ * (or interfere with) the sheet's own Save.
+ */
+describe('ShipSheet — sections', () => {
+  const SECTIONS = [
+    { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+    { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+  ]
+
+  it('renders the ship sections in the order they arrived', () => {
+    const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
+
+    const titles = wrapper.findAll('li h5').map((heading) => heading.text())
+    expect(titles).toEqual(['Cargo', 'Leads'])
+  })
+
+  it('emits the whole list with the new section appended', async () => {
+    const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
+
+    await buttonByText(wrapper, 'Add section').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Passengers')
+    await wrapper.find('#new-section-body').setValue('The Voss family.')
+    await buttonByText(wrapper, 'Add section').trigger('click')
+
+    const emitted = wrapper.emitted('save-sections')
+    expect(emitted).toHaveLength(1)
+    expect(emitted[0][0]).toHaveLength(3)
+    expect(emitted[0][0][2]).toMatchObject({ title: 'Passengers', body: 'The Voss family.' })
+    expect(emitted[0][0][2].id).toBeTruthy()
+  })
+
+  it('emits the list without the deleted section', async () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
+
+    await buttonByText(wrapper, 'Delete').trigger('click')
+
+    expect(wrapper.emitted('save-sections')[0][0]).toEqual([SECTIONS[1]])
+    confirm.mockRestore()
+  })
+
+  it('keeps the editor open, and the unsaved edits, when a section save lands', async () => {
+    const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
+    await startEditing(wrapper)
+    await nameInput(wrapper).setValue('Draft name')
+
+    // The section save replaced the store's ship; the draft must survive it and
+    // follow the new version, exactly as it does for an image operation.
+    await wrapper.setProps({
+      ship: { ...SHIP, sections: [...SECTIONS, { id: 's3', title: 'Log', body: 'Day one.' }], version: 5 },
+      updateSource: 'section',
+    })
+
+    expect(nameInput(wrapper).element.value).toBe('Draft name')
+
+    await buttonByText(wrapper, 'Save ship').trigger('click')
+    expect(wrapper.emitted('save')[0][0].version).toBe(5)
+  })
+})

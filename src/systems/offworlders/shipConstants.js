@@ -12,6 +12,7 @@
  * The catalog is small and closed, so upgrades are simply stored as an array
  * of names (repeatable ones may appear twice).
  */
+import { normalizeSections } from '@/utils/sections.js'
 
 export const OFFWORLDERS_SHIP_HULL_DEFAULT = 15
 export const OFFWORLDERS_SHIP_ARMOR_DEFAULT = 0
@@ -107,6 +108,9 @@ export function createEmptyShipData() {
     credits: 0,
     upgrades: [],
     notes: '',
+    // Small, individually titled plain-text notes beside `notes` (Cargo,
+    // Passengers, Leads, Log). Additive: `notes` stays its own markdown field.
+    sections: [],
     imageUrl: '',
     imageUrls: [],
   }
@@ -181,6 +185,8 @@ export function normalizeShipData(data) {
       ? data.upgrades.filter((entry) => typeof entry === 'string')
       : [],
     notes: typeof data.notes === 'string' ? data.notes : '',
+    // A ship written before the field existed loads as "no sections".
+    sections: normalizeSections(data.sections),
     imageUrl: typeof data.imageUrl === 'string' ? data.imageUrl : '',
     imageUrls: Array.isArray(data.imageUrls)
       ? data.imageUrls.filter((entry) => typeof entry === 'string')

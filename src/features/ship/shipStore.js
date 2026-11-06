@@ -18,9 +18,9 @@ export const useShipStore = defineStore('ship', () => {
   const hasConflict = ref(false)
   // What produced the `ship` currently in the store. A background refresh
   // ('fetch' — e.g. the activity poll) must be told apart from a write this
-  // client made ('save' | 'adjust' | 'image'), because the ship sheet keeps the
-  // user's unsaved edits across the former and not the latter.
-  // '' | 'fetch' | 'save' | 'adjust' | 'image'
+  // client made ('save' | 'adjust' | 'image' | 'section'), because the ship
+  // sheet keeps the user's unsaved edits across the former and not the latter.
+  // '' | 'fetch' | 'save' | 'adjust' | 'image' | 'section'
   const lastUpdateSource = ref('')
 
   // ==========================================================================
@@ -150,6 +150,58 @@ export const useShipStore = defineStore('ship', () => {
   }
 
   /**
+   * Replace the ship's sections and save immediately.
+   *
+   * Sections save on their own, like the quick-edit steppers and the images, so
+   * they are deliberately **not** part of the sheet's draft: the payload carries
+   * only `sections` and the version the store holds, and the backend leaves every
+   * other field alone. That is what keeps a section edit and an in-progress sheet
+   * edit from overwriting each other.
+   *
+   * The array is the crew's arrangement — it is sent as-is, in order.
+   *
+   * @param {number|string} campaignId
+   * @param {Array<{id: string, title: string, body: string}>} sections
+   * @returns {Promise<object|null>}
+   */
+  async function saveShipSections(campaignId, sections) {
+    const notificationStore = useNotificationStore()
+    if (!ship.value) return null
+    isSaving.value = true
+    hasConflict.value = false
+    lastUpdateSource.value = 'section'
+
+    try {
+      const saved = await ShipService.saveShip(campaignId, {
+        sections: [...(sections || [])],
+        version: ship.value.version,
+      })
+      ship.value = normalizeShipData(saved)
+      return ship.value
+    } catch (err) {
+      if (err?.response?.status === 409) {
+        hasConflict.value = true
+        notificationStore.addNotification(
+          'This ship was changed by someone else. Reload to see the latest.',
+          'error',
+          5000,
+        )
+      } else {
+        console.error('Failed to save the ship sections:', err)
+        if (!err.handled) {
+          notificationStore.addNotification(
+            extractErrorMessage(err, 'Failed to save the ship sections.'),
+            'error',
+          )
+        }
+      }
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /**
    * Shared handler for the image endpoints: they all return the updated ship.
    * @param {Promise<object>} request
    * @param {string} successMessage
@@ -227,6 +279,7 @@ export const useShipStore = defineStore('ship', () => {
     fetchShip,
     saveShip,
     adjustShipField,
+    saveShipSections,
     uploadShipImage,
     addGalleryImage,
     removeGalleryImage,

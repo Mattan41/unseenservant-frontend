@@ -101,6 +101,10 @@ function defaultShip(campaignId) {
     credits: 0,
     upgrades: [],
     notes: '',
+    // Small, individually titled plain-text notes beside `notes`. The adapter
+    // stores the array as it arrives (see `saveShip`), so a section added in
+    // Guest Demo survives a reload exactly like the ship's other fields.
+    sections: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }

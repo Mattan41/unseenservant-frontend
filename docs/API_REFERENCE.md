@@ -749,12 +749,15 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
   isSaving: boolean,
   error: string | null,
   hasConflict: boolean,     // last save was rejected with 409 (optimistic concurrency)
-  lastUpdateSource: '' | 'fetch' | 'save' | 'adjust' | 'image'
+  lastUpdateSource: '' | 'fetch' | 'save' | 'adjust' | 'image' | 'section'
                             // what produced the `ship` currently in the store:
                             // 'fetch' is a background refresh (the activity poll),
                             // the others are writes this client made. The ship
                             // sheet keeps the user's unsaved edits across a
                             // 'fetch' and not across a write (see the Ship section).
+                            // 'section' is a section save: it keeps the draft like
+                            // 'image' does, and moves the version the draft saves
+                            // against, because the server's copy did move on.
 }
 ```
 
@@ -765,7 +768,7 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version, updatedAt }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, sections, imageUrl, imageUrls, version, updatedAt }`
 - **Status Codes**: 200, 401, 403, 404
 - **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`. A fetch that arrives while the ship is already loaded is a **background refresh** (the activity poll in `CampaignView`, see *Section badges*): it sets `lastUpdateSource` to `'fetch'` and `ShipSection` keeps the sheet mounted rather than swapping it for the spinner, so an in-progress edit is not unmounted — the sheet itself also keeps the user's unsaved edits when the source is `'fetch'` (see `ShipSheet.vue`).
 
@@ -780,6 +783,18 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Response**: ShipDTO
 - **Status Codes**: 200, 400, 401, 403, 409
 - **Notes**: Upsert — creates the ship with defaults if the campaign has none, otherwise updates in place. Every campaign participant may view and edit; there is no DELETE. Optimistic concurrency: sending a stale `version` returns 409 and the UI prompts a reload. The sheet's inline +/- steppers (Hull, Drive fuel, Credits) save through `shipStore.adjustShipField`, which sends the same payload but suppresses the success toast.
+
+---
+
+### PUT /api/campaigns/{id}/ship — sections
+
+- **Service**: ShipService.saveShip(campaignId, { sections, version })
+- **Store Action**: shipStore.saveShipSections(campaignId, sections)
+- **Guest Mode**: Mocked — the adapter merges `sections` into `guest_ships` like any other field
+- **Request**: `{ sections: [{ id, title, body }], version }` — a **partial** PUT
+- **Response**: ShipDTO
+- **Status Codes**: 200, 400, 401, 403, 409
+- **Notes**: `sections` are small, individually titled plain-text notes that sit **beside** `notes` (Cargo, Passengers, Leads, Log). `notes` is untouched: it stays a separate markdown field and is never migrated into the list. The array is a whole-list replacement and its order is the user's order — there is no ordering column, so the array is stored and returned as sent. Because the backend applies only the fields present, this partial PUT leaves every other ship field alone, which is what lets a section edit and an in-progress sheet edit travel separately. `id` is generated client-side (`src/utils/sections.js`) and is opaque to the backend. The UI is `BaseNoteSections.vue`, shared with the character; the ship passes `editable` unconditionally because every participant may write.
 
 ---
 

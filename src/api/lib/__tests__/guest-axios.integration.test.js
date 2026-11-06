@@ -409,6 +409,22 @@ describe('guest-axios PUT routes', () => {
     expect(created).toMatchObject({ name: 'Fresh', campaignId: 'guest_campaign_1', version: 0 })
   })
 
+  it('persists a ship section, and a re-read still shows it', async () => {
+    const sections = [
+      { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+      { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+    ]
+
+    // The ship store's section save is a partial PUT: only `sections` and the
+    // version travel, and the adapter merges them like any other field.
+    await guestAxios.put('api/campaigns/guest_campaign_4/ship', { sections, version: 0 })
+
+    const { data } = await guestAxios.get('api/campaigns/guest_campaign_4/ship')
+    expect(data.sections).toEqual(sections)
+    // The rest of the ship is untouched by the partial save.
+    expect(data.name).toBe('The Null Gravitas')
+  })
+
   it('merges the campaign payload, creating the ship when the system turns Offworlders', async () => {
     const { data } = await guestAxios.put('api/campaigns/guest_campaign_1', { name: 'Renamed' })
     expect(data).toMatchObject({ id: 'guest_campaign_1', name: 'Renamed', primarySystem: 'DND5E' })
