@@ -10,10 +10,11 @@
  * Props in, events out — no store access: an image over the upload limit emits
  * `size-error` with the sentence to show, and the parent notifies.
  */
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
+import BaseNoteSections from '@/components/base/BaseNoteSections.vue'
 import MarkdownText from '@/components/base/MarkdownText.vue'
 import CampaignImage from '@/features/campaign/components/CampaignImage.vue'
 import BaseStickyActions from '@/components/base/BaseStickyActions.vue'
@@ -32,8 +33,10 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
 } from '@/systems/offworlders/shipConstants.js'
+import { useImageLightbox } from '@/utils/useImageLightbox.js'
 import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
+import { createSection } from '@/utils/sections.js'
 
 const props = defineProps({
   /** Normalized ship data block. */
@@ -52,6 +55,16 @@ const props = defineProps({
     default: false,
   },
   /**
+   * What produced the current `ship` (`shipStore.lastUpdateSource`):
+   * `'' | 'fetch' | 'save' | 'adjust' | 'image' | 'section'`. A background
+   * refresh (`'fetch'`) must not discard the user's unsaved edits; this sheet's
+   * own writes (`'save'` / `'image'` / `'section'`) may still move the draft on.
+   */
+  updateSource: {
+    type: String,
+    default: '',
+  },
+  /**
    * The campaign's characters — the crew manifest. Each card is one character,
    * so nothing about a crew member lives here: the sheet only presents them.
    */
@@ -64,6 +77,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  /**
+   * Guest/demo mode. Its mock backend cannot really store an upload, so every
+   * image affordance is hidden there; the seed data's own images still show.
+   */
+  isGuest: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -73,6 +94,7 @@ const emit = defineEmits([
   'add-gallery',
   'remove-gallery',
   'adjust-vital',
+  'save-sections',
   'size-error',
 ])
 
@@ -82,6 +104,11 @@ const draft = reactive(createEmptyShipData())
 // Signature of the editable fields, used to detect unsaved edits so we can warn
 // before navigating away (image fields are excluded — they save on their own).
 const baseline = ref('')
+
+// The ship `version` the draft's fields are based on — what a save must send, so
+// that an external change landing mid-edit still surfaces as a conflict instead
+// of the draft silently overwriting it.
+const draftVersion = ref(null)
 
 function draftSignature() {
   return JSON.stringify({
@@ -101,20 +128,28 @@ function draftSignature() {
 function resetDraft() {
   Object.assign(draft, createEmptyShipData(), props.ship)
   draft.upgrades = [...(props.ship.upgrades || [])]
+  draftVersion.value = props.ship.version ?? null
   baseline.value = draftSignature()
 }
 
-// A pending image upload/replace also replaces `ship`, but must not drop the
-// user's in-progress field edits or close edit mode.
-let pendingImageOp = false
+// How a replacement of `ship` is handled depends on what caused it (see the
+// `updateSource` prop, fed from `shipStore.lastUpdateSource`): while the user is
+// editing, neither a 'fetch' (a background refresh — the activity poll) nor a
+// write that is not the draft's own save ('image', 'section') may touch the
+// draft, because those are changes the user did not ask for and their edits have
+// to survive them. Those writes did move the server's copy on, so the version the
+// draft saves against follows them; a background refresh deliberately does not,
+// so saving after one still conflicts rather than overwriting the other person's
+// change. Anything else — this sheet's own save, a quick-edit, the first load —
+// reloads the draft and leaves edit mode.
+const KEEPS_DRAFT = new Set(['fetch', 'image', 'section'])
+const MOVES_VERSION = new Set(['image', 'section'])
 
-// Reset the draft (and leave edit mode) whenever the source ship changes —
-// e.g. after a successful save or a reload.
 watch(
   () => props.ship,
   () => {
-    if (pendingImageOp) {
-      pendingImageOp = false
+    if (editing.value && KEEPS_DRAFT.has(props.updateSource)) {
+      if (MOVES_VERSION.has(props.updateSource)) draftVersion.value = props.ship.version ?? null
       return
     }
     resetDraft()
@@ -131,6 +166,14 @@ function startEditing() {
 function cancelEditing() {
   resetDraft()
   editing.value = false
+}
+
+// The conflict banner's Reload is an explicit "give me the server's copy": the
+// local edits go, so leave edit mode first and let the incoming ship be adopted
+// by the watcher above, rather than kept the way a background refresh is.
+function reloadFromConflict() {
+  cancelEditing()
+  emit('reload')
 }
 
 function count(upgrade) {
@@ -150,10 +193,12 @@ function removeUpgrade(name) {
 }
 
 function submit() {
-  pendingImageOp = false
+  // Save against the version the draft's fields were based on (not whatever
+  // `ship` holds now), so a background refresh that landed mid-edit becomes a
+  // conflict rather than a silent overwrite of the other person's change.
   // Images are managed by their own endpoints, so they are not part of this
   // payload (see `buildShipPayload`, shared with the store's quick-edit action).
-  emit('save', buildShipPayload({ ...draft, version: props.ship.version }))
+  emit('save', buildShipPayload({ ...draft, version: draftVersion.value }))
 }
 
 // Quick-edit: Hull / Drive fuel / Credits are nudged in place and saved
@@ -161,6 +206,29 @@ function submit() {
 // draft inputs own those fields.
 function adjustVital(field, value) {
   emit('adjust-vital', { field, value })
+}
+
+// Sections save on their own, like the steppers above: they are not part of the
+// draft, so a section edit and an in-progress sheet edit never overwrite each
+// other. The parent persists the whole list, in the order it is sent.
+function addSection({ title, body }) {
+  emit('save-sections', [...(props.ship.sections || []), createSection({ title, body })])
+}
+
+function updateSection({ id, title, body }) {
+  emit(
+    'save-sections',
+    (props.ship.sections || []).map((section) =>
+      section.id === id ? { ...section, title, body } : section,
+    ),
+  )
+}
+
+function removeSection(id) {
+  emit(
+    'save-sections',
+    (props.ship.sections || []).filter((section) => section.id !== id),
+  )
 }
 
 // In view mode only show the upgrades the ship actually has; the full catalog
@@ -183,9 +251,19 @@ const repositionFile = ref(null)
 // handouts"), and every image in it is the ship's to remove; a character's art
 // belongs to its owner and is removed in Edit character, so it opens with its own
 // caption and steps through its own pictures instead of the ship's.
-const lightboxUrl = ref(null)
-const lightboxImages = ref([])
-const lightboxLabel = ref('')
+// Opening/stepping the lightbox is shared with the character's own gallery
+// lightbox (`useImageLightbox`); the state and the ←/→ handling live there, and
+// each caller gets its own instance, so the two never step through each other's
+// sets.
+const {
+  lightboxUrl,
+  lightboxImages,
+  lightboxLabel,
+  open: openLightbox,
+  close: closeLightbox,
+  showPrevious: showPreviousImage,
+  showNext: showNextImage,
+} = useImageLightbox()
 
 /** The ship's own images, profile image first — what the gallery grid renders. */
 const galleryImages = computed(() => {
@@ -196,14 +274,6 @@ const galleryImages = computed(() => {
 /** True while the open picture is one of the ship's own images. */
 const lightboxIsShipImage = computed(() => galleryImages.value.includes(lightboxUrl.value))
 
-/** Open one set of images, captioned with `label`. */
-function openLightbox(url, images = [], label = '') {
-  lightboxUrl.value = url
-  // A lone picture (a character with one image) still needs a set to step in.
-  lightboxImages.value = images.length ? [...images] : [url]
-  lightboxLabel.value = label
-}
-
 /** Open a picture from the ship's own gallery. */
 function openShipImage(url) {
   openLightbox(url, galleryImages.value, props.ship.name || 'Ship')
@@ -212,12 +282,6 @@ function openShipImage(url) {
 /** Open a crew card's pictures — that character's images, under its name. */
 function openCrewImage({ url, images = [], label = '' } = {}) {
   openLightbox(url, images, label)
-}
-
-function closeLightbox() {
-  lightboxUrl.value = null
-  lightboxImages.value = []
-  lightboxLabel.value = ''
 }
 
 /** True when `url` is the ship's profile image (not a gallery image). */
@@ -262,7 +326,6 @@ function applyRepositionedImage(file) {
   }
 
   repositionFile.value = null
-  pendingImageOp = true
   emit('upload-profile', file)
 }
 
@@ -281,51 +344,20 @@ function onGalleryFileChange(event) {
     return
   }
 
-  pendingImageOp = true
   emit('add-gallery', file)
 }
 
 function removeGalleryImage(url) {
-  pendingImageOp = true
   emit('remove-gallery', url)
   if (lightboxUrl.value === url) closeLightbox()
 }
 
-/**
- * Step the lightbox to the previous/next image, wrapping around at the ends.
- * The set is the one the picture was opened from (the ship's, or a crew card's).
- */
-function stepLightbox(offset) {
-  const images = lightboxImages.value
-  const index = images.indexOf(lightboxUrl.value)
-  if (index === -1) return
-  lightboxUrl.value = images[(index + offset + images.length) % images.length]
-}
-
-function showPreviousImage() {
-  stepLightbox(-1)
-}
-
-function showNextImage() {
-  stepLightbox(1)
-}
-
-/** Arrow-key navigation while the lightbox is open. */
-function onLightboxKeydown(event) {
-  if (!lightboxUrl.value) return
-  if (event.key === 'ArrowLeft') {
-    event.preventDefault()
-    showPreviousImage()
-  } else if (event.key === 'ArrowRight') {
-    event.preventDefault()
-    showNextImage()
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onLightboxKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
-
-const isDirty = computed(() => editing.value && draftSignature() !== baseline.value)
+// The sheet's own draft, and separately the text a note is holding. They are
+// kept apart because only the draft drives the sticky action bar; both count as
+// unsaved work when the user tries to leave.
+const draftDirty = computed(() => editing.value && draftSignature() !== baseline.value)
+const sectionsDirty = ref(false)
+const isDirty = computed(() => draftDirty.value || sectionsDirty.value)
 
 // Warn before leaving the campaign while the ship has unsaved edits.
 useUnsavedChanges(
@@ -339,7 +371,7 @@ useUnsavedChanges(
     <!-- Optimistic-concurrency notice -->
     <div v-if="conflict" class="error-message flex flex-wrap items-center justify-between gap-2">
       <span>This ship was changed by someone else. Reload to see the latest before editing.</span>
-      <BaseButton variant="retry" @click="$emit('reload')">Reload</BaseButton>
+      <BaseButton variant="retry" @click="reloadFromConflict">Reload</BaseButton>
     </div>
 
     <!-- Name (editable only while editing — the value itself is in the section
@@ -358,9 +390,11 @@ useUnsavedChanges(
       <BaseButton variant="update" icon="edit" @click="startEditing">Edit ship</BaseButton>
     </div>
 
-    <!-- Profile image: in view mode it mirrors the campaign image banner; while
-         editing it shrinks to the square editor (hover to change / reposition). -->
-    <div class="flex items-start gap-4">
+    <!-- Profile image: in view mode it mirrors the campaign image banner and
+         carries the same replace affordance as while editing — an explicit
+         button, because a hover overlay is unreachable on touch. While editing
+         it shrinks to the square editor (hover to change / reposition). -->
+    <div :class="editing ? 'flex items-start gap-4' : 'flex flex-col gap-2'">
       <div class="relative" :class="editing ? 'w-40 flex-shrink-0' : 'w-full'">
         <CampaignImage
           :src="ship.imageUrl"
@@ -371,7 +405,7 @@ useUnsavedChanges(
           style="border-color: var(--color-primary-300)"
         />
         <button
-          v-if="editing"
+          v-if="editing && !isGuest"
           type="button"
           class="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 text-sm text-white opacity-0 hover:opacity-100 transition-opacity"
           @click="triggerProfileInput"
@@ -379,6 +413,7 @@ useUnsavedChanges(
           Change image
         </button>
         <input
+          v-if="!isGuest"
           ref="profileInput"
           id="ship-profile-image-input"
           type="file"
@@ -391,8 +426,17 @@ useUnsavedChanges(
 
       <div v-if="editing" class="flex-1 min-w-0 space-y-2">
         <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
+        <p v-if="isGuest" class="guest-notice">⚠️ Image upload is not supported in guest mode.</p>
         <!-- A real button, so touch devices (no hover) can change the image. -->
-        <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+        <BaseButton v-else variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+      </div>
+      <!-- View mode: the same picker + reposition flow, reached without entering
+           Edit. An explicit button, because a hover overlay is unreachable on
+           touch. -->
+      <div v-else class="min-w-0 space-y-1">
+        <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
+        <p v-if="isGuest" class="guest-notice">⚠️ Image upload is not supported in guest mode.</p>
+        <BaseButton v-else variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
       </div>
     </div>
 
@@ -591,6 +635,22 @@ useUnsavedChanges(
       </template>
     </div>
 
+    <!-- Sections: small, individually titled notes that sit beside the free-text
+         notes above — Cargo, Passengers, Leads, Log as separate entries instead
+         of one blob. Plain text, not markdown. They save on their own (any
+         participant may write), so they are not part of the sheet's draft. -->
+    <div class="border-t border-section pt-4">
+      <BaseNoteSections
+        :sections="ship.sections"
+        :editable="true"
+        :saving="saving"
+        @add="addSection"
+        @update="updateSection"
+        @remove="removeSection"
+        @dirty="sectionsDirty = $event"
+      />
+    </div>
+
     <!-- Images: drawings, maps, handouts -->
     <div class="border-t border-section pt-4">
       <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
@@ -599,7 +659,7 @@ useUnsavedChanges(
           <span class="text-xs text-muted"
             >The ship's drawings, maps and handouts — click to view</span
           >
-          <template v-if="editing">
+          <template v-if="editing && !isGuest">
             <BaseButton variant="add" @click="triggerGalleryInput">Add image</BaseButton>
           </template>
         </div>
@@ -630,6 +690,7 @@ useUnsavedChanges(
       <p v-else class="text-sm text-muted italic">No images yet.</p>
 
       <input
+        v-if="!isGuest"
         ref="galleryInput"
         id="ship-gallery-image-input"
         type="file"
@@ -654,7 +715,7 @@ useUnsavedChanges(
          reachable while scrolling a long sheet, on mobile and desktop. -->
     <BaseStickyActions
       v-if="editing"
-      :dirty="isDirty"
+      :dirty="draftDirty"
       :saving="saving"
       save-label="Save ship"
       @cancel="cancelEditing"
@@ -704,7 +765,7 @@ useUnsavedChanges(
             Remove
           </BaseButton>
           <BaseButton
-            v-if="editing && isProfileImage(lightboxUrl)"
+            v-if="editing && isProfileImage(lightboxUrl) && !isGuest"
             variant="default"
             @click="changeProfileFromLightbox"
           >

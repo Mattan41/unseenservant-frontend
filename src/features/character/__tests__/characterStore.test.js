@@ -8,6 +8,7 @@ import { recordView, viewHistory } from '@/utils/viewHistory.js'
 vi.mock('@/features/character/CharacterService.js', () => ({
   default: {
     fetchAllCharactersForCurrentUser: vi.fn(),
+    updateCharacterField: vi.fn(),
     addCharacterImage: vi.fn(),
     removeCharacterImage: vi.fn(),
   },
@@ -127,6 +128,44 @@ describe('characterStore', () => {
       CharacterService.addCharacterImage.mockRejectedValue(new Error('upload failed'))
 
       await expect(store.addCharacterImage(1, file())).rejects.toThrow('upload failed')
+    })
+  })
+
+  // Sections belong to the character, so they travel inside the character DTO:
+  // the action is the ordinary one-field PATCH, and both the list entry and the
+  // open character have to follow it.
+  describe('sections', () => {
+    const SECTIONS = [
+      { id: 's1', title: 'Cargo', body: 'Two crates.' },
+      { id: 's2', title: 'Leads', body: 'A rumour.' },
+    ]
+
+    beforeEach(async () => {
+      const store = useCharacterStore()
+      await store.fetchAllCharactersForCurrentUser()
+      store.currentCharacter = store.characters[0]
+    })
+
+    it('patches the sections field and stores the returned character', async () => {
+      const store = useCharacterStore()
+      CharacterService.updateCharacterField.mockResolvedValue({
+        id: 1,
+        name: 'Aragorn',
+        sections: SECTIONS,
+      })
+
+      await store.updateCharacterSections(1, SECTIONS)
+
+      expect(CharacterService.updateCharacterField).toHaveBeenCalledWith(1, 'sections', SECTIONS)
+      expect(store.characters[0].sections).toEqual(SECTIONS)
+      expect(store.currentCharacter.sections).toEqual(SECTIONS)
+    })
+
+    it('rethrows a failed save so the view can stop its spinner', async () => {
+      const store = useCharacterStore()
+      CharacterService.updateCharacterField.mockRejectedValue(new Error('nope'))
+
+      await expect(store.updateCharacterSections(1, SECTIONS)).rejects.toThrow('nope')
     })
   })
 })

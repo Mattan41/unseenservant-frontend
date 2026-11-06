@@ -951,6 +951,21 @@ html[data-env='demo'] {
   @apply flex flex-col items-center gap-3 rounded-lg border border-(--border-section) p-6 text-center;
 }
 
+/* View switcher tabs (journal: Campaign + one tab per owned character). A real
+   ARIA tablist (`JournalTabs.vue`), shown only when there is more than one tab. */
+.tab-bar {
+  @apply flex flex-wrap gap-1 border-b border-(--border-section);
+}
+
+.tab-bar-item {
+  @apply cursor-pointer rounded-t-md px-3 py-2 text-sm font-medium text-(--text-muted) transition-colors hover:text-(--text-default);
+}
+
+.tab-bar-item--active,
+.tab-bar-item--active:hover {
+  @apply bg-primary-700 text-primary-100;
+}
+
 /* Base icon button (IconButton.vue) */
 .icon-btn {
   @apply inline-flex items-center justify-center rounded-md p-2 cursor-pointer transition-colors focus:outline-none focus:ring-2;
@@ -1374,6 +1389,31 @@ h5 {
   font-family: 'Oswald', sans-serif;
   font-size: 1.125rem;
   line-height: 1.25em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* Sub-section heading — a small heading for a block inside a narrow rail or
+   panel (e.g. the character sheet's identity rail, where "Notes:",
+   "Additional notes", "Appearance:" and "Backstory:" are siblings). Same
+   opt-out as `.modal-title` and `.card-title`, and for the same reason: the
+   global `h1–h5` rules are page-sized and unlayered, so a heading asked for
+   with `text-base` still renders at up to 34px. One size for every
+   sub-section, in every mode. */
+.subsection-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.3em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* A card title inside a `.subsection-heading` block — one step smaller, so the
+   block heading and the entries under it read as two levels. */
+.subsection-heading-sm {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.3em;
   font-weight: 600;
   text-transform: none;
 }

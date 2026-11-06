@@ -39,3 +39,50 @@ describe('buildShipExport', () => {
     expect(txt).not.toContain('**')
   })
 })
+
+describe('buildShipExport — sections', () => {
+  const withSections = {
+    ...ship,
+    sections: [
+      { id: 's1', title: 'Cargo', body: 'Two crates of medical supplies.' },
+      { id: 's2', title: 'Leads', body: 'A rumour about the Dry Dock.' },
+    ],
+  }
+
+  it('gives each section its own heading in markdown', () => {
+    const md = buildShipExport(withSections, { format: 'md' })
+
+    expect(md).toContain('## Cargo')
+    expect(md).toContain('Two crates of medical supplies.')
+    expect(md).toContain('## Leads')
+    expect(md).toContain('A rumour about the Dry Dock.')
+  })
+
+  it('renders each section as a title and its body in plain text', () => {
+    const txt = buildShipExport(withSections, { format: 'txt' })
+
+    expect(txt).toContain('CARGO')
+    expect(txt).toContain('Two crates of medical supplies.')
+    expect(txt).toContain('LEADS')
+  })
+
+  it('keeps the notes field separate from the sections', () => {
+    const md = buildShipExport(withSections, { format: 'md' })
+
+    expect(md).toContain('## Notes')
+    expect(md).toContain('**Loud** engines')
+  })
+
+  it('skips a section that has no body', () => {
+    const md = buildShipExport(
+      { ...ship, sections: [{ id: 's1', title: 'Empty', body: '' }] },
+      { format: 'md' },
+    )
+
+    expect(md).not.toContain('## Empty')
+  })
+
+  it('exports a ship that has no sections exactly as before', () => {
+    expect(buildShipExport(ship, { format: 'md' })).not.toContain('## Cargo')
+  })
+})

@@ -2,7 +2,8 @@
 /**
  * "My journal" — the container the campaign view renders for its journal
  * section, in the same spirit as `MessageBoard`: it talks to its store, and the
- * parts it shows (`JournalPager`, `JournalPageEditor`) stay presentational.
+ * parts it shows (`JournalPager`, `JournalPageEditor`, `CharacterJournalPanel`)
+ * stay presentational.
  *
  * The book always has a page to write on: the one after the last stored page is
  * a blank, virtual page, so the first keystroke on it creates the page and the
@@ -11,22 +12,45 @@
  * loses focus, when the tab is hidden and on `Ctrl/Cmd+S`, so the debounce is
  * never what the reader is waiting for.
  *
+ * Two views sit behind a tab bar: the campaign journal itself, and a panel per
+ * character the participant owns (from the campaign store, filtered to
+ * `ownerId === the viewer`). A character tab shows the character's long text
+ * read-only and lets its owner write the titled notes, saved through
+ * `characterStore` exactly as on `CharacterView`; `CharacterView` is still one
+ * link away for everything else. With no owned character there is a single tab,
+ * so the bar is not rendered and the section looks exactly as it did before.
+ *
+ * On opening, the journal lands on its most recently edited page (the newest
+ * `updatedAt` across the stored pages) rather than page 1. An in-progress draft
+ * wins over that default: the current page is left alone when there is unsaved
+ * text. Neither changes the store's own page semantics — `goToPage`,
+ * `insertPageAfterCurrent`, `deleteCurrentPage`, the guard and the pager are
+ * untouched.
+ *
  * Privacy is the backend's job — only the owner may read a journal, and the
  * campaign owner and a GM are refused too. The note below says so; it is not
  * what enforces it.
  */
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useJournalStore } from '@/features/journal/journalStore.js'
 import {
   counterVisible as counterVisibleFor,
+  mostRecentlyEditedPageNumber,
   resolveJump,
 } from '@/features/journal/journalUtils.js'
+import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useCharacterStore } from '@/features/character/characterStore.js'
+import { useUserStore } from '@/features/user/userStore.js'
+import { sameId } from '@/features/campaign/campaignPermissions.js'
+import { createSection, normalizeSections } from '@/utils/sections.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import BaseButton from '@/components/base/BaseButton.vue'
+import CharacterJournalPanel from '@/features/journal/components/CharacterJournalPanel.vue'
 import JournalPageEditor from '@/features/journal/components/JournalPageEditor.vue'
 import JournalPager from '@/features/journal/components/JournalPager.vue'
+import JournalTabs from '@/features/journal/components/JournalTabs.vue'
 
 const props = defineProps({
   campaignId: {
@@ -36,6 +60,9 @@ const props = defineProps({
 })
 
 const journalStore = useJournalStore()
+const campaignStore = useCampaignStore()
+const characterStore = useCharacterStore()
+const userStore = useUserStore()
 const notificationStore = useNotificationStore()
 
 const {
@@ -54,11 +81,120 @@ const {
 
 const counterVisible = computed(() => counterVisibleFor(charCount.value))
 
+// --- Tabs: the journal, then one per character the participant owns ----------
+
+/**
+ * The participant's own characters in this campaign, in the store's party order.
+ * Never another participant's character and never an NPC: the journal is the
+ * participant's own space.
+ */
+const ownCharacters = computed(() =>
+  campaignStore
+    .getCharactersByCampaignId(props.campaignId)
+    .filter((character) => sameId(character.ownerId, userStore.userId)),
+)
+
+/** Campaign first, then the owned characters under their own names. */
+const tabs = computed(() => [
+  { key: 'campaign', label: 'Campaign' },
+  ...ownCharacters.value.map((character) => ({
+    key: String(character.id),
+    label: character.name || 'Character',
+  })),
+])
+
+const activeTab = ref('campaign')
+
+/** The character behind the active tab, or `null` on the campaign tab. */
+const activeCharacter = computed(
+  () => ownCharacters.value.find((character) => String(character.id) === activeTab.value) || null,
+)
+
+// The character tabs show the viewer's own characters, so their material is
+// writable — exactly as on `CharacterView` (which has the identical owner rule).
+// The panel reports the change and this board persists it.
+const canEditActiveCharacter = computed(() =>
+  sameId(activeCharacter.value?.ownerId, userStore.userId),
+)
+const activeSections = computed(() => normalizeSections(activeCharacter.value?.sections))
+const characterBusy = ref(false)
+const characterDirty = ref(false)
+
+/** The message the character guard uses, on the route and on a tab switch alike. */
+const CHARACTER_LEAVE_MESSAGE = 'You have unsaved changes on this character. Leave without saving?'
+
+/**
+ * Persist one change to the character — a whole titled-notes list, or one of the
+ * long-text fields — through the same one-field PATCH `CharacterView` uses. The
+ * campaign store keeps its own copy of the party, so it is refreshed afterwards;
+ * otherwise the saved value would not show here (or on the campaign's character
+ * cards) once the panel is re-entered.
+ */
+async function persistCharacter(work) {
+  const character = activeCharacter.value
+  if (!character) return
+  characterBusy.value = true
+  try {
+    await work(character)
+    await campaignStore.fetchCharactersForCampaign(props.campaignId)
+  } catch {
+    // The store surfaced the error.
+  } finally {
+    characterBusy.value = false
+  }
+}
+
+function saveSections(nextSections) {
+  return persistCharacter((character) =>
+    characterStore.updateCharacterSections(character.id, nextSections),
+  )
+}
+
+function saveField({ field, value }) {
+  return persistCharacter((character) =>
+    characterStore.updateCharacterField(character.id, field, value),
+  )
+}
+
+function onAddSection({ title, body }) {
+  return saveSections([...activeSections.value, createSection({ title, body })])
+}
+
+function onUpdateSection({ id, title, body }) {
+  return saveSections(
+    activeSections.value.map((section) => (section.id === id ? { id, title, body } : section)),
+  )
+}
+
+function onRemoveSection(id) {
+  return saveSections(activeSections.value.filter((section) => section.id !== id))
+}
+
+function onCharacterDirty(value) {
+  characterDirty.value = value
+}
+
+/**
+ * Switching tabs unmounts the panel, which may hold a half-typed note or field —
+ * so ask first, the same question the route guard asks. The journal itself is not
+ * at risk: its draft lives in the store and keeps autosaving, so it never prompts
+ * here.
+ */
+function onSelectTab(key) {
+  if (key === activeTab.value) return
+  if (characterDirty.value && !window.confirm(CHARACTER_LEAVE_MESSAGE)) return
+  characterDirty.value = false
+  activeTab.value = key
+}
+
 // Autosave is debounced, so a pending save is what "unsaved changes" means here.
 useUnsavedChanges(
   () => journalStore.hasUnsavedChanges(),
   'You have unsaved changes in your journal. Leave without saving?',
 )
+
+// A note half-typed in a character tab is unsaved text too.
+useUnsavedChanges(() => characterDirty.value, CHARACTER_LEAVE_MESSAGE)
 
 /**
  * Flush what is pending without waiting for the debounce: when the field loses
@@ -87,16 +223,60 @@ function onVisibilityChange() {
   if (document.visibilityState === 'hidden') void journalStore.flush()
 }
 
+/**
+ * Open the journal and land on the page a returning reader wants — see
+ * `landOnMostRecentPage`.
+ */
+async function openJournal(id) {
+  await journalStore.fetchJournal(id)
+  await landOnMostRecentPage()
+}
+
+/**
+ * Land on the most recently edited page rather than page 1.
+ *
+ * A draft in progress is where the reader was, so it wins: the current page is
+ * left alone while there is unsaved text. Otherwise the newest stored page is
+ * the default (page 1 for an empty book or one whose pages carry no timestamp),
+ * and a no-op when it is already the page on screen. This only moves the store
+ * through its existing `goToPage` — no store behaviour changes.
+ */
+async function landOnMostRecentPage() {
+  if (journalStore.hasUnsavedChanges()) return
+  const target = mostRecentlyEditedPageNumber(journalStore.pages)
+  if (target && target !== journalStore.currentPageNumber) {
+    await journalStore.goToPage(target)
+  }
+}
+
+/**
+ * The party is already loaded by the campaign view, so the tabs normally need
+ * nothing. Fetch only when this campaign's characters have never been loaded and
+ * no load is on its way — through the store's existing action, never a new one.
+ */
+function ensureCharactersLoaded() {
+  const key = props.campaignId
+  const loaded = campaignStore.campaignCharacters?.[key]
+  if (loaded === undefined && !campaignStore.loadingCharacters) {
+    void campaignStore.fetchCharactersForCampaign(key)
+  }
+}
+
 onMounted(() => {
   document.addEventListener('keydown', onSaveShortcut)
   document.addEventListener('visibilitychange', onVisibilityChange)
-  journalStore.fetchJournal(props.campaignId)
+  void openJournal(props.campaignId)
+  ensureCharactersLoaded()
 })
 
 watch(
   () => props.campaignId,
   (id) => {
-    if (id) journalStore.fetchJournal(id)
+    if (id) {
+      activeTab.value = 'campaign'
+      characterDirty.value = false
+      void openJournal(id)
+    }
   },
 )
 
@@ -142,42 +322,81 @@ function onRejected(message) {
     </div>
 
     <template v-else>
-      <p class="text-sm text-muted">
-        Only you can read this journal. Changes are saved automatically — Ctrl/Cmd+S saves at once.
-      </p>
+      <!-- The bar only earns its place with something to switch to. -->
+      <JournalTabs
+        v-if="tabs.length > 1"
+        :tabs="tabs"
+        :active-key="activeTab"
+        @select="onSelectTab"
+      />
 
+      <!-- Campaign tab: the journal itself, exactly as it was -->
       <div
-        v-if="hasConflict"
-        class="error-message flex flex-wrap items-center justify-between gap-2"
+        v-if="activeTab === 'campaign'"
+        id="journal-panel-campaign"
+        role="tabpanel"
+        aria-labelledby="journal-tab-campaign"
+        class="space-y-4"
       >
-        <span>This page was changed by someone else. Reload to see the latest before writing.</span>
-        <BaseButton variant="retry" @click="journalStore.reload()">Reload</BaseButton>
+        <p class="text-sm text-muted">
+          Only you can read this journal. Changes are saved automatically — Ctrl/Cmd+S saves at
+          once.
+        </p>
+
+        <div
+          v-if="hasConflict"
+          class="error-message flex flex-wrap items-center justify-between gap-2"
+        >
+          <span
+            >This page was changed by someone else. Reload to see the latest before writing.</span
+          >
+          <BaseButton variant="retry" @click="journalStore.reload()">Reload</BaseButton>
+        </div>
+
+        <p v-if="atPageLimit" class="error-message">
+          This journal is full: {{ lastPageNumber - 1 }} pages is the limit. Delete a page before
+          adding another.
+        </p>
+
+        <JournalPager
+          :page-number="currentPageNumber"
+          :last-page-number="lastPageNumber"
+          :busy="isSaving"
+          :can-delete="currentPage !== null"
+          @go="onGo"
+          @insert="onInsert"
+          @remove="onRemove"
+        />
+
+        <JournalPageEditor
+          :model-value="draft"
+          :save-state="saveState"
+          :char-count="charCount"
+          :counter-visible="counterVisible"
+          @update:model-value="onContent"
+          @rejected="onRejected"
+          @blur="onBlur"
+        />
       </div>
 
-      <p v-if="atPageLimit" class="error-message">
-        This journal is full: {{ lastPageNumber - 1 }} pages is the limit. Delete a page before
-        adding another.
-      </p>
-
-      <JournalPager
-        :page-number="currentPageNumber"
-        :last-page-number="lastPageNumber"
-        :busy="isSaving"
-        :can-delete="currentPage !== null"
-        @go="onGo"
-        @insert="onInsert"
-        @remove="onRemove"
-      />
-
-      <JournalPageEditor
-        :model-value="draft"
-        :save-state="saveState"
-        :char-count="charCount"
-        :counter-visible="counterVisible"
-        @update:model-value="onContent"
-        @rejected="onRejected"
-        @blur="onBlur"
-      />
+      <!-- Character tab: one owned character — long text read-only, titled notes writable -->
+      <div
+        v-else-if="activeCharacter"
+        :id="`journal-panel-${activeTab}`"
+        role="tabpanel"
+        :aria-labelledby="`journal-tab-${activeTab}`"
+      >
+        <CharacterJournalPanel
+          :character="activeCharacter"
+          :editable="canEditActiveCharacter"
+          :saving="characterBusy"
+          @save-field="saveField"
+          @add="onAddSection"
+          @update="onUpdateSection"
+          @remove="onRemoveSection"
+          @dirty="onCharacterDirty"
+        />
+      </div>
     </template>
   </div>
 </template>

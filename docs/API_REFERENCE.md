@@ -420,8 +420,9 @@ re-deriving a role check.
 - **Service**: CharacterService.createCharacter(data)
 - **Store Action**: characterStore.createCharacter(data)
 - **Guest Mode**: Mocked — adds character to guest_characters with generated ID
-- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
+- **Request**: CharacterInputDTO `{ ownerId?, campaignId?, name, systemType, notes?, sections?, avatarUrl?, appearance?, backstory?, privateBackstory?, dnd5e?, offworlders? }`
   - `backstory` / `privateBackstory` are free-text core-character fields (any system). `backstory` is public to the campaign; `privateBackstory` is returned only to the owner or the campaign GM. Writes are owner-only.
+  - `sections = [ { id, title, body } ]` — small, individually titled **plain-text** notes that sit beside `notes` (see "PATCH … — sections" below). They belong to the character, so they follow it across campaigns, exports and imports. `buildPayload` carries them so a restored backup keeps them; the create form does not edit them.
   - `systemType` is optional: `null` (which is what the form sends for "No system") creates a **system-less character** — only the generic core fields exist and neither nested block is stored. The server no longer defaults it to `DND5E`.
   - `dnd5e = { level, characterClass, race, hitPoints, armorClass, stats }` (used when `systemType === 'DND5E'`)
   - `offworlders = { characterClass, species, xp, health, currentHealth, healthModifier, armor, supply, supplyMax, credits, stats, skills, abilities, weapons, items }` (used when `systemType === 'OFFWORLDERS'`)
@@ -480,6 +481,18 @@ re-deriving a role check.
 
 ---
 
+### PATCH /api/characters/{id} — sections
+
+- **Service**: CharacterService.updateCharacterField(characterId, 'sections', sections)
+- **Store Action**: characterStore.updateCharacterSections(characterId, sections)
+- **Guest Mode**: Mocked — the adapter merges `sections` into `guest_characters` like any other field
+- **Request**: `{ sections: [{ id, title, body }] }` — a one-field PATCH
+- **Response**: CharacterOutputDTO
+- **Status Codes**: 200, 400, 401, 403, 404
+- **Notes**: `sections` are small, individually titled plain-text notes that sit **beside** `notes`; `notes` is untouched and is never migrated into the list. They live on the character rather than on a campaign, so they follow it across campaigns, exports and imports — which is why they travel inside the character DTO and need no endpoint of their own. The array is a whole-list replacement and its order is the owner's order (no ordering column). `id` is generated client-side (`src/utils/sections.js`) and is opaque to the backend. Only the owner may write (the PATCH is owner-only); everyone who can see the character reads them. The UI is `BaseNoteSections.vue`, shared with the ship, with `:editable="isOwner"`.
+
+---
+
 ### POST /api/characters/{id}/image
 
 - **Service**: CharacterService.uploadCharacterImage(characterId, imageFile)
@@ -489,7 +502,7 @@ re-deriving a role check.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with updated imageUrl)
 - **Status Codes**: 200, 400, 401, 403
-- **Notes**: Extracts error message from response for user notification.
+- **Notes**: Replaces the character's `avatarUrl` portrait — the one image that goes through pick → reposition. Reached from Edit character and, without entering Edit, from the avatar's "Change image" affordance on `CharacterView` (owner only, hidden in Guest Demo). Errors surface through the notification store.
 
 ---
 
@@ -502,7 +515,7 @@ re-deriving a role check.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with the image appended to `imageUrls`)
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Edited from Edit character, where the picked file is uploaded **as it is** — no crop step, no re-encode (the portrait is the only image that goes through pick → reposition). In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery.
+- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Added from Edit character, or — without entering Edit — from the gallery's "Add image" affordance on `CharacterView` (owner only, hidden in Guest Demo); either way the picked file is uploaded **as it is** — no crop step, no re-encode (the portrait is the only image that goes through pick → reposition). Removal stays in Edit character. In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery. `CharacterView` shows the gallery in its own lightbox (its own `useImageLightbox` instance), stepping through the character's images only.
 
 ---
 
@@ -748,7 +761,16 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
   isLoading: boolean,
   isSaving: boolean,
   error: string | null,
-  hasConflict: boolean      // last save was rejected with 409 (optimistic concurrency)
+  hasConflict: boolean,     // last save was rejected with 409 (optimistic concurrency)
+  lastUpdateSource: '' | 'fetch' | 'save' | 'adjust' | 'image' | 'section'
+                            // what produced the `ship` currently in the store:
+                            // 'fetch' is a background refresh (the activity poll),
+                            // the others are writes this client made. The ship
+                            // sheet keeps the user's unsaved edits across a
+                            // 'fetch' and not across a write (see the Ship section).
+                            // 'section' is a section save: it keeps the draft like
+                            // 'image' does, and moves the version the draft saves
+                            // against, because the server's copy did move on.
 }
 ```
 
@@ -759,9 +781,9 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Service**: ShipService.fetchShip(campaignId)
 - **Store Action**: shipStore.fetchShip(campaignId)
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
-- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version, updatedAt }`
+- **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, sections, imageUrl, imageUrls, version, updatedAt }`
 - **Status Codes**: 200, 401, 403, 404
-- **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
+- **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`. A fetch that arrives while the ship is already loaded is a **background refresh** (the activity poll in `CampaignView`, see *Section badges*): it sets `lastUpdateSource` to `'fetch'` and `ShipSection` keeps the sheet mounted rather than swapping it for the spinner, so an in-progress edit is not unmounted — the sheet itself also keeps the user's unsaved edits when the source is `'fetch'` (see `ShipSheet.vue`).
 
 ---
 
@@ -777,6 +799,18 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 
 ---
 
+### PUT /api/campaigns/{id}/ship — sections
+
+- **Service**: ShipService.saveShip(campaignId, { sections, version })
+- **Store Action**: shipStore.saveShipSections(campaignId, sections)
+- **Guest Mode**: Mocked — the adapter merges `sections` into `guest_ships` like any other field
+- **Request**: `{ sections: [{ id, title, body }], version }` — a **partial** PUT
+- **Response**: ShipDTO
+- **Status Codes**: 200, 400, 401, 403, 409
+- **Notes**: `sections` are small, individually titled plain-text notes that sit **beside** `notes` (Cargo, Passengers, Leads, Log). `notes` is untouched: it stays a separate markdown field and is never migrated into the list. The array is a whole-list replacement and its order is the user's order — there is no ordering column, so the array is stored and returned as sent. Because the backend applies only the fields present, this partial PUT leaves every other ship field alone, which is what lets a section edit and an in-progress sheet edit travel separately. `id` is generated client-side (`src/utils/sections.js`) and is opaque to the backend. The UI is `BaseNoteSections.vue`, shared with the character; the ship passes `editable` unconditionally because every participant may write.
+
+---
+
 ### POST /api/campaigns/{id}/ship/image
 
 - **Service**: ShipService.uploadShipImage(campaignId, imageFile)
@@ -786,7 +820,7 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: ShipDTO (with the updated `imageUrl`)
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset.
+- **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset. Reachable from `ShipSheet` both while editing and, without entering Edit, from the profile image's "Change image" button in view mode — the same pick → reposition flow either way.
 
 ---
 
@@ -969,6 +1003,38 @@ the page's new id when the write created the page) and the next quiet moment
 sends it. Assigning the server's text back instead would drop the cursor at the
 end of the page and lose those keystrokes — which is exactly what a debounced
 autosave must not do.
+
+**Tabs and the default page.** The section opens on a tab bar: **Campaign** (the
+journal itself) and one tab per character the participant **owns** in the
+campaign — that character's `notes`, `backstory`, `privateBackstory` and
+`sections`, editable (see below), with an "Open character" link to `CharacterView`
+where the same fields can also be edited. The tabs come from `campaignStore.getCharactersByCampaignId(campaignId)`
+filtered to `ownerId === the viewer`, so another participant's character and an
+NPC never appear. With no owned character there is a single tab, so no tab bar is
+shown and the section is exactly as before. No new endpoint, store value or DTO
+field is involved — the characters are the campaign's own.
+
+On opening, the journal lands on its **most recently edited page**: the stored
+page whose `updatedAt` is the newest (`journalUtils.mostRecentlyEditedPageNumber`;
+the trailing blank page is virtual and never the answer, and a book with one page,
+or with no timestamps at all, stays on page 1). That default never overrides an
+in-progress draft — when `journalStore.hasUnsavedChanges()` is true the current
+page is left alone. It moves the store only through the existing `goToPage`, so
+`currentPageNumber`, the pager, the unsaved-changes guard and the autosave behave
+exactly as before.
+
+A character tab's material is writable, exactly as on `CharacterView`: the long
+text (notes / backstory / private backstory) is read-rendered by default with an
+Edit button that swaps in a markdown field (one field at a time, Save / Cancel),
+and the titled notes (`sections`) render through `BaseNoteSections`. The panel
+reports `save-field` / `add` / `update` / `remove`; `JournalBoard` persists each
+through the same one-field PATCH `CharacterView` uses
+(`characterStore.updateCharacterField` / `updateCharacterSections`). Because
+`characterStore` and `campaignStore` keep separate copies of a character, the
+campaign's character cache is refreshed (`campaignStore.fetchCharactersForCampaign`)
+after a save so the saved value shows in the panel and on the campaign's character
+cards. A half-typed note or field is guarded on leaving the route and on switching
+tabs.
 
 ### journalStore — State Shape
 

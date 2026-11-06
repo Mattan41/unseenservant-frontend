@@ -87,6 +87,37 @@ export function counterVisible(text) {
 }
 
 /**
+ * The page a returning reader should land on: the stored page whose `updatedAt`
+ * is the newest, as a 1-based page number.
+ *
+ * The trailing blank page is virtual — it is never stored and has no
+ * `updatedAt` — so it is never the answer. A page without a usable timestamp
+ * ranks oldest, and a tie keeps the earlier page, which is what makes a book
+ * whose pages all lack a timestamp (or that holds a single page) answer page 1:
+ * exactly where the journal opened before this rule existed.
+ *
+ * @param {Array<{updatedAt?: string|null}>} pages stored pages, in reading order
+ * @returns {number|null} 1-based page number, or `null` for an empty book
+ */
+export function mostRecentlyEditedPageNumber(pages = []) {
+  if (!Array.isArray(pages) || pages.length === 0) return null
+
+  let winner = 0
+  let winnerTime = -Infinity
+
+  pages.forEach((page, index) => {
+    const time = Date.parse(page?.updatedAt)
+    if (Number.isNaN(time)) return
+    if (time > winnerTime) {
+      winnerTime = time
+      winner = index
+    }
+  })
+
+  return winner + 1
+}
+
+/**
  * The save state as a semantic class. Colours are decided here rather than in a
  * template (STYLE_GUIDE §3.3), and both classes already exist.
  * @param {'idle'|'dirty'|'saving'|'saved'|'error'} state

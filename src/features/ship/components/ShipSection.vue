@@ -12,6 +12,7 @@ import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useAuthStore } from '@/features/auth/authStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -28,8 +29,13 @@ const props = defineProps({
 
 const shipStore = useShipStore()
 const campaignStore = useCampaignStore()
+const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
-const { ship, isLoading, isSaving, error, hasConflict } = storeToRefs(shipStore)
+const { ship, isLoading, isSaving, error, hasConflict, lastUpdateSource } =
+  storeToRefs(shipStore)
+
+/** Guest/demo mode cannot store an upload, so the sheet hides its image pickers. */
+const isGuest = computed(() => authStore.isGuest)
 
 /** The campaign, for the crew cards' player names and roles. */
 const campaign = computed(() => campaignStore.getCampaignById(props.campaignId) || null)
@@ -113,6 +119,15 @@ async function handleAdjustVital({ field, value }) {
   }
 }
 
+// Sections save immediately too, as a whole list in the order the sheet sent it.
+async function handleSaveSections(sections) {
+  try {
+    await shipStore.saveShipSections(props.campaignId, sections)
+  } catch {
+    // Error is surfaced by the store (notification + conflict banner).
+  }
+}
+
 /** An image over the upload limit: show the sentence the sheet produced. */
 function handleSizeError(message) {
   notificationStore.addNotification(message, 'error')
@@ -125,17 +140,11 @@ onMounted(loadShip)
 
 <template>
   <div>
-    <div v-if="isLoading" class="flex items-center justify-center py-4">
-      <div class="spinner h-6 w-6"></div>
-      <span class="ml-2 text-muted">Loading ship...</span>
-    </div>
-
-    <div v-else-if="error" class="py-4 text-center">
-      <p class="error-message mb-2">{{ error }}</p>
-      <BaseButton variant="retry" @click="loadShip">Retry</BaseButton>
-    </div>
-
-    <div v-else-if="ship">
+    <!-- A background refresh (the activity poll) flips `isLoading` but must not
+         blank the sheet: swapping it out would unmount it and drop the user's
+         in-progress edits. The spinner and the error are for the first load,
+         when there is nothing to show yet. -->
+    <div v-if="ship">
       <div class="flex justify-end mb-3">
         <ExportMenu :formats="SHIP_EXPORT_FORMATS" @export="exportShip" />
       </div>
@@ -144,16 +153,29 @@ onMounted(loadShip)
         :ship="ship"
         :saving="isSaving"
         :conflict="hasConflict"
+        :update-source="lastUpdateSource"
         :characters="crewCharacters"
         :participants="participants"
+        :is-guest="isGuest"
         @save="handleSave"
         @reload="loadShip"
         @upload-profile="handleUploadProfile"
         @add-gallery="handleAddGallery"
         @remove-gallery="handleRemoveGallery"
         @adjust-vital="handleAdjustVital"
+        @save-sections="handleSaveSections"
         @size-error="handleSizeError"
       />
+    </div>
+
+    <div v-else-if="isLoading" class="flex items-center justify-center py-4">
+      <div class="spinner h-6 w-6"></div>
+      <span class="ml-2 text-muted">Loading ship...</span>
+    </div>
+
+    <div v-else-if="error" class="py-4 text-center">
+      <p class="error-message mb-2">{{ error }}</p>
+      <BaseButton variant="retry" @click="loadShip">Retry</BaseButton>
     </div>
   </div>
 </template>

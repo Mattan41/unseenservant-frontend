@@ -4,7 +4,11 @@
 - `docs/STYLE_GUIDE.md` is authoritative for anything visual: tokens, semantic classes, and where a new class belongs.
 - `docs/API_REFERENCE.md` describes the three-layer API (`axios.js` / `apiClient.js` / `guest-axios.js` / `open5e-axios.js`) and each feature's store shape — read it before touching `src/api` or a store.
 - The campaign role/permission matrix lives in `README.md`.
-- Update the describing document in the same change when behavior, structure or an API changes.
+- Update the describing document in the same change when behavior, structure or an API
+  changes, but only where a document already covers it. `STYLE_GUIDE.md` must reflect
+  new tokens and semantic classes, and `API_REFERENCE.md` any change to the API layers,
+  endpoints or a store's shape. Do not create new docs, sections or notes for internal
+  refactors or things the code already makes clear.
 
 ## Styling (docs/STYLE_GUIDE.md §3–§4)
 - No color utilities and no hex or inline color styles in component templates — not even our own palette ones. `bg-primary-100`, `text-third-500`, `border-secondary-200`, `bg-yellow-100`, `bg-white`, `text-gray-500` are all banned.
@@ -32,3 +36,19 @@
 - Unit tests: Vitest + `@vue/test-utils` via `npm run test:unit`. Lint/format: `npm run lint` (fixes), `npm run lint:ci` (non-mutating check), `npm run format`.
 - Tests live in a `__tests__/` folder next to the code they test (one per directory that has tests, including `src/utils/`), named `<subject>.test.js`; tests that wire several real modules without service mocks use `<subject>.integration.test.js`. Import code under test via the `@/` alias, put helpers shared across features in `src/test-utils/`, and never place test files beside source files.
 - `.env`, `.env.local` and `*.code-workspace` are gitignored and hold local values only; never commit secrets.
+
+## Comments
+- Comments explain why the code is the way it is when that is not obvious, never
+  what it does. If a name, prop or type already says it, write no comment.
+- No change history in code ("previously", "instead of", "fixes the bug where").
+  That belongs in the commit message.
+- Default to no JSDoc, or one line saying what a component, store or helper is for.
+  A multi-line comment needs a non-obvious reason, such as a browser quirk, a guest-mode
+  constraint or a trap for the next editor.
+
+## Working style
+- For changes that mix behaviour and mechanical edits, keep them in separate
+  steps so they can be committed separately.
+- Design decisions (store shape, API layer changes, new shared components or
+  tokens) are presented as options with consequences. Do not pick one without
+  confirmation.

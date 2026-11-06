@@ -26,6 +26,10 @@ const character = ref({
   name: '',
   systemType: DEFAULT_SYSTEM_TYPE,
   notes: '',
+  // Sections are not edited here — they are managed on the character view — but
+  // they are part of the model so a restored backup carries them through the
+  // create step instead of silently dropping them.
+  sections: [],
   appearance: '',
   backstory: '',
   privateBackstory: '',

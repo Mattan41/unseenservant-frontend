@@ -191,6 +191,22 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  /**
+   * Replace the character's sections — the small, individually titled plain-text
+   * notes that sit beside `notes`.
+   *
+   * They travel inside the character DTO, so this is the ordinary one-field
+   * PATCH: no new endpoint, and the sections follow the character across
+   * campaigns, exports and imports. Owner-only, which the API enforces.
+   *
+   * @param {number|string} characterId
+   * @param {Array<{id: string, title: string, body: string}>} sections
+   * @returns {Promise<object>} The updated character
+   */
+  function updateCharacterSections(characterId, sections) {
+    return updateCharacterField(characterId, 'sections', sections)
+  }
+
   async function uploadCharacterImage(characterId, imageFile) {
     const notificationStore = useNotificationStore()
 
@@ -315,6 +331,7 @@ export const useCharacterStore = defineStore('character', () => {
     fetchCharactersWithoutCampaign,
     updateCharacter,
     updateCharacterField,
+    updateCharacterSections,
     uploadCharacterImage,
     addCharacterImage,
     removeCharacterImage,

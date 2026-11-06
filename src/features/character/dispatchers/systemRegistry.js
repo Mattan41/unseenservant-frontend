@@ -187,6 +187,10 @@ export function buildPayload(systemType, character) {
     // "No system" is the empty string in the form and `null` on the wire.
     systemType: systemType || null,
     notes: character.notes,
+    // Sections belong to the character, so a restored backup must carry them
+    // through the create form. `undefined` when the form has none, which the
+    // backend reads as "leave unchanged" (the edit form does not manage them).
+    sections: character.sections,
     appearance: character.appearance,
     backstory: character.backstory,
     privateBackstory: character.privateBackstory,

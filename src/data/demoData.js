@@ -310,6 +310,18 @@ export const guestCharacters = [
 - Cargo: whatever pays, no questions asked
 - Debt: the Syndicate still wants her
 - Rule: never file a flight plan`,
+    sections: [
+      {
+        id: 'guest_char_section_1',
+        title: 'Debts',
+        body: 'The Syndicate still wants her — and they have started asking at the Dry Dock.',
+      },
+      {
+        id: 'guest_char_section_2',
+        title: 'Contacts',
+        body: 'Marek, a dockhand who owes her a favour.\nThe Voss family, if they ever make planetfall.',
+      },
+    ],
     appearance: 'Sharp-eyed, patched flight jacket. *Always* carries a spare power cell.',
     backstory:
       'Vex learned to fly before she could drive, running cargo through the Fringe for anyone who paid.',
@@ -577,6 +589,23 @@ export const guestShips = [
 - port airlock seal is *temporary* — get it welded
 - fuel gauge reads low after every jump
 - transponder has "three previous owners" it would rather forget`,
+    sections: [
+      {
+        id: 'guest_ship_section_1',
+        title: 'Cargo',
+        body: 'Two crates of medical supplies bound for the Fringe.\nOne sealed case nobody has opened.',
+      },
+      {
+        id: 'guest_ship_section_2',
+        title: 'Passengers',
+        body: 'The Voss family — three of them, all travelling under assumed names.',
+      },
+      {
+        id: 'guest_ship_section_3',
+        title: 'Leads',
+        body: 'A dockhand at the Dry Dock claims the Syndicate is paying for names.',
+      },
+    ],
     imageUrl: '',
     imageUrls: [],
     createdAt: new Date().toISOString(),

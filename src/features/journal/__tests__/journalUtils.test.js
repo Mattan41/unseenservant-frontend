@@ -5,6 +5,7 @@ import {
   counterVisible,
   isOverLimit,
   lastPageNumber,
+  mostRecentlyEditedPageNumber,
   pageNumberAfterRemoval,
   resolveJump,
   saveStateClass,
@@ -69,6 +70,43 @@ describe('journalUtils', () => {
     expect(pageNumberAfterRemoval(2, 2)).toBe(2)
     // Deleting the last page leaves the virtual one at the old number.
     expect(pageNumberAfterRemoval(4, 2)).toBe(3)
+  })
+
+  describe('mostRecentlyEditedPageNumber', () => {
+    const page = (number, updatedAt) => ({ pageNumber: number, updatedAt })
+
+    it('answers the page with the newest timestamp', () => {
+      expect(
+        mostRecentlyEditedPageNumber([
+          page(1, '2026-01-01T00:00:00Z'),
+          page(2, '2026-03-01T00:00:00Z'),
+          page(3, '2026-02-01T00:00:00Z'),
+        ]),
+      ).toBe(2)
+    })
+
+    it('answers nothing for an empty book, so there is no default to apply', () => {
+      expect(mostRecentlyEditedPageNumber([])).toBeNull()
+      expect(mostRecentlyEditedPageNumber(undefined)).toBeNull()
+    })
+
+    it('keeps the first page when no page carries a usable timestamp', () => {
+      expect(mostRecentlyEditedPageNumber([page(1, null), page(2, undefined)])).toBe(1)
+      expect(mostRecentlyEditedPageNumber([page(1, 'not a date')])).toBe(1)
+    })
+
+    it('ranks an untimestamped page below a dated one', () => {
+      expect(mostRecentlyEditedPageNumber([page(1, null), page(2, '2026-01-01T00:00:00Z')])).toBe(2)
+    })
+
+    it('keeps the earlier page on a tie', () => {
+      expect(
+        mostRecentlyEditedPageNumber([
+          page(1, '2026-01-01T00:00:00Z'),
+          page(2, '2026-01-01T00:00:00Z'),
+        ]),
+      ).toBe(1)
+    })
   })
 
   describe('the length limit', () => {

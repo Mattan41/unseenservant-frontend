@@ -21,6 +21,7 @@ import {
   MAX_TITLE_LENGTH as PLANNER_MAX_TITLE,
 } from '@/features/planner/plannerConstants.js'
 import { parseUtcTimestamp } from '@/utils/timestampUtils.js'
+import { randomToken } from '@/utils/randomId.js'
 
 // Core local storage keys used by the adapter
 const KEYS = {
@@ -82,7 +83,7 @@ function setData(key, data) {
 }
 
 function generateId() {
-  return `guest_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+  return `guest_${randomToken()}`
 }
 
 /** Default Offworlders ship (rulebook p.13): 15 Hull, 0 Armor, 1D6, 4 Fuel. */
@@ -101,6 +102,10 @@ function defaultShip(campaignId) {
     credits: 0,
     upgrades: [],
     notes: '',
+    // Small, individually titled plain-text notes beside `notes`. The adapter
+    // stores the array as it arrives (see `saveShip`), so a section added in
+    // Guest Demo survives a reload exactly like the ship's other fields.
+    sections: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -859,6 +864,9 @@ function patchCharacter({ url, data }) {
     const campaignId = data && typeof data === 'object' ? data.campaignId : data
     characters[index].campaignId = campaignId || null
   } else if (typeof data === 'object' && data !== null) {
+    // A plain merge, so a one-field PATCH (the character's `sections`, say)
+    // leaves every other field alone — the same contract as the backend's
+    // null-safe patch.
     characters[index] = { ...characters[index], ...data }
   }
 
