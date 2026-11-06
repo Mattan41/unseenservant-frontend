@@ -144,6 +144,20 @@ describe('ShipSheet — view-mode profile image', () => {
     expect(buttonByText(wrapper, 'Change image')).toBeTruthy()
     expect(wrapper.find('#ship-profile-image-input').exists()).toBe(true)
   })
+
+  it('hides every image picker from a guest, in view and edit mode', async () => {
+    // The demo backend cannot store an upload, so no picker may appear.
+    const wrapper = mountSheet({ isGuest: true })
+
+    expect(buttonByText(wrapper, 'Change image')).toBeFalsy()
+    expect(wrapper.find('#ship-profile-image-input').exists()).toBe(false)
+
+    await startEditing(wrapper)
+
+    expect(buttonByText(wrapper, 'Change image')).toBeFalsy()
+    expect(buttonByText(wrapper, 'Add image')).toBeFalsy()
+    expect(wrapper.find('#ship-gallery-image-input').exists()).toBe(false)
+  })
 })
 
 /**

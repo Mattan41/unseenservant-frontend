@@ -275,6 +275,7 @@ async function removeGalleryImage(url) {
           <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
             <h5 class="text-lg font-semibold" style="color: var(--color-primary-600)">Images</h5>
             <BaseButton
+              v-if="!isGuestMode"
               variant="add"
               type="button"
               :disabled="galleryBusy"
@@ -290,7 +291,7 @@ async function removeGalleryImage(url) {
           </p>
 
           <div v-if="isGuestMode" class="guest-notice mb-3">
-            ⚠️ Image upload is not supported in guest mode — a placeholder image is stored instead.
+            ⚠️ Image upload is not supported in guest mode.
           </div>
 
           <div v-if="galleryImages.length" class="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -315,6 +316,7 @@ async function removeGalleryImage(url) {
           <p v-else class="text-sm text-muted italic">No images yet.</p>
 
           <input
+            v-if="!isGuestMode"
             id="character-gallery-input"
             ref="galleryInput"
             type="file"

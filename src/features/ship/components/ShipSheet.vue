@@ -77,6 +77,14 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  /**
+   * Guest/demo mode. Its mock backend cannot really store an upload, so every
+   * image affordance is hidden there; the seed data's own images still show.
+   */
+  isGuest: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -397,7 +405,7 @@ useUnsavedChanges(
           style="border-color: var(--color-primary-300)"
         />
         <button
-          v-if="editing"
+          v-if="editing && !isGuest"
           type="button"
           class="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 text-sm text-white opacity-0 hover:opacity-100 transition-opacity"
           @click="triggerProfileInput"
@@ -405,6 +413,7 @@ useUnsavedChanges(
           Change image
         </button>
         <input
+          v-if="!isGuest"
           ref="profileInput"
           id="ship-profile-image-input"
           type="file"
@@ -417,15 +426,17 @@ useUnsavedChanges(
 
       <div v-if="editing" class="flex-1 min-w-0 space-y-2">
         <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
+        <p v-if="isGuest" class="guest-notice">⚠️ Image upload is not supported in guest mode.</p>
         <!-- A real button, so touch devices (no hover) can change the image. -->
-        <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+        <BaseButton v-else variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
       </div>
       <!-- View mode: the same picker + reposition flow, reached without entering
            Edit. An explicit button, because a hover overlay is unreachable on
            touch. -->
       <div v-else class="min-w-0 space-y-1">
         <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
-        <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+        <p v-if="isGuest" class="guest-notice">⚠️ Image upload is not supported in guest mode.</p>
+        <BaseButton v-else variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
       </div>
     </div>
 
@@ -648,7 +659,7 @@ useUnsavedChanges(
           <span class="text-xs text-muted"
             >The ship's drawings, maps and handouts — click to view</span
           >
-          <template v-if="editing">
+          <template v-if="editing && !isGuest">
             <BaseButton variant="add" @click="triggerGalleryInput">Add image</BaseButton>
           </template>
         </div>
@@ -679,6 +690,7 @@ useUnsavedChanges(
       <p v-else class="text-sm text-muted italic">No images yet.</p>
 
       <input
+        v-if="!isGuest"
         ref="galleryInput"
         id="ship-gallery-image-input"
         type="file"
@@ -753,7 +765,7 @@ useUnsavedChanges(
             Remove
           </BaseButton>
           <BaseButton
-            v-if="editing && isProfileImage(lightboxUrl)"
+            v-if="editing && isProfileImage(lightboxUrl) && !isGuest"
             variant="default"
             @click="changeProfileFromLightbox"
           >

@@ -12,6 +12,7 @@ import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/features/ship/shipStore.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useAuthStore } from '@/features/auth/authStore.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -28,9 +29,13 @@ const props = defineProps({
 
 const shipStore = useShipStore()
 const campaignStore = useCampaignStore()
+const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 const { ship, isLoading, isSaving, error, hasConflict, lastUpdateSource } =
   storeToRefs(shipStore)
+
+/** Guest/demo mode cannot store an upload, so the sheet hides its image pickers. */
+const isGuest = computed(() => authStore.isGuest)
 
 /** The campaign, for the crew cards' player names and roles. */
 const campaign = computed(() => campaignStore.getCampaignById(props.campaignId) || null)
@@ -151,6 +156,7 @@ onMounted(loadShip)
         :update-source="lastUpdateSource"
         :characters="crewCharacters"
         :participants="participants"
+        :is-guest="isGuest"
         @save="handleSave"
         @reload="loadShip"
         @upload-profile="handleUploadProfile"

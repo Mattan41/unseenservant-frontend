@@ -1007,9 +1007,8 @@ autosave must not do.
 **Tabs and the default page.** The section opens on a tab bar: **Campaign** (the
 journal itself) and one tab per character the participant **owns** in the
 campaign — that character's `notes`, `backstory`, `privateBackstory` and
-`sections`, rendered read-only through `MarkdownText` / `BaseNoteSections`, with
-an "Open character" link to `CharacterView` (editing stays there; the tabs only
-read). The tabs come from `campaignStore.getCharactersByCampaignId(campaignId)`
+`sections`, editable (see below), with an "Open character" link to `CharacterView`
+where the same fields can also be edited. The tabs come from `campaignStore.getCharactersByCampaignId(campaignId)`
 filtered to `ownerId === the viewer`, so another participant's character and an
 NPC never appear. With no owned character there is a single tab, so no tab bar is
 shown and the section is exactly as before. No new endpoint, store value or DTO
@@ -1023,6 +1022,19 @@ in-progress draft — when `journalStore.hasUnsavedChanges()` is true the curren
 page is left alone. It moves the store only through the existing `goToPage`, so
 `currentPageNumber`, the pager, the unsaved-changes guard and the autosave behave
 exactly as before.
+
+A character tab's material is writable, exactly as on `CharacterView`: the long
+text (notes / backstory / private backstory) is read-rendered by default with an
+Edit button that swaps in a markdown field (one field at a time, Save / Cancel),
+and the titled notes (`sections`) render through `BaseNoteSections`. The panel
+reports `save-field` / `add` / `update` / `remove`; `JournalBoard` persists each
+through the same one-field PATCH `CharacterView` uses
+(`characterStore.updateCharacterField` / `updateCharacterSections`). Because
+`characterStore` and `campaignStore` keep separate copies of a character, the
+campaign's character cache is refreshed (`campaignStore.fetchCharactersForCampaign`)
+after a save so the saved value shows in the panel and on the campaign's character
+cards. A half-typed note or field is guarded on leaving the route and on switching
+tabs.
 
 ### journalStore — State Shape
 

@@ -38,6 +38,19 @@ vi.mock('@/features/campaign/campaignStore.js', () => ({
   useCampaignStore: () => campaignStub,
 }))
 
+// A character tab's titled notes save through `characterStore`; the board is the
+// only caller, so the stub records the call and nothing else.
+const { characterStub } = vi.hoisted(() => ({
+  characterStub: {
+    updateCharacterSections: vi.fn(),
+    updateCharacterField: vi.fn(),
+  },
+}))
+
+vi.mock('@/features/character/characterStore.js', () => ({
+  useCharacterStore: () => characterStub,
+}))
+
 const CAMPAIGN_ID = 1
 const USER = { id: 7, role: 'USER' }
 const PAGE = { id: 31, pageNumber: 1, content: 'one', version: 3, createdAt: null, updatedAt: null }
@@ -81,6 +94,8 @@ function pressSave() {
     new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true }),
   )
 }
+
+const buttonByText = (root, text) => root.findAll('button').find((button) => button.text() === text)
 
 describe('JournalBoard', () => {
   let wrapper
@@ -195,7 +210,7 @@ describe('JournalBoard', () => {
     expect(wrapper.find('[role="tablist"]').exists()).toBe(false)
   })
 
-  it('gives a tab to each owned character only, and reads it read-only', async () => {
+  it('gives a tab to each owned character only, and reads its material', async () => {
     campaignStub.characters = [
       {
         id: 1,
@@ -223,7 +238,51 @@ describe('JournalBoard', () => {
     expect(panel.find('a[href="/characters/1"]').exists()).toBe(true)
   })
 
-  it('omits the private backstory block when the API did not return it', async () => {
+  it('adds a titled note from a character tab, through the character store', async () => {
+    campaignStub.characters = [{ id: 1, name: 'Vex', ownerId: USER.id }]
+
+    await open()
+
+    // The character tab is not active yet, so select it first.
+    await wrapper.findAll('[role="tab"]')[1].trigger('click')
+    const panel = wrapper.get('[role="tabpanel"][aria-labelledby="journal-tab-1"]')
+
+    await buttonByText(panel, 'Add note').trigger('click')
+    await panel.find('#new-section-title').setValue('Cargo')
+    await panel.find('#new-section-body').setValue('Two crates.')
+    await buttonByText(panel, 'Add note').trigger('click')
+    await flushPromises()
+
+    // Whole-list replacement, exactly as CharacterView sends it.
+    expect(characterStub.updateCharacterSections).toHaveBeenCalledTimes(1)
+    const [id, sections] = characterStub.updateCharacterSections.mock.calls[0]
+    expect(id).toBe(1)
+    expect(sections).toHaveLength(1)
+    expect(sections[0]).toMatchObject({ title: 'Cargo', body: 'Two crates.' })
+    // The campaign store's copy of the party is refreshed so the note shows.
+    expect(campaignStub.fetchCharactersForCampaign).toHaveBeenCalledWith(CAMPAIGN_ID)
+  })
+
+  it('edits a long-text field from a character tab, through the character store', async () => {
+    campaignStub.characters = [{ id: 1, name: 'Vex', ownerId: USER.id, notes: 'old notes' }]
+
+    await open()
+
+    await wrapper.findAll('[role="tab"]')[1].trigger('click')
+    const panel = wrapper.get('[role="tabpanel"][aria-labelledby="journal-tab-1"]')
+
+    // Read mode by default; the first "Edit" belongs to Notes.
+    await buttonByText(panel, 'Edit').trigger('click')
+    await panel.find('#journal-character-notes').setValue('new notes')
+    await buttonByText(panel, 'Save').trigger('click')
+    await flushPromises()
+
+    // The same one-field PATCH CharacterView sends, then the party is refreshed.
+    expect(characterStub.updateCharacterField).toHaveBeenCalledWith(1, 'notes', 'new notes')
+    expect(campaignStub.fetchCharactersForCampaign).toHaveBeenCalledWith(CAMPAIGN_ID)
+  })
+
+  it('shows the private backstory field to an owner even when empty, so it can be written', async () => {
     campaignStub.characters = [{ id: 1, name: 'Vex', ownerId: USER.id, notes: 'Vex notes' }]
 
     await open()
@@ -233,6 +292,7 @@ describe('JournalBoard', () => {
     await vexTab.trigger('click')
 
     const panel = wrapper.get('[role="tabpanel"][aria-labelledby="journal-tab-1"]')
-    expect(panel.text()).not.toContain('Private —')
+    expect(panel.text()).toContain('Private —')
+    expect(buttonByText(panel, 'Edit')).toBeTruthy()
   })
 })

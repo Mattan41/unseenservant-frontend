@@ -112,6 +112,8 @@ describe('CharacterView — images from view mode', () => {
 
     expect(buttonByText(wrapper, 'Change image')).toBeFalsy()
     expect(buttonByText(wrapper, 'Add image')).toBeFalsy()
+    expect(wrapper.find('#character-avatar-input').exists()).toBe(false)
+    expect(wrapper.find('#character-gallery-input').exists()).toBe(false)
     expect(wrapper.find('.guest-notice').exists()).toBe(true)
   })
 })

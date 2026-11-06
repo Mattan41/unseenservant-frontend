@@ -12,12 +12,13 @@
  * loses focus, when the tab is hidden and on `Ctrl/Cmd+S`, so the debounce is
  * never what the reader is waiting for.
  *
- * Two views sit behind a tab bar: the campaign journal itself, and a read-only
- * panel per character the participant owns (from the campaign store, filtered to
- * `ownerId === the viewer`). The character tabs only read what lives on the
- * character — editing stays on `CharacterView`, reached from the tab's link.
- * With no owned character there is a single tab, so the bar is not rendered and
- * the section looks exactly as it did before.
+ * Two views sit behind a tab bar: the campaign journal itself, and a panel per
+ * character the participant owns (from the campaign store, filtered to
+ * `ownerId === the viewer`). A character tab shows the character's long text
+ * read-only and lets its owner write the titled notes, saved through
+ * `characterStore` exactly as on `CharacterView`; `CharacterView` is still one
+ * link away for everything else. With no owned character there is a single tab,
+ * so the bar is not rendered and the section looks exactly as it did before.
  *
  * On opening, the journal lands on its most recently edited page (the newest
  * `updatedAt` across the stored pages) rather than page 1. An in-progress draft
@@ -39,8 +40,10 @@ import {
   resolveJump,
 } from '@/features/journal/journalUtils.js'
 import { useCampaignStore } from '@/features/campaign/campaignStore.js'
+import { useCharacterStore } from '@/features/character/characterStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
 import { sameId } from '@/features/campaign/campaignPermissions.js'
+import { createSection, normalizeSections } from '@/utils/sections.js'
 import { useNotificationStore } from '@/stores/notificationStore.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -58,6 +61,7 @@ const props = defineProps({
 
 const journalStore = useJournalStore()
 const campaignStore = useCampaignStore()
+const characterStore = useCharacterStore()
 const userStore = useUserStore()
 const notificationStore = useNotificationStore()
 
@@ -106,7 +110,80 @@ const activeCharacter = computed(
   () => ownCharacters.value.find((character) => String(character.id) === activeTab.value) || null,
 )
 
+// The character tabs show the viewer's own characters, so their material is
+// writable — exactly as on `CharacterView` (which has the identical owner rule).
+// The panel reports the change and this board persists it.
+const canEditActiveCharacter = computed(() =>
+  sameId(activeCharacter.value?.ownerId, userStore.userId),
+)
+const activeSections = computed(() => normalizeSections(activeCharacter.value?.sections))
+const characterBusy = ref(false)
+const characterDirty = ref(false)
+
+/** The message the character guard uses, on the route and on a tab switch alike. */
+const CHARACTER_LEAVE_MESSAGE = 'You have unsaved changes on this character. Leave without saving?'
+
+/**
+ * Persist one change to the character — a whole titled-notes list, or one of the
+ * long-text fields — through the same one-field PATCH `CharacterView` uses. The
+ * campaign store keeps its own copy of the party, so it is refreshed afterwards;
+ * otherwise the saved value would not show here (or on the campaign's character
+ * cards) once the panel is re-entered.
+ */
+async function persistCharacter(work) {
+  const character = activeCharacter.value
+  if (!character) return
+  characterBusy.value = true
+  try {
+    await work(character)
+    await campaignStore.fetchCharactersForCampaign(props.campaignId)
+  } catch {
+    // The store surfaced the error.
+  } finally {
+    characterBusy.value = false
+  }
+}
+
+function saveSections(nextSections) {
+  return persistCharacter((character) =>
+    characterStore.updateCharacterSections(character.id, nextSections),
+  )
+}
+
+function saveField({ field, value }) {
+  return persistCharacter((character) =>
+    characterStore.updateCharacterField(character.id, field, value),
+  )
+}
+
+function onAddSection({ title, body }) {
+  return saveSections([...activeSections.value, createSection({ title, body })])
+}
+
+function onUpdateSection({ id, title, body }) {
+  return saveSections(
+    activeSections.value.map((section) => (section.id === id ? { id, title, body } : section)),
+  )
+}
+
+function onRemoveSection(id) {
+  return saveSections(activeSections.value.filter((section) => section.id !== id))
+}
+
+function onCharacterDirty(value) {
+  characterDirty.value = value
+}
+
+/**
+ * Switching tabs unmounts the panel, which may hold a half-typed note or field —
+ * so ask first, the same question the route guard asks. The journal itself is not
+ * at risk: its draft lives in the store and keeps autosaving, so it never prompts
+ * here.
+ */
 function onSelectTab(key) {
+  if (key === activeTab.value) return
+  if (characterDirty.value && !window.confirm(CHARACTER_LEAVE_MESSAGE)) return
+  characterDirty.value = false
   activeTab.value = key
 }
 
@@ -115,6 +192,9 @@ useUnsavedChanges(
   () => journalStore.hasUnsavedChanges(),
   'You have unsaved changes in your journal. Leave without saving?',
 )
+
+// A note half-typed in a character tab is unsaved text too.
+useUnsavedChanges(() => characterDirty.value, CHARACTER_LEAVE_MESSAGE)
 
 /**
  * Flush what is pending without waiting for the debounce: when the field loses
@@ -194,6 +274,7 @@ watch(
   (id) => {
     if (id) {
       activeTab.value = 'campaign'
+      characterDirty.value = false
       void openJournal(id)
     }
   },
@@ -298,14 +379,23 @@ function onRejected(message) {
         />
       </div>
 
-      <!-- Character tab: a read-only view of one owned character's material -->
+      <!-- Character tab: one owned character — long text read-only, titled notes writable -->
       <div
         v-else-if="activeCharacter"
         :id="`journal-panel-${activeTab}`"
         role="tabpanel"
         :aria-labelledby="`journal-tab-${activeTab}`"
       >
-        <CharacterJournalPanel :character="activeCharacter" />
+        <CharacterJournalPanel
+          :character="activeCharacter"
+          :editable="canEditActiveCharacter"
+          :saving="characterBusy"
+          @save-field="saveField"
+          @add="onAddSection"
+          @update="onUpdateSection"
+          @remove="onRemoveSection"
+          @dirty="onCharacterDirty"
+        />
       </div>
     </template>
   </div>

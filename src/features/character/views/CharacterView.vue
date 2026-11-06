@@ -507,8 +507,7 @@ const exportCharacter = async (format) => {
             </p>
 
             <div v-if="isOwner && isGuestMode" class="guest-notice mb-3">
-              ⚠️ Image upload is not supported in guest mode — a placeholder image is stored
-              instead.
+              ⚠️ Image upload is not supported in guest mode.
             </div>
 
             <div
@@ -534,6 +533,7 @@ const exportCharacter = async (format) => {
             <p v-else class="text-sm text-muted italic">No images yet.</p>
 
             <input
+              v-if="isOwner && !isGuestMode"
               ref="galleryInput"
               id="character-gallery-input"
               type="file"
