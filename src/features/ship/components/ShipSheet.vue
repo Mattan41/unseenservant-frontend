@@ -344,7 +344,12 @@ function removeGalleryImage(url) {
   if (lightboxUrl.value === url) closeLightbox()
 }
 
-const isDirty = computed(() => editing.value && draftSignature() !== baseline.value)
+// The sheet's own draft, and separately the text a note is holding. They are
+// kept apart because only the draft drives the sticky action bar; both count as
+// unsaved work when the user tries to leave.
+const draftDirty = computed(() => editing.value && draftSignature() !== baseline.value)
+const sectionsDirty = ref(false)
+const isDirty = computed(() => draftDirty.value || sectionsDirty.value)
 
 // Warn before leaving the campaign while the ship has unsaved edits.
 useUnsavedChanges(
@@ -631,6 +636,7 @@ useUnsavedChanges(
         @add="addSection"
         @update="updateSection"
         @remove="removeSection"
+        @dirty="sectionsDirty = $event"
       />
     </div>
 
@@ -697,7 +703,7 @@ useUnsavedChanges(
          reachable while scrolling a long sheet, on mobile and desktop. -->
     <BaseStickyActions
       v-if="editing"
-      :dirty="isDirty"
+      :dirty="draftDirty"
       :saving="saving"
       save-label="Save ship"
       @cancel="cancelEditing"

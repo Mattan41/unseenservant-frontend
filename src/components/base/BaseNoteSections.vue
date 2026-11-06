@@ -15,7 +15,7 @@
  * there is no markdown editor, no preview and no formatting help. Nothing here
  * renders HTML.
  */
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
@@ -46,7 +46,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['add', 'update', 'remove'])
+const emit = defineEmits(['add', 'update', 'remove', 'dirty'])
 
 const hasSections = computed(() => props.sections.length > 0)
 
@@ -117,6 +117,25 @@ function remove(section) {
   emit('remove', section.id)
   if (editingId.value === section.id) cancelEditing()
 }
+
+// --- Unsaved text ------------------------------------------------------------
+/**
+ * True while the add form or an inline editor holds text the user has not
+ * committed. An empty add form and an untouched editor are not dirty — there is
+ * nothing to lose.
+ *
+ * The parent binds this with `@dirty` and wires the route guard, so this
+ * component stays presentational: it reports, it does not decide.
+ */
+const isDirty = computed(() => {
+  if (adding.value) return newTitle.value.trim() !== '' || newBody.value.trim() !== ''
+  if (editingId.value === null) return false
+  const section = props.sections.find((entry) => entry.id === editingId.value)
+  if (!section) return false
+  return editTitle.value !== section.title || editBody.value !== section.body
+})
+
+watch(isDirty, (dirty) => emit('dirty', dirty), { immediate: true })
 </script>
 
 <template>

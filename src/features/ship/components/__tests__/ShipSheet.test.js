@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ShipSheet from '@/features/ship/components/ShipSheet.vue'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 // The sheet registers a route guard, and nothing here is about routing.
 vi.mock('@/utils/useUnsavedChanges.js', () => ({
@@ -186,6 +187,18 @@ describe('ShipSheet — sections', () => {
 
     expect(wrapper.emitted('save-sections')[0][0]).toEqual([SECTIONS[1]])
     confirm.mockRestore()
+  })
+
+  it('counts a note being typed as unsaved work', async () => {
+    const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
+    const isDirty = useUnsavedChanges.mock.calls.at(-1)[0]
+
+    expect(isDirty()).toBe(false)
+
+    await buttonByText(wrapper, 'Add note').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Passengers')
+
+    expect(isDirty()).toBe(true)
   })
 
   it('keeps the editor open, and the unsaved edits, when a section save lands', async () => {

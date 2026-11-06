@@ -133,3 +133,56 @@ describe('BaseNoteSections — editing and deleting', () => {
     confirm.mockRestore()
   })
 })
+
+/**
+ * The list reports whether it is holding text the user has not committed, so the
+ * parent can guard the route. An empty form and an untouched editor are not
+ * dirty: there is nothing to lose.
+ */
+describe('BaseNoteSections — unsaved text', () => {
+  const lastDirty = (wrapper) => wrapper.emitted('dirty').at(-1)[0]
+
+  it('reports nothing to lose for an empty add form', async () => {
+    const wrapper = mountList({ editable: true })
+
+    await buttonByText(wrapper, 'Add note').trigger('click')
+
+    expect(lastDirty(wrapper)).toBe(false)
+  })
+
+  it('reports unsaved text once the add form has content', async () => {
+    const wrapper = mountList({ editable: true })
+
+    await buttonByText(wrapper, 'Add note').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Cargo')
+
+    expect(lastDirty(wrapper)).toBe(true)
+  })
+
+  it('reports nothing to lose for an untouched editor', async () => {
+    const wrapper = mountList({ editable: true })
+
+    await buttonByText(wrapper, 'Edit').trigger('click')
+
+    expect(lastDirty(wrapper)).toBe(false)
+  })
+
+  it('reports unsaved text once an editor is changed', async () => {
+    const wrapper = mountList({ editable: true })
+
+    await buttonByText(wrapper, 'Edit').trigger('click')
+    await wrapper.find('#section-body-s1').setValue('Three crates now.')
+
+    expect(lastDirty(wrapper)).toBe(true)
+  })
+
+  it('clears the report when the form is cancelled', async () => {
+    const wrapper = mountList({ editable: true })
+
+    await buttonByText(wrapper, 'Add note').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Cargo')
+    await buttonByText(wrapper, 'Cancel').trigger('click')
+
+    expect(lastDirty(wrapper)).toBe(false)
+  })
+})

@@ -6,6 +6,7 @@ import CharacterView from '@/features/character/views/CharacterView.vue'
 import CharacterService from '@/features/character/CharacterService.js'
 import { useAuthStore } from '@/features/auth/authStore.js'
 import { useUserStore } from '@/features/user/userStore.js'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 vi.mock('@/features/character/CharacterService.js', () => ({
   default: { fetchCharacter: vi.fn(), updateCharacterField: vi.fn() },
@@ -18,6 +19,10 @@ vi.mock('@/features/character/dispatchers/SystemSheetRouter.vue', () => ({
 
 // Recording a view writes to localStorage; nothing here is about recency.
 vi.mock('@/utils/useViewRecency.js', () => ({ useViewRecency: vi.fn() }))
+
+// The route guard itself is shared and tested through its own callers; here we
+// only check that the view wires a note's unsaved text into it.
+vi.mock('@/utils/useUnsavedChanges.js', () => ({ useUnsavedChanges: vi.fn() }))
 
 const OWNER_ID = 7
 const CHARACTER = {
@@ -165,6 +170,20 @@ describe('CharacterView — sections', () => {
     expect(sections[0]).toMatchObject({ title: 'Cargo', body: 'Two crates.' })
 
     expect(wrapper.findAll('li h5').map((heading) => heading.text())).toEqual(['Cargo'])
+  })
+
+  it('asks before leaving while a note is being typed', async () => {
+    const wrapper = await mountView({ owner: true })
+    const [isDirty, message] = useUnsavedChanges.mock.calls.at(-1)
+
+    expect(message).toMatch(/unsaved changes in a note/)
+    expect(isDirty()).toBe(false)
+
+    await buttonByText(wrapper, 'Add note').trigger('click')
+    await wrapper.find('#new-section-title').setValue('Cargo')
+    await flushPromises()
+
+    expect(isDirty()).toBe(true)
   })
 
   it('saves an edited section with its id kept', async () => {

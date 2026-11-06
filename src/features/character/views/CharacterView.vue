@@ -27,6 +27,7 @@ import { useImagePicker } from '@/utils/useImagePicker.js'
 import { useImageLightbox } from '@/utils/useImageLightbox.js'
 import { validateImageSize } from '@/utils/imageUpload.js'
 import { createSection, normalizeSections } from '@/utils/sections.js'
+import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
 const characterStore = useCharacterStore()
 const campaignStore = useCampaignStore()
@@ -203,6 +204,14 @@ async function adjustOffworldersVital({ field, value }) {
 // character reads them.
 const characterSections = computed(() => normalizeSections(currentCharacter.value?.sections))
 const sectionsBusy = ref(false)
+// A note being typed in the rail is unsaved text: the list reports it and the
+// view guards the route, so leaving the character asks first.
+const sectionsDirty = ref(false)
+
+useUnsavedChanges(
+  () => sectionsDirty.value,
+  'You have unsaved changes in a note. Leave without saving?',
+)
 
 async function saveSections(sections) {
   const character = currentCharacter.value
@@ -433,6 +442,7 @@ const exportCharacter = async (format) => {
               @add="addSection"
               @update="updateSection"
               @remove="removeSection"
+              @dirty="sectionsDirty = $event"
             />
           </div>
 
