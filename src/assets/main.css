@@ -1378,6 +1378,31 @@ h5 {
   text-transform: none;
 }
 
+/* Sub-section heading — a small heading for a block inside a narrow rail or
+   panel (e.g. the character sheet's identity rail, where "Notes:",
+   "Additional notes", "Appearance:" and "Backstory:" are siblings). Same
+   opt-out as `.modal-title` and `.card-title`, and for the same reason: the
+   global `h1–h5` rules are page-sized and unlayered, so a heading asked for
+   with `text-base` still renders at up to 34px. One size for every
+   sub-section, in every mode. */
+.subsection-heading {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.3em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* A card title inside a `.subsection-heading` block — one step smaller, so the
+   block heading and the entries under it read as two levels. */
+.subsection-heading-sm {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.3em;
+  font-weight: 600;
+  text-transform: none;
+}
+
 /* Page heading — the compact greeting that opens a page. Sized for a header
    rather than a hero, and not uppercased: the brand's shouting case is for
    section headings and the wordmark, not for a sentence. */

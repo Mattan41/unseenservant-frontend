@@ -40,14 +40,14 @@ describe('BaseNoteSections — reading', () => {
     const wrapper = mountList({ sections: [] })
 
     expect(wrapper.find('.empty-cta').exists()).toBe(true)
-    expect(wrapper.text()).toContain('No sections yet.')
+    expect(wrapper.text()).toContain('No additional notes yet.')
     expect(wrapper.findAll('li')).toHaveLength(0)
   })
 
   it('offers no write controls to a viewer who may not edit', () => {
     const wrapper = mountList({ editable: false })
 
-    expect(buttonByText(wrapper, 'Add section')).toBeFalsy()
+    expect(buttonByText(wrapper, 'Add note')).toBeFalsy()
     expect(buttonByText(wrapper, 'Edit')).toBeFalsy()
     expect(buttonByText(wrapper, 'Delete')).toBeFalsy()
   })
@@ -57,10 +57,10 @@ describe('BaseNoteSections — adding', () => {
   it('emits the new section from the inline form', async () => {
     const wrapper = mountList({ editable: true })
 
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
     await wrapper.find('#new-section-title').setValue('Leads')
     await wrapper.find('#new-section-body').setValue('A rumour about the Dry Dock.')
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
 
     expect(wrapper.emitted('add')).toHaveLength(1)
     expect(wrapper.emitted('add')[0][0]).toEqual({
@@ -72,13 +72,13 @@ describe('BaseNoteSections — adding', () => {
   it('closes the form after adding, and refuses an empty section', async () => {
     const wrapper = mountList({ editable: true })
 
-    await buttonByText(wrapper, 'Add section').trigger('click')
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
     expect(wrapper.emitted('add')).toBeUndefined()
     expect(wrapper.find('#new-section-title').exists()).toBe(true)
 
     await wrapper.find('#new-section-title').setValue('Log')
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
 
     expect(wrapper.emitted('add')).toHaveLength(1)
     expect(wrapper.find('#new-section-title').exists()).toBe(false)
@@ -118,7 +118,7 @@ describe('BaseNoteSections — editing and deleting', () => {
 
     await buttonByText(wrapper, 'Delete').trigger('click')
 
-    expect(confirm).toHaveBeenCalledWith('Delete this section?')
+    expect(confirm).toHaveBeenCalledWith('Delete this note?')
     expect(wrapper.emitted('remove')[0]).toEqual(['s1'])
     confirm.mockRestore()
   })

@@ -166,10 +166,10 @@ describe('ShipSheet — sections', () => {
   it('emits the whole list with the new section appended', async () => {
     const wrapper = mountSheet({ ship: { ...SHIP, sections: SECTIONS } })
 
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
     await wrapper.find('#new-section-title').setValue('Passengers')
     await wrapper.find('#new-section-body').setValue('The Voss family.')
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
 
     const emitted = wrapper.emitted('save-sections')
     expect(emitted).toHaveLength(1)

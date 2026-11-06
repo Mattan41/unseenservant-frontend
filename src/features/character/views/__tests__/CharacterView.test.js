@@ -136,7 +136,7 @@ describe('CharacterView — sections', () => {
   it('offers no add/edit/delete controls to a non-owner', async () => {
     const wrapper = await mountView({ owner: false, character: { ...CHARACTER, sections: SECTIONS } })
 
-    expect(buttonByText(wrapper, 'Add section')).toBeFalsy()
+    expect(buttonByText(wrapper, 'Add note')).toBeFalsy()
     // Scoped to the section cards: the view's own "Edit" link is not a section
     // control and must not be mistaken for one.
     expect(sectionButton(wrapper, 'Edit')).toBeFalsy()
@@ -151,10 +151,10 @@ describe('CharacterView — sections', () => {
       [field]: value,
     }))
 
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
     await wrapper.find('#new-section-title').setValue('Cargo')
     await wrapper.find('#new-section-body').setValue('Two crates.')
-    await buttonByText(wrapper, 'Add section').trigger('click')
+    await buttonByText(wrapper, 'Add note').trigger('click')
     await flushPromises()
 
     expect(CharacterService.updateCharacterField).toHaveBeenCalledTimes(1)

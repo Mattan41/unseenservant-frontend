@@ -425,6 +425,8 @@ all conditional styling in `*Utils.js` files.
 | `.info-box-title` | Optional callout heading | `font-semibold` | implemented |
 | `.modal-title` | Dialog/panel title | Opts out of the page-sized `h1–h3` rules: `font-size: 1.25rem`, `text-transform: none` (the family also holds `.card-title` / `.page-heading` — see §3.7) | implemented |
 | `.card-title` | A character/campaign name inside a card | Opts out of the page-sized `h1–h5` rules: `font-size: 1.125rem`, `text-transform: none`. One size for every card, in every mode | implemented |
+| `.subsection-heading` | A block heading inside a narrow rail or panel (the character sheet's identity rail: "Notes:", "Additional notes", "Appearance:", "Backstory:") | Opts out of the page-sized `h1–h5` rules: `font-size: 1.25rem`, `text-transform: none`. Siblings in a rail all use it, so they read as one series | implemented |
+| `.subsection-heading-sm` | A card title inside a `.subsection-heading` block (the additional-notes card titles) | One step below `.subsection-heading`: `font-size: 1.125rem`, `text-transform: none` | implemented |
 | `.page-heading` | The sentence that opens a page (the Welcome greeting) | Opts out of the page-sized `h1–h3` rules: `font-size: 1.5rem`, `text-transform: none` | implemented |
 | `.page-heading-rule` | Short accent rule under a page heading | `mt-2 block h-0.5 w-16 rounded-full bg-(--secondary-accent)` | implemented |
 | `.welcome-name` | The signed-in name inside the welcome heading | `text-(--secondary-text-strong)` — the strong amber role, because the accent amber fails contrast on the light gradient. No animation, no gradient | implemented |

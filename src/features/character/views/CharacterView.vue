@@ -411,7 +411,7 @@ const exportCharacter = async (format) => {
 
           <!-- Notes -->
           <div class="text-default">
-            <p class="mb-1"><strong>Notes:</strong></p>
+            <h4 class="subsection-heading mb-1">Notes:</h4>
             <BaseClampedText
               v-if="currentCharacter.notes"
               :text="currentCharacter.notes"
@@ -438,13 +438,13 @@ const exportCharacter = async (format) => {
 
           <!-- Appearance (generic, any system) -->
           <div v-if="currentCharacter.appearance" class="text-default">
-            <p class="mb-1"><strong>Appearance:</strong></p>
+            <h4 class="subsection-heading mb-1">Appearance:</h4>
             <BaseClampedText :text="currentCharacter.appearance" mode="modal" title="Appearance" />
           </div>
 
           <!-- Backstory (generic, any system) — sits with Notes/Appearance -->
           <div class="text-default">
-            <p class="mb-1"><strong>Backstory:</strong></p>
+            <h4 class="subsection-heading mb-1">Backstory:</h4>
             <BaseClampedText
               v-if="currentCharacter.backstory"
               :text="currentCharacter.backstory"
@@ -455,9 +455,7 @@ const exportCharacter = async (format) => {
 
             <!-- Only rendered when the API returned it (owner or campaign GM). -->
             <div v-if="currentCharacter.privateBackstory" class="mt-4 pt-3 border-t border-section">
-              <p class="text-xs italic mb-1 text-muted">
-                Private — only you and the GM can see this
-              </p>
+              <h4 class="subsection-heading mb-1">Private — only you and the GM can see this</h4>
               <BaseClampedText
                 :text="currentCharacter.privateBackstory"
                 mode="modal"

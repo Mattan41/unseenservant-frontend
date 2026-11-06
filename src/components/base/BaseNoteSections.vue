@@ -3,6 +3,10 @@
  * A list of small, individually titled plain-text notes — the `sections` field
  * of a ship or a character. Not the campaign's sections (Overview, Lore, …).
  *
+ * The UI calls them "additional notes" and each entry a "note"; the data field
+ * and this component keep the name `sections`, which is what the DTOs and the
+ * stores use.
+ *
  * Presentational: props in, events out. The parent owns the save path and the
  * permission check (`editable`), so the ship (any participant may write) and the
  * character (owner only) share this component without sharing a store.
@@ -33,12 +37,12 @@ const props = defineProps({
   /** Heading for the block. */
   heading: {
     type: String,
-    default: 'Sections',
+    default: 'Additional notes',
   },
   /** Shown when there are no sections yet. */
   emptyText: {
     type: String,
-    default: 'No sections yet.',
+    default: 'No additional notes yet.',
   },
 })
 
@@ -118,14 +122,14 @@ function remove(section) {
 <template>
   <div>
     <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-      <h4 class="font-semibold text-default">{{ heading }}</h4>
+      <h4 class="subsection-heading text-default">{{ heading }}</h4>
       <BaseButton
         v-if="editable && !adding && hasSections"
         variant="add"
         :disabled="saving"
         @click="startAdding"
       >
-        Add section
+        Add note
       </BaseButton>
     </div>
 
@@ -163,7 +167,9 @@ function remove(section) {
         <!-- Read mode -->
         <div v-else>
           <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h5 class="font-semibold text-default">{{ section.title || 'Untitled section' }}</h5>
+            <h5 class="subsection-heading-sm text-default">
+              {{ section.title || 'Untitled note' }}
+            </h5>
             <div v-if="editable" class="flex items-center gap-2">
               <BaseButton
                 variant="update"
@@ -176,7 +182,7 @@ function remove(section) {
               <BaseButton
                 variant="remove"
                 :disabled="saving"
-                confirm-message="Delete this section?"
+                confirm-message="Delete this note?"
                 @click="remove(section)"
               >
                 Delete
@@ -195,7 +201,7 @@ function remove(section) {
     <div v-else-if="!adding" class="empty-cta">
       <p class="text-sm text-muted">{{ emptyText }}</p>
       <BaseButton v-if="editable" variant="add" :disabled="saving" @click="startAdding">
-        Add section
+        Add note
       </BaseButton>
     </div>
 
@@ -209,7 +215,6 @@ function remove(section) {
           v-model="newTitle"
           type="text"
           class="input-field p-2 rounded w-full"
-          placeholder="Cargo"
         />
         <label for="new-section-body" class="block text-xs uppercase text-muted">Body</label>
         <textarea
@@ -217,11 +222,10 @@ function remove(section) {
           v-model="newBody"
           rows="4"
           class="input-field p-2 rounded w-full"
-          placeholder="What goes in this section?"
         />
         <div class="flex justify-end gap-2">
           <BaseButton variant="ghost" @click="cancelAdding">Cancel</BaseButton>
-          <BaseButton variant="add" :disabled="saving" @click="submitNew">Add section</BaseButton>
+          <BaseButton variant="add" :disabled="saving" @click="submitNew">Add note</BaseButton>
         </div>
       </div>
     </div>
