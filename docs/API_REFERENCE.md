@@ -1004,6 +1004,26 @@ sends it. Assigning the server's text back instead would drop the cursor at the
 end of the page and lose those keystrokes — which is exactly what a debounced
 autosave must not do.
 
+**Tabs and the default page.** The section opens on a tab bar: **Campaign** (the
+journal itself) and one tab per character the participant **owns** in the
+campaign — that character's `notes`, `backstory`, `privateBackstory` and
+`sections`, rendered read-only through `MarkdownText` / `BaseNoteSections`, with
+an "Open character" link to `CharacterView` (editing stays there; the tabs only
+read). The tabs come from `campaignStore.getCharactersByCampaignId(campaignId)`
+filtered to `ownerId === the viewer`, so another participant's character and an
+NPC never appear. With no owned character there is a single tab, so no tab bar is
+shown and the section is exactly as before. No new endpoint, store value or DTO
+field is involved — the characters are the campaign's own.
+
+On opening, the journal lands on its **most recently edited page**: the stored
+page whose `updatedAt` is the newest (`journalUtils.mostRecentlyEditedPageNumber`;
+the trailing blank page is virtual and never the answer, and a book with one page,
+or with no timestamps at all, stays on page 1). That default never overrides an
+in-progress draft — when `journalStore.hasUnsavedChanges()` is true the current
+page is left alone. It moves the store only through the existing `goToPage`, so
+`currentPageNumber`, the pager, the unsaved-changes guard and the autosave behave
+exactly as before.
+
 ### journalStore — State Shape
 
 ```js
