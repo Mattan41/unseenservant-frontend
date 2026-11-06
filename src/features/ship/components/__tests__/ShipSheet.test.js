@@ -134,3 +134,13 @@ describe('ShipSheet — background refresh vs own writes', () => {
     expect(nameInput(wrapper).exists()).toBe(false)
   })
 })
+
+describe('ShipSheet — view-mode profile image', () => {
+  it('offers a "Change image" button without entering edit mode', () => {
+    // No `startEditing` call: the sheet is in view mode.
+    const wrapper = mountSheet()
+
+    expect(buttonByText(wrapper, 'Change image')).toBeTruthy()
+    expect(wrapper.find('#ship-profile-image-input').exists()).toBe(true)
+  })
+})

@@ -93,6 +93,7 @@ src/
 │   ├── errorUtils.js         # Extracts a human-readable error message from an Axios error.
 │   ├── imageUpload.js        # Frontend mirror of the backend's 5MB upload limit (validateImageSize).
 │   ├── useImagePicker.js     # Composable: pick → reposition → preview, shared by the campaign/character image editors.
+│   ├── useImageLightbox.js   # Composable: open/step/close an image lightbox (←/→ keys); character gallery + ship, one instance each.
 │   ├── sortUtils.js          # Pure list ordering: sortByLastViewed (most recently viewed first).
 │   ├── timestampUtils.js     # Backend timestamps are UTC: parseUtcTimestamp + the display formatters.
 │   ├── viewHistory.js        # Per-user "last viewed" timestamps in localStorage (view_history key).

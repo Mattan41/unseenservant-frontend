@@ -10,7 +10,7 @@
  * Props in, events out — no store access: an image over the upload limit emits
  * `size-error` with the sentence to show, and the parent notifies.
  */
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseMarkdownField from '@/components/base/BaseMarkdownField.vue'
 import BaseModal from '@/components/base/BaseModal.vue'
@@ -32,6 +32,7 @@ import {
   shipUpgradeCount,
   shipUpgradeMaxCount,
 } from '@/systems/offworlders/shipConstants.js'
+import { useImageLightbox } from '@/utils/useImageLightbox.js'
 import { validateImageSize } from '@/utils/imageUpload.js'
 import { useUnsavedChanges } from '@/utils/useUnsavedChanges.js'
 
@@ -213,9 +214,19 @@ const repositionFile = ref(null)
 // handouts"), and every image in it is the ship's to remove; a character's art
 // belongs to its owner and is removed in Edit character, so it opens with its own
 // caption and steps through its own pictures instead of the ship's.
-const lightboxUrl = ref(null)
-const lightboxImages = ref([])
-const lightboxLabel = ref('')
+// Opening/stepping the lightbox is shared with the character's own gallery
+// lightbox (`useImageLightbox`); the state and the ←/→ handling live there, and
+// each caller gets its own instance, so the two never step through each other's
+// sets.
+const {
+  lightboxUrl,
+  lightboxImages,
+  lightboxLabel,
+  open: openLightbox,
+  close: closeLightbox,
+  showPrevious: showPreviousImage,
+  showNext: showNextImage,
+} = useImageLightbox()
 
 /** The ship's own images, profile image first — what the gallery grid renders. */
 const galleryImages = computed(() => {
@@ -226,14 +237,6 @@ const galleryImages = computed(() => {
 /** True while the open picture is one of the ship's own images. */
 const lightboxIsShipImage = computed(() => galleryImages.value.includes(lightboxUrl.value))
 
-/** Open one set of images, captioned with `label`. */
-function openLightbox(url, images = [], label = '') {
-  lightboxUrl.value = url
-  // A lone picture (a character with one image) still needs a set to step in.
-  lightboxImages.value = images.length ? [...images] : [url]
-  lightboxLabel.value = label
-}
-
 /** Open a picture from the ship's own gallery. */
 function openShipImage(url) {
   openLightbox(url, galleryImages.value, props.ship.name || 'Ship')
@@ -242,12 +245,6 @@ function openShipImage(url) {
 /** Open a crew card's pictures — that character's images, under its name. */
 function openCrewImage({ url, images = [], label = '' } = {}) {
   openLightbox(url, images, label)
-}
-
-function closeLightbox() {
-  lightboxUrl.value = null
-  lightboxImages.value = []
-  lightboxLabel.value = ''
 }
 
 /** True when `url` is the ship's profile image (not a gallery image). */
@@ -318,40 +315,6 @@ function removeGalleryImage(url) {
   if (lightboxUrl.value === url) closeLightbox()
 }
 
-/**
- * Step the lightbox to the previous/next image, wrapping around at the ends.
- * The set is the one the picture was opened from (the ship's, or a crew card's).
- */
-function stepLightbox(offset) {
-  const images = lightboxImages.value
-  const index = images.indexOf(lightboxUrl.value)
-  if (index === -1) return
-  lightboxUrl.value = images[(index + offset + images.length) % images.length]
-}
-
-function showPreviousImage() {
-  stepLightbox(-1)
-}
-
-function showNextImage() {
-  stepLightbox(1)
-}
-
-/** Arrow-key navigation while the lightbox is open. */
-function onLightboxKeydown(event) {
-  if (!lightboxUrl.value) return
-  if (event.key === 'ArrowLeft') {
-    event.preventDefault()
-    showPreviousImage()
-  } else if (event.key === 'ArrowRight') {
-    event.preventDefault()
-    showNextImage()
-  }
-}
-
-onMounted(() => window.addEventListener('keydown', onLightboxKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onLightboxKeydown))
-
 const isDirty = computed(() => editing.value && draftSignature() !== baseline.value)
 
 // Warn before leaving the campaign while the ship has unsaved edits.
@@ -385,9 +348,11 @@ useUnsavedChanges(
       <BaseButton variant="update" icon="edit" @click="startEditing">Edit ship</BaseButton>
     </div>
 
-    <!-- Profile image: in view mode it mirrors the campaign image banner; while
-         editing it shrinks to the square editor (hover to change / reposition). -->
-    <div class="flex items-start gap-4">
+    <!-- Profile image: in view mode it mirrors the campaign image banner and
+         carries the same replace affordance as while editing — an explicit
+         button, because a hover overlay is unreachable on touch. While editing
+         it shrinks to the square editor (hover to change / reposition). -->
+    <div :class="editing ? 'flex items-start gap-4' : 'flex flex-col gap-2'">
       <div class="relative" :class="editing ? 'w-40 flex-shrink-0' : 'w-full'">
         <CampaignImage
           :src="ship.imageUrl"
@@ -419,6 +384,13 @@ useUnsavedChanges(
       <div v-if="editing" class="flex-1 min-w-0 space-y-2">
         <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
         <!-- A real button, so touch devices (no hover) can change the image. -->
+        <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
+      </div>
+      <!-- View mode: the same picker + reposition flow, reached without entering
+           Edit. An explicit button, because a hover overlay is unreachable on
+           touch. -->
+      <div v-else class="min-w-0 space-y-1">
+        <p class="text-sm text-muted">Upload or reposition the ship's profile picture.</p>
         <BaseButton variant="ghost" @click="triggerProfileInput">Change image</BaseButton>
       </div>
     </div>

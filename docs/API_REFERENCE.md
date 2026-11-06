@@ -489,7 +489,7 @@ re-deriving a role check.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with updated imageUrl)
 - **Status Codes**: 200, 400, 401, 403
-- **Notes**: Extracts error message from response for user notification.
+- **Notes**: Replaces the character's `avatarUrl` portrait — the one image that goes through pick → reposition. Reached from Edit character and, without entering Edit, from the avatar's "Change image" affordance on `CharacterView` (owner only, hidden in Guest Demo). Errors surface through the notification store.
 
 ---
 
@@ -502,7 +502,7 @@ re-deriving a role check.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: CharacterOutputDTO (with the image appended to `imageUrls`)
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Edited from Edit character, where the picked file is uploaded **as it is** — no crop step, no re-encode (the portrait is the only image that goes through pick → reposition). In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery.
+- **Notes**: Appends to the character's gallery, which sits beside the single `avatarUrl` portrait. Added from Edit character, or — without entering Edit — from the gallery's "Add image" affordance on `CharacterView` (owner only, hidden in Guest Demo); either way the picked file is uploaded **as it is** — no crop step, no re-encode (the portrait is the only image that goes through pick → reposition). Removal stays in Edit character. In an Offworlders campaign the gallery and the character's notes are what the ship's crew card shows — the crew **is** the campaign's characters. A card's images open in the ship's lightbox under the character's name, stepping through that character's own pictures; they are deliberately **not** part of the ship's gallery. `CharacterView` shows the gallery in its own lightbox (its own `useImageLightbox` instance), stepping through the character's images only.
 
 ---
 
@@ -792,7 +792,7 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Max File Size**: 5MB per file (configurable via the backend's `app.upload.max-file-size`; multipart limits are 8MB)
 - **Response**: ShipDTO (with the updated `imageUrl`)
 - **Status Codes**: 200, 400, 401, 403, 404
-- **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset.
+- **Notes**: Replaces the ship's profile image, which is shown in the ship view instead of the campaign image. Falls back to `/defaultShip.svg` when unset. Reachable from `ShipSheet` both while editing and, without entering Edit, from the profile image's "Change image" button in view mode — the same pick → reposition flow either way.
 
 ---
 
