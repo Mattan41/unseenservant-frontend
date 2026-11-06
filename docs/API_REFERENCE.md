@@ -748,7 +748,13 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
   isLoading: boolean,
   isSaving: boolean,
   error: string | null,
-  hasConflict: boolean      // last save was rejected with 409 (optimistic concurrency)
+  hasConflict: boolean,     // last save was rejected with 409 (optimistic concurrency)
+  lastUpdateSource: '' | 'fetch' | 'save' | 'adjust' | 'image'
+                            // what produced the `ship` currently in the store:
+                            // 'fetch' is a background refresh (the activity poll),
+                            // the others are writes this client made. The ship
+                            // sheet keeps the user's unsaved edits across a
+                            // 'fetch' and not across a write (see the Ship section).
 }
 ```
 
@@ -761,7 +767,7 @@ lookup those cards and `campaignActivity.js:campaignHasActivity` use.
 - **Guest Mode**: Mocked — reads `guest_ships` by campaignId (404 when none)
 - **Response**: ShipDTO `{ id, campaignId, name, hull, hullMax, armor, damage, driveFuel, maxDriveFuel, credits, upgrades, notes, imageUrl, imageUrls, version, updatedAt }`
 - **Status Codes**: 200, 401, 403, 404
-- **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`.
+- **Notes**: Requires a campaign participant. A 404 means no ship exists yet; the store falls back to the rulebook defaults (Hull 15, Armor 0, Damage 1D6, Max Drive Fuel 4). Only shown in the UI when the campaign's `primarySystem` is `OFFWORLDERS`. A fetch that arrives while the ship is already loaded is a **background refresh** (the activity poll in `CampaignView`, see *Section badges*): it sets `lastUpdateSource` to `'fetch'` and `ShipSection` keeps the sheet mounted rather than swapping it for the spinner, so an in-progress edit is not unmounted — the sheet itself also keeps the user's unsaved edits when the source is `'fetch'` (see `ShipSheet.vue`).
 
 ---
 

@@ -16,6 +16,12 @@ export const useShipStore = defineStore('ship', () => {
   const error = ref(null)
   // Set when a save is rejected because someone else edited the ship first.
   const hasConflict = ref(false)
+  // What produced the `ship` currently in the store. A background refresh
+  // ('fetch' — e.g. the activity poll) must be told apart from a write this
+  // client made ('save' | 'adjust' | 'image'), because the ship sheet keeps the
+  // user's unsaved edits across the former and not the latter.
+  // '' | 'fetch' | 'save' | 'adjust' | 'image'
+  const lastUpdateSource = ref('')
 
   // ==========================================================================
   // Actions
@@ -32,6 +38,7 @@ export const useShipStore = defineStore('ship', () => {
     isLoading.value = true
     error.value = null
     hasConflict.value = false
+    lastUpdateSource.value = 'fetch'
 
     try {
       const data = await ShipService.fetchShip(campaignId)
@@ -68,6 +75,7 @@ export const useShipStore = defineStore('ship', () => {
     const notificationStore = useNotificationStore()
     isSaving.value = true
     hasConflict.value = false
+    lastUpdateSource.value = 'save'
 
     try {
       const saved = await ShipService.saveShip(campaignId, shipData)
@@ -111,6 +119,7 @@ export const useShipStore = defineStore('ship', () => {
     if (!ship.value) return null
     isSaving.value = true
     hasConflict.value = false
+    lastUpdateSource.value = 'adjust'
 
     try {
       const payload = { ...buildShipPayload(ship.value), [field]: value }
@@ -148,6 +157,7 @@ export const useShipStore = defineStore('ship', () => {
   async function applyImageResult(request, successMessage) {
     const notificationStore = useNotificationStore()
     isSaving.value = true
+    lastUpdateSource.value = 'image'
     try {
       const saved = await request
       ship.value = normalizeShipData(saved)
@@ -198,6 +208,7 @@ export const useShipStore = defineStore('ship', () => {
     isLoading.value = false
     isSaving.value = false
     hasConflict.value = false
+    lastUpdateSource.value = ''
   }
 
   // ==========================================================================
@@ -210,6 +221,7 @@ export const useShipStore = defineStore('ship', () => {
     isSaving,
     error,
     hasConflict,
+    lastUpdateSource,
 
     // Actions
     fetchShip,

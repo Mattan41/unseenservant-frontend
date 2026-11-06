@@ -297,7 +297,11 @@ while an anonymous visitor gets the example strips described above.
   badged, and a user's own write marks the section seen so it never badges them.
   A shared, ref-counted poll (`features/campaign/useCampaignActivityPoll.js`)
   keeps the stamps live while the list or a campaign is open (see
-  docs/API_REFERENCE.md → "Section badges").
+  docs/API_REFERENCE.md → "Section badges"). Reloading the ship from that poll is
+  a *background refresh*: it must not blank the ship sheet or close an open
+  editor, so the store records what produced the current ship
+  (`shipStore.lastUpdateSource`) and both `ShipSection` and `ShipSheet` honour it
+  (see docs/API_REFERENCE.md → `GET /api/campaigns/{id}/ship`).
 
 ### Routing & Navigation
 - Protected routes are explicitly flagged using `meta: { requiresAuth: true }`.

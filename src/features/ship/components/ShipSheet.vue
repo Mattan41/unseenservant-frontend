@@ -52,6 +52,16 @@ const props = defineProps({
     default: false,
   },
   /**
+   * What produced the current `ship` (`shipStore.lastUpdateSource`):
+   * `'' | 'fetch' | 'save' | 'adjust' | 'image'`. A background refresh
+   * (`'fetch'`) must not discard the user's unsaved edits; this sheet's own
+   * writes (`'save'` / `'image'`) may still move the draft on.
+   */
+  updateSource: {
+    type: String,
+    default: '',
+  },
+  /**
    * The campaign's characters — the crew manifest. Each card is one character,
    * so nothing about a crew member lives here: the sheet only presents them.
    */
@@ -83,6 +93,11 @@ const draft = reactive(createEmptyShipData())
 // before navigating away (image fields are excluded — they save on their own).
 const baseline = ref('')
 
+// The ship `version` the draft's fields are based on — what a save must send, so
+// that an external change landing mid-edit still surfaces as a conflict instead
+// of the draft silently overwriting it.
+const draftVersion = ref(null)
+
 function draftSignature() {
   return JSON.stringify({
     name: draft.name,
@@ -101,20 +116,25 @@ function draftSignature() {
 function resetDraft() {
   Object.assign(draft, createEmptyShipData(), props.ship)
   draft.upgrades = [...(props.ship.upgrades || [])]
+  draftVersion.value = props.ship.version ?? null
   baseline.value = draftSignature()
 }
 
-// A pending image upload/replace also replaces `ship`, but must not drop the
-// user's in-progress field edits or close edit mode.
-let pendingImageOp = false
-
-// Reset the draft (and leave edit mode) whenever the source ship changes —
-// e.g. after a successful save or a reload.
+// How a replacement of `ship` is handled depends on what caused it (see the
+// `updateSource` prop, fed from `shipStore.lastUpdateSource`): while the user is
+// editing, neither a 'fetch' (a background refresh — the activity poll) nor an
+// 'image' (this sheet's own image op) may touch the draft, because those are
+// changes the user did not ask for and their edits have to survive them. An
+// image op did move the server's copy on, so the version the draft saves against
+// follows it; a background refresh deliberately does not, so saving after one
+// still conflicts rather than overwriting the other person's change. Anything
+// else — this sheet's own save, a quick-edit, the first load — reloads the draft
+// and leaves edit mode.
 watch(
   () => props.ship,
   () => {
-    if (pendingImageOp) {
-      pendingImageOp = false
+    if (editing.value && (props.updateSource === 'fetch' || props.updateSource === 'image')) {
+      if (props.updateSource === 'image') draftVersion.value = props.ship.version ?? null
       return
     }
     resetDraft()
@@ -131,6 +151,14 @@ function startEditing() {
 function cancelEditing() {
   resetDraft()
   editing.value = false
+}
+
+// The conflict banner's Reload is an explicit "give me the server's copy": the
+// local edits go, so leave edit mode first and let the incoming ship be adopted
+// by the watcher above, rather than kept the way a background refresh is.
+function reloadFromConflict() {
+  cancelEditing()
+  emit('reload')
 }
 
 function count(upgrade) {
@@ -150,10 +178,12 @@ function removeUpgrade(name) {
 }
 
 function submit() {
-  pendingImageOp = false
+  // Save against the version the draft's fields were based on (not whatever
+  // `ship` holds now), so a background refresh that landed mid-edit becomes a
+  // conflict rather than a silent overwrite of the other person's change.
   // Images are managed by their own endpoints, so they are not part of this
   // payload (see `buildShipPayload`, shared with the store's quick-edit action).
-  emit('save', buildShipPayload({ ...draft, version: props.ship.version }))
+  emit('save', buildShipPayload({ ...draft, version: draftVersion.value }))
 }
 
 // Quick-edit: Hull / Drive fuel / Credits are nudged in place and saved
@@ -262,7 +292,6 @@ function applyRepositionedImage(file) {
   }
 
   repositionFile.value = null
-  pendingImageOp = true
   emit('upload-profile', file)
 }
 
@@ -281,12 +310,10 @@ function onGalleryFileChange(event) {
     return
   }
 
-  pendingImageOp = true
   emit('add-gallery', file)
 }
 
 function removeGalleryImage(url) {
-  pendingImageOp = true
   emit('remove-gallery', url)
   if (lightboxUrl.value === url) closeLightbox()
 }
@@ -339,7 +366,7 @@ useUnsavedChanges(
     <!-- Optimistic-concurrency notice -->
     <div v-if="conflict" class="error-message flex flex-wrap items-center justify-between gap-2">
       <span>This ship was changed by someone else. Reload to see the latest before editing.</span>
-      <BaseButton variant="retry" @click="$emit('reload')">Reload</BaseButton>
+      <BaseButton variant="retry" @click="reloadFromConflict">Reload</BaseButton>
     </div>
 
     <!-- Name (editable only while editing — the value itself is in the section
